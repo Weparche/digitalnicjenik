@@ -4,8 +4,8 @@ import { adapters, isServiceItem, parseMarketinoCsv, renderCsv, renderXml, valid
 const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(value)
 const dateTime = (value: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
 const slugFromPath = () => window.location.pathname.match(/^\/c\/([^/]+)/)?.[1]
-const platformHost = () => ['localhost', '127.0.0.1', 'digitalnicjenik.nepar.hr'].includes(window.location.hostname) || window.location.hostname.endsWith('.pages.dev')
-const isCustomPublication = () => !platformHost() && (window.location.pathname === '/' || window.location.pathname.startsWith('/arhiva'))
+const platformHost = () => ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.endsWith('.pages.dev')
+const isCustomPublication = () => window.location.pathname.startsWith('/arhiva') && !['localhost', '127.0.0.1'].includes(window.location.hostname) && !window.location.hostname.endsWith('.pages.dev')
 
 function download(text: string, filename: string, type: string) {
   const url = URL.createObjectURL(new Blob([text], { type }))

@@ -8,21 +8,22 @@
     "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",
     "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb"
   },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "digitalni-cjenik-nepar",
-      "migrations_dir": "./migrations"
-    }
-  ],
   "env": {
     "staging": {
       "name": "digitalni-cjenik-nepar-staging",
-      "d1_databases": [{ "binding": "DB", "database_name": "digitalni-cjenik-nepar-staging", "migrations_dir": "./migrations" }]
+      "vars": {
+        "DEMO_WRITE_TENANT": "nepar",
+        "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",
+        "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb"
+      }
     },
     "production": {
       "name": "digitalni-cjenik-nepar",
-      "d1_databases": [{ "binding": "DB", "database_name": "digitalni-cjenik-nepar", "migrations_dir": "./migrations" }]
+      "vars": {
+        "DEMO_WRITE_TENANT": "nepar",
+        "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",
+        "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb"
+      }
     }
   }
 }

@@ -39,6 +39,15 @@ async function metadataFor(env: RuntimeEnv, tenantId: string) {
   return mapMetadata(row)
 }
 
+async function assertActivePublicationTarget(env: RuntimeEnv, tenantId: string) {
+  const target = await env.DB!.prepare("SELECT id FROM publication_targets WHERE tenant_id = ? AND status = 'active' LIMIT 1").bind(tenantId).first<{ id: string }>()
+  if (!target) throw new Error("Nedostaje aktivni public target za objavu.")
+}
+
+function assertPayloadTenant(slug: string, tenantId: string, payload: NormalizedPriceList) {
+  if (payload.tenant.slug !== slug || payload.tenant.id !== tenantId) throw new Error("Draft pripada drugom tenantu.")
+}
+
 async function tenantIdFor(env: RuntimeEnv, slug: string) {
   const row = await env.DB!.prepare("SELECT id FROM tenants WHERE slug = ?").bind(slug).first<{ id: string }>()
   return row?.id ?? null
@@ -49,7 +58,7 @@ async function ensureTenant(env: RuntimeEnv, list: NormalizedPriceList) {
   const statements = [
     env.DB!.prepare("INSERT INTO tenants (id, slug, name, currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at").bind(list.tenant.id, list.tenant.slug, list.tenant.name, list.currency, timestamp, timestamp),
     env.DB!.prepare("INSERT INTO publication_metadata (tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?, ?) ON CONFLICT(tenant_id) DO NOTHING").bind(list.tenant.id, "usluzni-objekt", "demo", list.tenant.slug, env.DEFAULT_PUBLICATION_TIMEZONE || "Europe/Zagreb", timestamp, timestamp),
-    env.DB!.prepare("INSERT INTO publication_targets (id, tenant_id, hostname, status, created_at, updated_at) VALUES (?, ?, ?, 'active', ?, ?) ON CONFLICT DO NOTHING").bind("target-" + list.tenant.id, list.tenant.id, list.tenant.slug === (env.DEMO_WRITE_TENANT || "nepar") ? (env.DEMO_PUBLIC_HOSTNAME || list.tenant.slug + ".digitalnicjenik.nepar.hr") : list.tenant.slug + ".digitalnicjenik.nepar.hr", timestamp, timestamp),
+    env.DB!.prepare("INSERT INTO publication_targets (id, tenant_id, hostname, status, created_at, updated_at) VALUES (?, ?, ?, 'active', ?, ?) ON CONFLICT(id) DO UPDATE SET hostname = excluded.hostname, status = 'active', updated_at = excluded.updated_at").bind("target-" + list.tenant.id, list.tenant.id, list.tenant.slug === (env.DEMO_WRITE_TENANT || "nepar") ? (env.DEMO_PUBLIC_HOSTNAME || list.tenant.slug + ".digitalnicjenik.nepar.hr") : list.tenant.slug + ".digitalnicjenik.nepar.hr", timestamp, timestamp),
   ]
   if (list.tenant.slug === (env.DEMO_WRITE_TENANT || "nepar")) {
     statements.push(env.DB!.prepare("INSERT INTO entitlements (id, tenant_id, plan, status, period_start, period_end, created_at, updated_at) VALUES (?, ?, 'publisher_self_service', 'active', ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING").bind("entitlement-" + list.tenant.slug, list.tenant.id, timestamp, addDays(timestamp, 365), timestamp, timestamp))
@@ -101,7 +110,7 @@ export async function readPublicationByStem(env: RuntimeEnv, stem: string, publi
 
 export async function readPublicationForHost(env: RuntimeEnv, hostname: string): Promise<PricePublication | null> {
   if (!env.DB) return null
-  const row = await env.DB.prepare(publicationSelect + " JOIN publication_targets target ON target.current_publication_id = p.id WHERE lower(target.hostname) = lower(?) AND target.status = 'active' AND p.is_current = 1 LIMIT 1").bind(hostname).first<PublicationRow>()
+  const row = await env.DB.prepare(publicationSelect + " JOIN publication_targets target ON target.current_publication_id = p.id WHERE target.tenant_id = p.tenant_id AND lower(target.hostname) = lower(?) AND target.status = 'active' AND p.is_current = 1 LIMIT 1").bind(hostname).first<PublicationRow>()
   return row ? mapPublication(row) : null
 }
 
@@ -145,6 +154,7 @@ export async function updateDraft(env: RuntimeEnv, slug: string, draftId: string
   if (!env.DB) throw new Error("D1 binding DB nije konfiguriran.")
   const draft = await readDraft(env, slug, draftId)
   if (!draft || draft.status === "published") throw new Error("Draft nije pronađen ili je već objavljen.")
+  assertPayloadTenant(slug, draft.tenantId, list)
   const validation = validatePriceList(list)
   const timestamp = now()
   await env.DB.prepare("UPDATE price_uploads SET normalized_payload_json = ?, validation_issues_json = ?, status = ?, updated_at = ? WHERE id = ?").bind(json(list), json(validation.issues), validation.status, timestamp, draftId).run()
@@ -155,7 +165,10 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   if (!env.DB) throw new Error("D1 binding DB nije konfiguriran.")
   const draft = await readDraft(env, slug, draftId)
   if (!draft) throw new Error("Draft nije pronađen.")
+  assertPayloadTenant(slug, draft.tenantId, draft.normalizedPayload)
   if (draft.status !== "ready_to_publish" && !internalDemo) throw new Error("Cjenik još nije spreman za objavu.")
+  const draftValidation = validatePriceList(draft.normalizedPayload)
+  if (!internalDemo && draftValidation.status !== "ready_to_publish") throw new Error("Cjenik više nije spreman za objavu. Ponovno provjerite dopune.")
   const entitlement = await readEntitlement(env, slug)
   if (!internalDemo && (!entitlement || entitlement.status !== "active" || entitlement.plan === "validator")) throw new Error("Aktivan Publisher entitlement nije pronađen.")
   const current = await readCurrentPublication(env, slug)
@@ -172,6 +185,7 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const filenamePrefix = createFilenameStemPrefix(metadata)
   const filenameTime = filenameTimestamp(new Date(timestamp), metadata.timezone)
   const publicUntil = addDays(timestamp, 30)
+  await assertActivePublicationTarget(env, tenantId)
   // The first statement claims the draft. Every following statement also
   // requires that this payload is not already current. This makes a retry or
   // concurrent request idempotent without relying on a JavaScript-side lock.

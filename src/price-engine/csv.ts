@@ -1,7 +1,9 @@
 import type { NormalizedPriceList } from './types'
 
-const escapeCsv = (value: unknown) => {
-  const stringValue = value === null || value === undefined ? '' : String(value)
+const protectSpreadsheetFormula = (value: string) => /^[=+\-@]/.test(value) || /^[\t\r\n]/.test(value) ? "'" + value : value
+const escapeCsv = (value: unknown, protectFormula = true) => {
+  const rawValue = value === null || value === undefined ? '' : String(value)
+  const stringValue = protectFormula ? protectSpreadsheetFormula(rawValue) : rawValue
   return /[",\n\r]/.test(stringValue) ? `"${stringValue.replaceAll('"', '""')}"` : stringValue
 }
 
@@ -11,5 +13,5 @@ export function renderCsv(priceList: NormalizedPriceList): string {
     item.category ?? '', item.name, item.type ?? '', item.externalId ?? '',
     item.price.toFixed(2), item.salePrice == null ? '' : item.salePrice.toFixed(2), item.specialSaleApplied === true ? 'DA' : item.specialSaleApplied === false ? 'NE' : '', item.specialSaleName ?? '', item.anchorPrice == null ? '' : item.anchorPrice.toFixed(2), item.unit ?? '',
   ])
-  return '\uFEFF' + [header, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\r\n') + '\r\n'
+  return '\uFEFF' + [header, ...rows].map((row) => row.map((value, index) => escapeCsv(value, index !== 4 && index !== 5 && index !== 8)).join(',')).join('\r\n') + '\r\n'
 }

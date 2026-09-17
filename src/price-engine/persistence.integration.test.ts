@@ -46,6 +46,9 @@ describe('D1 Publisher persistence', () => {
 
     const completed = { ...imported.draft.normalizedPayload, items: imported.draft.normalizedPayload.items.map((item) => ({ ...item, anchorPrice: item.price, specialSaleApplied: false, isNewSinceReferenceDate: false })) }
     expect(validatePriceList(completed).status).toBe('ready_to_publish')
+    const crossTenantPayload = { ...completed, tenant: { ...completed.tenant, id: 'other-tenant', slug: 'other-tenant' } }
+    const crossTenantPatch = await patchDraft({ request: new Request('https://demo.test/draft', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: crossTenantPayload }) }), params: { slug: 'nepar', id: imported.draft.id }, env })
+    expect(crossTenantPatch.status).toBe(422)
     const patchedResponse = await patchDraft({ request: new Request('https://demo.test/api/tenants/nepar/draft/' + imported.draft.id, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: completed }) }), params: { slug: 'nepar', id: imported.draft.id }, env })
     const patched = await patchedResponse.json() as { validation: { status: string }; draft: { status: string } }
     expect(patched.validation.status).toBe('ready_to_publish')
@@ -95,6 +98,8 @@ describe('D1 Publisher persistence', () => {
     const oldXmlResponse = await getImmutableXml({ request: hostRequest('/' + simulated.publications[1].filenameStem + '.xml'), params: { filename: simulated.publications[1].filenameStem }, env })
     expect(await oldCsvResponse.text()).toContain('500.00')
     expect(await oldXmlResponse.text()).toContain('500.00')
+    const previewOldCsvResponse = await getImmutableCsv({ request: new Request('https://preview.pages.dev/' + simulated.publications[1].filenameStem + '.csv'), params: { filename: simulated.publications[1].filenameStem }, env })
+    expect(previewOldCsvResponse.status).toBe(404)
 
     const currentResponse = await getTenant({ request: new Request('https://demo.test/api/tenants/nepar'), ...context })
     const current = await currentResponse.json() as { priceList: NormalizedPriceList; publications: PricePublication[] }

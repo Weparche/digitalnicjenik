@@ -10,4 +10,7 @@ export const onRequestPatch = async ({ request, params, env }: { request: Reques
   } catch (caught) { return Response.json({ error: caught instanceof Error ? caught.message : 'Dopuna drafta nije uspjela.' }, { status: 422 }) }
 }
 
-export const onRequestGet = async ({ params, env }: { params: Record<string, string>; env: RuntimeEnv }) => Response.json({ draft: await readDraft(env, params.slug, params.id) })
+export const onRequestGet = async ({ params, env }: { params: Record<string, string>; env: RuntimeEnv }) => {
+  if (params.slug !== (env.DEMO_WRITE_TENANT || 'nepar')) return Response.json({ error: 'Pregled produkcijskog drafta zahtijeva autentikaciju/operator pristup.' }, { status: 403 })
+  return Response.json({ draft: await readDraft(env, params.slug, params.id) })
+}

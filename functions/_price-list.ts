@@ -25,8 +25,7 @@ export async function publicationByStem(request: Request, stem: string, env: Run
   const publication = await readPublicationByStem(env, stem, true)
   if (!publication) return null
   const hostname = new URL(request.url).hostname
-  const internal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.pages.dev')
-  return internal || (await readPublicationForHost(env, hostname))?.tenantId === publication.tenantId ? publication : null
+  return (await readPublicationForHost(env, hostname))?.tenantId === publication.tenantId ? publication : null
 }
 
 export function fileResponse(body: string, extension: 'csv' | 'xml', stem: string) {

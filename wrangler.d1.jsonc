@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "digitalni-cjenik-nepar-d1",
+  "compatibility_date": "2026-09-17",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "digitalni-cjenik-nepar",
+      "migrations_dir": "./migrations"
+    }
+  ]
+}

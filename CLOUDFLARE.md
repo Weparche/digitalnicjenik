@@ -2,15 +2,15 @@
 
 Binding name: `DB`.
 
-The repository intentionally omits `database_id` from `wrangler.jsonc`. Create the database in the target Cloudflare account and add the returned ID to the deployment configuration or dashboard binding; no production ID is committed here.
+The repository intentionally omits `database_id` from `wrangler.jsonc`. Pages production uses a dashboard D1 binding named `DB`; no production ID is committed here.
 
 ## Local
 
 ```powershell
 npm install
-npx wrangler d1 migrations apply digitalni-cjenik-nepar --local
+npx wrangler d1 migrations apply digitalni-cjenik-nepar --config wrangler.d1.jsonc --local
 npm run build
-npx wrangler pages dev dist
+npx wrangler pages dev dist --d1 DB=digitalni-cjenik-nepar
 ```
 
 `pages dev` uses the local D1 database and Pages Functions. The first request for `/api/tenants/nepar` bootstraps the untouched root `marketino-artikli` fixture into D1.
@@ -19,12 +19,12 @@ npx wrangler pages dev dist
 
 ```powershell
 npx wrangler d1 create digitalni-cjenik-nepar
-npx wrangler d1 migrations apply digitalni-cjenik-nepar --remote
+npx wrangler d1 migrations apply digitalni-cjenik-nepar --config wrangler.d1.jsonc --remote
 npm run build
 npx wrangler pages deploy dist --project-name digitalni-cjenik-nepar
 ```
 
-Before deploy, connect the `DB` binding to the created D1 database in the Pages project or add its `database_id` in deployment configuration. Apply migrations with the commands above (`--local` for local work, `--remote` for production). Production database IDs and Pages project IDs are intentionally not committed here.
+Before deploy, connect the created D1 database to the Pages project with binding name `DB`. Apply migrations with the commands above (`--local` for local work, `--remote` for production). Production database IDs and Pages project IDs are intentionally not committed here; adding a name-only D1 binding to `wrangler.jsonc` makes the Pages configuration validator reject the deployment.
 
 The demo write boundary is configured with `DEMO_WRITE_TENANT` (default
 `nepar`), its public hostname with `DEMO_PUBLIC_HOSTNAME`, and the default publication timezone with
