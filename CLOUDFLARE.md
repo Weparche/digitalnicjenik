@@ -36,4 +36,32 @@ then create matching active rows in `publication_targets`. Seed production
 tenant metadata and active `entitlements` separately; do not hardcode those
 values in the repository.
 
-No secrets are required for this demo; the real Marketino API and webhook verification will need credentials in Phase 2.
+## Lead forma i Email Sending
+
+Nova ruta `POST /api/leads/digitalni-cjenik` koristi D1 binding `DB`, Turnstile
+Siteverify i Cloudflare Email Sending REST API. Prije javnog uključivanja forme u
+Pages production/preview konfiguraciji postavite:
+
+```text
+CF_ACCOUNT_ID
+CF_EMAIL_API_TOKEN          secret
+EMAIL_FROM                  publisher@nepar.hr
+EMAIL_TO                    nepar@nepar.hr
+TURNSTILE_SECRET_KEY        secret
+LEAD_RATE_LIMIT_SECRET      secret
+VITE_TURNSTILE_SITE_KEY     build variable
+```
+
+Domenu `nepar.hr` prvo onboardajte za Email Sending i verificirajte odredište
+`nepar@nepar.hr`. `CF_EMAIL_API_TOKEN`, `TURNSTILE_SECRET_KEY` i
+`LEAD_RATE_LIMIT_SECRET` nikad se ne spremaju u repozitorij. Nakon migracije
+`0004_lead_rate_limit.sql` napravite production integration test s privitkom;
+REST API ima ukupni limit poruke od 5 MiB pa posebno provjerite graničnu
+datoteku prije javnog lansiranja.
+
+Turnstile widget mora imati hostname `digitalnicjenik.nepar.hr` i action
+`turnstile-spin-v2`. Backend prihvaća poruku tek kada Siteverify vrati
+`success: true` za isti action/hostname. D1 zapisuje samo HMAC hash IP-a, status
+pokušaja i vrijeme; ime, e-mail, poruka i datoteka ostaju izvan baze i logova.
+
+Buduća automatska sinkronizacija s providerom zahtijevat će zasebne vjerodajnice.

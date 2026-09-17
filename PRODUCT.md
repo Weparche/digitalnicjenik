@@ -16,23 +16,23 @@ Small business owners and operators who already maintain prices in a POS, ERP, o
 
 ## Product Purpose
 
-NEPAR Publisher helps a small business check whether its website exposes a public machine-readable price list, validate a CSV price list, and publish a maintained public web price list with CSV, XML, and change history. Success means a non-technical owner understands what is ready, what is missing, and which next step solves it.
+NEPAR Publisher helps a small business check whether its website exposes a public machine-readable price list, validate CSV/XML data, convert Excel price lists, and request a complete technical implementation. Success means a non-technical owner understands what is ready, what is missing, and can send NEPAR whatever material they already have.
 
 ## Positioning
 
-The acquisition flow starts with a no-registration website readiness check, continues with a free CSV validator, and then offers Publisher, setup, or managed service. The backend keeps the existing normalization and publication infrastructure without exposing internal source-system details to customers.
+The acquisition flow starts with a no-registration website readiness check, continues with a free CSV/XML validator or local Excel conversion, and then offers consultation, Publisher setup, or managed service. The backend keeps the existing normalization and publication infrastructure without exposing internal source-system details to customers.
 
 ## Operating Context
 
-The customer continues working in the system where they maintain prices, exports a CSV price list, and uploads it for validation. For the MVP, they can check a website, load the demo, upload a CSV, preview normalized rows, complete missing regulatory fields, and publish immutable versions. Public lists are designed for direct links and iframe embeds.
+The customer can check a website, upload CSV/XML, map an XLS/XLSX worksheet into the same normalized model, preview rows, complete missing regulatory fields, download both machine-readable outputs, or send a file/URL to NEPAR for consultation or implementation. Excel stays local until the user explicitly attaches it to an inquiry.
 
 ## Capabilities and Constraints
 
-The MVP supports a tolerant CSV adapter, canonical normalization, deterministic hashes, snapshots, CSV/XML rendering, immutable publications, public `/c/:slug` lists, archive views, embed instructions, and the website readiness checker. It does not include authentication, billing, automatic provider synchronization, or user roles. The existing source adapter and integration fixture remain internal compatibility infrastructure.
+The MVP supports a tolerant CSV adapter, shared XML and Excel normalization, deterministic hashes, snapshots, CSV/XML rendering, immutable publications, public `/c/:slug` lists, archive views, website readiness checking, and a Turnstile-protected implementation inquiry with an optional attachment. It does not include authentication, billing, automatic provider synchronization, CRM, marketing subscriptions, or user roles.
 
 ## Brand Commitments
 
-Product name: NEPAR Publisher. Primary message: “Provjerite web, učitajte CSV i objavite cjenik bez tehničkog predznanja.” Tone is clear, calm, professional, and helpful; avoid provider-specific promises, stock people, cheesy AI imagery, and decoration without product meaning.
+Product name: NEPAR Publisher. Primary message: “Provjerite što imate. Ako želite, mi ćemo riješiti ostalo.” Tone is clear, calm, professional, and helpful; avoid provider-specific promises, stock people, cheesy AI imagery, and decoration without product meaning.
 
 ## Evidence on Hand
 

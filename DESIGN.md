@@ -1,20 +1,33 @@
 # NEPAR Digitalni Cjenik — visual direction
 
-> Active direction (2026-09): the root route is a premium light utility app, not a dark control-room landing page. The website checker is the primary first action, followed by the CSV/XML validator. The legacy direction below remains historical context for public price-list surfaces only.
+> Active direction (2026-09): the root route is a premium light utility and sales app in the NEPAR visual system. Historical dark control-room styling is not used on the acquisition surface.
 
 ## Active root surface
 
-The `/` route is an Operate-first acquisition tool. Its first viewport must let a non-technical website owner enter a URL, run the public machine-readable price-list check, understand the result, and choose CSV/XML validation without pricing or a workflow explainer.
+The `/` route combines Operate and Persuade. Its first viewport lets a non-technical website owner run the checker without scrolling while a distinct sales card offers full implementation from 129 €. The product proves value before asking for contact details, but help is always reachable.
 
-Use a calm light surface, white utility panels, dark green actions, and amber only for warnings or manual review. Preserve visible focus states, 44px touch targets, safe URL/filename wrapping, and reduced-motion behavior at 390px.
+Use NEPAR slate neutrals on `#f8fafc`, white utility panels, and `#2563eb` primary actions. Cyan and violet are restrained brand accents. Green is reserved for success, amber for warning/manual review, and red for errors. Preserve visible focus states, 44px touch targets, safe URL/filename wrapping, and reduced-motion behavior at 390px.
 
-The checker result persists through the handoff. A confirmed URL is shown as evidence, never imported automatically. “Imam CSV” scrolls to and focuses the validator container, not its hidden file input. CSV and XML share one normalized validation path.
+The checker result persists through validator and lead handoffs. A confirmed URL is shown as evidence, never imported automatically. “Imam CSV” scrolls to and focuses the validator container, not its hidden file input. CSV, XML, and mapped Excel rows share one normalized validation path. A source file is attached to an inquiry only after explicit checkbox confirmation.
 
-## World
+## Active palette
+
+- canvas `#f8fafc`
+- ink `#0f172a`
+- body `#334155`
+- muted `#64748b`
+- primary `#2563eb`, hover `#1d4ed8`
+- cyan `#0891b2`
+- violet `#6d28d9`
+- border `#e2e8f0`
+
+The local NEPAR Solutions logo is the brand anchor. Surfaces use precise borders and one soft, offset shadow tier; avoid gradients, glass, decorative dashboards, and generic SaaS icon-card grids.
+
+## Historical public-list world
 
 Safelight control room: a quiet, dark technical workspace where price changes move through a deliberate processing line and emerge as publishable outputs. The page should feel like a calibrated instrument, not a generic SaaS dashboard.
 
-## Surface mode
+## Historical surface mode
 
 Persuade on the landing page; Operate inside the demo. The first viewport must explain the promise in one glance and give the visitor a direct path into a real fixture-backed demo.
 
