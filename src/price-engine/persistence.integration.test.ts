@@ -15,6 +15,8 @@ import { onRequestGet as getImmutableXml } from '../../functions/[filename].xml'
 import { validatePriceList } from './validate'
 import type { NormalizedPriceList, PricePublication } from './types'
 import { onRequestPost as validateAnonymous } from '../../functions/api/validator/validate'
+import { renderXml } from './xml'
+import { parseMarketinoCsv } from './adapters/marketinoCsv'
 
 describe('D1 Publisher persistence', () => {
   beforeEach(async () => {
@@ -37,6 +39,9 @@ describe('D1 Publisher persistence', () => {
     const anonymousValidation = await validateAnonymous({ request: new Request('https://validator.test/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: fixture }) }) })
     expect(anonymousValidation.status).toBe(200)
     expect((await anonymousValidation.json() as { validation: { status: string } }).validation.status).toBe('manual_review')
+    const xmlValidation = await validateAnonymous({ request: new Request('https://validator.test/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ xml: renderXml({ ...parseMarketinoCsv(fixture).priceList, items: [parseMarketinoCsv(fixture).priceList.items[0]] }) }) }) })
+    expect(xmlValidation.status).toBe(200)
+    expect((await xmlValidation.json() as { priceList: NormalizedPriceList }).priceList.items[0]).toMatchObject({ name: 'Administracija sadržaja', price: 40 })
     expect((await env.DB.prepare('SELECT COUNT(*) AS count FROM price_publications').first<{ count: number }>())?.count).toBe(0)
     const importedResponse = await importTenant({ request: new Request('https://demo.test/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: fixture, name: 'NEPAR', sourceFilename: 'marketino-artikli.csv' }) }), ...context })
     const imported = await importedResponse.json() as { draft: { id: string; status: string; normalizedPayload: NormalizedPriceList }; validation: { status: string; issues: Array<{ field: string }> } }

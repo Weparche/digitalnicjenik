@@ -1,5 +1,15 @@
 # NEPAR Digitalni Cjenik — visual direction
 
+> Active direction (2026-09): the root route is a premium light utility app, not a dark control-room landing page. The website checker is the primary first action, followed by the CSV/XML validator. The legacy direction below remains historical context for public price-list surfaces only.
+
+## Active root surface
+
+The `/` route is an Operate-first acquisition tool. Its first viewport must let a non-technical website owner enter a URL, run the public machine-readable price-list check, understand the result, and choose CSV/XML validation without pricing or a workflow explainer.
+
+Use a calm light surface, white utility panels, dark green actions, and amber only for warnings or manual review. Preserve visible focus states, 44px touch targets, safe URL/filename wrapping, and reduced-motion behavior at 390px.
+
+The checker result persists through the handoff. A confirmed URL is shown as evidence, never imported automatically. “Imam CSV” scrolls to and focuses the validator container, not its hidden file input. CSV and XML share one normalized validation path.
+
 ## World
 
 Safelight control room: a quiet, dark technical workspace where price changes move through a deliberate processing line and emerge as publishable outputs. The page should feel like a calibrated instrument, not a generic SaaS dashboard.

@@ -3,7 +3,7 @@ import fixture from '../../marketino-artikli?raw'
 import { canonicalize, deterministicHash, SnapshotEngine } from './hash'
 import { parseMarketinoCsv } from './adapters/marketinoCsv'
 import { renderCsv } from './csv'
-import { renderXml } from './xml'
+import { parseXmlPriceList, renderXml } from './xml'
 
 describe('MarketinoCsvAdapter against the real export', () => {
   it('parses all service rows, Croatian text, categories and numeric prices', () => {
@@ -41,6 +41,16 @@ describe('NEPAR Price Engine outputs', () => {
     expect(xml).toContain('A &amp; &lt;B&gt;')
     expect(xml).toContain('A &amp; &lt;B&gt; &quot;test&quot;')
     expect(xml).not.toContain('<B>')
+  })
+
+  it('round-trips XML through the shared normalized model', () => {
+    const source = { ...base, items: [{ ...base.items[0], anchorPrice: 65, salePrice: 35, specialSaleApplied: true, specialSaleName: 'Ljetna ponuda' }] }
+    const parsed = parseXmlPriceList(renderXml(source), source.tenant)
+    expect(parsed.items[0]).toMatchObject({ name: source.items[0].name, price: source.items[0].price, anchorPrice: 65, salePrice: 35, specialSaleApplied: true, specialSaleName: 'Ljetna ponuda' })
+  })
+
+  it('rejects malformed XML without relying on browser DOM APIs', () => {
+    expect(() => parseXmlPriceList('<priceList><item><name>Usluga</name></priceList>')).toThrow('XML nije ispravan')
   })
 
   it('does not duplicate unchanged snapshots and records a changed snapshot', async () => {
