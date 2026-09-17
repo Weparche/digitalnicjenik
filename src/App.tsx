@@ -253,6 +253,25 @@ function LandingLegacy() {
   </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / MVP</span><a href="/c/nepar">Javni demo cjenik ↗</a></footer></div>
 }
 
+type LandingVariant = '1' | '2' | '3'
+
+function VariantBottom() {
+  return <><section className="engine-section" id="workflow"><div className="section-heading"><p className="eyebrow">KAKO RADI</p><h2>Jedan jasan put<br /><em>do cjenika na webu.</em></h2><p>Prvo provjerite web. Ako već imate CSV, provjerite ga besplatno. Ako želite, NEPAR može pretvoriti i postaviti cijeli cjenik.</p></div><div className="interactive-flow"><PublisherFlow /><div className="workflow-explanation"><div><strong>Provjeri web</strong><span>Pronađite javni CSV ili XML.</span></div><Arrow /><div><strong>Provjeri CSV</strong><span>Učitajte datoteku i dopunite što nedostaje.</span></div><Arrow /><div><strong>Objavi</strong><span>Publisher održava aktualni cjenik i arhivu.</span></div></div></div></section><PublisherWorkspace /><Pricing /></>
+}
+
+function LandingVariant({ variant }: { variant: LandingVariant }) {
+  const content = variant === '1'
+    ? { label: 'PREGLED ZA VLASNIKE WEB STRANICA', title: <>Prvo provjerite.<br /><em>Onda odlučite.</em></>, body: 'U nekoliko sekundi saznajte može li vaš web već ponuditi strojni cjenik. Ako ne može, pokazat ćemo vam najjednostavniji sljedeći korak.', sideTitle: 'Bez nagađanja', sideBody: 'Provjeravamo samo ono što je javno dostupno vašim kupcima.', sideItems: ['Javni CSV ili XML dokument', 'Dostupnost bez prijave', 'Tehnički rezultat, bez pravnih obećanja'] }
+    : variant === '2'
+      ? { label: 'NEPAR / WEB CHECKER', title: <>Ne nagađajte.<br /><em>Provjerite.</em></>, body: 'Jedan URL. Jedan jasan rezultat. Bez registracije, bez poziva i bez čitanja tehničke dokumentacije.', sideTitle: 'Vaš prvi odgovor', sideBody: 'Ako pronađemo datoteku, pokazujemo točan URL. Ako ne pronađemo, dobit ćete konkretan izbor.', sideItems: ['GREEN — dokument potvrđen', 'YELLOW — cjenik postoji, datoteka nije potvrđena', 'RED — nema potvrđenog strojnog cjenika'] }
+      : { label: 'NEPAR PUBLISHER', title: <>Vaš web, vaš cjenik,<br /><em>jedan jasan sljedeći korak.</em></>, body: 'Možda je sve već spremno. Možda samo treba izvesti CSV. Provjerite prvo — tek nakon toga odlučujete želite li sami ili da mi sve riješimo.', sideTitle: 'Za WordPress, Wix i Google Sites', sideBody: 'Ne morate biti programer. Ako vam je web izradio netko drugi, i dalje možete krenuti od ove provjere.', sideItems: ['Provjerite web bez registracije', 'Učitajte CSV iz svog programa', 'Zatražite postavljanje od 129 €'] }
+  return <div className={'app-shell variant-page variant-' + variant}><header className="site-header"><Logo /><nav><a href="#checker">Provjeri web</a><a href="#demo">Imam CSV</a><a href="#pricing">Cijene</a></nav><a className="header-cta" href="#checker">Provjeri web <span>→</span></a></header><main>
+    <section className="variant-hero"><div className="variant-intro"><p className="eyebrow">{content.label} <span className="eyebrow-rule" /></p><h1>{content.title}</h1><p className="hero-sub">{content.body}</p><ReadinessChecker /></div><aside className="variant-proof"><div className="proof-seal">N</div><span className="checker-label">ŠTO DOBIVATE</span><h2>{content.sideTitle}</h2><p>{content.sideBody}</p><ul>{content.sideItems.map((item) => <li key={item}><span aria-hidden="true">✓</span>{item}</li>)}</ul><a className="variant-proof-link" href="https://nepar.hr/digitalni-cjenik">Trebate da mi to postavimo? <strong>Od 129 € →</strong></a></aside></section>
+    <section className="variant-trust"><span>Jasan odgovor prije kupnje</span><span>•</span><strong>CSV cjenik · XML cjenik · javna provjera</strong><span>•</span><span>Za stranice koje već imate</span></section>
+    <VariantBottom />
+  </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / varijanta {variant}</span><a href="/">Natrag na početnu ↗</a></footer></div>
+}
+
 function Landing() {
   return <div className="app-shell"><header className="site-header"><Logo /><nav><a href="#checker">Provjeri web</a><a href="#demo">Učitaj CSV</a><a href="#pricing">Cijene</a></nav><a className="header-cta" href="#checker">Provjeri web <span>→</span></a></header><main>
     <section className="hero readiness-hero"><div className="hero-copy"><p className="eyebrow">NEPAR PUBLISHER <span className="eyebrow-rule" /></p><h1>Je li vaš web spreman za <em>strojni cjenik?</em></h1><p className="hero-sub">Provjerite pronalazi li vaš web javni CSV ili XML cjenik. Bez registracije i bez tehničkog predznanja.</p><ReadinessChecker /></div><div className="hero-visual" aria-label="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik"><picture className="visual-asset"><source media="(max-width: 520px)" srcSet="/assets/nepar-orchestration-mobile.webp" /><img src="/assets/nepar-orchestration-desktop.webp" alt="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik" /></picture><div className="visual-top"><span>WEB / CHECK / PUBLISH</span><span>NEPAR</span></div><div className="visual-core"><span className="core-ring ring-one" /><span className="core-ring ring-two" /><span className="core-ring ring-three" /><div className="core-label"><span>NEPAR</span><strong>CHECK<br />READY</strong></div></div><div className="visual-rail rail-source"><span>01 / INPUT</span><strong>VAŠ WEB</strong><i /></div><div className="visual-rail rail-web"><span>02 / FOUND</span><strong>CSV / XML</strong><i /></div><div className="visual-rail rail-csv"><span>03 / NEXT</span><strong>WIDGET · ARHIVA</strong><i /></div><div className="visual-readout"><span>TECHNICAL CHECK</span><strong>PUBLIC DOCUMENT</strong><b>●</b></div></div></section>
@@ -264,7 +283,9 @@ function Landing() {
 
 export default function App() {
   const slug = slugFromPath()
+  const variant = window.location.pathname.match(/^\/varijanta\/([123])\/?$/)?.[1] as LandingVariant | undefined
   if (slug) return <PublicPriceList slug={slug} />
   if (isCustomPublication()) return <PublicPriceList customHost />
+  if (variant) return <LandingVariant variant={variant} />
   return <Landing />
 }
