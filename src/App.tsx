@@ -81,7 +81,74 @@ function ValidationSummary({ issues, itemCount }: { issues: ValidationIssue[]; i
 }
 
 function Pricing() {
-  return <section className="pricing-section" id="pricing"><div className="section-heading"><p className="eyebrow">JASNA PONUDA / 02</p><h2>Od besplatne provjere<br /><em>do cjenika na vašem webu.</em></h2><p>Odaberite koliko posla želite prepustiti NEPAR-u. Nema skrivenog broja objava ni tehničkog žargona.</p></div><div className="pricing-lead"><div><span className="pricing-kicker">NAJČEŠĆI IZBOR</span><h3>Sve ćemo vam postaviti — od 129 €</h3><p>Digitalni cjenik na vašem webu, objava, arhiva i prvih 12 mjeseci Publishera uključeni.</p></div><a className="button button-amber" href="#demo">Zatraži postavljanje <span>→</span></a></div><div className="pricing-grid"><article><span>01 / BESPLATNO</span><h3>Validator</h3><strong>0 €</strong><p>Upload, provjera i preview bez objave.</p></article><article className="pricing-featured"><span>02 / SAMOSTALNO</span><h3>Publisher</h3><strong>49 €/god</strong><p>Samostalni upload, provjera, neograničene objave, hosting, CSV/XML izlazi i arhiva.</p></article><article><span>03 / ODRŽAVANJE</span><h3>Managed</h3><strong>149 €/god</strong><p>NEPAR provjerava, objavljuje i prati uobičajene izmjene postojećeg cjenika.</p></article></div><div className="pricing-details"><span>WordPress ključ u ruke 149 €</span><span>Custom / Wix / Google Sites od 169 €</span><span>Vizualni HTML cjenik +49 €</span><span>Ručna izmjena 39 € · Hitna 69 €</span><span>AutoSync uskoro · 79 €/god ili 7,90 €/mj</span></div></section>
+  return <section className="pricing-section" id="pricing"><div className="section-heading"><p className="eyebrow">JASNA PONUDA / 02</p><h2>Od besplatne provjere<br /><em>do cjenika na vašem webu.</em></h2><p>Odaberite koliko posla želite prepustiti NEPAR-u. Sve je objašnjeno jednostavno, bez tehničkog žargona.</p></div><div className="pricing-lead"><div><span className="pricing-kicker">NAJČEŠĆI IZBOR</span><h3>Sve ćemo vam postaviti — od 129 €</h3><p>Digitalni cjenik na vašem webu, objava, arhiva i prvih 12 mjeseci Publishera uključeni.</p></div><a className="button button-amber" href="https://nepar.hr/digitalni-cjenik">Zatraži postavljanje <span>→</span></a></div><div className="pricing-grid"><article><span>01 / BESPLATNO</span><h3>Validator</h3><strong>0 €</strong><p>Upload, provjera i preview bez objave.</p></article><article className="pricing-featured"><span>02 / SAMOSTALNO</span><h3>Publisher</h3><strong>49 €/god</strong><p>Samostalni upload, provjera, neograničene objave, hosting, CSV/XML izlazi i arhiva.</p></article><article><span>03 / ODRŽAVANJE</span><h3>Managed</h3><strong>149 €/god</strong><p>NEPAR provjerava, objavljuje i prati uobičajene izmjene postojećeg cjenika.</p></article></div><div className="pricing-details"><span>WordPress ključ u ruke 149 €</span><span>Custom / Wix / Google Sites od 169 €</span><span>Vizualni HTML cjenik +49 €</span><span>Ručna izmjena 39 € · Hitna 69 €</span><span>AutoSync uskoro · 79 €/god</span></div></section>
+}
+
+type CheckerDetails = {
+  csvFound?: boolean
+  xmlFound?: boolean
+  csvUrl?: string | null
+  xmlUrl?: string | null
+  pricePageFound?: boolean
+}
+
+type CheckerResult = {
+  status: 'green' | 'yellow' | 'red' | 'unavailable'
+  message: string
+  details?: CheckerDetails
+}
+
+function ReadinessChecker() {
+  const [url, setUrl] = useState('')
+  const [urlError, setUrlError] = useState('')
+  const [result, setResult] = useState<CheckerResult | null>(null)
+  const [checking, setChecking] = useState(false)
+
+  async function check(event?: React.FormEvent) {
+    event?.preventDefault()
+    const value = url.trim()
+    if (!value) {
+      setUrlError('Unesite adresu svoje web stranice, primjerice https://mojweb.hr.')
+      setResult(null)
+      return
+    }
+    setUrlError('')
+    setChecking(true)
+    setResult(null)
+    try {
+      const response = await fetch('/api/digitalni-cjenik/check', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url: value }),
+      })
+      const payload = await response.json() as CheckerResult
+      if (!payload || !['green', 'yellow', 'red', 'unavailable'].includes(payload.status)) throw new Error('invalid_response')
+      setResult(payload)
+    } catch {
+      setResult({ status: 'unavailable', message: 'Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.' })
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  const details = result?.details ?? {}
+  const resultTitle = result?.status === 'green' ? 'Strojni cjenik pronađen' : result?.status === 'yellow' ? 'Cjenik postoji, ali strojna datoteka nije potvrđena' : result?.status === 'red' ? 'Strojni cjenik nije pronađen' : 'Provjera trenutačno nije dostupna'
+  const resultClass = result?.status === 'green' ? 'is-green' : result?.status === 'yellow' ? 'is-yellow' : result?.status === 'red' ? 'is-red' : 'is-unavailable'
+
+  return <div className="readiness-checker" id="checker">
+    <div className="checker-form-panel">
+      <div><span className="checker-label">PRVI KORAK</span><h2>Provjerite svoj web</h2><p>Provjera gleda samo javno dostupne tehničke signale. Ne morate se registrirati.</p></div>
+      <form onSubmit={check} noValidate>
+        <label className="sr-only" htmlFor="website-readiness-url">Adresa web stranice</label>
+        <input id="website-readiness-url" value={url} onChange={(event) => { setUrl(event.target.value); if (urlError) setUrlError('') }} placeholder="https://mojweb.hr" inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck="false" aria-invalid={Boolean(urlError)} aria-describedby={urlError ? 'website-readiness-error' : undefined} />
+        <button className="button button-amber" type="submit" disabled={checking}>{checking ? 'Provjeravamo…' : 'Provjeri web'} <span>{checking ? '◌' : '→'}</span></button>
+      </form>
+      {urlError && <p id="website-readiness-error" className="checker-error" role="alert">{urlError}</p>}
+      <p className="checker-helper">Provjeravamo postoji li javno dostupan CSV ili XML cjenik. Ne potvrđujemo pravnu usklađenost.</p>
+    </div>
+    {result && <div className={'checker-result ' + resultClass} role="status" aria-live="polite"><div className="checker-result-heading"><span className="result-mark" aria-hidden="true">{result.status === 'green' ? '✓' : result.status === 'unavailable' ? '!' : '·'}</span><div><span className="checker-label">REZULTAT PROVJERE</span><h3>{resultTitle}</h3></div></div><p>{result.message}</p>{result.status === 'green' && <div className="checker-found"><span>CSV: {details.csvUrl ? <a href={details.csvUrl} target="_blank" rel="noreferrer">{details.csvUrl}</a> : 'nije pronađen'}</span><span>XML: {details.xmlUrl ? <a href={details.xmlUrl} target="_blank" rel="noreferrer">{details.xmlUrl}</a> : 'nije pronađen'}</span></div>}{result.status === 'green' && <a className="checker-result-cta" href="https://nepar.hr/digitalni-cjenik">Želite ga prikazati i održavati na webu? Pogledajte NEPAR Publisher →</a>}{result.status === 'red' && <p className="checker-next-step">Možete učitati CSV za besplatnu provjeru ili zatražiti da NEPAR pretvori i postavi vaš postojeći cjenik.</p>}{result.status === 'unavailable' && <button className="text-button" type="button" onClick={() => void check()}>Pokušajte ponovno →</button>}</div>}
+    <div className={'checker-paths ' + (result ? 'has-result' : '')}><h2>Što želite napraviti?</h2><div className="checker-path-grid"><a className="checker-path" href="#demo"><span>01</span><strong>Imam CSV</strong><small>Učitaj i besplatno provjeri</small></a><a className="checker-path" href="https://nepar.hr/digitalni-cjenik"><span>02</span><strong>Nemam CSV</strong><small>Pretvorite moj postojeći cjenik</small></a><a className="checker-path checker-path-featured" href="https://nepar.hr/digitalni-cjenik"><span>03</span><strong>Želim sve riješeno</strong><small>Postavljanje od 129 €</small></a></div></div>
+  </div>
 }
 
 function PublisherWorkspace() {
@@ -111,10 +178,10 @@ function PublisherWorkspace() {
       const response = await fetch('/api/tenants/nepar')
       if (!response.ok) throw new Error('local')
       const payload = await response.json() as { priceList: NormalizedPriceList }
-      setList(payload.priceList); setStep('published'); setSourceFilename('marketino-artikli.csv'); return
+      setList(payload.priceList); setStep('published'); setSourceFilename('demo-cjenik.csv'); return
     } catch {
       const loaded = await adapters.nepar.load()
-      setList(loaded); setStep('published'); setSourceFilename('marketino-artikli.csv')
+      setList(loaded); setStep('published'); setSourceFilename('demo-cjenik.csv')
     } finally { setBusy(false) }
   }
 
@@ -174,14 +241,23 @@ function PublisherWorkspace() {
   }
 
   const canPublish = list && validation.blockingCount === 0
-  return <section className="demo-section" id="demo"><div className="section-heading"><p className="eyebrow">BESPLATNA PROVJERA / 01</p><h2>Učitajte cjenik.<br /><em>Mi ćemo vam reći što nedostaje.</em></h2><p>Učitajte Marketino CSV, pregledajte rezultate i dopunite samo podatke koji su potrebni za objavu.</p></div><PublisherFlow /><div className="source-picker"><button className={'source-choice ' + (step === 'published' ? 'selected' : '')} onClick={loadDemo} disabled={busy}><span className="choice-number">01</span><span><strong>Otvori demo cjenik</strong><small>Javno objavljena demonstracija</small></span><span className="choice-arrow">↗</span></button><label className={'source-choice file-choice ' + (step !== 'published' && list ? 'selected' : '')}><span className="choice-number">02</span><span><strong>Učitaj Marketino CSV</strong><small>Upload, provjera i preview</small></span><span className="choice-arrow">↗</span><input type="file" accept=".csv,text/csv" onChange={(event) => loadFile(event.target.files?.[0])} /></label><div className="source-choice upcoming"><span className="choice-number">03</span><span><strong>AutoSync <em>USKORO</em></strong><small>Marketino / NeoSalon feed</small></span><span className="choice-arrow">→</span></div></div>{busy && <div className="inline-status" role="status"><span className="status-dot" /> Obrada cjenika…</div>}{error && <div className="error-box" role="alert"><strong>Potrebna je pažnja</strong><span>{error}</span></div>}{list && step !== 'published' && <div className="preview-panel"><div className="preview-head"><div><p className="eyebrow">PROVJERA / DOPUNA</p><h3>Podaci prije objave</h3></div><ValidationSummary issues={validation.issues} itemCount={list.items.length} /></div><div className="table-wrap"><table><thead><tr><th>Naziv</th><th>Maloprodajna</th><th>Sidrena</th><th>Posebna prodaja</th></tr></thead><tbody>{list.items.map((item, index) => <tr key={item.externalId || item.name}><td><strong>{item.name}</strong><small>{item.type || 'Vrsta nije navedena'}</small></td><td>{money(item.price)}</td><td><input className="table-input" aria-label={'Sidrena cijena za ' + item.name} type="number" min="0.01" step="0.01" value={item.anchorPrice ?? ''} onChange={(event) => updateItem(index, { anchorPrice: event.target.value ? Number(event.target.value) : null })} /></td><td>{item.salePrice != null ? <div className="sale-fields"><label><input type="checkbox" checked={item.specialSaleApplied === true} onChange={(event) => updateItem(index, { specialSaleApplied: event.target.checked, specialSaleName: event.target.checked ? item.specialSaleName : null })} /> potvrđeno</label>{item.specialSaleApplied === true && <input className="table-input" aria-label={'Naziv posebne prodaje za ' + item.name} value={item.specialSaleName ?? ''} placeholder="Naziv oblika" onChange={(event) => updateItem(index, { specialSaleName: event.target.value })} />}</div> : <span className="muted-cell">Nije navedeno</span>}</td></tr>)}</tbody></table></div><p className="validation-note">{validation.blockingCount ? 'Objava je zaključana dok se ne riješe označene stavke.' : 'Cjenik je spreman za objavu.'}</p><div className="preview-actions"><button className="button button-dark" onClick={saveDraft} disabled={busy}>Spremi dopune <span>→</span></button><button className="button button-amber" onClick={publish} disabled={!canPublish || busy}>Objavi novi cjenik <span>→</span></button></div></div>}{list && step === 'published' && <div className="published-panel" role="status"><div><span className="status-dot" /><strong>Aktualni cjenik je objavljen</strong><p>{publication ? publication.filenameStem + '.csv / .xml' : 'Stable current alias i javna arhiva su aktivni.'}</p></div><a className="button button-amber" href="/c/nepar">Otvori cjenik <span>↗</span></a></div>}{message && <p className="success-line">{message}</p>}</section>
+  return <section className="demo-section" id="demo"><div className="section-heading"><p className="eyebrow">BESPLATNA PROVJERA / 01</p><h2>Učitajte cjenik.<br /><em>Mi ćemo vam reći što nedostaje.</em></h2><p>Izvezite CSV iz programa u kojem vodite cijene, učitajte ga ovdje i dopunite samo podatke potrebne za objavu.</p></div><PublisherFlow /><div className="source-picker"><button className={'source-choice ' + (step === 'published' ? 'selected' : '')} onClick={loadDemo} disabled={busy}><span className="choice-number">01</span><span><strong>Otvori demo cjenik</strong><small>Demo podaci — ovo nije stvarni cjenik salona</small></span><span className="choice-arrow">↗</span></button><label className={'source-choice file-choice ' + (step !== 'published' && list ? 'selected' : '')}><span className="choice-number">02</span><span><strong>Učitaj CSV cjenik</strong><small>Upload, provjera i preview</small></span><span className="choice-arrow">↗</span><input type="file" accept=".csv,text/csv" onChange={(event) => loadFile(event.target.files?.[0])} /></label><div className="source-choice upcoming"><span className="choice-number">03</span><span><strong>AutoSync <em>USKORO</em></strong><small>Automatsko ažuriranje iz vašeg sustava</small></span><span className="choice-arrow">→</span></div></div>{busy && <div className="inline-status" role="status"><span className="status-dot" /> Obrada cjenika…</div>}{error && <div className="error-box" role="alert"><strong>Potrebna je pažnja</strong><span>{error}</span></div>}{list && step !== 'published' && <div className="preview-panel"><div className="preview-head"><div><p className="eyebrow">PROVJERA / DOPUNA</p><h3>Podaci prije objave</h3></div><ValidationSummary issues={validation.issues} itemCount={list.items.length} /></div><div className="table-wrap"><table><thead><tr><th>Naziv</th><th>Maloprodajna</th><th>Sidrena</th><th>Posebna prodaja</th></tr></thead><tbody>{list.items.map((item, index) => <tr key={item.externalId || item.name}><td><strong>{item.name}</strong><small>{item.type || 'Vrsta nije navedena'}</small></td><td>{money(item.price)}</td><td><input className="table-input" aria-label={'Sidrena cijena za ' + item.name} type="number" min="0.01" step="0.01" value={item.anchorPrice ?? ''} onChange={(event) => updateItem(index, { anchorPrice: event.target.value ? Number(event.target.value) : null })} /></td><td>{item.salePrice != null ? <div className="sale-fields"><label><input type="checkbox" checked={item.specialSaleApplied === true} onChange={(event) => updateItem(index, { specialSaleApplied: event.target.checked, specialSaleName: event.target.checked ? item.specialSaleName : null })} /> potvrđeno</label>{item.specialSaleApplied === true && <input className="table-input" aria-label={'Naziv posebne prodaje za ' + item.name} value={item.specialSaleName ?? ''} placeholder="Naziv oblika" onChange={(event) => updateItem(index, { specialSaleName: event.target.value })} />}</div> : <span className="muted-cell">Nije navedeno</span>}</td></tr>)}</tbody></table></div><p className="validation-note">{validation.blockingCount ? 'Objava je zaključana dok se ne riješe označene stavke.' : 'Cjenik je spreman za objavu.'}</p><div className="preview-actions"><button className="button button-dark" onClick={saveDraft} disabled={busy}>Spremi dopune <span>→</span></button><button className="button button-amber" onClick={publish} disabled={!canPublish || busy}>Objavi novi cjenik <span>→</span></button></div></div>}{list && step === 'published' && <div className="published-panel" role="status"><div><span className="status-dot" /><strong>Aktualni cjenik je objavljen</strong><p>{publication ? publication.filenameStem + '.csv / .xml' : 'Stable current alias i javna arhiva su aktivni.'}</p></div><a className="button button-amber" href="/c/nepar">Otvori cjenik <span>↗</span></a></div>}{message && <p className="success-line">{message}</p>}</section>
 }
 
-function Landing() {
+function LandingLegacy() {
   return <div className="app-shell"><header className="site-header"><Logo /><nav><a href="#workflow">Kako radi</a><a href="#demo">Provjeri CSV</a><a href="#pricing">Cijene</a></nav><a className="header-cta" href="#demo">Besplatno provjeri <span>→</span></a></header><main>
     <section className="hero"><div className="hero-copy"><p className="eyebrow">NEPAR PUBLISHER <span className="eyebrow-rule" /></p><h1>Sve ćemo vam postaviti — <em>od 129 €.</em></h1><p className="hero-sub">Digitalni cjenik na vašem webu, objava, arhiva i prvih 12 mjeseci Publishera uključeni. Ili ga sami održavajte za 49 €/god.</p><div className="hero-actions"><a className="button button-amber" href="#demo">Besplatno provjeri CSV <span>→</span></a><a className="button button-outline" href="#pricing">Pogledaj opcije <span>↘</span></a></div><p className="hero-note"><span className="status-dot" /> CSV upload, validacija i preview su besplatni.</p></div><div className="hero-visual" aria-label="Vizualni prikaz toka CSV datoteke do objavljenog cjenika"><picture className="visual-asset"><source media="(max-width: 520px)" srcSet="/assets/nepar-orchestration-mobile.webp" /><img src="/assets/nepar-orchestration-desktop.webp" alt="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik" /></picture><div className="visual-top"><span>PUBLICATION / READY</span><span>NP—001</span></div><div className="visual-grid" /><div className="visual-core"><span className="core-ring ring-one" /><span className="core-ring ring-two" /><span className="core-ring ring-three" /><div className="core-label"><span>NEPAR</span><strong>PUBLISH<br />READY</strong></div></div><div className="visual-rail rail-source"><span>01 / INPUT</span><strong>CSV EXPORT</strong><i /></div><div className="visual-rail rail-web"><span>02 / OUTPUT</span><strong>WEB</strong><i /></div><div className="visual-rail rail-csv"><span>03 / OUTPUT</span><strong>CSV · XML · ARHIVA</strong><i /></div><div className="visual-readout"><span>LAST EVENT</span><strong>PUBLICATION.CREATED</strong><b>●</b></div></div></section>
     <section className="proof-strip"><span>Učitajte jednom</span><span>→</span><strong>objavite ispravno</strong><span className="proof-fade">i čuvajte svaku verziju</span></section>
     <section className="engine-section" id="workflow"><div className="section-heading"><p className="eyebrow">JEDNOSTAVAN WORKFLOW</p><h2>Vaš poslovni sustav<br /><em>ostaje izvor istine.</em></h2><p>NEPAR provjerava podatke koje već imate, pomaže popuniti što nedostaje i objavljuje ih na pravom mjestu.</p></div><div className="interactive-flow"><PublisherFlow /><div className="workflow-explanation"><div><strong>Validator</strong><span>Besplatna provjera bez objave.</span></div><Arrow /><div><strong>Publisher</strong><span>Jedna immutable verzija po objavi.</span></div><Arrow /><div><strong>Arhiva</strong><span>Aktualna i prethodne verzije na dohvat.</span></div></div></div></section>
+    <PublisherWorkspace /><Pricing />
+  </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / MVP</span><a href="/c/nepar">Javni demo cjenik ↗</a></footer></div>
+}
+
+function Landing() {
+  return <div className="app-shell"><header className="site-header"><Logo /><nav><a href="#checker">Provjeri web</a><a href="#demo">Učitaj CSV</a><a href="#pricing">Cijene</a></nav><a className="header-cta" href="#checker">Provjeri web <span>→</span></a></header><main>
+    <section className="hero readiness-hero"><div className="hero-copy"><p className="eyebrow">NEPAR PUBLISHER <span className="eyebrow-rule" /></p><h1>Je li vaš web spreman za <em>strojni cjenik?</em></h1><p className="hero-sub">Provjerite pronalazi li vaš web javni CSV ili XML cjenik. Bez registracije i bez tehničkog predznanja.</p><ReadinessChecker /></div><div className="hero-visual" aria-label="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik"><picture className="visual-asset"><source media="(max-width: 520px)" srcSet="/assets/nepar-orchestration-mobile.webp" /><img src="/assets/nepar-orchestration-desktop.webp" alt="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik" /></picture><div className="visual-top"><span>WEB / CHECK / PUBLISH</span><span>NEPAR</span></div><div className="visual-core"><span className="core-ring ring-one" /><span className="core-ring ring-two" /><span className="core-ring ring-three" /><div className="core-label"><span>NEPAR</span><strong>CHECK<br />READY</strong></div></div><div className="visual-rail rail-source"><span>01 / INPUT</span><strong>VAŠ WEB</strong><i /></div><div className="visual-rail rail-web"><span>02 / FOUND</span><strong>CSV / XML</strong><i /></div><div className="visual-rail rail-csv"><span>03 / NEXT</span><strong>WIDGET · ARHIVA</strong><i /></div><div className="visual-readout"><span>TECHNICAL CHECK</span><strong>PUBLIC DOCUMENT</strong><b>●</b></div></div></section>
+    <section className="proof-strip"><span>Provjerite prvo</span><span>→</span><strong>odaberite sljedeći korak</strong><span className="proof-fade">bez nepotrebnog žargona</span></section>
+    <section className="engine-section" id="workflow"><div className="section-heading"><p className="eyebrow">KAKO RADI</p><h2>Od vašeg weba<br /><em>do jasnog sljedećeg koraka.</em></h2><p>Prvo provjerite web. Ako već imate CSV, provjerite ga besplatno. Ako želite, NEPAR može pretvoriti i postaviti cijeli cjenik.</p></div><div className="interactive-flow"><PublisherFlow /><div className="workflow-explanation"><div><strong>Provjeri web</strong><span>Pronađite javni CSV ili XML.</span></div><Arrow /><div><strong>Provjeri CSV</strong><span>Učitajte datoteku i dopunite što nedostaje.</span></div><Arrow /><div><strong>Objavi</strong><span>Publisher održava aktualni cjenik i arhivu.</span></div></div></div></section>
     <PublisherWorkspace /><Pricing />
   </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / MVP</span><a href="/c/nepar">Javni demo cjenik ↗</a></footer></div>
 }

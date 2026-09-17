@@ -18,7 +18,7 @@ Use a sturdy grotesk display face for the hero and a highly legible sans for bod
 
 ## Signature interaction
 
-The source-to-output flow is the focal moment: a single amber pulse travels from Marketino through the NEPAR engine, then activates WEB, CSV, XML, and ARHIVA sequentially. The sync simulator reuses this same grammar so motion explains the product mechanism.
+The readiness-to-publication flow is the focal moment: a visitor checks a website, validates a CSV, then sees the path to WEB, CSV, XML, and ARHIVA. The existing amber processing grammar remains, but the first viewport prioritizes a useful answer over backend mechanics.
 
 ## Responsive behavior
 
