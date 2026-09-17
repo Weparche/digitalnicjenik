@@ -9,8 +9,8 @@
     "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb"
   },
   "env": {
-    "staging": {
-      "name": "digitalni-cjenik-nepar-staging",
+    "preview": {
+      "name": "digitalni-cjenik-nepar-preview",
       "vars": {
         "DEMO_WRITE_TENANT": "nepar",
         "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",
