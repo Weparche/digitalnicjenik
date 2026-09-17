@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { adapters, isServiceItem, parseMarketinoCsv, renderCsv, renderXml, validatePriceList, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
+import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 
 const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(value)
 const dateTime = (value: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
@@ -272,20 +272,96 @@ function LandingVariant({ variant }: { variant: LandingVariant }) {
   </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / varijanta {variant}</span><a href="/">Natrag na početnu ↗</a></footer></div>
 }
 
+function ValidatorApp() {
+  const [list, setList] = useState<NormalizedPriceList | null>(null)
+  const [draftId, setDraftId] = useState('')
+  const [issues, setIssues] = useState<ValidationIssue[]>([])
+  const [sourceFilename, setSourceFilename] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  const [publication, setPublication] = useState<PricePublication | null>(null)
+  const [published, setPublished] = useState(false)
+  const validation = useMemo(() => list ? validatePriceList(list) : { status: 'invalid' as const, issues, blockingCount: issues.length, warningCount: 0 }, [list, issues])
+
+  const updateItem = (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => setList((current) => current ? { ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) } : current)
+
+  async function loadFile(file?: File) {
+    if (!file) return
+    setBusy(true); setError(''); setMessage(''); setPublished(false); setDraftId(''); setPublication(null)
+    try {
+      if (file.size > 2_000_000) throw new Error('Datoteka je prevelika. Maksimalna veličina je 2 MB.')
+      const raw = await file.text()
+      const lowerName = file.name.toLowerCase()
+      const isXml = lowerName.endsWith('.xml')
+      if (!isXml && !lowerName.endsWith('.csv')) throw new Error('Učitajte datoteku s nastavkom .csv ili .xml.')
+      const parsed = isXml ? { priceList: parseXmlPriceList(raw) } : parseMarketinoCsv(raw, { id: 'nepar', slug: 'nepar', name: 'NEPAR' })
+      setList(parsed.priceList); setSourceFilename(file.name)
+      const localValidation = validatePriceList(parsed.priceList)
+      setIssues(localValidation.issues)
+      if (!isXml) {
+        try {
+          const response = await fetch('/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: raw }) })
+          if (response.ok) setIssues(((await response.json()) as { validation: { issues: ValidationIssue[] } }).validation.issues)
+        } catch {
+          // The local validator is enough for an anonymous preview; the API adds server-side confirmation when available.
+        }
+      }
+    } catch (caught) {
+      setList(null); setError(caught instanceof Error ? caught.message : 'Datoteku nije moguće učitati.')
+    } finally { setBusy(false) }
+  }
+
+  async function createRemoteDraft() {
+    if (!list) return ''
+    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: renderCsv(list), name: 'NEPAR', sourceFilename }) })
+    if (!response.ok) throw new Error((await response.json() as { error?: string }).error || 'Cjenik nije moguće pripremiti.')
+    const payload = await response.json() as { draft: { id: string }; validation: { issues: ValidationIssue[] } }
+    setDraftId(payload.draft.id); setIssues(payload.validation.issues)
+    return payload.draft.id
+  }
+
+  async function saveDraft() {
+    if (!list) return
+    setBusy(true); setError(''); setMessage('')
+    try {
+      const id = draftId || await createRemoteDraft()
+      if (!id) throw new Error('Cjenik nije moguće spremiti.')
+      const response = await fetch('/api/tenants/nepar/draft/' + id, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: list }) })
+      if (!response.ok) throw new Error((await response.json() as { error?: string }).error || 'Dopuna nije spremljena.')
+      const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
+      setIssues(payload.validation.issues); setMessage('Dopune su spremljene. Provjerite sažetak prije objave.')
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Dopuna nije uspjela.') } finally { setBusy(false) }
+  }
+
+  async function publish() {
+    if (!list || validation.blockingCount > 0) return
+    setBusy(true); setError(''); setMessage('')
+    try {
+      const id = draftId || await createRemoteDraft()
+      if (!id) throw new Error('Za objavu je potreban aktivan Publisher.')
+      const response = await fetch('/api/tenants/nepar/publish', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ draftId: id }) })
+      const payload = await response.json() as { error?: string; message?: string; publication?: PricePublication }
+      if (!response.ok) throw new Error(payload.error || 'Objava nije uspjela.')
+      setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setPublished(true)
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Objava nije uspjela.') } finally { setBusy(false) }
+  }
+
+  function confirmNoSpecialSale() {
+    if (!list || !window.confirm('Potvrdite da akcijske cijene nisu primijenjene tijekom posebnog oblika prodaje.')) return
+    setList({ ...list, items: list.items.map((item) => item.salePrice != null ? { ...item, specialSaleApplied: false, specialSaleName: null } : item) })
+  }
+
+  return <div className="validator-app-shell"><header className="app-header"><Logo /><a href="https://nepar.hr/digitalni-cjenik">Trebate pomoć? <strong>NEPAR postavljanje →</strong></a></header><main className="validator-app"><section className="validator-app-intro"><span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span><h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1><p>Učitajte CSV iz programa u kojem vodite cijene ili XML koji već imate. Odmah ćete vidjeti koje podatke treba dopuniti prije objave.</p></section><section className="validator-tool" aria-label="Validator cjenika"><div className="upload-card"><div className="upload-card-heading"><div><span className="app-label">1 / UČITAJTE</span><h2>CSV ili XML cjenik</h2><p>Za besplatni pregled nije potrebna registracija.</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete i CSV/XML izlaze</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">2 / ŠTO PROVJERAVAMO</span><h2>Pravni podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena za usluge</li><li><span>03</span>Potvrda posebnog oblika prodaje kod akcijske cijene</li><li><span>04</span>Nova usluga ide na ručni pregled</li></ul><p>Provjera je tehnički i regulatorni pregled podataka. Ne zamjenjuje pravni savjet.</p></aside></section>{list && <section className="validation-app-panel"><div className="validation-app-head"><div><span className="app-label">3 / REZULTAT</span><h2>{published ? 'Cjenik je objavljen' : validation.blockingCount ? 'Još nekoliko stvari treba dopuniti' : 'Cjenik je spreman za objavu'}</h2><p>{list.items.length} stavki učitano · {sourceFilename || 'učitana datoteka'}</p></div><div className={'validation-app-count ' + (validation.blockingCount ? 'needs-attention' : 'ready')}><strong>{validation.blockingCount || 0}</strong><span>{validation.blockingCount ? 'za dopunu' : 'bez blokera'}</span></div></div><div className="validation-app-summary"><strong>{validation.blockingCount ? 'Pronašli smo podatke koje treba dopuniti.' : 'Svi obavezni podaci su popunjeni.'}</strong>{validation.warningCount > 0 && <span>{validation.warningCount} upozorenja</span>}{validation.issues.length > 0 && <ul>{validation.issues.slice(0, 8).map((issue) => <li key={issue.row + '-' + issue.field + '-' + issue.itemKey}><b>{issue.severity === 'manual_review' ? 'RUČNI PREGLED' : issue.severity === 'error' ? 'GREŠKA' : 'UPOZORENJE'}</b>{issue.message}</li>)}</ul>}{validation.issues.some((issue) => issue.field === 'specialSaleApplied') && <button className="app-link-button" type="button" onClick={confirmNoSpecialSale}>Grupno potvrdi: nije poseban oblik prodaje →</button>}</div><div className="validator-table-wrap"><table><thead><tr><th>Naziv</th><th>Vrsta</th><th>Maloprodajna</th><th>Sidrena cijena</th><th>Posebna prodaja</th></tr></thead><tbody>{list.items.map((item, index) => <tr key={item.externalId || item.name}><td><strong>{item.name}</strong><small>{item.category || 'Bez kategorije'}</small></td><td>{item.type || 'Nije navedena'}</td><td>{money(item.price)}</td><td><input className="app-table-input" aria-label={'Sidrena cijena za ' + item.name} type="number" min="0.01" step="0.01" value={item.anchorPrice ?? ''} onChange={(event) => updateItem(index, { anchorPrice: event.target.value ? Number(event.target.value) : null })} /></td><td>{item.salePrice != null ? <div className="app-sale-fields"><label><input type="checkbox" checked={item.specialSaleApplied === true} onChange={(event) => updateItem(index, { specialSaleApplied: event.target.checked, specialSaleName: event.target.checked ? item.specialSaleName : null })} /> potvrđeno</label>{item.specialSaleApplied === true && <input className="app-table-input" aria-label={'Naziv posebne prodaje za ' + item.name} value={item.specialSaleName ?? ''} placeholder="Naziv prodaje" onChange={(event) => updateItem(index, { specialSaleName: event.target.value })} />}</div> : <span>—</span>}</td></tr>)}</tbody></table></div><div className="validator-actions"><button className="app-button app-button-light" type="button" onClick={saveDraft} disabled={busy}>Spremi dopune</button><button className="app-button app-button-primary" type="button" onClick={publish} disabled={Boolean(validation.blockingCount) || busy || published}>Objavi novi cjenik</button><div className="output-actions"><button type="button" onClick={() => download(renderCsv(list), 'cjenik.csv', 'text/csv;charset=utf-8')}>Preuzmi CSV</button><button type="button" onClick={() => download(renderXml(list), 'cjenik.xml', 'application/xml')}>Preuzmi XML</button></div></div>{message && <p className="app-success" role="status">{message}{publication && ' · verzija ' + publication.sequence}</p>}{validation.blockingCount > 0 && <div className="consultation-card"><div><span className="app-label">TREBATE POMOĆ?</span><h3>Pošaljite nam cjenik na pregled.</h3><p>Možemo objasniti što nedostaje, pomoći s dopunama i postaviti cjenik na vaš web.</p></div><a className="app-button app-button-primary" href="https://nepar.hr/digitalni-cjenik">Zatražite konzultacije →</a></div>}{validation.blockingCount === 0 && !published && <div className="consultation-card ready-card"><div><span className="app-label">SLJEDEĆI KORAK</span><h3>Spremni ste za Publisher.</h3><p>Želite da NEPAR sve poveže s vašim webom? Postavljanje je od 129 €.</p></div><a className="app-button app-button-primary" href="https://nepar.hr/digitalni-cjenik">Zatražite postavljanje →</a></div>}</section>}<p className="validator-footnote">Želite prvo vidjeti primjer? <a href="/c/nepar">Otvori demo podaci →</a></p></main></div>
+}
+
 function Landing() {
-  return <div className="app-shell"><header className="site-header"><Logo /><nav><a href="#checker">Provjeri web</a><a href="#demo">Učitaj CSV</a><a href="#pricing">Cijene</a></nav><a className="header-cta" href="#checker">Provjeri web <span>→</span></a></header><main>
-    <section className="hero readiness-hero"><div className="hero-copy"><p className="eyebrow">NEPAR PUBLISHER <span className="eyebrow-rule" /></p><h1>Je li vaš web spreman za <em>strojni cjenik?</em></h1><p className="hero-sub">Provjerite pronalazi li vaš web javni CSV ili XML cjenik. Bez registracije i bez tehničkog predznanja.</p><ReadinessChecker /></div><div className="hero-visual" aria-label="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik"><picture className="visual-asset"><source media="(max-width: 520px)" srcSet="/assets/nepar-orchestration-mobile.webp" /><img src="/assets/nepar-orchestration-desktop.webp" alt="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik" /></picture><div className="visual-top"><span>WEB / CHECK / PUBLISH</span><span>NEPAR</span></div><div className="visual-core"><span className="core-ring ring-one" /><span className="core-ring ring-two" /><span className="core-ring ring-three" /><div className="core-label"><span>NEPAR</span><strong>CHECK<br />READY</strong></div></div><div className="visual-rail rail-source"><span>01 / INPUT</span><strong>VAŠ WEB</strong><i /></div><div className="visual-rail rail-web"><span>02 / FOUND</span><strong>CSV / XML</strong><i /></div><div className="visual-rail rail-csv"><span>03 / NEXT</span><strong>WIDGET · ARHIVA</strong><i /></div><div className="visual-readout"><span>TECHNICAL CHECK</span><strong>PUBLIC DOCUMENT</strong><b>●</b></div></div></section>
-    <section className="proof-strip"><span>Provjerite prvo</span><span>→</span><strong>odaberite sljedeći korak</strong><span className="proof-fade">bez nepotrebnog žargona</span></section>
-    <section className="engine-section" id="workflow"><div className="section-heading"><p className="eyebrow">KAKO RADI</p><h2>Od vašeg weba<br /><em>do jasnog sljedećeg koraka.</em></h2><p>Prvo provjerite web. Ako već imate CSV, provjerite ga besplatno. Ako želite, NEPAR može pretvoriti i postaviti cijeli cjenik.</p></div><div className="interactive-flow"><PublisherFlow /><div className="workflow-explanation"><div><strong>Provjeri web</strong><span>Pronađite javni CSV ili XML.</span></div><Arrow /><div><strong>Provjeri CSV</strong><span>Učitajte datoteku i dopunite što nedostaje.</span></div><Arrow /><div><strong>Objavi</strong><span>Publisher održava aktualni cjenik i arhivu.</span></div></div></div></section>
-    <PublisherWorkspace /><Pricing />
-  </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / MVP</span><a href="/c/nepar">Javni demo cjenik ↗</a></footer></div>
+  return <ValidatorApp />
 }
 
 export default function App() {
   const slug = slugFromPath()
-  const variant = window.location.pathname.match(/^\/varijanta\/([123])\/?$/)?.[1] as LandingVariant | undefined
   if (slug) return <PublicPriceList slug={slug} />
   if (isCustomPublication()) return <PublicPriceList customHost />
-  if (variant) return <LandingVariant variant={variant} />
   return <Landing />
 }

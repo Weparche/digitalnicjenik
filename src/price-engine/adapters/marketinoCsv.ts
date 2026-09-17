@@ -40,7 +40,7 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const anchorIndex = findColumn(headers, 'sidrena cijena', 'sidrena cijena*', 'dodatna cijena', 'anchor price', 'reference price')
   const specialSaleAppliedIndex = findColumn(headers, 'poseban oblik prodaje', 'posebni oblik prodaje', 'special sale applied')
   const specialSaleNameIndex = findColumn(headers, 'naziv posebnog oblika prodaje', 'poseban oblik prodaje naziv', 'special sale name')
-  if (nameIndex < 0 || priceIndex < 0) throw new Error('Nisu pronađeni obavezni stupci “Naziv*” i “Cijena*”. Provjerite da je ovo Marketino CSV export.')
+  if (nameIndex < 0 || priceIndex < 0) throw new Error('Nisu pronađeni obavezni stupci “Naziv*” i “Cijena*”. Provjerite da je ovo CSV izvoz cjenika.')
   const warnings: ParseResult['warnings'] = []
   const items = rows.slice(1).flatMap((row, index) => {
     const name = row[nameIndex]?.trim() ?? ''; const price = normalizeNumber(row[priceIndex]);
