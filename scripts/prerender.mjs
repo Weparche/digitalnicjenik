@@ -8,7 +8,6 @@ import { renderToString } from 'react-dom/server'
 import React from 'react'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { productFaq } from '../src/productFaq.ts'
 
 const SITE_URL = 'https://digitalnicjenik.nepar.hr'
 const NEPAR_URL = 'https://nepar.hr'
@@ -33,7 +32,7 @@ function safeJson(value) {
   return JSON.stringify(value).replaceAll('<', '\\u003c')
 }
 
-function buildSchema() {
+function buildSchema(productFaq) {
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -102,8 +101,12 @@ function buildSchema() {
 }
 
 async function main() {
+  // Load TS through Vite SSR — plain Node cannot import .ts without a loader.
   const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
-  const { Landing } = await vite.ssrLoadModule('/src/App.tsx')
+  const [{ Landing }, { productFaq }] = await Promise.all([
+    vite.ssrLoadModule('/src/App.tsx'),
+    vite.ssrLoadModule('/src/productFaq.ts'),
+  ])
   const bodyHtml = renderToString(React.createElement(Landing))
   await vite.close()
 
@@ -136,7 +139,7 @@ async function main() {
     )
   }
   if (!html.includes('data-nepar-schema')) {
-    const schema = `    <script type="application/ld+json" data-nepar-schema>${safeJson(buildSchema())}</script>\n  </head>`
+    const schema = `    <script type="application/ld+json" data-nepar-schema>${safeJson(buildSchema(productFaq))}</script>\n  </head>`
     html = html.replace('</head>', schema)
   }
 
