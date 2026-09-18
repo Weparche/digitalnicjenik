@@ -18,6 +18,6 @@ test('shows skipped-row import issue and keeps Publish disabled', async ({ page 
   const panel = page.locator('.validation-app-panel')
   await expect(panel).toBeVisible()
   await expect(panel.getByText(/Redak\s+3\s+nije uvezen/i)).toBeVisible()
-  await expect(panel.getByText('Valjana')).toBeVisible()
+  await expect(panel.locator('td strong', { hasText: 'Valjana' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Objavi novi cjenik' })).toBeDisabled()
 })
