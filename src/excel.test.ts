@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
 import { EXCEL_MAX_COLUMNS, excelRowsToPriceList, headersForSheet, readExcelWorkbook, suggestExcelMapping, type ExcelSheet } from './excel'
-import { renderCsv, renderXml, validatePriceList } from './price-engine'
+import { renderCsv, renderXml, validatePriceList, mergeValidationIssues } from './price-engine'
 
 function workbookBytes(bookType: 'xlsx' | 'xls' = 'xlsx') {
   const workbook = XLSX.utils.book_new()
@@ -23,7 +23,7 @@ describe('Excel conversion', () => {
     expect(workbook.sheets[0].rows[1][1]).toBe(20)
     const headers = headersForSheet(workbook.sheets[0], 0)
     const mapping = suggestExcelMapping(headers)
-    const list = excelRowsToPriceList(workbook.sheets[0], 0, mapping)
+    const list = excelRowsToPriceList(workbook.sheets[0], 0, mapping).priceList
     expect(list.items).toHaveLength(2)
     expect(list.items[0]).toMatchObject({ name: 'Šišanje', price: 20, type: 'Usluga', anchorPrice: 18 })
     expect(validatePriceList(list).issues.some((issue) => issue.field === 'anchorPrice')).toBe(false)
@@ -34,9 +34,26 @@ describe('Excel conversion', () => {
   it('requires explicit name and price mapping and keeps sale completion in the shared validator', () => {
     const sheet: ExcelSheet = { name: 'Cjenik', rows: [['Usluga', 'Iznos', 'Akcija'], ['Masaža', '30,00', '25,00']] }
     expect(() => excelRowsToPriceList(sheet, 0, {})).toThrow(/naziv i maloprodajnu cijenu/i)
-    const list = excelRowsToPriceList(sheet, 0, { name: 'Usluga', price: 'Iznos', salePrice: 'Akcija' })
+    const list = excelRowsToPriceList(sheet, 0, { name: 'Usluga', price: 'Iznos', salePrice: 'Akcija' }).priceList
     expect(list.items[0].salePrice).toBe(25)
     expect(validatePriceList(list).issues.some((issue) => issue.field === 'specialSaleApplied')).toBe(true)
+  })
+
+  it('emits IMPORT_ROW_SKIPPED for blank-price rows and blocks ready_to_publish', () => {
+    const sheet: ExcelSheet = {
+      name: 'Cjenik',
+      rows: [
+        ['Naziv', 'Cijena', 'Vrsta'],
+        ['Valjana', 20, 'Usluga'],
+        ['Preskočena', '', 'Usluga'],
+      ],
+    }
+    const converted = excelRowsToPriceList(sheet, 0, { name: 'Naziv', price: 'Cijena', type: 'Vrsta' })
+    expect(converted.priceList.items).toHaveLength(1)
+    expect(converted.issues[0]).toMatchObject({ code: 'IMPORT_ROW_SKIPPED', source: 'xlsx', field: 'price', row: 3 })
+    const validation = mergeValidationIssues(validatePriceList(converted.priceList), converted.issues)
+    expect(validation.status).toBe('invalid')
+    expect(validation.blockingCount).toBeGreaterThan(0)
   })
 
   it('rejects worksheets wider than the deterministic column limit', async () => {

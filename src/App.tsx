@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
+import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 import { ExcelConverter } from './ExcelConverter'
 import { EducationSection } from './EducationSection'
 import { LeadForm, type LeadContext, type LeadIntent } from './LeadForm'
@@ -8,6 +8,14 @@ const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'curren
 const dateTime = (value: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
 const slugFromPath = () => window.location.pathname.match(/^\/c\/([^/]+)/)?.[1]
 const platformHost = () => ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.endsWith('.pages.dev')
+
+async function writeErrorMessage(response: Response, fallback: string) {
+  const payload = await response.json().catch(() => ({})) as { error?: string; code?: string }
+  if (response.status === 401) return payload.error || 'Potrebna je operator autentikacija.'
+  if (response.status === 403) return payload.error || 'Pristup tenantu nije dopušten.'
+  if (response.status === 429) return payload.error || 'Previše zahtjeva. Pokušajte kasnije.'
+  return payload.error || fallback
+}
 const isCustomPublication = () => window.location.pathname.startsWith('/arhiva') && !['localhost', '127.0.0.1'].includes(window.location.hostname) && !window.location.hostname.endsWith('.pages.dev')
 
 function download(text: string, filename: string, type: string) {
@@ -164,7 +172,10 @@ function PublisherWorkspace() {
   const [busy, setBusy] = useState(false)
   const [publication, setPublication] = useState<PricePublication | null>(null)
   const [message, setMessage] = useState('')
-  const validation = useMemo(() => list ? validatePriceList(list) : { status: 'invalid' as const, issues, blockingCount: issues.length, warningCount: 0 }, [list, issues])
+  const validation = useMemo(() => {
+    if (!list) return { status: 'invalid' as const, issues, blockingCount: issues.length, warningCount: 0 }
+    return mergeValidationIssues(validatePriceList(list), issues.filter((issue) => issue.code === 'IMPORT_ROW_SKIPPED'))
+  }, [list, issues])
   useEffect(() => {
     const confirmGroup = () => {
       if (!window.confirm('Potvrdite da nijedna akcijska cijena nije primijenjena tijekom posebnog oblika prodaje.')) return
@@ -196,10 +207,10 @@ function PublisherWorkspace() {
       const isXml = file.name.toLowerCase().endsWith('.xml')
       if (!isXml && !file.name.toLowerCase().endsWith('.csv')) throw new Error('Učitajte datoteku s nastavkom .csv ili .xml.')
       const parsed = isXml
-        ? { priceList: parseXmlPriceList(raw, { id: 'nepar', slug: 'nepar', name: 'NEPAR' }) }
+        ? { priceList: parseXmlPriceList(raw, { id: 'nepar', slug: 'nepar', name: 'NEPAR' }), warnings: [] as { row: number; message: string }[] }
         : parseMarketinoCsv(raw, { id: 'nepar', slug: 'nepar', name: 'NEPAR' })
-      setList(parsed.priceList); setIssues([]); setSourceFilename(file.name); setStep('validate')
-      const result = validatePriceList(parsed.priceList)
+      setList(parsed.priceList); setSourceFilename(file.name); setStep('validate')
+      const result = mergeValidationIssues(validatePriceList(parsed.priceList), importIssuesFromParseWarnings(parsed.warnings || [], isXml ? 'xml' : 'csv'))
       setIssues(result.issues)
       const response = await fetch('/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(isXml ? { xml: raw } : { csv: raw }) })
       if (response.ok) { const remote = await response.json() as { validation: { issues: ValidationIssue[] } }; setIssues(remote.validation.issues) }
@@ -208,8 +219,8 @@ function PublisherWorkspace() {
 
   async function createRemoteDraft() {
     if (!list) return null
-    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: renderCsv(list), name: 'NEPAR', sourceFilename }) })
-    if (!response.ok) throw new Error((await response.json() as { error?: string }).error || 'Draft nije spremljen.')
+    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename }) })
+    if (!response.ok) throw new Error(await writeErrorMessage(response, 'Draft nije spremljen.'))
     const payload = await response.json() as { draft: { id: string }; validation: { issues: ValidationIssue[] } }
     setDraftId(payload.draft.id); setIssues(payload.validation.issues)
     return payload.draft.id
@@ -222,8 +233,8 @@ function PublisherWorkspace() {
       let idToSave = draftId
       if (!idToSave) idToSave = await createRemoteDraft() || ''
       if (idToSave) {
-        const response = await fetch('/api/tenants/nepar/draft/' + idToSave, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: list }) })
-        if (!response.ok) throw new Error((await response.json() as { error?: string }).error || 'Dopuna nije spremljena.')
+        const response = await fetch('/api/tenants/nepar/draft/' + idToSave, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }) })
+        if (!response.ok) throw new Error(await writeErrorMessage(response, 'Dopuna nije spremljena.'))
         const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
         setIssues(payload.validation.issues)
       } else setIssues(validatePriceList(list).issues)
@@ -240,7 +251,7 @@ function PublisherWorkspace() {
       if (!idToPublish) throw new Error('Za objavu pokrenite Cloudflare Pages lokalni server.')
       const response = await fetch('/api/tenants/nepar/publish', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ draftId: idToPublish }) })
       const payload = await response.json() as { error?: string; message?: string; publication?: PricePublication }
-      if (!response.ok) throw new Error(payload.error || 'Objava nije uspjela.')
+      if (!response.ok) throw new Error(payload.error || (response.status === 429 ? 'Previše zahtjeva. Pokušajte kasnije.' : response.status === 401 ? 'Potrebna je operator autentikacija.' : response.status === 403 ? 'Pristup tenantu nije dopušten.' : 'Objava nije uspjela.'))
       setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setStep('published')
       const current = await fetch('/api/tenants/nepar').then((item) => item.json()) as { priceList: NormalizedPriceList }
       setList(current.priceList)
@@ -290,7 +301,10 @@ function ValidatorApp({ onContextChange, onLead }: { onContextChange?: (context:
   const [message, setMessage] = useState('')
   const [publication, setPublication] = useState<PricePublication | null>(null)
   const [published, setPublished] = useState(false)
-  const validation = useMemo(() => list ? validatePriceList(list) : { status: 'invalid' as const, issues, blockingCount: issues.length, warningCount: 0 }, [list, issues])
+  const validation = useMemo(() => {
+    if (!list) return { status: 'invalid' as const, issues, blockingCount: issues.length, warningCount: 0 }
+    return mergeValidationIssues(validatePriceList(list), issues.filter((issue) => issue.code === 'IMPORT_ROW_SKIPPED'))
+  }, [list, issues])
 
   useEffect(() => {
     onContextChange?.({
@@ -304,11 +318,11 @@ function ValidatorApp({ onContextChange, onLead }: { onContextChange?: (context:
 
   const updateItem = (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => setList((current) => current ? { ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) } : current)
 
-  function applyNormalizedList(priceList: NormalizedPriceList, file: File) {
+  function applyNormalizedList(priceList: NormalizedPriceList, file: File, importIssues: ValidationIssue[] = []) {
     setList(priceList)
     setSourceFilename(file.name)
     setSourceFile(file)
-    setIssues(validatePriceList(priceList).issues)
+    setIssues(mergeValidationIssues(validatePriceList(priceList), importIssues).issues)
     setPublished(false)
     setDraftId('')
     setPublication(null)
@@ -325,10 +339,8 @@ function ValidatorApp({ onContextChange, onLead }: { onContextChange?: (context:
       const lowerName = file.name.toLowerCase()
       const isXml = lowerName.endsWith('.xml')
       if (!isXml && !lowerName.endsWith('.csv')) throw new Error('Učitajte datoteku s nastavkom .csv ili .xml.')
-      const parsed = isXml ? { priceList: parseXmlPriceList(raw) } : parseMarketinoCsv(raw, { id: 'nepar', slug: 'nepar', name: 'NEPAR' })
-      applyNormalizedList(parsed.priceList, file)
-      const localValidation = validatePriceList(parsed.priceList)
-      setIssues(localValidation.issues)
+      const parsed = isXml ? { priceList: parseXmlPriceList(raw), warnings: [] as { row: number; message: string }[] } : parseMarketinoCsv(raw, { id: 'nepar', slug: 'nepar', name: 'NEPAR' })
+      applyNormalizedList(parsed.priceList, file, importIssuesFromParseWarnings(parsed.warnings || [], isXml ? 'xml' : 'csv'))
       try {
         const response = await fetch('/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(isXml ? { xml: raw } : { csv: raw }) })
         if (response.ok) setIssues(((await response.json()) as { validation: { issues: ValidationIssue[] } }).validation.issues)
@@ -342,8 +354,8 @@ function ValidatorApp({ onContextChange, onLead }: { onContextChange?: (context:
 
   async function createRemoteDraft() {
     if (!list) return ''
-    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: renderCsv(list), name: 'NEPAR', sourceFilename }) })
-    if (!response.ok) throw new Error((await response.json() as { error?: string }).error || 'Cjenik nije moguće pripremiti.')
+    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename }) })
+    if (!response.ok) throw new Error(await writeErrorMessage(response, 'Cjenik nije moguće pripremiti.'))
     const payload = await response.json() as { draft: { id: string }; validation: { issues: ValidationIssue[] } }
     setDraftId(payload.draft.id); setIssues(payload.validation.issues)
     return payload.draft.id
@@ -355,8 +367,8 @@ function ValidatorApp({ onContextChange, onLead }: { onContextChange?: (context:
     try {
       const id = draftId || await createRemoteDraft()
       if (!id) throw new Error('Cjenik nije moguće spremiti.')
-      const response = await fetch('/api/tenants/nepar/draft/' + id, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: list }) })
-      if (!response.ok) throw new Error((await response.json() as { error?: string }).error || 'Dopuna nije spremljena.')
+      const response = await fetch('/api/tenants/nepar/draft/' + id, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }) })
+      if (!response.ok) throw new Error(await writeErrorMessage(response, 'Dopuna nije spremljena.'))
       const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
       setIssues(payload.validation.issues); setMessage('Dopune su spremljene. Provjerite sažetak prije objave.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Dopuna nije uspjela.') } finally { setBusy(false) }
@@ -512,7 +524,7 @@ function PremiumEntry() {
   </main></div>
 }
 
-function Landing() {
+export function Landing() {
   return <PremiumEntry />
 }
 

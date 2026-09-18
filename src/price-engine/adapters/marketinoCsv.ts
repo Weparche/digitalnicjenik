@@ -45,7 +45,14 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const items = rows.slice(1).flatMap((row, index) => {
     const name = row[nameIndex]?.trim() ?? ''; const price = normalizeNumber(row[priceIndex]);
     if (!name && !row.some(Boolean)) return []
-    if (!name || price == null) { warnings.push({ row: index + 2, message: !name ? 'Nedostaje naziv.' : 'Cijena nije broj — redak je preskočen.' }); return [] }
+    if (!name || price == null) {
+      warnings.push({
+        row: index + 2,
+        field: !name ? 'name' : 'price',
+        message: !name ? 'nedostaje naziv.' : 'cijena nije broj.',
+      })
+      return []
+    }
     const salePrice = saleIndex >= 0 ? normalizeNumber(row[saleIndex]) : null
     const rawType = row[typeIndex]?.trim() || ''
     const type = rawType === '2' ? 'Usluga' : rawType || undefined

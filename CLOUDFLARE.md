@@ -2,7 +2,9 @@
 
 Binding name: `DB`.
 
-The repository intentionally omits `database_id` from `wrangler.jsonc`. Pages production uses a dashboard D1 binding named `DB`; no production ID is committed here.
+The repository includes the production D1 `database_id` in `wrangler.jsonc` so
+`wrangler pages deploy` attaches the existing `DB` binding. Do not create a second
+database; reuse `digitalni-cjenik-nepar`.
 
 ## Local
 
@@ -18,18 +20,45 @@ npx wrangler pages dev dist --d1 DB=digitalni-cjenik-nepar
 ## Production
 
 ```powershell
-npx wrangler d1 create digitalni-cjenik-nepar
 npx wrangler d1 migrations apply digitalni-cjenik-nepar --config wrangler.d1.jsonc --remote
 npm run build
-npx wrangler pages deploy dist --project-name digitalni-cjenik-nepar
+npx wrangler pages deploy dist --project-name digitalnicjenik
 ```
 
-Before deploy, connect the created D1 database to the Pages project with binding name `DB`. Apply migrations with the commands above (`--local` for local work, `--remote` for production). Production database IDs and Pages project IDs are intentionally not committed here; adding a name-only D1 binding to `wrangler.jsonc` makes the Pages configuration validator reject the deployment.
+Production Pages project name is `digitalnicjenik` (custom domain `digitalnicjenik.nepar.hr`).
+The Wrangler `name` in `wrangler.jsonc` may differ; always pass `--project-name digitalnicjenik`.
+
 
 The demo write boundary is configured with `DEMO_WRITE_TENANT` (default
 `nepar`), its public hostname with `DEMO_PUBLIC_HOSTNAME`, and the default publication timezone with
-`DEFAULT_PUBLICATION_TIMEZONE` (default `Europe/Zagreb`). Production customer
-writes remain blocked until authentication/operator authorization is added.
+`DEFAULT_PUBLICATION_TIMEZONE` (default `Europe/Zagreb`).
+
+Write access model:
+
+- Demo tenant (`DEMO_WRITE_TENANT`): anonymous sandbox mutations are allowed only for that
+  tenant, with server-side tenant canonicalization, tenant-scoped draft/publish SQL, and a
+  dedicated demo write rate-limit bucket. No browser/Vite write secret is used.
+- Any other tenant: requires `Authorization: Bearer <OPERATOR_WRITE_KEY>` (Cloudflare secret only).
+- Customer `publication_targets` hostnames are not write surfaces (defense-in-depth).
+
+### Hostname roles (demo tenant)
+
+| Hostname | Role | Writes | Public reads (`/cjenik.csv`, publication current) |
+|---|---|---|---|
+| `digitalnicjenik.nepar.hr` (`DEMO_PUBLIC_HOSTNAME`) | App + primary public hostname | Allowed (demo sandbox) | Yes |
+| `digitalnicjenik.pages.dev` | Intentional secondary **public read** alias for the same demo publication | Denied (403) — treated as publication target, not an app write surface | Yes |
+| `localhost` / preview hosts **not** in `publication_targets` | Local/app API hosts | Allowed for demo slug | N/A unless mapped |
+| Customer custom hostnames in `publication_targets` | Tenant public sites only | Denied (403) | That tenant only |
+
+`digitalnicjenik.pages.dev` is kept in `publication_targets` on purpose so the Pages alias can serve the same current cjenik. It is **not** a write surface.
+
+Configure these Pages secrets before enabling non-demo writes or relying on rate limits:
+
+```text
+OPERATOR_WRITE_KEY
+DEMO_WRITE_RATE_LIMIT_SECRET   # optional; falls back to LEAD_RATE_LIMIT_SECRET
+CHECKER_RATE_LIMIT_SECRET      # optional; falls back to LEAD_RATE_LIMIT_SECRET
+```
 
 Configure `digitalnicjenik.nepar.hr` and customer custom hostnames in Pages DNS,
 then create matching active rows in `publication_targets`. Seed production

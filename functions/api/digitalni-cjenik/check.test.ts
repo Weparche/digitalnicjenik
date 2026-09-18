@@ -103,13 +103,33 @@ describe('digital price list checker hardening', () => {
     expect(valid.details.xmlUrl).toBe('https://example.com/current.xml')
   })
 
-  it('returns yellow for a discovered price page without a confirmed machine document', async () => {
-    const fetch = routeFetch({
+  it('returns yellow only when the price page passes multi-signal content checks', async () => {
+    const { pageLooksLikePriceList } = await import('./check')
+    const richHtml = '<!doctype html><html><body><h1>Cjenik usluga</h1><table><tr><th>Naziv</th><th>Cijena</th></tr><tr><td>Šišanje</td><td>15,00 €</td></tr><tr><td>Bojanje</td><td>40,00 €</td></tr><tr><td>Pranje</td><td>8,00 €</td></tr></table><script type="application/ld+json">{"@type":"Product"}</script></body></html>'
+    expect(pageLooksLikePriceList(new Response(richHtml, { status: 200, headers: { 'content-type': 'text/html' } }), richHtml)).toBe(true)
+
+    const weak = routeFetch({
       '/': () => new Response('<a href="/cjenik/">Cjenik</a>', { status: 200 }),
-      '/cjenik/': () => new Response('<h1>Cjenik</h1><p>Usluge i cijene</p>', { status: 200 }),
+      '/cjenik/': () => new Response('<!doctype html><html><body><h1>Cjenik</h1><p>Dobrodošli</p></body></html>', { status: 200, headers: { 'content-type': 'text/html' } }),
+    })
+    vi.stubGlobal('fetch', weak)
+    expect((await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })).status).toBe('red')
+
+    const soft404 = routeFetch({
+      '/': () => new Response('<a href="/cjenik/">Cjenik</a>', { status: 200 }),
+      '/cjenik/': () => new Response('<!doctype html><html><body><h1>404</h1><p>Stranica nije pronađena</p></body></html>', { status: 200, headers: { 'content-type': 'text/html' } }),
+    })
+    vi.stubGlobal('fetch', soft404)
+    expect((await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })).details.pricePageFound).toBe(false)
+
+    const fetch = routeFetch({
+      '/': () => new Response('<a href="/cjenik/">Cjenik</a>', { status: 200, headers: { 'content-type': 'text/html' } }),
+      '/cjenik/': () => new Response(richHtml, { status: 200, headers: { 'content-type': 'text/html' } }),
+      '/cjenici/': () => new Response('missing', { status: 404 }),
     })
     vi.stubGlobal('fetch', fetch)
     const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+    expect(checked.details.pricePageFound).toBe(true)
     expect(checked.status).toBe('yellow')
   })
 

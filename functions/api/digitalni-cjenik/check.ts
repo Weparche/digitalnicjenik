@@ -5,6 +5,9 @@ type Resolver = {
 
 type CheckerEnv = {
   DIGITAL_PRICE_LIST_DNS_RESOLVER?: Resolver;
+  DB?: import('../../_repository').D1DatabaseLike;
+  CHECKER_RATE_LIMIT_SECRET?: string;
+  LEAD_RATE_LIMIT_SECRET?: string;
 };
 
 type CheckDetails = {
@@ -245,6 +248,32 @@ function isHtml(response: Response, body: string) {
   return contentType.includes("text/html") || /^<!doctype\s+html|^<html[\s>]/i.test(start);
 }
 
+function stripTags(html: string) {
+  return html.replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function pageLooksLikePriceList(response: Response, body: string): boolean {
+  if (!response.ok || !isHtml(response, body)) return false;
+  const text = stripTags(body).toLocaleLowerCase("hr-HR");
+  if (text.length < 40) return false;
+  if (/(stranica nije pronađena|page not found|\b404\b|nema rezultata)/i.test(text) && text.length < 400) return false;
+
+  let score = 0;
+  if (/<(table|tbody)[\s>]/i.test(body) && /(cijena|price|€|eur)/i.test(body) && /(naziv|name|usluga|artikl)/i.test(body)) score += 2;
+  if (/itemtype=["'][^"']*(product|offer)/i.test(body) || /"@type"\s*:\s*"(product|offer)"/i.test(body)) score += 2;
+  if (/<(h1|h2|h3)[^>]*>[^<]*(cjenik|cijene|price list)/i.test(body)) score += 1;
+  if ((body.match(/€|eur/gi) || []).length >= 3) score += 1;
+  if ((body.match(/\b\d+[.,]\d{2}\b/g) || []).length >= 3) score += 1;
+  if (/\.csv|\.xml|application\/(csv|xml)/i.test(body)) score += 1;
+  if (/(cjenik|cijene)/i.test(text) && score === 0) return false;
+  return score >= 2;
+}
+
+export function pageLooksLikeArchive(response: Response, body: string): boolean {
+  if (!pageLooksLikePriceList(response, body)) return false;
+  return /(arhiva|archive|povijest|prethodn)/i.test(body);
+}
+
 function parseCsvRows(value: string): string[][] {
   const source = value.replace(/^\uFEFF/, "");
   const sample = source.split(/\r?\n/).filter(Boolean).slice(0, 5).join("\n");
@@ -380,9 +409,11 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
     try {
       const fetched = await safeDigitalPriceListFetch(page, env);
       if (!fetched.response.ok) continue;
-      details.pricePageFound = true;
-      details.pricePageUrl ||= fetched.url.href;
       const secondaryHtml = await readLimited(fetched.response, MAX_HTML_BYTES);
+      if (pageLooksLikePriceList(fetched.response, secondaryHtml)) {
+        details.pricePageFound = true;
+        details.pricePageUrl ||= fetched.url.href;
+      }
       for (const candidate of extractLinks(secondaryHtml, fetched.url)) {
         if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
         if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
@@ -397,7 +428,13 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
   for (const candidate of archive) {
     try {
       const fetched = await safeDigitalPriceListFetch(candidate, env);
-      if (fetched.response.ok) { details.archiveFound = true; details.archiveUrl = fetched.url.href; break; }
+      if (!fetched.response.ok) continue;
+      const archiveHtml = await readLimited(fetched.response, MAX_HTML_BYTES);
+      if (pageLooksLikeArchive(fetched.response, archiveHtml)) {
+        details.archiveFound = true;
+        details.archiveUrl = fetched.url.href;
+        break;
+      }
     } catch { network.failed = true; }
   }
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat.", details);
@@ -407,8 +444,41 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
 }
 
 export const onRequestPost = async ({ request, env }: { request: Request; env: CheckerEnv }) => {
+  try {
+    await consumeCheckerBudget(request, env);
+  } catch (caught) {
+    if (caught instanceof Error && caught.message === "rate_limited") {
+      return Response.json({ ...result("unavailable", "Previše provjera. Pokušajte kasnije."), code: "rate_limited" }, { status: 429 });
+    }
+    if (caught instanceof Error && caught.message === "rate_limit_misconfigured") {
+      return Response.json(result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno."), { status: 503 });
+    }
+  }
   const body = await parseBody(request);
   if (!body || body.url === undefined) return Response.json(result("red", "Unesite ispravnu adresu web stranice."), { status: 400 });
   const checked = await runDigitalPriceListCheck(body.url, env);
   return Response.json(checked);
 };
+
+const CHECKER_LIMIT_PER_HOUR = 30;
+const HOUR_MS = 3_600_000;
+
+async function consumeCheckerBudget(request: Request, env: CheckerEnv) {
+  if (!env.DB) return;
+  const secret = env.CHECKER_RATE_LIMIT_SECRET || env.LEAD_RATE_LIMIT_SECRET;
+  if (!secret) throw new Error("rate_limit_misconfigured");
+  const { hmacIp } = await import("../../_lead");
+  const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0";
+  const ipHash = await hmacIp(ip, secret);
+  const windowStart = new Date(Math.floor(Date.now() / HOUR_MS) * HOUR_MS).toISOString();
+  const existing = await env.DB.prepare("SELECT attempt_count FROM checker_rate_buckets WHERE ip_hash = ? AND window_start = ?").bind(ipHash, windowStart).first<{ attempt_count: number }>();
+  if ((existing?.attempt_count ?? 0) >= CHECKER_LIMIT_PER_HOUR) throw new Error("rate_limited");
+  await env.DB.prepare(
+    `INSERT INTO checker_rate_buckets (ip_hash, window_start, attempt_count, updated_at)
+     VALUES (?, ?, 1, ?)
+     ON CONFLICT(ip_hash, window_start) DO UPDATE SET
+       attempt_count = attempt_count + 1,
+       updated_at = excluded.updated_at
+     WHERE attempt_count < ?`,
+  ).bind(ipHash, windowStart, new Date().toISOString(), CHECKER_LIMIT_PER_HOUR).run();
+}

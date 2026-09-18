@@ -1,14 +1,24 @@
 import { deterministicHash, diffPriceLists } from "../src/price-engine/hash"
 import { createFilenameStemPrefix, filenameTimestamp } from "../src/price-engine/filename"
 import { parseMarketinoCsv } from "../src/price-engine/adapters/marketinoCsv"
-import { validatePriceList } from "../src/price-engine/validate"
+import { mergeValidationIssues, validatePriceList } from "../src/price-engine/validate"
 import type { DraftStatus, Entitlement, NormalizedPriceList, PricePublication, PriceSnapshot, PublicationMetadata, PriceUpload, ValidationIssue } from "../src/price-engine/types"
 import { marketinoFixture } from "./_fixture"
 
 type D1Result = { meta?: { changes?: number } }
 type D1Statement = { bind: (...values: unknown[]) => D1Statement; first: <T = Record<string, unknown>>() => Promise<T | null>; all: <T = Record<string, unknown>>() => Promise<{ results: T[] }>; run: () => Promise<D1Result> }
 export type D1DatabaseLike = { prepare: (query: string) => D1Statement; batch: (statements: D1Statement[]) => Promise<D1Result[]> }
-export type RuntimeEnv = { DB?: D1DatabaseLike; ASSETS?: { fetch: (input: Request | URL | string) => Promise<Response> }; DEMO_WRITE_TENANT?: string; DEMO_PUBLIC_HOSTNAME?: string; DEFAULT_PUBLICATION_TIMEZONE?: string }
+export type RuntimeEnv = {
+  DB?: D1DatabaseLike
+  ASSETS?: { fetch: (input: Request | URL | string) => Promise<Response> }
+  DEMO_WRITE_TENANT?: string
+  DEMO_PUBLIC_HOSTNAME?: string
+  DEFAULT_PUBLICATION_TIMEZONE?: string
+  OPERATOR_WRITE_KEY?: string
+  DEMO_WRITE_RATE_LIMIT_SECRET?: string
+  LEAD_RATE_LIMIT_SECRET?: string
+  CHECKER_RATE_LIMIT_SECRET?: string
+}
 
 type PublicationRow = { id: string; tenant_id: string; tenant_slug: string; tenant_name: string; price_list_id: string; sequence: number; filename_stem: string; published_at: string; superseded_at: string | null; public_until: string | null; hash: string; payload_json: string; is_current: number }
 type UploadRow = { id: string; tenant_id: string; source_filename: string; source_type: string; normalized_payload_json: string; validation_issues_json: string; status: DraftStatus; created_at: string; updated_at: string }
@@ -40,17 +50,28 @@ async function metadataFor(env: RuntimeEnv, tenantId: string) {
 }
 
 async function assertActivePublicationTarget(env: RuntimeEnv, tenantId: string) {
-  const target = await env.DB!.prepare("SELECT id FROM publication_targets WHERE tenant_id = ? AND status = 'active' LIMIT 1").bind(tenantId).first<{ id: string }>()
-  if (!target) throw new Error("Nedostaje aktivni public target za objavu.")
+  const target = await env.DB!.prepare("SELECT id, tenant_id FROM publication_targets WHERE tenant_id = ? AND status = 'active' LIMIT 1").bind(tenantId).first<{ id: string; tenant_id: string }>()
+  if (!target || target.tenant_id !== tenantId) throw new Error("Nedostaje aktivni public target za objavu.")
+  return target
 }
 
-function assertPayloadTenant(slug: string, tenantId: string, payload: NormalizedPriceList) {
-  if (payload.tenant.slug !== slug || payload.tenant.id !== tenantId) throw new Error("Draft pripada drugom tenantu.")
+export async function resolveTenant(env: RuntimeEnv, slug: string) {
+  return env.DB!.prepare("SELECT id, slug, name FROM tenants WHERE slug = ?").bind(slug).first<{ id: string; slug: string; name: string }>()
+}
+
+export function withCanonicalTenant(list: NormalizedPriceList, tenant: { id: string; slug: string; name: string }): NormalizedPriceList {
+  return { ...list, tenant: { id: tenant.id, slug: tenant.slug, name: tenant.name } }
 }
 
 async function tenantIdFor(env: RuntimeEnv, slug: string) {
-  const row = await env.DB!.prepare("SELECT id FROM tenants WHERE slug = ?").bind(slug).first<{ id: string }>()
+  const row = await resolveTenant(env, slug)
   return row?.id ?? null
+}
+
+async function requireTenant(env: RuntimeEnv, slug: string) {
+  const tenant = await resolveTenant(env, slug)
+  if (!tenant) throw new Error("Tenant nije pronađen.")
+  return tenant
 }
 
 async function ensureTenant(env: RuntimeEnv, list: NormalizedPriceList) {
@@ -137,48 +158,55 @@ export async function readDraft(env: RuntimeEnv, slug: string, draftId: string):
   return row ? mapUpload(row) : null
 }
 
-export async function createDraft(env: RuntimeEnv, slug: string, list: NormalizedPriceList, sourceFilename: string, sourceType: string) {
+export async function createDraft(env: RuntimeEnv, slug: string, list: NormalizedPriceList, sourceFilename: string, sourceType: string, sourceArtifact?: string | null, extraIssues: ValidationIssue[] = []) {
   if (!env.DB) throw new Error("D1 binding DB nije konfiguriran.")
-  await ensureTenant(env, list)
-  const validation = validatePriceList(list)
+  const provisional = withCanonicalTenant(list, { id: list.tenant.id || slug, slug, name: list.tenant.name || slug })
+  await ensureTenant(env, provisional)
+  const tenant = await requireTenant(env, slug)
+  const canonical = withCanonicalTenant(provisional, tenant)
+  const validation = mergeValidationIssues(validatePriceList(canonical), extraIssues)
   const timestamp = now()
   const draftId = id()
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO price_uploads (id, tenant_id, source_filename, source_type, normalized_payload_json, validation_issues_json, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(draftId, list.tenant.id, sourceFilename, sourceType, json(list), json(validation.issues), validation.status as DraftStatus, timestamp, timestamp),
-    env.DB.prepare("INSERT INTO sync_logs (id, tenant_id, provider, status, message, created_at, event_type, details_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id(), list.tenant.id, sourceType, validation.status === "ready_to_publish" ? "validated" : "manual_review", "Učitano " + list.items.length + " stavki.", timestamp, "upload_validated", json({ draftId, blockingCount: validation.blockingCount, warningCount: validation.warningCount })),
+    env.DB.prepare("INSERT INTO price_uploads (id, tenant_id, source_filename, source_type, normalized_payload_json, validation_issues_json, status, created_at, updated_at, source_artifact_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(draftId, tenant.id, sourceFilename, sourceType, json(canonical), json(validation.issues), validation.status as DraftStatus, timestamp, timestamp, sourceArtifact ?? null),
+    env.DB.prepare("INSERT INTO sync_logs (id, tenant_id, provider, status, message, created_at, event_type, details_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id(), tenant.id, sourceType, validation.status === "ready_to_publish" ? "validated" : "manual_review", "Učitano " + canonical.items.length + " stavki.", timestamp, "upload_validated", json({ draftId, blockingCount: validation.blockingCount, warningCount: validation.warningCount })),
   ])
   return { draft: await readDraft(env, slug, draftId), validation }
 }
 
 export async function updateDraft(env: RuntimeEnv, slug: string, draftId: string, list: NormalizedPriceList) {
   if (!env.DB) throw new Error("D1 binding DB nije konfiguriran.")
+  const tenant = await requireTenant(env, slug)
   const draft = await readDraft(env, slug, draftId)
   if (!draft || draft.status === "published") throw new Error("Draft nije pronađen ili je već objavljen.")
-  assertPayloadTenant(slug, draft.tenantId, list)
-  const validation = validatePriceList(list)
+  if (draft.tenantId !== tenant.id) throw new Error("Draft nije pronađen.")
+  const canonical = withCanonicalTenant(list, tenant)
+  const validation = validatePriceList(canonical)
   const timestamp = now()
-  await env.DB.prepare("UPDATE price_uploads SET normalized_payload_json = ?, validation_issues_json = ?, status = ?, updated_at = ? WHERE id = ?").bind(json(list), json(validation.issues), validation.status, timestamp, draftId).run()
+  const updated = await env.DB.prepare("UPDATE price_uploads SET normalized_payload_json = ?, validation_issues_json = ?, status = ?, updated_at = ? WHERE id = ? AND tenant_id = ? AND status != 'published'").bind(json(canonical), json(validation.issues), validation.status, timestamp, draftId, tenant.id).run()
+  if (!(updated.meta?.changes ?? 0)) throw new Error("Draft nije pronađen ili je već objavljen.")
   return { draft: await readDraft(env, slug, draftId), validation }
 }
 
 export async function publishDraft(env: RuntimeEnv, slug: string, draftId: string, internalDemo = false) {
   if (!env.DB) throw new Error("D1 binding DB nije konfiguriran.")
+  const tenant = await requireTenant(env, slug)
   const draft = await readDraft(env, slug, draftId)
-  if (!draft) throw new Error("Draft nije pronađen.")
-  assertPayloadTenant(slug, draft.tenantId, draft.normalizedPayload)
+  if (!draft || draft.tenantId !== tenant.id) throw new Error("Draft nije pronađen.")
+  const payload = withCanonicalTenant(draft.normalizedPayload, tenant)
   if (draft.status !== "ready_to_publish" && !internalDemo) throw new Error("Cjenik još nije spreman za objavu.")
-  const draftValidation = validatePriceList(draft.normalizedPayload)
+  const draftValidation = validatePriceList(payload)
   if (!internalDemo && draftValidation.status !== "ready_to_publish") throw new Error("Cjenik više nije spreman za objavu. Ponovno provjerite dopune.")
   const entitlement = await readEntitlement(env, slug)
   if (!internalDemo && (!entitlement || entitlement.status !== "active" || entitlement.plan === "validator")) throw new Error("Aktivan Publisher entitlement nije pronađen.")
   const current = await readCurrentPublication(env, slug)
-  const hash = await deterministicHash(draft.normalizedPayload)
+  const hash = await deterministicHash(payload)
   if (current?.hash === hash) {
-    await env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ?").bind(now(), draftId).run()
+    await env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ?").bind(now(), draftId, tenant.id).run()
     return { changed: false, message: "Nema promjena za objavu.", publication: current, current: current.payload, changedItems: [] }
   }
   const timestamp = now()
-  const tenantId = draft.tenantId
+  const tenantId = tenant.id
   const metadata = await metadataFor(env, tenantId)
   const publicationId = id()
   const priceListId = id()
@@ -189,15 +217,15 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   // The first statement claims the draft. Every following statement also
   // requires that this payload is not already current. This makes a retry or
   // concurrent request idempotent without relying on a JavaScript-side lock.
-  const guard = "EXISTS (SELECT 1 FROM price_uploads WHERE id = ? AND status = 'published') AND NOT EXISTS (SELECT 1 FROM price_publications WHERE tenant_id = ? AND is_current = 1 AND hash = ?)"
+  const guard = "EXISTS (SELECT 1 FROM price_uploads WHERE id = ? AND tenant_id = ? AND status = 'published') AND NOT EXISTS (SELECT 1 FROM price_publications WHERE tenant_id = ? AND is_current = 1 AND hash = ?)"
   const entitlementGuard = internalDemo ? "1 = 1" : "EXISTS (SELECT 1 FROM entitlements WHERE tenant_id = ? AND status = 'active' AND plan IN ('publisher_self_service', 'managed') AND (period_end IS NULL OR period_end >= ?))"
-  const firstBindings = internalDemo ? [timestamp, draftId] : [timestamp, draftId, tenantId, timestamp]
+  const firstBindings = internalDemo ? [timestamp, draftId, tenantId] : [timestamp, draftId, tenantId, tenantId, timestamp]
   const insertedGuard = "EXISTS (SELECT 1 FROM price_publications WHERE id = ? AND tenant_id = ?)"
   const results = await env.DB.batch([
-    env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND status " + (internalDemo ? "IN ('ready_to_publish', 'manual_review', 'invalid')" : "= 'ready_to_publish'") + " AND " + entitlementGuard).bind(...firstBindings),
-    env.DB.prepare("UPDATE price_publications SET is_current = 0, superseded_at = ?, public_until = ? WHERE tenant_id = ? AND is_current = 1 AND " + guard).bind(timestamp, publicUntil, tenantId, draftId, tenantId, hash),
-    env.DB.prepare("INSERT INTO price_list_versions (id, tenant_id, hash, payload_json, created_at) SELECT ?, ?, ?, ?, ? WHERE " + guard).bind(priceListId, tenantId, hash, json(draft.normalizedPayload), timestamp, draftId, tenantId, hash),
-    env.DB.prepare("INSERT INTO price_publications (id, tenant_id, price_list_id, sequence, filename_stem, published_at, superseded_at, public_until, hash, payload_json, is_current) SELECT ?, ?, ?, next_publication_sequence, ? || '_' || next_publication_sequence || '_' || ?, ?, NULL, NULL, ?, ?, 1 FROM publication_metadata WHERE tenant_id = ? AND " + guard).bind(publicationId, tenantId, priceListId, filenamePrefix, filenameTime, timestamp, hash, json(draft.normalizedPayload), tenantId, draftId, tenantId, hash),
+    env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ? AND status " + (internalDemo ? "IN ('ready_to_publish', 'manual_review', 'invalid')" : "= 'ready_to_publish'") + " AND " + entitlementGuard).bind(...firstBindings),
+    env.DB.prepare("UPDATE price_publications SET is_current = 0, superseded_at = ?, public_until = ? WHERE tenant_id = ? AND is_current = 1 AND " + guard).bind(timestamp, publicUntil, tenantId, draftId, tenantId, tenantId, hash),
+    env.DB.prepare("INSERT INTO price_list_versions (id, tenant_id, hash, payload_json, created_at) SELECT ?, ?, ?, ?, ? WHERE " + guard).bind(priceListId, tenantId, hash, json(payload), timestamp, draftId, tenantId, tenantId, hash),
+    env.DB.prepare("INSERT INTO price_publications (id, tenant_id, price_list_id, sequence, filename_stem, published_at, superseded_at, public_until, hash, payload_json, is_current) SELECT ?, ?, ?, next_publication_sequence, ? || '_' || next_publication_sequence || '_' || ?, ?, NULL, NULL, ?, ?, 1 FROM publication_metadata WHERE tenant_id = ? AND " + guard).bind(publicationId, tenantId, priceListId, filenamePrefix, filenameTime, timestamp, hash, json(payload), tenantId, draftId, tenantId, tenantId, hash),
     env.DB.prepare("UPDATE publication_metadata SET next_publication_sequence = next_publication_sequence + 1, updated_at = ? WHERE tenant_id = ? AND " + insertedGuard).bind(timestamp, tenantId, publicationId, tenantId),
     env.DB.prepare("UPDATE publication_targets SET current_publication_id = ?, updated_at = ? WHERE tenant_id = ? AND " + insertedGuard).bind(publicationId, timestamp, tenantId, publicationId, tenantId),
     env.DB.prepare("INSERT INTO sync_logs (id, tenant_id, provider, status, message, created_at, event_type, details_json) SELECT ?, ?, ?, 'published', ?, ?, 'publication_published', ? WHERE " + insertedGuard).bind(id(), tenantId, draft.sourceType, "Objavljena nova verzija cjenika.", timestamp, json({ publicationId, hash }), publicationId, tenantId),
@@ -208,9 +236,9 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
     if (concurrentCurrent?.hash === hash) return { changed: false, message: "Nema promjena za objavu.", publication: concurrentCurrent, current: concurrentCurrent.payload, changedItems: [] }
     throw new Error("Objava nije mogla biti atomski dovršena. Pokušajte ponovno.")
   }
-  const publication = await env.DB.prepare(publicationSelect + " WHERE p.id = ? LIMIT 1").bind(publicationId).first<PublicationRow>()
+  const publication = await env.DB.prepare(publicationSelect + " WHERE p.id = ? AND p.tenant_id = ? LIMIT 1").bind(publicationId, tenantId).first<PublicationRow>()
   if (!publication) throw new Error("Objavljena publikacija nije pronađena.")
-  return { changed: true, message: "Cjenik je objavljen.", publication: mapPublication(publication), current: draft.normalizedPayload, changedItems: diffPriceLists(current?.payload, draft.normalizedPayload) }
+  return { changed: true, message: "Cjenik je objavljen.", publication: mapPublication(publication), current: payload, changedItems: diffPriceLists(current?.payload, payload) }
 }
 
 export async function persistPriceList(env: RuntimeEnv, priceList: NormalizedPriceList, provider = priceList.source) {

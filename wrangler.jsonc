@@ -3,6 +3,14 @@
   "name": "digitalni-cjenik-nepar",
   "compatibility_date": "2026-09-17",
   "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "digitalni-cjenik-nepar",
+      "database_id": "5fab5acf-0d2d-4355-895b-39da1f0462e1",
+      "migrations_dir": "./migrations"
+    }
+  ],
   "vars": {
     "DEMO_WRITE_TENANT": "nepar",
     "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",
@@ -19,6 +27,14 @@
     },
     "production": {
       "name": "digitalni-cjenik-nepar",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "digitalni-cjenik-nepar",
+          "database_id": "5fab5acf-0d2d-4355-895b-39da1f0462e1",
+          "migrations_dir": "./migrations"
+        }
+      ],
       "vars": {
         "DEMO_WRITE_TENANT": "nepar",
         "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",

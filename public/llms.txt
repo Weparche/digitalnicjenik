@@ -1,0 +1,20 @@
+# NEPAR Publisher — Digitalni cjenik
+
+NEPAR Publisher je alat kojim vlasnik web stranice provjerava ima li javno dostupan
+strojno čitljiv (CSV ili XML) digitalni cjenik, validira postojeću datoteku, pretvara
+Excel cjenik u CSV/XML i po potrebi naruči potpunu tehničku implementaciju.
+
+Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https://nepar.hr
+
+Kanonski URL proizvoda: https://digitalnicjenik.nepar.hr/
+
+Detaljna pravna i tehnička dokumentacija o obvezi digitalnog cjenika, sidrenoj cijeni
+i automatizaciji objavljena je na nepar.hr, ne na ovoj poddomeni:
+
+- https://nepar.hr/digitalni-cjenik — pregled obveze i NEPAR Digital Price Engine
+- https://nepar.hr/digitalni-cjenik/sidrena-cijena — sidrena/dodatna cijena
+- https://nepar.hr/digitalni-cjenik/xml-csv — XML/CSV format i zahtjevi
+- https://nepar.hr/digitalni-cjenik/automatizacija — automatizacija objave cjenika
+
+Napomena: ovaj llms.txt je informativni artefakt za strojno čitanje i ne utječe na
+Google rangiranje.

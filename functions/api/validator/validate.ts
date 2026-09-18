@@ -1,5 +1,5 @@
 import { parseMarketinoCsv } from '../../../src/price-engine/adapters/marketinoCsv'
-import { validatePriceList } from '../../../src/price-engine/validate'
+import { importIssuesFromParseWarnings, mergeValidationIssues, validatePriceList } from '../../../src/price-engine/validate'
 import { parseXmlPriceList } from '../../../src/price-engine/xml'
 
 export const onRequestPost = async ({ request }: { request: Request }) => {
@@ -15,6 +15,8 @@ export const onRequestPost = async ({ request }: { request: Request }) => {
     const parsed = hasXml
       ? { priceList: parseXmlPriceList(source, { id: 'nepar', slug: 'nepar', name: 'NEPAR' }), warnings: [] }
       : parseMarketinoCsv(source)
-    return Response.json({ priceList: parsed.priceList, warnings: parsed.warnings, validation: validatePriceList(parsed.priceList) })
+    const importIssues = importIssuesFromParseWarnings(parsed.warnings, hasXml ? 'xml' : 'csv')
+    const validation = mergeValidationIssues(validatePriceList(parsed.priceList), importIssues)
+    return Response.json({ priceList: parsed.priceList, warnings: parsed.warnings, validation })
   } catch (caught) { return Response.json({ error: caught instanceof Error ? caught.message : 'Provjera datoteke nije uspjela.' }, { status: 422 }) }
 }

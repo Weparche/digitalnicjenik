@@ -16,6 +16,8 @@ const clear = async () => env.DB.batch([
   env.DB.prepare('DELETE FROM integrations'),
   env.DB.prepare('DELETE FROM price_lists'),
   env.DB.prepare('DELETE FROM tenants'),
+  env.DB.prepare('DELETE FROM demo_write_rate_buckets'),
+  env.DB.prepare('DELETE FROM checker_rate_buckets'),
 ])
 
 const validList = (): NormalizedPriceList => {

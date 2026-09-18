@@ -1,5 +1,6 @@
 import { normalizeNumber } from './price-engine/normalize'
-import type { NormalizedPriceList } from './price-engine/types'
+import { importIssuesFromParseWarnings } from './price-engine/validate'
+import type { NormalizedPriceList, ParseWarning, ValidationIssue } from './price-engine/types'
 
 export const EXCEL_MAX_BYTES = 5_000_000
 export const EXCEL_MAX_ROWS = 5_000
@@ -91,7 +92,7 @@ export function excelRowsToPriceList(
   headerRowIndex: number,
   mapping: ExcelMapping,
   tenant = { id: 'nepar', slug: 'nepar', name: 'NEPAR' },
-): NormalizedPriceList {
+): { priceList: NormalizedPriceList; issues: ValidationIssue[] } {
   if (!mapping.name || !mapping.price) throw new Error('Odaberite stupce za naziv i maloprodajnu cijenu.')
   const headers = headersForSheet(sheet, headerRowIndex)
   const indexes = Object.fromEntries(
@@ -100,15 +101,24 @@ export function excelRowsToPriceList(
   if ((indexes.name ?? -1) < 0 || (indexes.price ?? -1) < 0) throw new Error('Odabrani obavezni stupci više nisu dostupni.')
 
   const rows = sheet.rows.slice(headerRowIndex + 1, headerRowIndex + 1 + EXCEL_MAX_ROWS)
-  const items = rows.flatMap((row) => {
+  const warnings: ParseWarning[] = []
+  const items = rows.flatMap((row, index) => {
     const value = (field: ExcelField) => {
-      const index = indexes[field]
-      return index == null || index < 0 ? '' : row[index]
+      const column = indexes[field]
+      return column == null || column < 0 ? '' : row[column]
     }
     const name = clean(value('name'))
     const price = normalizeNumber(value('price'))
+    const absoluteRow = headerRowIndex + index + 2
     if (!name && !row.some((cell) => clean(cell))) return []
-    if (!name || price == null) return []
+    if (!name || price == null) {
+      warnings.push({
+        row: absoluteRow,
+        field: !name ? 'name' : 'price',
+        message: !name ? 'nedostaje naziv.' : 'cijena nije broj.',
+      })
+      return []
+    }
     const rawType = clean(value('type'))
     const salePrice = normalizeNumber(value('salePrice'))
     const specialSaleApplied = booleanValue(value('specialSaleApplied'))
@@ -127,6 +137,7 @@ export function excelRowsToPriceList(
     }]
   })
   if (!items.length) throw new Error('Nakon mapiranja nije pronađena nijedna stavka s nazivom i cijenom.')
-  return { tenant, source: 'nepar', currency: 'EUR', updatedAt: new Date().toISOString(), items }
+  const priceList: NormalizedPriceList = { tenant, source: 'nepar', currency: 'EUR', updatedAt: new Date().toISOString(), items }
+  return { priceList, issues: importIssuesFromParseWarnings(warnings, 'xlsx') }
 }
 

@@ -3,7 +3,9 @@ export type EntitlementPlan = 'validator' | 'publisher_self_service' | 'managed'
 export type EntitlementStatus = 'active' | 'inactive' | 'expired'
 export type DraftStatus = 'uploaded' | 'invalid' | 'manual_review' | 'ready_to_publish' | 'published'
 export type ValidationSeverity = 'error' | 'warning' | 'manual_review'
-export type ValidationField = 'name' | 'price' | 'type' | 'anchorPrice' | 'specialSaleApplied' | 'specialSaleName'
+export type ValidationField = 'name' | 'price' | 'type' | 'anchorPrice' | 'specialSaleApplied' | 'specialSaleName' | 'import'
+export type ValidationIssueCode = 'IMPORT_ROW_SKIPPED'
+export type ValidationIssueSource = 'csv' | 'xlsx' | 'xml'
 
 export type NormalizedPriceItem = {
   externalId?: string
@@ -28,7 +30,7 @@ export type NormalizedPriceList = {
   items: NormalizedPriceItem[]
 }
 
-export type ParseWarning = { row: number; message: string }
+export type ParseWarning = { row: number; message: string; field?: ValidationField }
 export type ParseResult = { priceList: NormalizedPriceList; warnings: ParseWarning[] }
 
 export type ValidationIssue = {
@@ -37,6 +39,8 @@ export type ValidationIssue = {
   field: ValidationField
   severity: ValidationSeverity
   message: string
+  code?: ValidationIssueCode
+  source?: ValidationIssueSource
 }
 
 export type ValidationResult = {

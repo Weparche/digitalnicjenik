@@ -19,6 +19,14 @@ import { renderXml } from './xml'
 import { parseMarketinoCsv } from './adapters/marketinoCsv'
 
 describe('D1 Publisher persistence', () => {
+  const runtimeEnv = () => ({
+    ...env,
+    DEMO_WRITE_RATE_LIMIT_SECRET: 'demo-rate-secret',
+    LEAD_RATE_LIMIT_SECRET: 'demo-rate-secret',
+    DEMO_WRITE_TENANT: 'nepar',
+    DEMO_PUBLIC_HOSTNAME: 'digitalnicjenik.nepar.hr',
+  })
+
   beforeEach(async () => {
     await env.DB.batch([
       env.DB.prepare('DELETE FROM sync_logs'),
@@ -31,11 +39,14 @@ describe('D1 Publisher persistence', () => {
       env.DB.prepare('DELETE FROM integrations'),
       env.DB.prepare('DELETE FROM price_lists'),
       env.DB.prepare('DELETE FROM tenants'),
+      env.DB.prepare('DELETE FROM demo_write_rate_buckets'),
+      env.DB.prepare('DELETE FROM checker_rate_buckets'),
     ])
   })
 
   it('imports a draft, completes it, publishes immutable versions and serves one current payload', async () => {
-    const context = { params: { slug: 'nepar' }, env }
+    const writeEnv = runtimeEnv()
+    const context = { params: { slug: 'nepar' }, env: writeEnv }
     const anonymousValidation = await validateAnonymous({ request: new Request('https://validator.test/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: fixture }) }) })
     expect(anonymousValidation.status).toBe(200)
     expect((await anonymousValidation.json() as { validation: { status: string } }).validation.status).toBe('manual_review')
@@ -43,7 +54,7 @@ describe('D1 Publisher persistence', () => {
     expect(xmlValidation.status).toBe(200)
     expect((await xmlValidation.json() as { priceList: NormalizedPriceList }).priceList.items[0]).toMatchObject({ name: 'Administracija sadržaja', price: 40 })
     expect((await env.DB.prepare('SELECT COUNT(*) AS count FROM price_publications').first<{ count: number }>())?.count).toBe(0)
-    const importedResponse = await importTenant({ request: new Request('https://demo.test/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: fixture, name: 'NEPAR', sourceFilename: 'marketino-artikli.csv' }) }), ...context })
+    const importedResponse = await importTenant({ request: new Request('https://demo.test/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': '198.51.100.20' }, body: JSON.stringify({ csv: fixture, name: 'NEPAR', sourceFilename: 'marketino-artikli.csv' }) }), ...context })
     const imported = await importedResponse.json() as { draft: { id: string; status: string; normalizedPayload: NormalizedPriceList }; validation: { status: string; issues: Array<{ field: string }> } }
     expect(importedResponse.status).toBe(200)
     expect(imported.draft.status).toBe('manual_review')
@@ -52,9 +63,12 @@ describe('D1 Publisher persistence', () => {
     const completed = { ...imported.draft.normalizedPayload, items: imported.draft.normalizedPayload.items.map((item) => ({ ...item, anchorPrice: item.price, specialSaleApplied: false, isNewSinceReferenceDate: false })) }
     expect(validatePriceList(completed).status).toBe('ready_to_publish')
     const crossTenantPayload = { ...completed, tenant: { ...completed.tenant, id: 'other-tenant', slug: 'other-tenant' } }
-    const crossTenantPatch = await patchDraft({ request: new Request('https://demo.test/draft', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: crossTenantPayload }) }), params: { slug: 'nepar', id: imported.draft.id }, env })
-    expect(crossTenantPatch.status).toBe(422)
-    const patchedResponse = await patchDraft({ request: new Request('https://demo.test/api/tenants/nepar/draft/' + imported.draft.id, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: completed }) }), params: { slug: 'nepar', id: imported.draft.id }, env })
+    const crossTenantPatch = await patchDraft({ request: new Request('https://demo.test/draft', { method: 'PATCH', headers: { 'content-type': 'application/json', 'cf-connecting-ip': '198.51.100.20' }, body: JSON.stringify({ priceList: crossTenantPayload }) }), params: { slug: 'nepar', id: imported.draft.id }, env: writeEnv })
+    expect(crossTenantPatch.status).toBe(200)
+    const crossCanonical = await crossTenantPatch.json() as { draft: { normalizedPayload: NormalizedPriceList } }
+    expect(crossCanonical.draft.normalizedPayload.tenant.slug).toBe('nepar')
+    expect(crossCanonical.draft.normalizedPayload.tenant.id).toBe('nepar')
+    const patchedResponse = await patchDraft({ request: new Request('https://demo.test/api/tenants/nepar/draft/' + imported.draft.id, { method: 'PATCH', headers: { 'content-type': 'application/json', 'cf-connecting-ip': '198.51.100.20' }, body: JSON.stringify({ priceList: completed }) }), params: { slug: 'nepar', id: imported.draft.id }, env: writeEnv })
     const patched = await patchedResponse.json() as { validation: { status: string }; draft: { status: string } }
     expect(patched.validation.status).toBe('ready_to_publish')
     expect(patched.draft.status).toBe('ready_to_publish')
@@ -74,7 +88,7 @@ describe('D1 Publisher persistence', () => {
     const duplicateImport = await importTenant({ request: new Request('https://demo.test/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: fixture, name: 'NEPAR' }) }), ...context })
     const duplicate = await duplicateImport.json() as { draft: { id: string; normalizedPayload: NormalizedPriceList } }
     const duplicateList = { ...duplicate.draft.normalizedPayload, items: duplicate.draft.normalizedPayload.items.map((item) => ({ ...item, anchorPrice: item.price, specialSaleApplied: false, isNewSinceReferenceDate: false })) }
-    await patchDraft({ request: new Request('https://demo.test/draft', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: duplicateList }) }), params: { slug: 'nepar', id: duplicate.draft.id }, env })
+    await patchDraft({ request: new Request('https://demo.test/draft', { method: 'PATCH', headers: { 'content-type': 'application/json', 'cf-connecting-ip': '198.51.100.20' }, body: JSON.stringify({ priceList: duplicateList }) }), params: { slug: 'nepar', id: duplicate.draft.id }, env: writeEnv })
     const unchangedResponse = await (await import('../../functions/api/tenants/[slug]/publish')).onRequestPost({ request: new Request('https://demo.test/publish', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ draftId: duplicate.draft.id }) }), ...context })
     const unchanged = await unchangedResponse.json() as { changed: boolean; message: string }
     expect(unchanged.changed).toBe(false)

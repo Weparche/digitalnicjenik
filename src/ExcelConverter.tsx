@@ -9,7 +9,7 @@ import {
   type ExcelMapping,
   type ExcelWorkbook,
 } from './excel'
-import type { NormalizedPriceList } from './price-engine'
+import type { NormalizedPriceList, ValidationIssue } from './price-engine'
 
 const fieldLabels: Array<{ field: ExcelField; label: string; required?: boolean }> = [
   { field: 'name', label: 'Naziv', required: true },
@@ -25,7 +25,7 @@ const fieldLabels: Array<{ field: ExcelField; label: string; required?: boolean 
   { field: 'isNewSinceReferenceDate', label: 'Nova usluga' },
 ]
 
-export function ExcelConverter({ onConverted }: { onConverted: (list: NormalizedPriceList, sourceFile: File) => void }) {
+export function ExcelConverter({ onConverted }: { onConverted: (list: NormalizedPriceList, sourceFile: File, importIssues?: ValidationIssue[]) => void }) {
   const [sourceFile, setSourceFile] = useState<File | null>(null)
   const [workbook, setWorkbook] = useState<ExcelWorkbook | null>(null)
   const [sheetIndex, setSheetIndex] = useState(0)
@@ -88,7 +88,8 @@ export function ExcelConverter({ onConverted }: { onConverted: (list: Normalized
     if (!sheet || !sourceFile) return
     setError('')
     try {
-      onConverted(excelRowsToPriceList(sheet, headerRow, mapping), sourceFile)
+      const converted = excelRowsToPriceList(sheet, headerRow, mapping)
+      onConverted(converted.priceList, sourceFile, converted.issues)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Excel nije moguće pretvoriti.')
     }

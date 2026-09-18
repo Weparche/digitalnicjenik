@@ -55,7 +55,7 @@ function startsWith(bytes: Uint8Array, signature: number[]) {
 
 function validText(bytes: Uint8Array, extension: 'csv' | 'xml') {
   if (bytes.includes(0)) return false
-  const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes.slice(0, 64_000)).replace(/^\uFEFF/, '').trim()
+  const text = new TextDecoder('utf-8').decode(bytes.slice(0, 64_000)).replace(/^\uFEFF/, '').trim()
   if (!text) return false
   if (extension === 'xml') return /^<\?xml\b|^<[A-Za-z_][\w:.-]*(?:\s|>|\/)/.test(text) && !/^<!doctype\s+html|^<html\b/i.test(text)
   const lines = text.split(/\r?\n/).filter(Boolean)
