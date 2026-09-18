@@ -33,6 +33,223 @@ function Logo() {
 
 function Arrow() { return <span className="arrow" aria-hidden="true">↘</span> }
 
+function missingAnchorItems(list: NormalizedPriceList) {
+  return list.items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => isServiceItem(item) && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0))
+}
+
+function summarizeValidationIssues(issues: ValidationIssue[]) {
+  const missingAnchors = issues.filter((issue) => issue.field === 'anchorPrice' && issue.message.startsWith('Nedostaje sidrena cijena'))
+  const other = issues.filter((issue) => !(issue.field === 'anchorPrice' && issue.message.startsWith('Nedostaje sidrena cijena')))
+  return { missingAnchorCount: missingAnchors.length, otherIssues: other }
+}
+
+function ValidationResultPanel({
+  list,
+  validation,
+  sourceFilename,
+  published,
+  busy,
+  message,
+  publication,
+  onUpdateItem,
+  onConfirmAnchorsFromRetail,
+  onConfirmNoSpecialSale,
+  onSaveDraft,
+  onPublish,
+  onLead,
+}: {
+  list: NormalizedPriceList
+  validation: { blockingCount: number; warningCount: number; issues: ValidationIssue[] }
+  sourceFilename: string
+  published: boolean
+  busy: boolean
+  message: string
+  publication: PricePublication | null
+  onUpdateItem: (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => void
+  onConfirmAnchorsFromRetail: () => void
+  onConfirmNoSpecialSale: () => void
+  onSaveDraft: () => void
+  onPublish: () => void
+  onLead?: (intent: LeadIntent) => void
+}) {
+  const { missingAnchorCount, otherIssues } = summarizeValidationIssues(validation.issues)
+  const needsAnchors = missingAnchorCount > 0
+  const incomplete = validation.blockingCount > 0
+  const tableRef = useRef<HTMLDivElement>(null)
+
+  function focusAnchorTable() {
+    tableRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+    const firstMissing = tableRef.current?.querySelector<HTMLInputElement>('input.app-table-input.is-required')
+    firstMissing?.focus()
+  }
+
+  return (
+    <section className="validation-app-panel">
+      <div className="validation-app-head">
+        <div>
+          <span className="app-label">3 / REZULTAT</span>
+          <h2>{published ? 'Cjenik je objavljen' : incomplete ? 'Još nekoliko stvari treba dopuniti' : 'Cjenik je spreman za objavu'}</h2>
+          <p>{list.items.length} stavki učitano · {sourceFilename || 'učitana datoteka'}</p>
+        </div>
+        <div className={'validation-app-count ' + (incomplete ? 'needs-attention' : 'ready')}>
+          <strong>{incomplete ? validation.blockingCount : 0}</strong>
+          <span>{incomplete ? 'za dopunu' : 'bez blokera'}</span>
+        </div>
+      </div>
+
+      <div className="validation-app-summary">
+        <strong>{incomplete ? 'Pronašli smo podatke koje treba dopuniti.' : 'Svi obavezni podaci su popunjeni.'}</strong>
+        {validation.warningCount > 0 && <span>{validation.warningCount} upozorenja</span>}
+
+        {needsAnchors && (
+          <div className="validation-group-callout" role="status">
+            <p><strong>{missingAnchorCount} {missingAnchorCount === 1 ? 'stavka nema' : 'stavki nema'} sidrenu cijenu</strong></p>
+            <p>Unesite cijenu koja je za pojedinu uslugu vrijedila 10. rujna 2026., bez posebnog oblika prodaje.</p>
+            <button className="app-button app-button-light" type="button" onClick={focusAnchorTable}>Dopuni sidrene cijene</button>
+          </div>
+        )}
+
+        {otherIssues.length > 0 && (
+          <ul>
+            {otherIssues.slice(0, 8).map((issue) => (
+              <li key={issue.row + '-' + issue.field + '-' + issue.itemKey}>
+                <b>{issue.severity === 'manual_review' ? 'RUČNI PREGLED' : issue.severity === 'error' ? 'GREŠKA' : 'UPOZORENJE'}</b>
+                {issue.message}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {validation.issues.some((issue) => issue.field === 'specialSaleApplied') && (
+          <button className="app-link-button" type="button" onClick={onConfirmNoSpecialSale}>Grupno potvrdi: nije poseban oblik prodaje →</button>
+        )}
+      </div>
+
+      {needsAnchors && (
+        <div className="anchor-bulk-panel" role="region" aria-label="Sidrene cijene">
+          <p className="anchor-bulk-question"><strong>Jesu li ove cijene bile iste 10. rujna 2026.?</strong></p>
+          <p className="anchor-bulk-warning">Potvrdite samo ako su navedene redovne cijene, bez akcija i popusta, vrijedile 10. rujna 2026.</p>
+          <div className="anchor-bulk-actions">
+            <button className="app-button app-button-primary" type="button" onClick={onConfirmAnchorsFromRetail}>
+              Da — postavi trenutne cijene kao sidrene
+            </button>
+            <button className="app-button app-button-light" type="button" onClick={focusAnchorTable}>
+              Ne — unijet ću pojedinačno
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="validator-table-wrap" ref={tableRef}>
+        <table>
+          <thead>
+            <tr>
+              <th>Naziv</th>
+              <th>Vrsta</th>
+              <th>Maloprodajna</th>
+              <th>Sidrena cijena</th>
+              <th>Posebna prodaja</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.items.map((item, index) => {
+              const service = isServiceItem(item)
+              const anchorMissing = service && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0)
+              const specialApplied = item.specialSaleApplied === true
+              return (
+                <tr key={item.externalId || item.name} className={anchorMissing ? 'row-needs-anchor' : undefined}>
+                  <td>
+                    <strong>{item.name}</strong>
+                    <small>{item.category || 'Bez kategorije'}</small>
+                  </td>
+                  <td>{item.type || 'Nije navedena'}</td>
+                  <td>{money(item.price)}</td>
+                  <td>
+                    <label className={'anchor-field' + (anchorMissing ? ' is-required' : '')}>
+                      <span className="sr-only">Sidrena cijena za {item.name}</span>
+                      <input
+                        className={'app-table-input' + (anchorMissing ? ' is-required' : '')}
+                        aria-label={'Sidrena cijena za ' + item.name}
+                        aria-invalid={anchorMissing}
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder={service ? 'obavezno' : '—'}
+                        value={item.anchorPrice ?? ''}
+                        onChange={(event) => onUpdateItem(index, { anchorPrice: event.target.value ? Number(event.target.value) : null })}
+                      />
+                      <span aria-hidden="true">€</span>
+                    </label>
+                  </td>
+                  <td>
+                    <div className="app-sale-fields">
+                      <label className="special-sale-toggle">
+                        <span>Posebna prodaja</span>
+                        <select
+                          aria-label={'Posebna prodaja za ' + item.name}
+                          value={specialApplied ? 'da' : item.specialSaleApplied === false ? 'ne' : ''}
+                          onChange={(event) => {
+                            const value = event.target.value
+                            if (value === 'da') onUpdateItem(index, { specialSaleApplied: true })
+                            else if (value === 'ne') onUpdateItem(index, { specialSaleApplied: false, specialSaleName: null })
+                            else onUpdateItem(index, { specialSaleApplied: null })
+                          }}
+                        >
+                          {item.specialSaleApplied == null && <option value="">Odaberite</option>}
+                          <option value="ne">Ne</option>
+                          <option value="da">Da</option>
+                        </select>
+                      </label>
+                      {specialApplied && (
+                        <input
+                          className="app-table-input"
+                          aria-label={'Naziv posebne prodaje za ' + item.name}
+                          value={item.specialSaleName ?? ''}
+                          placeholder="Naziv prodaje"
+                          onChange={(event) => onUpdateItem(index, { specialSaleName: event.target.value })}
+                        />
+                      )}
+                      {item.salePrice != null && (
+                        <small className="sale-price-note">Akcijska: {money(item.salePrice)}</small>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="validator-actions">
+        <button className="app-button app-button-light" type="button" onClick={onSaveDraft} disabled={busy}>Spremi dopune</button>
+        <button className="app-button app-button-primary" type="button" onClick={onPublish} disabled={incomplete || busy || published}>Objavi novi cjenik</button>
+        <div className="output-actions">
+          <button type="button" onClick={() => download(renderCsv(list), incomplete ? 'cjenik-radni.csv' : 'cjenik.csv', 'text/csv;charset=utf-8')}>
+            {incomplete ? 'Preuzmi radni CSV' : 'Preuzmi CSV'}
+          </button>
+          <button type="button" onClick={() => download(renderXml(list), incomplete ? 'cjenik-radni.xml' : 'cjenik.xml', 'application/xml')}>
+            {incomplete ? 'Preuzmi radni XML' : 'Preuzmi XML'}
+          </button>
+        </div>
+      </div>
+      {message && <p className="app-success" role="status">{message}{publication && ' · verzija ' + publication.sequence}</p>}
+      <div className={'consultation-card ' + (incomplete ? '' : 'ready-card')}>
+        <div>
+          <span className="app-label">{incomplete ? 'TREBATE POMOĆ?' : 'SLJEDEĆI KORAK'}</span>
+          <h3>{incomplete ? 'Pošaljite nam cjenik na pregled.' : 'Cjenik je spreman za tehničko postavljanje.'}</h3>
+          <p>{incomplete ? 'Objasnit ćemo što nedostaje i pomoći s dopunama.' : 'NEPAR ga može povezati s vašim webom i preuzeti objavu.'}</p>
+        </div>
+        <button className="app-button app-button-primary" type="button" onClick={() => onLead?.(incomplete ? 'consultation' : 'implementation')}>
+          {incomplete ? 'Zatražite konzultaciju' : 'Postavljanje od 129 €'}
+        </button>
+      </div>
+    </section>
+  )
+}
+
 function PublisherFlow() {
   return <section className="publisher-flow" aria-label="NEPAR Publisher workflow">
     {['UČITAJ', 'PROVJERI', 'DOPUNI', 'OBJAVI', 'AKTUALNO + ARHIVA'].map((step, index) => <div className="publisher-step" key={step}><span>0{index + 1}</span><strong>{step}</strong>{index < 4 && <Arrow />}</div>)}
@@ -290,7 +507,7 @@ function LandingVariant({ variant }: { variant: LandingVariant }) {
   </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / varijanta {variant}</span><a href="/">Natrag na početnu ↗</a></footer></div>
 }
 
-function ValidatorApp({ onContextChange, onLead }: { onContextChange?: (context: LeadContext) => void; onLead?: (intent: LeadIntent) => void }) {
+function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContextChange?: (context: LeadContext) => void; onLead?: (intent: LeadIntent) => void; embedded?: boolean }) {
   const [list, setList] = useState<NormalizedPriceList | null>(null)
   const [draftId, setDraftId] = useState('')
   const [issues, setIssues] = useState<ValidationIssue[]>([])
@@ -392,12 +609,52 @@ function ValidatorApp({ onContextChange, onLead }: { onContextChange?: (context:
     setList({ ...list, items: list.items.map((item) => item.salePrice != null ? { ...item, specialSaleApplied: false, specialSaleName: null } : item) })
   }
 
-  return <div className="validator-app-shell"><header className="app-header"><Logo /><a href="#posaljite-cjenik" onClick={(event) => { if (onLead) { event.preventDefault(); onLead('implementation') } }}>Trebate pomoć? <strong>NEPAR postavljanje →</strong></a></header><main className="validator-app">
-    <section className="validator-app-intro"><span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span><h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1><p>Učitajte CSV iz programa u kojem vodite cijene ili XML koji već imate. Odmah ćete vidjeti koje podatke treba dopuniti prije objave.</p></section>
+  function confirmAnchorsFromRetail() {
+    if (!list) return
+    const pending = missingAnchorItems(list)
+    if (!pending.length) return
+    if (!window.confirm('Potvrdite da su navedene redovne cijene, bez akcija i popusta, vrijedile 10. rujna 2026. Sidrena cijena bit će postavljena na trenutnu maloprodajnu cijenu za ' + pending.length + ' usluga.')) return
+    setList({
+      ...list,
+      items: list.items.map((item) => {
+        const needsAnchor = isServiceItem(item) && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0)
+        return needsAnchor ? { ...item, anchorPrice: item.price } : item
+      }),
+    })
+    setMessage('Sidrene cijene su postavljene prema potvrđenim maloprodajnim cijenama. Pregledajte tablicu prije objave.')
+  }
+
+  const intro = <section className="validator-app-intro">{embedded ? null : <span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span>}{embedded ? <h2>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h2> : <h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1>}{embedded ? null : <p>Učitajte CSV iz programa u kojem vodite cijene ili XML koji već imate. Odmah ćete vidjeti koje podatke treba dopuniti prije objave.</p>}</section>
+  const tool = <>
     <section className="validator-tool" aria-label="Validator cjenika"><div className="upload-card"><div className="upload-card-heading"><div><span className="app-label">1 / UČITAJTE</span><h2>CSV ili XML cjenik</h2><p>Za besplatni pregled nije potrebna registracija.</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">2 / ŠTO PROVJERAVAMO</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena za usluge</li><li><span>03</span>Potvrda posebnog oblika prodaje kod akcijske cijene</li><li><span>04</span>Nova usluga ide na ručni pregled</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
-    {list && <section className="validation-app-panel"><div className="validation-app-head"><div><span className="app-label">3 / REZULTAT</span><h2>{published ? 'Cjenik je objavljen' : validation.blockingCount ? 'Još nekoliko stvari treba dopuniti' : 'Cjenik je spreman za objavu'}</h2><p>{list.items.length} stavki učitano · {sourceFilename || 'učitana datoteka'}</p></div><div className={'validation-app-count ' + (validation.blockingCount ? 'needs-attention' : 'ready')}><strong>{validation.blockingCount || 0}</strong><span>{validation.blockingCount ? 'za dopunu' : 'bez blokera'}</span></div></div><div className="validation-app-summary"><strong>{validation.blockingCount ? 'Pronašli smo podatke koje treba dopuniti.' : 'Svi obavezni podaci su popunjeni.'}</strong>{validation.warningCount > 0 && <span>{validation.warningCount} upozorenja</span>}{validation.issues.length > 0 && <ul>{validation.issues.slice(0, 8).map((issue) => <li key={issue.row + '-' + issue.field + '-' + issue.itemKey}><b>{issue.severity === 'manual_review' ? 'RUČNI PREGLED' : issue.severity === 'error' ? 'GREŠKA' : 'UPOZORENJE'}</b>{issue.message}</li>)}</ul>}{validation.issues.some((issue) => issue.field === 'specialSaleApplied') && <button className="app-link-button" type="button" onClick={confirmNoSpecialSale}>Grupno potvrdi: nije poseban oblik prodaje →</button>}</div><div className="validator-table-wrap"><table><thead><tr><th>Naziv</th><th>Vrsta</th><th>Maloprodajna</th><th>Sidrena cijena</th><th>Posebna prodaja</th></tr></thead><tbody>{list.items.map((item, index) => <tr key={item.externalId || item.name}><td><strong>{item.name}</strong><small>{item.category || 'Bez kategorije'}</small></td><td>{item.type || 'Nije navedena'}</td><td>{money(item.price)}</td><td><input className="app-table-input" aria-label={'Sidrena cijena za ' + item.name} type="number" min="0.01" step="0.01" value={item.anchorPrice ?? ''} onChange={(event) => updateItem(index, { anchorPrice: event.target.value ? Number(event.target.value) : null })} /></td><td>{item.salePrice != null ? <div className="app-sale-fields"><label><input type="checkbox" checked={item.specialSaleApplied === true} onChange={(event) => updateItem(index, { specialSaleApplied: event.target.checked, specialSaleName: event.target.checked ? item.specialSaleName : null })} /> potvrđeno</label>{item.specialSaleApplied === true && <input className="app-table-input" aria-label={'Naziv posebne prodaje za ' + item.name} value={item.specialSaleName ?? ''} placeholder="Naziv prodaje" onChange={(event) => updateItem(index, { specialSaleName: event.target.value })} />}</div> : <span>—</span>}</td></tr>)}</tbody></table></div><div className="validator-actions"><button className="app-button app-button-light" type="button" onClick={saveDraft} disabled={busy}>Spremi dopune</button><button className="app-button app-button-primary" type="button" onClick={publish} disabled={Boolean(validation.blockingCount) || busy || published}>Objavi novi cjenik</button><div className="output-actions"><button type="button" onClick={() => download(renderCsv(list), 'cjenik.csv', 'text/csv;charset=utf-8')}>Preuzmi CSV</button><button type="button" onClick={() => download(renderXml(list), 'cjenik.xml', 'application/xml')}>Preuzmi XML</button></div></div>{message && <p className="app-success" role="status">{message}{publication && ' · verzija ' + publication.sequence}</p>}<div className={'consultation-card ' + (validation.blockingCount ? '' : 'ready-card')}><div><span className="app-label">{validation.blockingCount ? 'TREBATE POMOĆ?' : 'SLJEDEĆI KORAK'}</span><h3>{validation.blockingCount ? 'Pošaljite nam cjenik na pregled.' : 'Cjenik je spreman za tehničko postavljanje.'}</h3><p>{validation.blockingCount ? 'Objasnit ćemo što nedostaje i pomoći s dopunama.' : 'NEPAR ga može povezati s vašim webom i preuzeti objavu.'}</p></div><button className="app-button app-button-primary" type="button" onClick={() => onLead?.(validation.blockingCount ? 'consultation' : 'implementation')}>{validation.blockingCount ? 'Zatražite konzultaciju' : 'Postavljanje od 129 €'}</button></div></section>}
+    {list && (
+      <ValidationResultPanel
+        list={list}
+        validation={validation}
+        sourceFilename={sourceFilename}
+        published={published}
+        busy={busy}
+        message={message}
+        publication={publication}
+        onUpdateItem={updateItem}
+        onConfirmAnchorsFromRetail={confirmAnchorsFromRetail}
+        onConfirmNoSpecialSale={confirmNoSpecialSale}
+        onSaveDraft={() => void saveDraft()}
+        onPublish={() => void publish()}
+        onLead={onLead}
+      />
+    )}
     <ExcelConverter onConverted={applyNormalizedList} />
     <p className="validator-footnote">Želite prvo vidjeti primjer? <a href="/c/nepar">Otvori demo podatke →</a></p>
+  </>
+
+  if (embedded) {
+    return <div className="validator-app validator-app-embedded">{intro}{tool}</div>
+  }
+
+  return <div className="validator-app-shell"><header className="app-header"><Logo /><a href="#posaljite-cjenik" onClick={(event) => { if (onLead) { event.preventDefault(); onLead('implementation') } }}>Trebate pomoć? <strong>NEPAR postavljanje →</strong></a></header><main className="validator-app">
+    {intro}
+    {tool}
   </main></div>
 }
 
@@ -517,7 +774,7 @@ function PremiumEntry() {
     <div id="csv-validator" ref={validatorRef} className="premium-validator-anchor" tabIndex={-1} aria-labelledby="csv-validator-title">
       {foundUrls.length > 0 && <div className="premium-handoff"><span className="app-label">PRONAĐENO NA VAŠEM WEBU</span><div>{foundUrls.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer">{url}</a>)}</div><p>Datoteka nije automatski preuzeta. Učitajte je ovdje ako želite provjeriti njezin sadržaj i pravne podatke.</p></div>}
       <div className="premium-validator-heading"><span className="app-label">02 / PROVJERA DATOTEKE</span><h2 id="csv-validator-title">Već imate cjenik? Provjerite ga ovdje.</h2><p>Učitajte CSV ili XML. Ako imate Excel, pretvorite ga u istom alatu.</p></div>
-      <ValidatorApp onContextChange={setValidatorContext} onLead={focusLead} />
+      <ValidatorApp embedded onContextChange={setValidatorContext} onLead={focusLead} />
     </div>
     <LeadForm intent={leadIntent} context={leadContext} onIntentChange={setLeadIntent} />
     <EducationSection onLead={focusLead} />

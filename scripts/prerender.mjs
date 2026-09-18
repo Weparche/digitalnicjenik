@@ -16,9 +16,11 @@ const WEBSITE_ID = `${SITE_URL}/#website`
 const PAGE_ID = `${SITE_URL}/#page`
 const APP_ID = `${SITE_URL}/#app`
 const PRICE_ENGINE_ID = `${NEPAR_URL}/digitalni-cjenik#price-engine`
+const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
 
-const TITLE = 'Provjera digitalnog cjenika, XML/CSV i implementacija | NEPAR Publisher'
-const DESCRIPTION = 'Provjerite web i CSV/XML cjenik, pretvorite Excel ili zatražite potpunu NEPAR implementaciju od 129 €.'
+const TITLE = 'NEPAR Digital Price Checker — je li vaš web spreman za 1.10.2026.?'
+const DESCRIPTION = 'Provjerite postoji li na vašem webu javno dostupan CSV/XML cjenik, validirajte njegov sadržaj i pripremite implementaciju.'
+const TWITTER_DESCRIPTION = 'Provjera javnog CSV/XML cjenika, validator i implementacija.'
 
 function escapeHtml(value) {
   return String(value)
@@ -47,7 +49,7 @@ function buildSchema(productFaq) {
       {
         '@type': 'WebSite',
         '@id': WEBSITE_ID,
-        name: 'NEPAR Publisher — Digitalni cjenik',
+        name: 'NEPAR Digital Price Checker',
         url: `${SITE_URL}/`,
         inLanguage: 'hr',
         publisher: { '@id': ORGANIZATION_ID },
@@ -70,8 +72,8 @@ function buildSchema(productFaq) {
       {
         '@type': 'SoftwareApplication',
         '@id': APP_ID,
-        name: 'NEPAR Publisher — provjera digitalnog cjenika',
-        description: 'Besplatni alat koji provjerava ima li web stranica javno dostupan CSV ili XML digitalni cjenik, validira učitanu datoteku i pretvara Excel cjenik u CSV/XML.',
+        name: 'NEPAR Digital Price Checker',
+        description: DESCRIPTION,
         url: `${SITE_URL}/`,
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
@@ -100,6 +102,24 @@ function buildSchema(productFaq) {
   }
 }
 
+/** Publication routes must not inherit homepage canonical / share identity. */
+function buildAppShell(html) {
+  let shell = html
+  shell = shell.replace(/<link\s+rel="canonical"[^>]*>\s*/gi, '')
+  shell = shell.replace(/<meta\s+property="og:[^"]*"\s+content="[^"]*"\s*\/>\s*/gi, '')
+  shell = shell.replace(/<meta\s+name="twitter:[^"]*"\s+content="[^"]*"\s*\/>\s*/gi, '')
+  if (!/name="robots"/i.test(shell)) {
+    shell = shell.replace('<head>', '<head>\n    <meta name="robots" content="noindex,nofollow" />')
+  } else {
+    shell = shell.replace(
+      /<meta\s+name="robots"\s+content="[^"]*"\s*\/>/i,
+      '<meta name="robots" content="noindex,nofollow" />',
+    )
+  }
+  shell = shell.replace(/<title>[\s\S]*?<\/title>/, '<title>NEPAR Publisher</title>')
+  return shell
+}
+
 async function main() {
   // Load TS through Vite SSR — plain Node cannot import .ts without a loader.
   const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
@@ -115,8 +135,8 @@ async function main() {
 
   // /c/:slug and /arhiva reuse this same build (via a Cloudflare Pages rewrite, see
   // public/_redirects) but render a different component tree (PublicPriceList) client-side, so
-  // they must not receive the Landing markup below — ship them the pristine, empty-root shell.
-  writeFileSync(resolve('dist/app-shell.html'), html, 'utf8')
+  // they must not receive the Landing markup or homepage OG/canonical identity.
+  writeFileSync(resolve('dist/app-shell.html'), buildAppShell(html), 'utf8')
 
   html = html.replace(/<div id="root"><\/div>/, `<div id="root" data-nepar-prerendered="true">${bodyHtml}</div>`)
   html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(TITLE)}</title>`)
@@ -132,10 +152,29 @@ async function main() {
     /<meta property="og:description" content="[^"]*" \/>/,
     `<meta property="og:description" content="${escapeHtml(DESCRIPTION)}" />`,
   )
-  if (!html.includes('twitter:card')) {
+  // Ensure share image tags stay absolute and complete (already in Vite template; keep them).
+  if (!html.includes(`property="og:image" content="${OG_IMAGE}"`)) {
     html = html.replace(
       '</head>',
-      `    <meta name="twitter:card" content="summary" />\n    <meta name="twitter:title" content="${escapeHtml(TITLE)}" />\n    <meta name="twitter:description" content="${escapeHtml(DESCRIPTION)}" />\n  </head>`,
+      `    <meta property="og:image" content="${OG_IMAGE}" />\n    <meta property="og:image:secure_url" content="${OG_IMAGE}" />\n    <meta property="og:image:type" content="image/png" />\n    <meta property="og:image:width" content="1200" />\n    <meta property="og:image:height" content="630" />\n    <meta property="og:image:alt" content="NEPAR Digital Price Checker — provjera CSV/XML cjenika" />\n  </head>`,
+    )
+  }
+  html = html.replace(
+    /<meta name="twitter:card" content="[^"]*" \/>/,
+    '<meta name="twitter:card" content="summary_large_image" />',
+  )
+  html = html.replace(
+    /<meta name="twitter:title" content="[^"]*" \/>/,
+    `<meta name="twitter:title" content="${escapeHtml(TITLE)}" />`,
+  )
+  html = html.replace(
+    /<meta name="twitter:description" content="[^"]*" \/>/,
+    `<meta name="twitter:description" content="${escapeHtml(TWITTER_DESCRIPTION)}" />`,
+  )
+  if (!html.includes('twitter:image')) {
+    html = html.replace(
+      '</head>',
+      `    <meta name="twitter:image" content="${OG_IMAGE}" />\n  </head>`,
     )
   }
   if (!html.includes('data-nepar-schema')) {

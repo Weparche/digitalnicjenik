@@ -13,6 +13,7 @@
     "typecheck": "npm run typecheck:app && npm run typecheck:functions",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "generate:share-assets": "node scripts/generate-share-assets.mjs",
     "ci": "npm run typecheck && npm test && npm run build && npm run test:e2e"
   },
   "dependencies": {

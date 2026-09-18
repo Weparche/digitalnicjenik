@@ -26,6 +26,8 @@ function expect(relativePath, pattern, message) {
 
 // --- index.html ("/") ---
 const indexHtml = read('index.html')
+const h1Count = (indexHtml.match(/<h1\b/gi) || []).length
+if (h1Count !== 1) failures.push(`index.html: expected exactly one <h1>, found ${h1Count}`)
 expect('index.html', /<h1[^>]*>/, 'prerendered H1 is missing')
 expect('index.html', 'Provjerite što imate', 'prerendered hero copy is missing')
 expect('index.html', '<link rel="canonical" href="https://digitalnicjenik.nepar.hr/" />', 'self-canonical is missing')
@@ -34,10 +36,24 @@ expect('index.html', /<meta name="description" content="[^"]{20,}" \/>/, 'meta d
 expect('index.html', 'application/ld+json', 'JSON-LD is missing')
 expect('index.html', 'https://digitalnicjenik.nepar.hr/#app', 'SoftwareApplication @id is missing from JSON-LD')
 expect('index.html', 'https://nepar.hr/digitalni-cjenik#price-engine', 'reused NEPAR Price Engine Service @id is missing')
-expect('index.html', 'nepar.hr/digitalni-cjenik/sidrena-cijena', 'inlink to the sidrena-cijena guide is missing');
-expect('index.html', 'nepar.hr/digitalni-cjenik/xml-csv', 'inlink to the xml-csv guide is missing');
-expect('index.html', 'nepar.hr/digitalni-cjenik/automatizacija', 'inlink to the automatizacija guide is missing');
-if (indexHtml.includes('sameAs')) failures.push('index.html: JSON-LD must not use sameAs between the product and NEPAR Organization');
+expect('index.html', 'nepar.hr/digitalni-cjenik/sidrena-cijena', 'inlink to the sidrena-cijena guide is missing')
+expect('index.html', 'nepar.hr/digitalni-cjenik/xml-csv', 'inlink to the xml-csv guide is missing')
+expect('index.html', 'nepar.hr/digitalni-cjenik/automatizacija', 'inlink to the automatizacija guide is missing')
+expect('index.html', '<meta property="og:url" content="https://digitalnicjenik.nepar.hr/" />', 'og:url is missing')
+expect('index.html', '<meta property="og:locale" content="hr_HR" />', 'og:locale is missing')
+expect('index.html', '<meta property="og:image" content="https://digitalnicjenik.nepar.hr/og/digitalni-cjenik-og.png" />', 'absolute og:image is missing')
+expect('index.html', '<meta property="og:image:width" content="1200" />', 'og:image:width must be 1200')
+expect('index.html', '<meta property="og:image:height" content="630" />', 'og:image:height must be 630')
+expect('index.html', '<meta name="twitter:card" content="summary_large_image" />', 'twitter:card must be summary_large_image')
+expect('index.html', 'rel="icon" href="/favicon.svg"', 'favicon.svg reference is missing')
+expect('index.html', 'rel="apple-touch-icon" href="/apple-touch-icon.png"', 'apple-touch-icon reference is missing')
+if (indexHtml.includes('sameAs')) failures.push('index.html: JSON-LD must not use sameAs between the product and NEPAR Organization')
+if (!existsSync(resolve(distDir, 'og/digitalni-cjenik-og.png'))) {
+  failures.push('Missing dist/og/digitalni-cjenik-og.png')
+}
+if (!existsSync(resolve(distDir, 'favicon.svg'))) failures.push('Missing dist/favicon.svg')
+if (!existsSync(resolve(distDir, 'favicon-32x32.png'))) failures.push('Missing dist/favicon-32x32.png')
+if (!existsSync(resolve(distDir, 'apple-touch-icon.png'))) failures.push('Missing dist/apple-touch-icon.png')
 
 const rootMatch = indexHtml.match(/<div id="root"[^>]*>([\s\S]*)<\/div>\s*<\/body>/)
 const rootText = (rootMatch?.[1] ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -65,6 +81,9 @@ expect('404.html', '<meta name="robots" content="noindex,nofollow" />', '404 pag
 const appShell = read('app-shell.html')
 if (appShell.includes('data-nepar-prerendered')) failures.push('app-shell.html: must be the pristine shell, not the prerendered Landing markup')
 if (!/<div id="root"><\/div>/.test(appShell)) failures.push('app-shell.html: root div must be empty so client-side rendering picks the right component tree')
+expect('app-shell.html', '<meta name="robots" content="noindex,nofollow" />', 'app-shell must be noindex,nofollow')
+if (appShell.includes('rel="canonical"')) failures.push('app-shell.html: must not claim homepage canonical')
+if (appShell.includes('property="og:url"')) failures.push('app-shell.html: must not claim homepage og:url')
 
 // --- _redirects: no catch-all SPA rewrite ---
 const redirects = read('_redirects')
@@ -77,4 +96,4 @@ if (failures.length) {
   process.exit(1)
 }
 
-console.log('Verified index.html prerender, robots.txt, sitemap.xml, llms.txt, and 404 artifact.')
+console.log('Verified index.html prerender, share meta, robots.txt, sitemap.xml, llms.txt, and 404 artifact.')

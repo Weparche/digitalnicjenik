@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 1200px; height: 630px; overflow: hidden; }
+    body {
+      font-family: Manrope, system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse 900px 500px at 85% 20%, rgba(37, 99, 235, 0.14), transparent 60%),
+        radial-gradient(ellipse 700px 400px at 10% 90%, rgba(8, 145, 178, 0.12), transparent 55%),
+        #f8fafc;
+      color: #0f172a;
+    }
+    .frame {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      padding: 72px 80px;
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .brand img.mark {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: block;
+    }
+    .brand span {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #2563eb;
+    }
+    h1 {
+      max-width: 620px;
+      font-size: 58px;
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      font-weight: 800;
+      text-wrap: balance;
+      color: #0f172a;
+    }
+    h1 em {
+      font-style: normal;
+      color: #2563eb;
+    }
+    .support {
+      margin-top: 22px;
+      font-size: 22px;
+      font-weight: 600;
+      color: #334155;
+      line-height: 1.35;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.08);
+      padding: 28px 26px;
+    }
+    .card-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #2563eb;
+      margin-bottom: 14px;
+    }
+    .card h2 {
+      font-size: 26px;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      margin-bottom: 18px;
+    }
+    .field {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .field input {
+      flex: 1;
+      height: 48px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 0 14px;
+      font: inherit;
+      font-size: 14px;
+      color: #64748b;
+      background: #fff;
+    }
+    .field button {
+      height: 48px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #ecfdf5;
+      color: #15803d;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #15803d;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div>
+      <div class="brand">
+        <img class="mark" src="MARK_SRC" alt="" width="52" height="52" />
+        <span>NEPAR Digital Price Checker</span>
+      </div>
+      <h1>Je li vaš web spreman za <em>1.10.2026.?</em></h1>
+      <p class="support">Provjera CSV/XML cjenika</p>
+    </div>
+    <aside class="card" aria-hidden="true">
+      <div class="card-label">Tehnička provjera</div>
+      <h2>Strojni cjenik na webu</h2>
+      <div class="field">
+        <input value="https://vasweb.hr" readonly />
+        <button type="button">Provjeri web</button>
+      </div>
+      <div class="status"><span class="dot"></span> CSV / XML dostupan</div>
+    </aside>
+  </div>
+</body>
+</html>

@@ -10,5 +10,8 @@ export default defineConfig({
       bindings: { TEST_MIGRATIONS: await readD1Migrations(path.resolve(process.cwd(), 'migrations')) },
     },
   }))],
-  test: { setupFiles: ['./test/apply-migrations.ts'] },
+  test: {
+    setupFiles: ['./test/apply-migrations.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
+  },
 })
