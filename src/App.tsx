@@ -921,7 +921,7 @@ function PremiumReadinessChecker({ onResult, onChooseCsv, onLead }: { onResult: 
 
   const details = result?.details ?? {}
   const resultTitle = result?.status === 'green'
-    ? 'Strojni cjenik pronađen'
+    ? 'Datoteka je pronađena — to još nije potvrda usklađenosti'
     : result?.status === 'yellow'
       ? 'Cjenik postoji, ali strojna datoteka nije potvrđena'
       : result?.status === 'red'
@@ -943,10 +943,31 @@ function PremiumReadinessChecker({ onResult, onChooseCsv, onLead }: { onResult: 
     {urlError && <p id="premium-website-error" className="premium-inline-error" role="alert">{urlError}</p>}
     <div className="premium-trust-row" aria-label="Informacije o provjeri"><span>Bez registracije</span><span>Javno dostupna provjera</span><span>CSV ili XML rezultat</span></div>
     {result && <div className={'premium-checker-result ' + resultClass} role="status" aria-live="polite">
-      <div className="premium-result-heading"><span className="premium-result-mark" aria-hidden="true">{result.status === 'green' ? '✓' : result.status === 'unavailable' ? '!' : '·'}</span><div><span className="app-label">REZULTAT PROVJERE</span><h3>{resultTitle}</h3></div></div>
+      <div className="premium-result-heading"><span className="premium-result-mark" aria-hidden="true">{result.status === 'green' ? '!' : result.status === 'unavailable' ? '!' : '·'}</span><div><span className="app-label">REZULTAT PROVJERE</span><h3>{resultTitle}</h3></div></div>
       <p>{result.message}</p>
-      {result.status === 'green' && <div className="premium-found-documents"><span>CSV {details.csvUrl ? <a href={details.csvUrl} target="_blank" rel="noreferrer">{details.csvUrl}</a> : 'nije pronađen'}</span><span>XML {details.xmlUrl ? <a href={details.xmlUrl} target="_blank" rel="noreferrer">{details.xmlUrl}</a> : 'nije pronađen'}</span></div>}
-      {result.status === 'green' && <button className="premium-result-action" type="button" onClick={() => onLead('consultation')}>Pošaljite pronađeni URL na dodatnu provjeru →</button>}
+      {result.status === 'green' && (
+        <>
+          <div className="premium-found-documents">
+            <span>CSV {details.csvUrl ? <a href={details.csvUrl} target="_blank" rel="noreferrer">{details.csvUrl}</a> : 'nije pronađen'}</span>
+            <span>XML {details.xmlUrl ? <a href={details.xmlUrl} target="_blank" rel="noreferrer">{details.xmlUrl}</a> : 'nije pronađen'}</span>
+          </div>
+          <div className="premium-sufficiency-note">
+            <h4>Zašto sama datoteka možda nije dovoljna?</h4>
+            <p>Ova provjera potvrđuje samo da je CSV/XML <em>tehnički dostupan</em> na webu. Ne potvrđuje da ispunjavate Odluku o digitalnom cjeniku. Često i dalje nedostaje:</p>
+            <ul>
+              <li><strong>Arhiva</strong> — prethodne objavljene verzije moraju ostati javno dostupne najmanje 30 dana</li>
+              <li><strong>Naziv datoteke</strong> — propisani elementi (objekt, adresa, oznaka, broj pohrane, datum i vrijeme)</li>
+              <li><strong>Sadržaj</strong> — obavezna polja, sidrena/dodatna cijena, posebni oblici prodaje gdje treba</li>
+              <li><strong>Strojna vidljivost</strong> — softverski alati moraju moći dohvatiti aktualne cijene bez prijave</li>
+              <li><strong>Ažurnost</strong> — aktualni cjenik mora odgovarati stvarnim cijenama u propisanom roku</li>
+            </ul>
+            <p className="premium-sufficiency-disclaimer">Ovo nije pravni savjet — tehnička napomena što ova automatska provjera ne pokriva.</p>
+          </div>
+          <button className="app-button app-button-primary premium-result-cta" type="button" onClick={() => onLead('consultation')}>
+            Pošaljite pronađeni URL na konzultaciju →
+          </button>
+        </>
+      )}
       {result.status === 'yellow' && <button className="premium-result-action" type="button" onClick={() => onLead('consultation')}>Pošaljite postojeću stranicu — provjerit ćemo što nedostaje →</button>}
       {result.status === 'red' && <button className="premium-result-action" type="button" onClick={onChooseCsv}>Imam CSV → besplatna provjera</button>}
       {result.status === 'unavailable' && <button className="premium-result-action" type="button" onClick={() => void check()}>Pokušajte ponovno →</button>}
@@ -995,7 +1016,7 @@ function PremiumEntry() {
     <section className="premium-hero"><div className="premium-hero-content"><div className="premium-hero-copy"><span className="app-label">NEPAR PUBLISHER / TEHNIČKA PROVJERA</span><h1>Provjerite što imate. <em>Mi ćemo riješiti ostalo.</em></h1><p>Provjerite može li vaš web dohvatiti strojni cjenik ili nam odmah pošaljite ono što danas koristite.</p></div><div className="premium-hero-note"><span className="premium-note-dot" aria-hidden="true" /><span>Za WordPress, Wix, Google Sites, Webflow i stranice koje vam je izradio netko drugi.</span></div></div></section>
     <div className="premium-hero-tools"><PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} /><aside className="hero-sales-card"><h2>Plugin i implementacija <strong>od 49,90 €</strong></h2><p>Plugin 49,90 € · implementacija 49,90 € · zajedno 89,90 €. Pošaljite što imate — odgovaramo s ponudom.</p><ul><li>pregled onoga što već imate</li><li>plugin ili potpuna ugradnja na web</li><li>bez besplatnog trajnog hostinga</li></ul><button className="app-button app-button-primary" type="button" onClick={() => focusLead('implementation')}>Zatražite ponudu 89,90 €</button><button className="sales-link" type="button" onClick={() => focusLead('plugin')}>Samo plugin 49,90 €</button></aside></div>
     <div id="csv-validator" ref={validatorRef} className="premium-validator-anchor" tabIndex={-1} aria-labelledby="csv-validator-title">
-      {foundUrls.length > 0 && <div className="premium-handoff"><span className="app-label">PRONAĐENO NA VAŠEM WEBU</span><div>{foundUrls.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer">{url}</a>)}</div><p>Datoteka nije automatski preuzeta. Učitajte je ovdje ako želite provjeriti njezin sadržaj i pravne podatke.</p></div>}
+      {foundUrls.length > 0 && <div className="premium-handoff"><span className="app-label">PRONAĐENO NA VAŠEM WEBU</span><div>{foundUrls.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer">{url}</a>)}</div><p>Datoteka nije automatski preuzeta. Dostupnost URL-a nije dovoljna — učitajte datoteku ovdje za sadržaj ili pošaljite URL na konzultaciju za arhivu, naziv datoteke i strojnu vidljivost.</p></div>}
       <div className="premium-validator-heading"><span className="app-label">02 / PROVJERA DATOTEKE</span><h2 id="csv-validator-title">Već imate cjenik? Provjerite ga ovdje.</h2><p>Učitajte CSV ili XML. Ako imate Excel, pretvorite ga u istom alatu.</p></div>
       <ValidatorApp embedded onContextChange={setValidatorContext} onLead={focusLead} />
     </div>

@@ -437,7 +437,7 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
       }
     } catch { network.failed = true; }
   }
-  if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat.", details);
+  if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
   if (details.pricePageFound) return result("yellow", "Pronađena je stranica ili cjenik, ali nije potvrđen valjan javni CSV/XML dokument.", details);
   if (network.failed) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.", details);
   return result("red", "Strojni cjenik nije pronađen.", details);

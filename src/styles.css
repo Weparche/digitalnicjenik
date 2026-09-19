@@ -278,12 +278,13 @@ body:has(.validator-app-shell) { background: #eef1ed; color: #18221c; }
 .premium-trust-row span { display: inline-flex; align-items: center; gap: 7px; }
 .premium-trust-row span::before { content: '✓'; color: #4f8b5a; font-size: 11px; }
 .premium-checker-result { margin-top: 20px; padding: 18px; border: 1px solid #cbd8ce; border-radius: 9px; background: #f8fbf8; }
-.premium-checker-result.is-green { border-color: #91bd98; background: #f1f8f2; }
+.premium-checker-result.is-green { border-color: #f0c14d; background: #fff8e8; }
 .premium-checker-result.is-yellow { border-color: #e0c18b; background: #fffaf0; }
 .premium-checker-result.is-red { border-color: #dfaea6; background: #fff7f5; }
 .premium-checker-result.is-unavailable { border-color: #cbd2cc; background: #f7f9f7; }
 .premium-result-heading { display: flex; align-items: flex-start; gap: 11px; }
 .premium-result-mark { display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; border: 1px solid currentColor; border-radius: 50%; color: #39764a; font: 15px var(--mono); }
+.is-green .premium-result-mark { color: #b45309; }
 .is-yellow .premium-result-mark { color: #ae7527; }
 .is-red .premium-result-mark { color: #b55d52; }
 .is-unavailable .premium-result-mark { color: #6e7c73; }
@@ -291,6 +292,68 @@ body:has(.validator-app-shell) { background: #eef1ed; color: #18221c; }
 .premium-checker-result > p { max-width: 70ch; margin: 14px 0 0 41px; color: #5e6e63; font-size: 12px; line-height: 1.55; }
 .premium-found-documents { display: grid; gap: 5px; margin: 14px 0 0 41px; padding: 11px 13px; border: 1px solid #d3e2d5; border-radius: 6px; background: #fff; color: #66766b; font: 10px/1.5 var(--mono); }
 .premium-found-documents a { color: #2b713e; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; }
+.premium-sufficiency-note {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0 41px;
+  padding: 18px 18px 16px;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  background: #fff;
+}
+.premium-sufficiency-note h4 {
+  margin: 0;
+  color: #92400e;
+  font-size: clamp(17px, 2.2vw, 20px);
+  letter-spacing: -.025em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.premium-sufficiency-note > p {
+  margin: 0;
+  color: #78350f;
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 62ch;
+}
+.premium-sufficiency-note > p em {
+  font-style: normal;
+  font-weight: 700;
+}
+.premium-sufficiency-note ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.premium-sufficiency-note li {
+  position: relative;
+  padding-left: 14px;
+  color: #78350f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.premium-sufficiency-note li::before {
+  content: '';
+  position: absolute;
+  top: 0.55em;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d97706;
+}
+.premium-sufficiency-note li strong { color: #92400e; }
+.premium-sufficiency-disclaimer {
+  color: #a16207 !important;
+  font-size: 12px !important;
+}
+.premium-result-cta {
+  margin: 16px 0 0 41px;
+  width: fit-content;
+  min-height: 44px;
+}
 .premium-result-link, .premium-result-action { display: inline-block; margin: 14px 0 0 41px; color: #2b713e; font: 11px var(--mono); text-decoration: underline; text-underline-offset: 3px; }
 .premium-result-action { padding: 0; border: 0; background: transparent; cursor: pointer; }
 .premium-checker-next { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 23px; padding-top: 19px; border-top: 1px solid #e1e8e2; }
@@ -333,8 +396,9 @@ body:has(.validator-app-shell) { background: #eef1ed; color: #18221c; }
   .premium-checker-form input, .premium-primary-button { width: 100%; min-height: 48px; }
   .premium-trust-row { display: grid; gap: 8px; }
   .premium-checker-result { padding: 14px; }
-  .premium-checker-result > p, .premium-found-documents, .premium-result-link, .premium-result-action { margin-left: 0; }
+  .premium-checker-result > p, .premium-found-documents, .premium-result-link, .premium-result-action, .premium-sufficiency-note, .premium-result-cta { margin-left: 0; }
   .premium-result-heading h3 { font-size: 17px; }
+  .premium-result-cta { width: 100%; }
   .premium-checker-next { align-items: stretch; flex-direction: column; }
   .premium-checker-next button { width: 100%; }
   .premium-validator-anchor { margin-top: 32px; }
@@ -541,13 +605,21 @@ body:has(.premium-entry) { background: var(--nepar-canvas); color: var(--nepar-i
 .premium-trust-row { color: var(--nepar-muted); font-family: inherit; font-size: 11px; }
 .premium-trust-row span::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--nepar-cyan); }
 .premium-checker-result { border-color: var(--nepar-border); background: #f8fafc; }
-.premium-checker-result.is-green { border-color: #86efac; background: #f0fdf4; }
+.premium-checker-result.is-green { border-color: #f59e0b; background: #fffbeb; }
 .premium-checker-result.is-yellow { border-color: #fcd34d; background: #fffbeb; }
 .premium-checker-result.is-red { border-color: #fca5a5; background: #fef2f2; }
 .premium-result-heading h3 { color: var(--nepar-ink); }
 .premium-checker-result > p { color: var(--nepar-body); }
 .premium-found-documents { border-color: var(--nepar-border); color: var(--nepar-body); font-family: inherit; font-size: 11px; }
 .premium-found-documents a, .premium-result-link, .premium-result-action { color: var(--nepar-primary); font-family: inherit; font-weight: 700; }
+.premium-entry .premium-sufficiency-note { border-color: #f59e0b; background: #fff; }
+.premium-entry .premium-sufficiency-note h4 { color: #92400e; }
+.premium-entry .premium-sufficiency-note > p,
+.premium-entry .premium-sufficiency-note li { color: #78350f; }
+.premium-entry .premium-result-cta { margin-left: 41px; }
+@media (max-width: 760px) {
+  .premium-entry .premium-result-cta { margin-left: 0; width: 100%; }
+}
 .premium-checker-next { border-color: var(--nepar-border); }
 .premium-checker-next strong { color: var(--nepar-ink); }
 .premium-checker-next span { color: var(--nepar-muted); }
