@@ -172,7 +172,8 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   const message = stringField(form, 'message', 3000)
   const privacy = form.get('privacy')
   const token = stringField(form, 'cf-turnstile-response', 2048)
-  if (!['implementation', 'consultation'].includes(intent) || !name || !validEmail(email) || privacy !== 'on') return jsonResponse(400, { ok: false, code: 'invalid_input' })
+  if (!['implementation', 'consultation', 'plugin'].includes(intent) || !name || !validEmail(email) || privacy !== 'on') return jsonResponse(400, { ok: false, code: 'invalid_input' })
+  const intentLabel = intent === 'implementation' ? 'Implementacija' : intent === 'plugin' ? 'Plugin / link' : 'Konzultacija'
 
   const ip = request.headers.get('cf-connecting-ip') ?? 'unknown'
   const attemptId = crypto.randomUUID()
@@ -199,7 +200,7 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   }
   const context = normalizeContext(stringField(form, 'context', 4000))
   const rows = [
-    ['Namjera', intent === 'implementation' ? 'Implementacija' : 'Konzultacija'],
+    ['Namjera', intentLabel],
     ['Ime / tvrtka', name], ['E-mail', email], ['Telefon', phone || '—'], ['Web', website || '—'],
     ['Platforma', platform || '—'], ['Materijali', materials || '—'], ['Poruka', message || '—'],
     ['Checker', context?.checkerStatus || '—'], ['Pronađeni URL-ovi', context?.discoveredUrls.join('\n') || '—'],
@@ -212,7 +213,7 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
     to: env.EMAIL_TO,
     from: { address: env.EMAIL_FROM, name: 'NEPAR Publisher' },
     reply_to: { address: email, name },
-    subject: `${intent === 'implementation' ? 'Implementacija' : 'Konzultacija'} · digitalni cjenik · ${name}`.slice(0, 180),
+    subject: `${intentLabel} · digitalni cjenik · ${name}`.slice(0, 180),
     text,
     html,
   }

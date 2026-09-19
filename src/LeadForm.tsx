@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export type LeadIntent = 'implementation' | 'consultation'
+export type LeadIntent = 'implementation' | 'consultation' | 'plugin'
 export type LeadContext = {
   website?: string
   checkerStatus?: string
@@ -127,9 +127,9 @@ export function LeadForm({ intent, context, onIntentChange }: { intent: LeadInte
   if (status === 'sent') return <section id="posaljite-cjenik" className="lead-section lead-success" tabIndex={-1}><span className="lead-success-mark" aria-hidden="true">✓</span><div><h2>Upit je poslan.</h2><p>Javit ćemo vam se na unesenu e-mail adresu nakon pregleda materijala.</p></div></section>
 
   return <section id="posaljite-cjenik" className="lead-section" aria-labelledby="lead-title" tabIndex={-1}>
-    <div className="lead-copy"><span className="app-label">NE MORATE ZNATI TEHNIČKE DETALJE</span><h2 id="lead-title">Pošaljite što imate. Mi ćemo predložiti najkraći put.</h2><p>Možete poslati datoteku, adresu weba ili samo opisati gdje danas držite cijene. Odgovorit ćemo konkretno, bez obveze.</p><div className="lead-price"><strong>Implementacija od 129 €</strong><span>Tehnička priprema, postavljanje na postojeći web i prva godina Publishera.</span></div></div>
+    <div className="lead-copy"><span className="app-label">NE MORATE ZNATI TEHNIČKE DETALJE</span><h2 id="lead-title">{intent === 'plugin' ? 'Pomoć s pluginom ili linkom' : 'Pošaljite što imate. Mi ćemo predložiti najkraći put.'}</h2><p>{intent === 'plugin' ? 'Imate CSV/XML linkove, a trebate ugradnju u CMS ili plugin. Pošaljite platformu i što ste već probali — odgovorit ćemo konkretno.' : 'Možete poslati datoteku, adresu weba ili samo opisati gdje danas držite cijene. Odgovorit ćemo konkretno, bez obveze.'}</p><div className="lead-price"><strong>{intent === 'plugin' ? 'Plugin / link podrška' : 'Implementacija od 129 €'}</strong><span>{intent === 'plugin' ? 'Tehnička pomoć oko ugradnje na vaš web. Hosting javne stranice i dalje ostaje na vama.' : 'Tehnička priprema, postavljanje na postojeći web i prva godina Publishera.'}</span></div></div>
     <form className="lead-form" onSubmit={submit} encType="multipart/form-data">
-      <fieldset className="intent-switch"><legend>Što vam treba?</legend><label><input type="radio" name="intent-choice" checked={intent === 'implementation'} onChange={() => onIntentChange('implementation')} /><span>Implementacija</span></label><label><input type="radio" name="intent-choice" checked={intent === 'consultation'} onChange={() => onIntentChange('consultation')} /><span>Konzultacija</span></label></fieldset>
+      <fieldset className="intent-switch"><legend>Što vam treba?</legend><label><input type="radio" name="intent-choice" checked={intent === 'implementation'} onChange={() => onIntentChange('implementation')} /><span>Implementacija</span></label><label><input type="radio" name="intent-choice" checked={intent === 'plugin'} onChange={() => onIntentChange('plugin')} /><span>Plugin / link</span></label><label><input type="radio" name="intent-choice" checked={intent === 'consultation'} onChange={() => onIntentChange('consultation')} /><span>Konzultacija</span></label></fieldset>
       <div className="lead-fields">
         <label>Ime ili naziv tvrtke<input name="name" required maxLength={120} autoComplete="name" /></label>
         <label>E-mail<input name="email" type="email" required maxLength={254} autoComplete="email" /></label>
@@ -145,7 +145,7 @@ export function LeadForm({ intent, context, onIntentChange }: { intent: LeadInte
       <TurnstileField onToken={setTurnstileToken} />
       <label className="privacy-choice"><input name="privacy" type="checkbox" required /><span>Slažem se da NEPAR obradi podatke i privitak radi odgovora na upit. <a href="https://nepar.hr/privatnost" target="_blank" rel="noreferrer">Politika privatnosti</a></span></label>
       {error && <p className="app-error" role="alert">{error}</p>}
-      <button className="app-button app-button-primary lead-submit" type="submit" disabled={status === 'sending' || !siteKey}>{status === 'sending' ? 'Šaljemo…' : intent === 'implementation' ? 'Pošaljite upit za implementaciju' : 'Zatražite konzultaciju'}</button>
+      <button className="app-button app-button-primary lead-submit" type="submit" disabled={status === 'sending' || !siteKey}>{status === 'sending' ? 'Šaljemo…' : intent === 'implementation' ? 'Pošaljite upit za implementaciju' : intent === 'plugin' ? 'Pošaljite upit za plugin / link' : 'Zatražite konzultaciju'}</button>
     </form>
   </section>
 }

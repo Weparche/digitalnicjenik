@@ -70,69 +70,112 @@ function PublishedSuccessPanel({
   message: string
   onLead?: (intent: LeadIntent) => void
 }) {
+  const [path, setPath] = useState<'choose' | 'plugin' | 'implementation'>('choose')
   const urls = publishedPublicUrls(slug)
   const versionLabel = publication ? `verzija ${publication.sequence}` : null
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
   const versionCsv = publication ? `${origin}/${publication.filenameStem}.csv` : null
   const versionXml = publication ? `${origin}/${publication.filenameStem}.xml` : null
 
+  function choosePlugin() {
+    setPath('plugin')
+  }
+
+  function chooseImplementation() {
+    setPath('implementation')
+    onLead?.('implementation')
+  }
+
   return (
     <div className="publish-success-panel" role="status">
-      <div className="publish-success-head">
-        <span className="app-label">OBJAVLJENO</span>
-        <h3>{message || 'Cjenik je objavljen.'}{versionLabel ? ` · ${versionLabel}` : ''}</h3>
-        <p>Javni HTML prikaz i strojni CSV/XML su aktivni. Podijelite link ili ugradite stable URL na svoj web.</p>
+      <div className="publish-success-hero">
+        <div className="publish-success-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="48" height="48" fill="none">
+            <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="2" opacity=".25" />
+            <path d="M14 24.5 21 31.5 34 16.5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h3>Cjenik je spreman{versionLabel ? ` · ${versionLabel}` : ''}</h3>
+        <p>
+          {message || 'Objava je uspjela.'} Sada birate kako će živjeti na <em>vašem</em> webu.
+          Linkovi i sandbox pregled su alat za ugradnju — ne besplatni trajni hosting za klijente.
+        </p>
       </div>
 
-      <div className="publish-success-actions">
-        <a className="app-button app-button-primary" href={urls.html} target="_blank" rel="noreferrer">Otvori javni cjenik ↗</a>
-        <a className="app-button app-button-light" href={urls.archive} target="_blank" rel="noreferrer">Otvori arhivu ↗</a>
-      </div>
+      {path === 'choose' && (
+        <div className="publish-path-grid" aria-label="Odaberite sljedeći korak">
+          <button type="button" className="publish-path-card" onClick={choosePlugin}>
+            <strong>Samo plugin / link</strong>
+            <span>Stable CSV i XML za vaš CMS ili plugin. Vi ugrađujete i hostate na vlastitom webu; NEPAR ne drži javnu stranicu za klijente.</span>
+            <em>Prikaži linkove →</em>
+          </button>
+          <button type="button" className="publish-path-card publish-path-card-featured" onClick={chooseImplementation}>
+            <strong>Plugin + implementacija</strong>
+            <span>Priprema, povezivanje s postojećim webom i prva godina Publishera. Pošaljete što imate — mi postavimo.</span>
+            <em>Od 129 € →</em>
+          </button>
+        </div>
+      )}
 
-      <div className="publish-link-grid">
-        <div className="publish-link-card">
-          <strong>Javni HTML</strong>
-          <code>{urls.html}</code>
-          <button type="button" className="app-link-button" onClick={() => copyText(urls.html)}>Kopiraj link</button>
-        </div>
-        <div className="publish-link-card">
-          <strong>Stable CSV (uvijek aktualno)</strong>
-          <code>{urls.stableCsv}</code>
-          <div className="publish-link-row">
-            <a href={urls.stableCsv} target="_blank" rel="noreferrer">Otvori</a>
-            <button type="button" className="app-link-button" onClick={() => copyText(urls.stableCsv)}>Kopiraj</button>
+      {path === 'plugin' && (
+        <div className="publish-plugin-panel">
+          <div className="publish-plugin-intro">
+            <h4>Linkovi za plugin i ugradnju</h4>
+            <p>Koristite stable CSV/XML na svom webu. HTML pregled na NEPAR domeni je privremeni sandbox, ne zamjena za vašu stranicu.</p>
           </div>
-        </div>
-        <div className="publish-link-card">
-          <strong>Stable XML (uvijek aktualno)</strong>
-          <code>{urls.stableXml}</code>
-          <div className="publish-link-row">
-            <a href={urls.stableXml} target="_blank" rel="noreferrer">Otvori</a>
-            <button type="button" className="app-link-button" onClick={() => copyText(urls.stableXml)}>Kopiraj</button>
-          </div>
-        </div>
-        {versionCsv && versionXml && (
-          <div className="publish-link-card">
-            <strong>Ova verzija (immutable)</strong>
-            <code>{publication?.filenameStem}.csv / .xml</code>
-            <div className="publish-link-row">
-              <a href={versionCsv} target="_blank" rel="noreferrer">CSV</a>
-              <a href={versionXml} target="_blank" rel="noreferrer">XML</a>
+          <div className="publish-link-grid">
+            <div className="publish-link-card">
+              <strong>Stable CSV (plugin / dohvat)</strong>
+              <code>{urls.stableCsv}</code>
+              <div className="publish-link-row">
+                <a href={urls.stableCsv} target="_blank" rel="noreferrer">Otvori</a>
+                <button type="button" className="app-link-button" onClick={() => copyText(urls.stableCsv)}>Kopiraj</button>
+              </div>
+            </div>
+            <div className="publish-link-card">
+              <strong>Stable XML (plugin / dohvat)</strong>
+              <code>{urls.stableXml}</code>
+              <div className="publish-link-row">
+                <a href={urls.stableXml} target="_blank" rel="noreferrer">Otvori</a>
+                <button type="button" className="app-link-button" onClick={() => copyText(urls.stableXml)}>Kopiraj</button>
+              </div>
+            </div>
+            {versionCsv && versionXml && (
+              <div className="publish-link-card">
+                <strong>Ova verzija (immutable)</strong>
+                <code>{publication?.filenameStem}.csv / .xml</code>
+                <div className="publish-link-row">
+                  <a href={versionCsv} target="_blank" rel="noreferrer">CSV</a>
+                  <a href={versionXml} target="_blank" rel="noreferrer">XML</a>
+                </div>
+              </div>
+            )}
+            <div className="publish-link-card publish-link-card-muted">
+              <strong>Privremeni NEPAR pregled</strong>
+              <code>{urls.html}</code>
+              <div className="publish-link-row">
+                <a href={urls.html} target="_blank" rel="noreferrer">Otvori sandbox</a>
+                <a href={urls.archive} target="_blank" rel="noreferrer">Arhiva</a>
+              </div>
             </div>
           </div>
-        )}
-      </div>
-
-      <div className="consultation-card ready-card publish-success-next">
-        <div>
-          <span className="app-label">SLJEDEĆI KORAK</span>
-          <h3>Ugradite cjenik na postojeći web.</h3>
-          <p>Stable CSV/XML možete povezati na WordPress, Wix ili custom stranicu. Ako želite, NEPAR to postavi umjesto vas.</p>
+          <div className="publish-plugin-footer">
+            <button type="button" className="app-button app-button-light" onClick={() => setPath('choose')}>← Natrag na izbor</button>
+            <button type="button" className="app-button app-button-primary" onClick={() => onLead?.('plugin')}>Trebate pomoć s pluginom?</button>
+          </div>
         </div>
-        <button className="app-button app-button-primary" type="button" onClick={() => onLead?.('implementation')}>
-          Postavljanje od 129 €
-        </button>
-      </div>
+      )}
+
+      {path === 'implementation' && (
+        <div className="publish-implement-panel">
+          <h4>Implementacija od 129 €</h4>
+          <p>Ispunite obrazac ispod — priložit ćemo kontekst ove objave{versionLabel ? ` (${versionLabel})` : ''}. NEPAR predlaže najkraći put do ugradnje na vaš postojeći web.</p>
+          <div className="publish-implement-actions">
+            <button type="button" className="app-button app-button-light" onClick={() => setPath('choose')}>← Natrag na izbor</button>
+            <button type="button" className="app-button app-button-primary" onClick={() => onLead?.('implementation')}>Idi na obrazac →</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -64,6 +64,15 @@ describe('digitalni cjenik lead delivery', () => {
     expect((await env.DB.prepare('SELECT COUNT(*) AS count FROM lead_delivery_attempts').first<{ count: number }>())?.count).toBe(5)
   })
 
+  it('accepts plugin intent and labels the outbound email', async () => {
+    const fetcher = successfulFetch()
+    const response = await handleLeadRequest(request({ intent: 'plugin', message: 'Trebam WordPress plugin' }), leadEnv(), fetcher)
+    expect(response.status).toBe(200)
+    const emailBody = JSON.parse(String(((fetcher as unknown as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit).body)) as { subject: string; html: string }
+    expect(emailBody.subject).toContain('Plugin / link')
+    expect(emailBody.html).toContain('Plugin / link')
+  })
+
   it('reports Email API errors without claiming success', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => String(input).includes('siteverify')
       ? Response.json({ success: true, action: 'turnstile-spin-v2', hostname: 'digitalnicjenik.nepar.hr' })
