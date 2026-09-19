@@ -710,3 +710,83 @@ body:has(.premium-entry) { background: var(--nepar-canvas); color: var(--nepar-i
   .education-cta > div:last-child { flex-direction: column; }
   .education-cta .app-button { width: 100%; }
 }
+
+.publisher-shell .publisher-auth {
+  width: min(520px, calc(100% - 48px));
+  margin: 48px auto 80px;
+}
+.publisher-auth-panel {
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border: 1px solid var(--nepar-border, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, .07);
+}
+.publisher-auth-panel h1 {
+  margin: 0;
+  color: var(--nepar-ink, #0f172a);
+  font-size: clamp(28px, 4vw, 36px);
+  letter-spacing: -.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.publisher-auth-panel > p {
+  margin: 0;
+  color: var(--nepar-body, #334155);
+  font-size: 15px;
+  line-height: 1.55;
+  max-width: 42ch;
+}
+.publisher-auth-form {
+  display: grid;
+  gap: 14px;
+}
+.publisher-auth-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--nepar-muted, #64748b);
+  font-size: 12px;
+  font-weight: 700;
+}
+.publisher-auth-form input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--nepar-ink, #0f172a);
+  font: 14px inherit;
+}
+.publisher-auth-form input:focus {
+  border-color: var(--nepar-primary, #2563eb);
+  outline: 3px solid #93c5fd;
+  outline-offset: 1px;
+}
+.publisher-auth-sent {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: var(--nepar-ink, #0f172a);
+}
+.publisher-auth-sent p { margin: 0; color: var(--nepar-body, #334155); font-size: 14px; line-height: 1.5; }
+.publisher-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--nepar-muted, #64748b);
+  font-size: 12px;
+}
+.publisher-header-meta strong { color: var(--nepar-ink, #0f172a); }
+.publisher-dashboard { padding-bottom: 64px; }
+.publisher-dashboard .validator-app-intro h1 { max-width: 18ch; }
+@media (max-width: 760px) {
+  .publisher-shell .publisher-auth { width: calc(100% - 32px); margin-top: 28px; }
+  .publisher-auth-panel { padding: 22px; }
+  .publisher-header-meta { max-width: 180px; text-align: right; }
+}

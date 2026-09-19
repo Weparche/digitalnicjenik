@@ -1,3 +1,4 @@
+import { resolveSession, userHasTenantMembership } from './_auth'
 import { hmacIp } from './_lead'
 import type { D1DatabaseLike, RuntimeEnv } from './_repository'
 
@@ -93,13 +94,11 @@ async function consumeDemoWriteBudget(env: RuntimeEnv, request: Request) {
   }
 }
 
-function requireOperatorKey(env: RuntimeEnv, request: Request) {
+function operatorAuthorized(env: RuntimeEnv, request: Request) {
   const key = env.OPERATOR_WRITE_KEY
-  if (!key) throw new AccessDeniedError(503, 'operator_key_missing', 'OPERATOR_WRITE_KEY nije konfiguriran.')
+  if (!key) return false
   const token = bearerToken(request)
-  if (!token || !timingSafeEqual(token, key)) {
-    throw new AccessDeniedError(401, 'unauthorized', 'Operator autentikacija je obavezna.')
-  }
+  return Boolean(token && timingSafeEqual(token, key))
 }
 
 export async function requireTenantAccess(options: {
@@ -114,12 +113,6 @@ export async function requireTenantAccess(options: {
   const isDemo = slug === demoTenantSlug(env)
   const isMutation = operation !== 'draft_get'
 
-  if (isDemo) {
-    if (isMutation) await consumeDemoWriteBudget(env, request)
-  } else {
-    requireOperatorKey(env, request)
-  }
-
   if (!env.DB) throw new AccessDeniedError(503, 'db_unavailable', 'D1 binding DB nije konfiguriran.')
 
   let tenant = await resolveTenantBySlug(env, slug)
@@ -128,8 +121,25 @@ export async function requireTenantAccess(options: {
     // createDraft/ensureTenant will persist the canonical row.
     tenant = { id: slug, slug, name: slug === 'nepar' ? 'NEPAR' : slug }
   }
-  if (!tenant) throw new AccessDeniedError(404, 'tenant_not_found', 'Tenant nije pronađen.')
-  return tenant
+
+  if (isDemo) {
+    if (isMutation) await consumeDemoWriteBudget(env, request)
+    if (!tenant) throw new AccessDeniedError(404, 'tenant_not_found', 'Tenant nije pronađen.')
+    return tenant
+  }
+
+  if (operatorAuthorized(env, request)) {
+    if (!tenant) throw new AccessDeniedError(404, 'tenant_not_found', 'Tenant nije pronađen.')
+    return tenant
+  }
+
+  const session = await resolveSession(env, request)
+  if (session && tenant && await userHasTenantMembership(env, session.user.id, tenant.id)) {
+    return tenant
+  }
+
+  // Unauthenticated non-demo: always 401 (do not reveal whether the tenant exists).
+  throw new AccessDeniedError(401, 'unauthorized', 'Prijava ili operator autentikacija je obavezna.')
 }
 
 export function accessErrorResponse(error: unknown) {

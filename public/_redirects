@@ -1,2 +1,4 @@
 /c/* /app-shell 200
 /arhiva /app-shell 200
+/app /app-shell 200
+/app/* /app-shell 200

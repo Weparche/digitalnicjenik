@@ -38,7 +38,8 @@ Write access model:
 - Demo tenant (`DEMO_WRITE_TENANT`): anonymous sandbox mutations are allowed only for that
   tenant, with server-side tenant canonicalization, tenant-scoped draft/publish SQL, and a
   dedicated demo write rate-limit bucket. No browser/Vite write secret is used.
-- Any other tenant: requires `Authorization: Bearer <OPERATOR_WRITE_KEY>` (Cloudflare secret only).
+- Any other tenant: `Authorization: Bearer <OPERATOR_WRITE_KEY>` **or** an authenticated
+  Publisher session cookie (`nepar_session`) for a `tenant_members` owner of that tenant.
 - Customer `publication_targets` hostnames are not write surfaces (defense-in-depth).
 
 ### Hostname roles (demo tenant)
@@ -58,12 +59,26 @@ Configure these Pages secrets before enabling non-demo writes or relying on rate
 OPERATOR_WRITE_KEY
 DEMO_WRITE_RATE_LIMIT_SECRET   # optional; falls back to LEAD_RATE_LIMIT_SECRET
 CHECKER_RATE_LIMIT_SECRET      # optional; falls back to LEAD_RATE_LIMIT_SECRET
+AUTH_RATE_LIMIT_SECRET         # optional; falls back to LEAD_RATE_LIMIT_SECRET
 ```
 
 Configure `digitalnicjenik.nepar.hr` and customer custom hostnames in Pages DNS,
 then create matching active rows in `publication_targets`. Seed production
 tenant metadata and active `entitlements` separately; do not hardcode those
 values in the repository.
+
+### Activating a self-serve Publisher tenant (ops)
+
+After lead close / payment:
+
+1. Apply D1 migration `0006_auth.sql` if not already applied.
+2. Create tenant + active `publisher_self_service` entitlement + `publication_targets`
+   hostname (usually `{slug}.digitalnicjenik.nepar.hr`).
+3. Insert `auth_users` + `tenant_members` (role `owner`) for the customer email, or use
+   `ensureTenantOwner` from `functions/_auth.ts` in a one-off ops script.
+4. Customer opens `https://digitalnicjenik.nepar.hr/app` and requests a magic link.
+
+Anonymous demo publish on `nepar` never becomes a paid tenant automatically.
 
 ## Lead forma i Email Sending
 

@@ -1,3 +1,4 @@
+import { PublisherLogin, usePublisherSession } from './PublisherAuth'
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 import { ExcelConverter } from './ExcelConverter'
@@ -11,7 +12,7 @@ const platformHost = () => ['localhost', '127.0.0.1'].includes(window.location.h
 
 async function writeErrorMessage(response: Response, fallback: string) {
   const payload = await response.json().catch(() => ({})) as { error?: string; code?: string }
-  if (response.status === 401) return payload.error || 'Potrebna je operator autentikacija.'
+  if (response.status === 401) return payload.error || 'Potrebna je prijava ili operator autentikacija.'
   if (response.status === 403) return payload.error || 'Pristup tenantu nije dopušten.'
   if (response.status === 429) return payload.error || 'Previše zahtjeva. Pokušajte kasnije.'
   return payload.error || fallback
@@ -49,8 +50,17 @@ function copyText(value: string) {
   void navigator.clipboard?.writeText(value)
 }
 
-function publishedPublicUrls(slug: string) {
+function publishedPublicUrls(slug: string, mode: 'sandbox' | 'publisher' = 'sandbox') {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
+  if (mode === 'publisher') {
+    const feedOrigin = `https://${slug}.digitalnicjenik.nepar.hr`
+    return {
+      html: `${origin}/c/${slug}`,
+      archive: `${origin}/c/${slug}/arhiva`,
+      stableCsv: `${feedOrigin}/cjenik.csv`,
+      stableXml: `${feedOrigin}/cjenik.xml`,
+    }
+  }
   return {
     html: `${origin}/c/${slug}`,
     archive: `${origin}/c/${slug}/arhiva`,
@@ -64,18 +74,73 @@ function PublishedSuccessPanel({
   publication,
   message,
   onLead,
+  mode = 'sandbox',
 }: {
   slug: string
   publication: PricePublication | null
   message: string
   onLead?: (intent: LeadIntent) => void
+  mode?: 'sandbox' | 'publisher'
 }) {
   const [path, setPath] = useState<'choose' | 'plugin' | 'implementation'>('choose')
-  const urls = publishedPublicUrls(slug)
+  const urls = publishedPublicUrls(slug, mode)
   const versionLabel = publication ? `verzija ${publication.sequence}` : null
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
   const versionCsv = publication ? `${origin}/${publication.filenameStem}.csv` : null
   const versionXml = publication ? `${origin}/${publication.filenameStem}.xml` : null
+
+  if (mode === 'publisher') {
+    return (
+      <div className="publish-success-panel publish-success-panel-live" role="status">
+        <div className="publish-success-hero">
+          <div className="publish-success-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="48" height="48" fill="none">
+              <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="2" opacity=".25" />
+              <path d="M14 24.5 21 31.5 34 16.5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h3>Objavljeno{versionLabel ? ` · ${versionLabel}` : ''}</h3>
+          <p>{message || 'Nova verzija je aktivna.'} Stable CSV i XML odmah pokazuju ovu verziju. HTML pregled i arhiva ostaju na vašim trajnim adresama.</p>
+        </div>
+        <div className="publish-link-grid">
+          <div className="publish-link-card">
+            <strong>Stable CSV</strong>
+            <code>{urls.stableCsv}</code>
+            <div className="publish-link-row">
+              <a href={urls.stableCsv} target="_blank" rel="noreferrer">Otvori</a>
+              <button type="button" className="app-link-button" onClick={() => copyText(urls.stableCsv)}>Kopiraj</button>
+            </div>
+          </div>
+          <div className="publish-link-card">
+            <strong>Stable XML</strong>
+            <code>{urls.stableXml}</code>
+            <div className="publish-link-row">
+              <a href={urls.stableXml} target="_blank" rel="noreferrer">Otvori</a>
+              <button type="button" className="app-link-button" onClick={() => copyText(urls.stableXml)}>Kopiraj</button>
+            </div>
+          </div>
+          <div className="publish-link-card">
+            <strong>Javni HTML</strong>
+            <code>{urls.html}</code>
+            <div className="publish-link-row">
+              <a href={urls.html} target="_blank" rel="noreferrer">Otvori</a>
+              <a href={urls.archive} target="_blank" rel="noreferrer">Arhiva</a>
+            </div>
+          </div>
+          {versionCsv && versionXml && (
+            <div className="publish-link-card publish-link-card-muted">
+              <strong>Ova verzija (immutable)</strong>
+              <code>{publication?.filenameStem}.csv / .xml</code>
+              <div className="publish-link-row">
+                <a href={versionCsv} target="_blank" rel="noreferrer">CSV</a>
+                <a href={versionXml} target="_blank" rel="noreferrer">XML</a>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   function choosePlugin() {
     setPath('plugin')
@@ -99,6 +164,7 @@ function PublishedSuccessPanel({
         <p>
           {message || 'Objava je uspjela.'} Sada birate kako će živjeti na <em>vašem</em> webu.
           Linkovi i sandbox pregled su alat za ugradnju — ne besplatni trajni hosting za klijente.
+          Trajni Publisher link i dashboard dolaze nakon aktivacije.
         </p>
       </div>
 
@@ -106,7 +172,7 @@ function PublishedSuccessPanel({
         <div className="publish-path-grid" aria-label="Odaberite sljedeći korak">
           <button type="button" className="publish-path-card" onClick={choosePlugin}>
             <strong>Samo plugin / link</strong>
-            <span>Stable CSV i XML za vaš CMS ili plugin. Vi ugrađujete i hostate na vlastitom webu; NEPAR ne drži javnu stranicu za klijente.</span>
+            <span>Stable CSV i XML za vaš CMS ili plugin. Vi ugrađujete i hostate na vlastitom webu; NEPAR sandbox nije trajna stranica za klijente.</span>
             <em>Prikaži linkove →</em>
           </button>
           <button type="button" className="publish-path-card publish-path-card-featured" onClick={chooseImplementation}>
@@ -121,7 +187,7 @@ function PublishedSuccessPanel({
         <div className="publish-plugin-panel">
           <div className="publish-plugin-intro">
             <h4>Linkovi za plugin i ugradnju</h4>
-            <p>Koristite stable CSV/XML na svom webu. HTML pregled na NEPAR domeni je privremeni sandbox, ne zamjena za vašu stranicu.</p>
+            <p>Koristite stable CSV/XML na svom webu. HTML pregled na NEPAR domeni je privremeni sandbox. Trajni link + dashboard aktiviraju se s Publisherom.</p>
           </div>
           <div className="publish-link-grid">
             <div className="publish-link-card">
@@ -194,6 +260,7 @@ function ValidationResultPanel({
   onSaveDraft,
   onPublish,
   onLead,
+  mode = 'sandbox',
 }: {
   list: NormalizedPriceList
   validation: { blockingCount: number; warningCount: number; issues: ValidationIssue[] }
@@ -208,6 +275,7 @@ function ValidationResultPanel({
   onSaveDraft: () => void
   onPublish: () => void
   onLead?: (intent: LeadIntent) => void
+  mode?: 'sandbox' | 'publisher'
 }) {
   const { missingAnchorCount, otherIssues } = summarizeValidationIssues(validation.issues)
   const needsAnchors = missingAnchorCount > 0
@@ -246,6 +314,7 @@ function ValidationResultPanel({
           publication={publication}
           message={message}
           onLead={onLead}
+          mode={mode}
         />
       ) : (
         <>
@@ -659,7 +728,23 @@ function LandingVariant({ variant }: { variant: LandingVariant }) {
   </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / varijanta {variant}</span><a href="/">Natrag na početnu ↗</a></footer></div>
 }
 
-function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContextChange?: (context: LeadContext) => void; onLead?: (intent: LeadIntent) => void; embedded?: boolean }) {
+function ValidatorApp({
+  onContextChange,
+  onLead,
+  embedded = false,
+  mode = 'sandbox',
+  tenantSlug = 'nepar',
+  tenantName = 'NEPAR',
+  tenantId,
+}: {
+  onContextChange?: (context: LeadContext) => void
+  onLead?: (intent: LeadIntent) => void
+  embedded?: boolean
+  mode?: 'sandbox' | 'publisher'
+  tenantSlug?: string
+  tenantName?: string
+  tenantId?: string
+}) {
   const [list, setList] = useState<NormalizedPriceList | null>(null)
   const [draftId, setDraftId] = useState('')
   const [issues, setIssues] = useState<ValidationIssue[]>([])
@@ -670,6 +755,10 @@ function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContext
   const [message, setMessage] = useState('')
   const [publication, setPublication] = useState<PricePublication | null>(null)
   const [published, setPublished] = useState(false)
+  const resolvedTenantId = tenantId || tenantSlug
+  const tenantIdentity = { id: resolvedTenantId, slug: tenantSlug, name: tenantName }
+  const apiBase = `/api/tenants/${encodeURIComponent(tenantSlug)}`
+  const fetchOpts: RequestInit = mode === 'publisher' ? { credentials: 'include' } : {}
   const validation = useMemo(() => {
     if (!list) return { status: 'invalid' as const, issues, blockingCount: issues.length, warningCount: 0 }
     return mergeValidationIssues(validatePriceList(list), issues.filter((issue) => issue.code === 'IMPORT_ROW_SKIPPED'))
@@ -685,13 +774,29 @@ function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContext
     })
   }, [list, onContextChange, sourceFile, sourceFilename, validation.blockingCount, validation.issues])
 
+  useEffect(() => {
+    if (mode !== 'publisher') return
+    let cancelled = false
+    void fetch(apiBase, { credentials: 'include' }).then(async (response) => {
+      if (cancelled || !response.ok) return
+      const payload = await response.json() as { priceList?: NormalizedPriceList; publication?: PricePublication }
+      if (!payload.priceList) return
+      setList(payload.priceList)
+      setPublished(true)
+      setSourceFilename('trenutna-objava')
+      if (payload.publication) setPublication(payload.publication)
+    }).catch(() => undefined)
+    return () => { cancelled = true }
+  }, [apiBase, mode])
+
   const updateItem = (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => setList((current) => current ? { ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) } : current)
 
   function applyNormalizedList(priceList: NormalizedPriceList, file: File, importIssues: ValidationIssue[] = []) {
-    setList(priceList)
+    const scoped = { ...priceList, tenant: { ...priceList.tenant, ...tenantIdentity } }
+    setList(scoped)
     setSourceFilename(file.name)
     setSourceFile(file)
-    setIssues(mergeValidationIssues(validatePriceList(priceList), importIssues).issues)
+    setIssues(mergeValidationIssues(validatePriceList(scoped), importIssues).issues)
     setPublished(false)
     setDraftId('')
     setPublication(null)
@@ -708,7 +813,9 @@ function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContext
       const lowerName = file.name.toLowerCase()
       const isXml = lowerName.endsWith('.xml')
       if (!isXml && !lowerName.endsWith('.csv')) throw new Error('Učitajte datoteku s nastavkom .csv ili .xml.')
-      const parsed = isXml ? { priceList: parseXmlPriceList(raw), warnings: [] as { row: number; message: string }[] } : parseMarketinoCsv(raw, { id: 'nepar', slug: 'nepar', name: 'NEPAR' })
+      const parsed = isXml
+        ? { priceList: parseXmlPriceList(raw, tenantIdentity), warnings: [] as { row: number; message: string }[] }
+        : parseMarketinoCsv(raw, tenantIdentity)
       applyNormalizedList(parsed.priceList, file, importIssuesFromParseWarnings(parsed.warnings || [], isXml ? 'xml' : 'csv'))
       try {
         const response = await fetch('/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(isXml ? { xml: raw } : { csv: raw }) })
@@ -723,7 +830,12 @@ function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContext
 
   async function createRemoteDraft() {
     if (!list) return ''
-    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename }) })
+    const response = await fetch(`${apiBase}/import`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      ...fetchOpts,
+      body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename }),
+    })
     if (!response.ok) throw new Error(await writeErrorMessage(response, 'Cjenik nije moguće pripremiti.'))
     const payload = await response.json() as { draft: { id: string }; validation: { issues: ValidationIssue[] } }
     setDraftId(payload.draft.id); setIssues(payload.validation.issues)
@@ -736,7 +848,12 @@ function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContext
     try {
       const id = draftId || await createRemoteDraft()
       if (!id) throw new Error('Cjenik nije moguće spremiti.')
-      const response = await fetch('/api/tenants/nepar/draft/' + id, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }) })
+      const response = await fetch(`${apiBase}/draft/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        ...fetchOpts,
+        body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }),
+      })
       if (!response.ok) throw new Error(await writeErrorMessage(response, 'Dopuna nije spremljena.'))
       const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
       setIssues(payload.validation.issues); setMessage('Dopune su spremljene. Provjerite sažetak prije objave.')
@@ -749,10 +866,19 @@ function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContext
     try {
       const id = draftId || await createRemoteDraft()
       if (!id) throw new Error('Za objavu je potreban aktivan Publisher.')
-      const response = await fetch('/api/tenants/nepar/publish', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ draftId: id }) })
+      const response = await fetch(`${apiBase}/publish`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        ...fetchOpts,
+        body: JSON.stringify({ draftId: id }),
+      })
       const payload = await response.json() as { error?: string; message?: string; publication?: PricePublication }
       if (!response.ok) throw new Error(payload.error || 'Objava nije uspjela.')
       setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setPublished(true)
+      if (mode === 'publisher') {
+        const current = await fetch(apiBase, fetchOpts).then((item) => item.json()).catch(() => null) as { priceList?: NormalizedPriceList } | null
+        if (current?.priceList) setList(current.priceList)
+      }
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Objava nije uspjela.') } finally { setBusy(false) }
   }
 
@@ -776,9 +902,12 @@ function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContext
     setMessage('Sidrene cijene su postavljene prema potvrđenim maloprodajnim cijenama. Pregledajte tablicu prije objave.')
   }
 
-  const intro = <section className="validator-app-intro">{embedded ? null : <span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span>}{embedded ? <h2>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h2> : <h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1>}{embedded ? null : <p>Učitajte CSV iz programa u kojem vodite cijene ili XML koji već imate. Odmah ćete vidjeti koje podatke treba dopuniti prije objave.</p>}</section>
+  const intro = mode === 'publisher'
+    ? <section className="validator-app-intro"><h1>Publisher dashboard<br /><em>{tenantName}</em></h1><p>Učitajte novi CSV/XML, pretvorite Excel ili ručno uredite stavke. Stable linkovi se ažuriraju tek nakon Objavi.</p></section>
+    : <section className="validator-app-intro">{embedded ? null : <span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span>}{embedded ? <h2>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h2> : <h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1>}{embedded ? null : <p>Učitajte CSV iz programa u kojem vodite cijene ili XML koji već imate. Odmah ćete vidjeti koje podatke treba dopuniti prije objave.</p>}</section>
+
   const tool = <>
-    <section className="validator-tool" aria-label="Validator cjenika"><div className="upload-card"><div className="upload-card-heading"><div><span className="app-label">1 / UČITAJTE</span><h2>CSV ili XML cjenik</h2><p>Za besplatni pregled nije potrebna registracija.</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">2 / ŠTO PROVJERAVAMO</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena za usluge</li><li><span>03</span>Potvrda posebnog oblika prodaje kod akcijske cijene</li><li><span>04</span>Nova usluga ide na ručni pregled</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
+    <section className="validator-tool" aria-label={mode === 'publisher' ? 'Publisher cjenik' : 'Validator cjenika'}><div className="upload-card"><div className="upload-card-heading"><div><span className="app-label">{mode === 'publisher' ? 'UČITAJTE ILI UREDITE' : '1 / UČITAJTE'}</span><h2>CSV ili XML cjenik</h2><p>{mode === 'publisher' ? 'Nova datoteka zamjenjuje draft. Ručne izmjene u tablici ostaju dok ne objavite.' : 'Za besplatni pregled nije potrebna registracija.'}</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">{mode === 'publisher' ? 'PRIJE OBJAVE' : '2 / ŠTO PROVJERAVAMO'}</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena za usluge</li><li><span>03</span>Potvrda posebnog oblika prodaje kod akcijske cijene</li><li><span>04</span>Nova usluga ide na ručni pregled</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
     {list && (
       <ValidationResultPanel
         list={list}
@@ -794,14 +923,19 @@ function ValidatorApp({ onContextChange, onLead, embedded = false }: { onContext
         onSaveDraft={() => void saveDraft()}
         onPublish={() => void publish()}
         onLead={onLead}
+        mode={mode}
       />
     )}
     <ExcelConverter onConverted={applyNormalizedList} />
-    <p className="validator-footnote">Želite prvo vidjeti primjer? <a href="/c/nepar">Otvori demo podatke →</a></p>
+    {mode === 'sandbox' && <p className="validator-footnote">Želite prvo vidjeti primjer? <a href="/c/nepar">Otvori demo podatke →</a></p>}
   </>
 
   if (embedded) {
     return <div className="validator-app validator-app-embedded">{intro}{tool}</div>
+  }
+
+  if (mode === 'publisher') {
+    return <div className="validator-app">{intro}{tool}</div>
   }
 
   return <div className="validator-app-shell"><header className="app-header"><Logo /><a href="#posaljite-cjenik" onClick={(event) => { if (onLead) { event.preventDefault(); onLead('implementation') } }}>Trebate pomoć? <strong>NEPAR postavljanje →</strong></a></header><main className="validator-app">
@@ -937,7 +1071,58 @@ export function Landing() {
   return <PremiumEntry />
 }
 
+function PublisherEntry() {
+  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+  const authError = params.get('authError') || undefined
+  const { session, error, logout } = usePublisherSession()
+
+  if (session === undefined) {
+    return (
+      <div className="validator-app-shell premium-entry publisher-shell">
+        <header className="app-header"><Logo /></header>
+        <main className="publisher-auth"><p className="app-status" role="status">Provjeravamo prijavu…</p></main>
+      </div>
+    )
+  }
+
+  if (!session) return <PublisherLogin initialError={authError} />
+
+  const tenant = session.tenants[0]
+  if (!tenant) {
+    return (
+      <div className="validator-app-shell premium-entry publisher-shell">
+        <header className="app-header"><Logo /><button className="header-lead" type="button" onClick={() => void logout()}>Odjava</button></header>
+        <main className="publisher-auth">
+          <section className="publisher-auth-panel">
+            <h1>Nema aktivnog tenanta</h1>
+            <p>Vaš e-mail je prijavljen, ali još nema povezanog Publisher tenanta. Javite se na nepar@nepar.hr.</p>
+            {error && <p className="app-error" role="alert">{error}</p>}
+          </section>
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div className="validator-app-shell premium-entry publisher-shell">
+      <header className="app-header">
+        <Logo />
+        <div className="publisher-header-meta">
+          <span>{session.user.email}</span>
+          <strong>{tenant.name}</strong>
+          <button className="header-lead" type="button" onClick={() => void logout()}>Odjava</button>
+        </div>
+      </header>
+      <main className="validator-app premium-entry-main publisher-dashboard">
+        <ValidatorApp mode="publisher" tenantSlug={tenant.slug} tenantId={tenant.id} tenantName={tenant.name} />
+      </main>
+    </div>
+  )
+}
+
 export default function App() {
+  const path = typeof window !== 'undefined' ? window.location.pathname : '/'
+  if (path === '/app' || path.startsWith('/app/')) return <PublisherEntry />
   const slug = slugFromPath()
   if (slug) return <PublicPriceList slug={slug} />
   if (isCustomPublication()) return <PublicPriceList customHost />

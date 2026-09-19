@@ -28,7 +28,7 @@ The customer can check a website, upload CSV/XML, map an XLS/XLSX worksheet into
 
 ## Capabilities and Constraints
 
-The MVP supports a tolerant CSV adapter, shared XML and Excel normalization, deterministic hashes, snapshots, CSV/XML rendering, immutable publications, public `/c/:slug` lists, archive views, website readiness checking, and a Turnstile-protected implementation inquiry with an optional attachment. It does not include authentication, billing, automatic provider synchronization, CRM, marketing subscriptions, or user roles.
+The product supports a tolerant CSV adapter, shared XML and Excel normalization, deterministic hashes, snapshots, CSV/XML rendering, immutable publications, public `/c/:slug` lists, archive views, website readiness checking, a Turnstile-protected implementation inquiry with an optional attachment, and magic-link Publisher login for activated tenants (`/app`). Anonymous validator/demo publish remains a sandbox and is not permanent customer hosting. Billing, automatic provider synchronization, CRM, marketing subscriptions, and multi-user roles beyond owner are out of scope for this layer.
 
 ## Brand Commitments
 
@@ -40,11 +40,12 @@ The existing integration fixture at `./marketino-artikli` contains Croatian head
 
 ## Product Principles
 
-- Change prices at the source, not in NEPAR.
+- Change prices at the source when a provider exists; for self-serve tenants without a provider, the Publisher draft is the source until they publish.
 - One normalized list powers every output.
 - Make sync state and history visible enough to build trust.
 - Keep public price lists fast, readable, and embed-friendly.
 - Never invent source data or future integration details.
+- Demo sandbox links are not a substitute for an activated Publisher tenant.
 
 ## Accessibility & Inclusion
 
