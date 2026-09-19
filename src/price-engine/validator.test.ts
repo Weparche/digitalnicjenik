@@ -5,13 +5,14 @@ import { createFilenameStem, filenameTimestamp, sanitizeFilenamePart } from './f
 import { validatePriceList } from './validate'
 
 describe('NEPAR regulatory validator', () => {
-  it('flags the real Marketino fixture for completion without publishing it', () => {
+  it('keeps the NEPAR fixture publish-ready with sidrena cijena filled', () => {
     const parsed = parseMarketinoCsv(fixture, { id: 'nepar', slug: 'nepar', name: 'NEPAR' })
     const validation = validatePriceList(parsed.priceList)
 
     expect(parsed.priceList.items).toHaveLength(29)
-    expect(validation.status).toBe('manual_review')
-    expect(validation.issues.some((issue) => issue.field === 'anchorPrice')).toBe(true)
+    expect(parsed.priceList.items.some((item) => item.name.includes('Plugin'))).toBe(true)
+    expect(validation.status).toBe('ready_to_publish')
+    expect(validation.issues.some((issue) => issue.field === 'anchorPrice')).toBe(false)
   })
 
   it('maps only an explicit anchor column and never PN/PNP', () => {
