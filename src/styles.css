@@ -144,6 +144,21 @@ body:has(.validator-app-shell) { background: #eef1ed; color: #18221c; }
 .special-sale-toggle span { color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
 .special-sale-toggle select { min-height: 36px; min-width: 96px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #0f172a; padding: 0 8px; font: 12px inherit; }
 .sale-price-note { color: #64748b; font-size: 10px; }
+.publish-success-panel { display: grid; gap: 22px; padding: 24px 30px 30px; }
+.publish-success-head h3 { margin: 8px 0 10px; color: #264f30; font-size: 22px; letter-spacing: -.03em; }
+.publish-success-head p { margin: 0; max-width: 62ch; color: #58705d; font-size: 14px; line-height: 1.55; }
+.publish-success-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.publish-link-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.publish-link-card { display: grid; gap: 8px; padding: 16px; border: 1px solid #d4ddd5; border-radius: 10px; background: #f7faf7; }
+.publish-link-card strong { color: #273a2c; font-size: 13px; }
+.publish-link-card code { overflow-wrap: anywhere; color: #3c7b4a; font: 11px var(--mono); }
+.publish-link-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.publish-link-row a { color: #2e7040; font: 11px var(--mono); text-decoration: underline; text-underline-offset: 3px; }
+.publish-success-next { margin: 0; }
+@media (max-width: 760px) {
+  .publish-success-panel { padding: 18px 22px 22px; }
+  .publish-link-grid { grid-template-columns: 1fr; }
+}
 .app-link-button { width: fit-content; padding: 0; border: 0; background: transparent; color: #2e7541; font: 11px var(--mono); text-decoration: underline; text-underline-offset: 3px; }
 .validator-table-wrap { overflow-x: auto; }
 .validator-table-wrap table { min-width: 760px; color: #3e4c42; }
@@ -519,6 +534,12 @@ body:has(.premium-entry) { background: var(--nepar-canvas); color: var(--nepar-i
 .premium-entry .app-table-input.is-required { border-color: #f59e0b; background: #fffbeb; }
 .premium-entry .special-sale-toggle select:focus { border-color: var(--nepar-primary); outline: 3px solid #93c5fd; }
 .premium-entry .row-needs-anchor td { background: rgba(254, 243, 199, 0.35); }
+.premium-entry .publish-success-head h3 { color: var(--nepar-ink); }
+.premium-entry .publish-success-head p { color: var(--nepar-body); }
+.premium-entry .publish-link-card { border-color: var(--nepar-border); background: #fff; }
+.premium-entry .publish-link-card strong { color: var(--nepar-ink); }
+.premium-entry .publish-link-card code,
+.premium-entry .publish-link-row a { color: var(--nepar-primary); }
 .premium-entry .consultation-card { border-color: #fed7aa; background: #fff7ed; }
 .premium-entry .ready-card { border-color: #bfdbfe; background: #eff6ff; }
 

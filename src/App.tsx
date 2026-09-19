@@ -45,6 +45,98 @@ function summarizeValidationIssues(issues: ValidationIssue[]) {
   return { missingAnchorCount: missingAnchors.length, otherIssues: other }
 }
 
+function copyText(value: string) {
+  void navigator.clipboard?.writeText(value)
+}
+
+function publishedPublicUrls(slug: string) {
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
+  return {
+    html: `${origin}/c/${slug}`,
+    archive: `${origin}/c/${slug}/arhiva`,
+    stableCsv: `${origin}/cjenik.csv`,
+    stableXml: `${origin}/cjenik.xml`,
+  }
+}
+
+function PublishedSuccessPanel({
+  slug,
+  publication,
+  message,
+  onLead,
+}: {
+  slug: string
+  publication: PricePublication | null
+  message: string
+  onLead?: (intent: LeadIntent) => void
+}) {
+  const urls = publishedPublicUrls(slug)
+  const versionLabel = publication ? `verzija ${publication.sequence}` : null
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
+  const versionCsv = publication ? `${origin}/${publication.filenameStem}.csv` : null
+  const versionXml = publication ? `${origin}/${publication.filenameStem}.xml` : null
+
+  return (
+    <div className="publish-success-panel" role="status">
+      <div className="publish-success-head">
+        <span className="app-label">OBJAVLJENO</span>
+        <h3>{message || 'Cjenik je objavljen.'}{versionLabel ? ` · ${versionLabel}` : ''}</h3>
+        <p>Javni HTML prikaz i strojni CSV/XML su aktivni. Podijelite link ili ugradite stable URL na svoj web.</p>
+      </div>
+
+      <div className="publish-success-actions">
+        <a className="app-button app-button-primary" href={urls.html} target="_blank" rel="noreferrer">Otvori javni cjenik ↗</a>
+        <a className="app-button app-button-light" href={urls.archive} target="_blank" rel="noreferrer">Otvori arhivu ↗</a>
+      </div>
+
+      <div className="publish-link-grid">
+        <div className="publish-link-card">
+          <strong>Javni HTML</strong>
+          <code>{urls.html}</code>
+          <button type="button" className="app-link-button" onClick={() => copyText(urls.html)}>Kopiraj link</button>
+        </div>
+        <div className="publish-link-card">
+          <strong>Stable CSV (uvijek aktualno)</strong>
+          <code>{urls.stableCsv}</code>
+          <div className="publish-link-row">
+            <a href={urls.stableCsv} target="_blank" rel="noreferrer">Otvori</a>
+            <button type="button" className="app-link-button" onClick={() => copyText(urls.stableCsv)}>Kopiraj</button>
+          </div>
+        </div>
+        <div className="publish-link-card">
+          <strong>Stable XML (uvijek aktualno)</strong>
+          <code>{urls.stableXml}</code>
+          <div className="publish-link-row">
+            <a href={urls.stableXml} target="_blank" rel="noreferrer">Otvori</a>
+            <button type="button" className="app-link-button" onClick={() => copyText(urls.stableXml)}>Kopiraj</button>
+          </div>
+        </div>
+        {versionCsv && versionXml && (
+          <div className="publish-link-card">
+            <strong>Ova verzija (immutable)</strong>
+            <code>{publication?.filenameStem}.csv / .xml</code>
+            <div className="publish-link-row">
+              <a href={versionCsv} target="_blank" rel="noreferrer">CSV</a>
+              <a href={versionXml} target="_blank" rel="noreferrer">XML</a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="consultation-card ready-card publish-success-next">
+        <div>
+          <span className="app-label">SLJEDEĆI KORAK</span>
+          <h3>Ugradite cjenik na postojeći web.</h3>
+          <p>Stable CSV/XML možete povezati na WordPress, Wix ili custom stranicu. Ako želite, NEPAR to postavi umjesto vas.</p>
+        </div>
+        <button className="app-button app-button-primary" type="button" onClick={() => onLead?.('implementation')}>
+          Postavljanje od 129 €
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ValidationResultPanel({
   list,
   validation,
@@ -79,6 +171,12 @@ function ValidationResultPanel({
   const incomplete = validation.blockingCount > 0
   const tableRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    if (!published) return
+    const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+    requestAnimationFrame(() => document.querySelector('.publish-success-panel')?.scrollIntoView({ behavior, block: 'start' }))
+  }, [published])
+
   function focusAnchorTable() {
     tableRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
     const firstMissing = tableRef.current?.querySelector<HTMLInputElement>('input.app-table-input.is-required')
@@ -91,14 +189,23 @@ function ValidationResultPanel({
         <div>
           <span className="app-label">3 / REZULTAT</span>
           <h2>{published ? 'Cjenik je objavljen' : incomplete ? 'Još nekoliko stvari treba dopuniti' : 'Cjenik je spreman za objavu'}</h2>
-          <p>{list.items.length} stavki učitano · {sourceFilename || 'učitana datoteka'}</p>
+          <p>{list.items.length} stavki učitano · {sourceFilename || 'učitana datoteka'}{publication ? ` · verzija ${publication.sequence}` : ''}</p>
         </div>
-        <div className={'validation-app-count ' + (incomplete ? 'needs-attention' : 'ready')}>
-          <strong>{incomplete ? validation.blockingCount : 0}</strong>
-          <span>{incomplete ? 'za dopunu' : 'bez blokera'}</span>
+        <div className={'validation-app-count ' + (published ? 'ready' : incomplete ? 'needs-attention' : 'ready')}>
+          <strong>{published ? (publication?.sequence ?? '✓') : incomplete ? validation.blockingCount : 0}</strong>
+          <span>{published ? 'objavljeno' : incomplete ? 'za dopunu' : 'bez blokera'}</span>
         </div>
       </div>
 
+      {published ? (
+        <PublishedSuccessPanel
+          slug={list.tenant.slug || 'nepar'}
+          publication={publication}
+          message={message}
+          onLead={onLead}
+        />
+      ) : (
+        <>
       <div className="validation-app-summary">
         <strong>{incomplete ? 'Pronašli smo podatke koje treba dopuniti.' : 'Svi obavezni podaci su popunjeni.'}</strong>
         {validation.warningCount > 0 && <span>{validation.warningCount} upozorenja</span>}
@@ -235,7 +342,7 @@ function ValidationResultPanel({
           </button>
         </div>
       </div>
-      {message && <p className="app-success" role="status">{message}{publication && ' · verzija ' + publication.sequence}</p>}
+      {message && <p className="app-success" role="status">{message}</p>}
       <div className={'consultation-card ' + (incomplete ? '' : 'ready-card')}>
         <div>
           <span className="app-label">{incomplete ? 'TREBATE POMOĆ?' : 'SLJEDEĆI KORAK'}</span>
@@ -246,6 +353,8 @@ function ValidationResultPanel({
           {incomplete ? 'Zatražite konzultaciju' : 'Postavljanje od 129 €'}
         </button>
       </div>
+        </>
+      )}
     </section>
   )
 }
