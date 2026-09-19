@@ -1,6 +1,6 @@
 export type PriceSource = 'nepar' | 'marketino-csv' | 'marketino-api'
 export type EntitlementPlan = 'validator' | 'publisher_self_service' | 'managed'
-export type EntitlementStatus = 'active' | 'inactive' | 'expired'
+export type EntitlementStatus = 'trial' | 'active' | 'expired' | 'suspended'
 export type DraftStatus = 'uploaded' | 'invalid' | 'manual_review' | 'ready_to_publish' | 'published'
 export type ValidationSeverity = 'error' | 'warning' | 'manual_review'
 export type ValidationField = 'name' | 'price' | 'type' | 'anchorPrice' | 'specialSaleApplied' | 'specialSaleName' | 'import'

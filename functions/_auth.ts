@@ -46,6 +46,17 @@ function randomToken() {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
+export async function createSessionForUser(env: AuthEnv, userId: string) {
+  if (!env.DB) throw new AccessDeniedError(503, 'db_unavailable', 'D1 binding DB nije konfiguriran.')
+  const sessionToken = randomToken()
+  const sessionHash = await sha256Hex(sessionToken)
+  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString()
+  await env.DB.prepare(
+    'INSERT INTO auth_sessions (id, user_id, token_hash, expires_at, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)',
+  ).bind(crypto.randomUUID(), userId, sessionHash, expiresAt, nowIso(), nowIso()).run()
+  return { sessionToken, maxAgeSeconds: Math.floor(SESSION_TTL_MS / 1000) }
+}
+
 function clientIp(request: Request) {
   return request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '0.0.0.0'
 }

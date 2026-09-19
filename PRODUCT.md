@@ -16,36 +16,40 @@ Small business owners and operators who already maintain prices in a POS, ERP, o
 
 ## Product Purpose
 
-NEPAR Publisher helps a small business check whether its website exposes a public machine-readable price list, validate CSV/XML data, convert Excel price lists, and request a complete technical implementation. Success means a non-technical owner understands what is ready, what is missing, and can send NEPAR whatever material they already have.
+NEPAR Publisher helps a small business check whether its website exposes a public machine-readable price list, validate CSV/XML data, convert Excel price lists, and publish a real public price list on a stable `/c/{slug}` URL with CSV/XML feeds. Success means a non-technical owner can preview data, start a 7-day trial on their own URL, then continue self-serve or ask NEPAR to install it.
 
 ## Positioning
 
-The acquisition flow starts with a no-registration website readiness check, continues with a free CSV/XML validator or local Excel conversion, and then offers consultation, Publisher setup, or managed service. The backend keeps the existing normalization and publication infrastructure without exposing internal source-system details to customers.
+The acquisition flow is trial-first: website readiness check → free CSV/XML/Excel preview (private draft, no public publish) → e-mail verify → trial tenant with real `/c/{slug}` → dashboard upgrade (49,90 €/god self-serve or 89,90 € first year with install) → paid renewal. `/c/nepar` is the NEPAR demo fixture only and is never the destination for customer uploads.
 
 ## Operating Context
 
-The customer can check a website, upload CSV/XML, map an XLS/XLSX worksheet into the same normalized model, preview rows, complete missing regulatory fields, download both machine-readable outputs, or send a file/URL to NEPAR for consultation or implementation. Excel stays local until the user explicitly attaches it to an inquiry.
+Anonymous users upload into a private draft (≈24 h, R2 + D1 metadata). Publishing a trial requires business name, e-mail, and slug; the tenant is created only after magic-link verification. Owners use `/app` to edit, re-upload, and publish while entitlement is live. Expired tenants keep the dashboard (edit/upload) but public HTML/CSV/XML/archive return 410 until renewed.
 
 ## Capabilities and Constraints
 
-The product supports a tolerant CSV adapter, shared XML and Excel normalization, deterministic hashes, snapshots, CSV/XML rendering, immutable publications, public `/c/:slug` lists, archive views, website readiness checking, a Turnstile-protected implementation inquiry with an optional attachment, and magic-link Publisher login for activated tenants (`/app`). Anonymous validator/demo publish remains a sandbox and is not permanent customer hosting. Billing, automatic provider synchronization, CRM, marketing subscriptions, and multi-user roles beyond owner are out of scope for this layer.
+Supports CSV/XML/Excel normalization, private drafts, idempotent trial provisioning, entitlements (`trial` | `active` | `expired` | `suspended`) with always-set `period_end`, public access guard, trial `noindex`, iframe-friendly public pages, magic-link auth, and ops renew (`MAX(now, period_end) + 1 year`). Stripe/billing automation, CRM, and a WordPress plugin codebase are out of scope for this layer; commercial fulfillment is offer → payment → ops renew.
 
 ## Brand Commitments
 
-Product name: NEPAR Publisher. Primary message: “Provjerite što imate. Ako želite, mi ćemo riješiti ostalo.” Tone is clear, calm, professional, and helpful; avoid provider-specific promises, stock people, cheesy AI imagery, and decoration without product meaning.
+Product name: NEPAR Publisher. Primary message: “Provjerite što imate. Ako želite, mi ćemo riješiti ostalo.” Tone is clear, calm, professional, and helpful.
 
 ## Evidence on Hand
 
-The existing integration fixture at `./marketino-artikli` contains Croatian headers and values and remains available for compatibility tests. The public product does not name that source system. Automatic provider synchronization remains explicitly future work.
+The fixture at `./marketino-artikli` remains available for the demo tenant. Automatic provider synchronization remains future work.
 
 ## Product Principles
 
-- Change prices at the source when a provider exists; for self-serve tenants without a provider, the Publisher draft is the source until they publish.
+- Change prices at the source when a provider exists; for self-serve tenants the Publisher draft is the source until they publish.
 - One normalized list powers every output.
-- Make sync state and history visible enough to build trust.
-- Keep public price lists fast, readable, and embed-friendly.
+- The customer keeps the same slug/URL from trial through paid renewal.
+- Demo `/c/nepar` is not a substitute for a customer trial or paid tenant.
 - Never invent source data or future integration details.
-- Demo sandbox links are not a substitute for an activated Publisher tenant.
+
+## Commercial offer
+
+- Publisher self-service: **49,90 €/god** (same URL; customer embeds link/iframe).
+- Publisher + install: **89,90 € first year**, then **49,90 €/god**.
 
 ## Accessibility & Inclusion
 

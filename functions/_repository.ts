@@ -11,6 +11,7 @@ export type D1DatabaseLike = { prepare: (query: string) => D1Statement; batch: (
 export type RuntimeEnv = {
   DB?: D1DatabaseLike
   ASSETS?: { fetch: (input: Request | URL | string) => Promise<Response> }
+  DRAFTS?: { put: (key: string, value: string, options?: { httpMetadata?: { contentType?: string } }) => Promise<unknown>; get: (key: string) => Promise<{ text(): Promise<string> } | null> }
   DEMO_WRITE_TENANT?: string
   DEMO_PUBLIC_HOSTNAME?: string
   DEFAULT_PUBLICATION_TIMEZONE?: string
@@ -198,7 +199,13 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const draftValidation = validatePriceList(payload)
   if (!internalDemo && draftValidation.status !== "ready_to_publish") throw new Error("Cjenik više nije spreman za objavu. Ponovno provjerite dopune.")
   const entitlement = await readEntitlement(env, slug)
-  if (!internalDemo && (!entitlement || entitlement.status !== "active" || entitlement.plan === "validator")) throw new Error("Aktivan Publisher entitlement nije pronađen.")
+  const live =
+    entitlement
+    && (entitlement.status === 'active' || entitlement.status === 'trial')
+    && entitlement.plan !== 'validator'
+    && entitlement.periodEnd
+    && new Date(entitlement.periodEnd).getTime() >= Date.now()
+  if (!internalDemo && !live) throw new Error("Aktivan Publisher entitlement nije pronađen.")
   const current = await readCurrentPublication(env, slug)
   const hash = await deterministicHash(payload)
   if (current?.hash === hash) {
@@ -218,7 +225,7 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   // requires that this payload is not already current. This makes a retry or
   // concurrent request idempotent without relying on a JavaScript-side lock.
   const guard = "EXISTS (SELECT 1 FROM price_uploads WHERE id = ? AND tenant_id = ? AND status = 'published') AND NOT EXISTS (SELECT 1 FROM price_publications WHERE tenant_id = ? AND is_current = 1 AND hash = ?)"
-  const entitlementGuard = internalDemo ? "1 = 1" : "EXISTS (SELECT 1 FROM entitlements WHERE tenant_id = ? AND status = 'active' AND plan IN ('publisher_self_service', 'managed') AND (period_end IS NULL OR period_end >= ?))"
+  const entitlementGuard = internalDemo ? "1 = 1" : "EXISTS (SELECT 1 FROM entitlements WHERE tenant_id = ? AND status IN ('active', 'trial') AND plan IN ('publisher_self_service', 'managed') AND period_end IS NOT NULL AND period_end >= ?)"
   const firstBindings = internalDemo ? [timestamp, draftId, tenantId] : [timestamp, draftId, tenantId, tenantId, timestamp]
   const insertedGuard = "EXISTS (SELECT 1 FROM price_publications WHERE id = ? AND tenant_id = ?)"
   const results = await env.DB.batch([

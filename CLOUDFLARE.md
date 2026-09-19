@@ -67,18 +67,42 @@ then create matching active rows in `publication_targets`. Seed production
 tenant metadata and active `entitlements` separately; do not hardcode those
 values in the repository.
 
-### Activating a self-serve Publisher tenant (ops)
+R2 binding `DRAFTS` → bucket `digitalnicjenik-drafts` stores anonymous private
+draft payloads. Apply migration `0007_trial_publisher.sql` for drafts, claims,
+and entitlement status recreate (`trial` | `active` | `expired` | `suspended`).
 
-After lead close / payment:
+### Trial-first customer journey
 
-1. Apply D1 migration `0006_auth.sql` if not already applied.
-2. Create tenant + active `publisher_self_service` entitlement + `publication_targets`
-   hostname (usually `{slug}.digitalnicjenik.nepar.hr`).
-3. Insert `auth_users` + `tenant_members` (role `owner`) for the customer email, or use
-   `ensureTenantOwner` from `functions/_auth.ts` in a one-off ops script.
-4. Customer opens `https://digitalnicjenik.nepar.hr/app` and requests a magic link.
+1. Anonymous upload → `POST /api/drafts` (private draft, ~24h, no `/c/nepar` publish).
+2. Claim → `POST /api/trials/start` (business name + e-mail + slug) sends magic mail; **no tenant yet**.
+3. `GET /api/trials/callback?token=` idempotently provisions tenant, trial entitlement (7d), claims draft, publishes, sets session, redirects `/app?welcome=1`.
+4. Dashboard upgrade CTAs → `POST /api/publisher/upgrade` e-mails NEPAR with full tenant context.
+5. After payment, ops renew: `POST /api/ops/renew` with `Authorization: Bearer <OPERATOR_WRITE_KEY>` and `{ "slug": "..." }`  
+   (`period_end = MAX(now, period_end) + 1 year`, `status = active`).
 
-Anonymous demo publish on `nepar` never becomes a paid tenant automatically.
+Public HTML/CSV/XML/archive for expired/suspended tenants return **410** + `Cache-Control: no-store`.  
+Trial public responses include `X-Robots-Tag: noindex, nofollow`.  
+Public `/c/*` allows iframe embed via `Content-Security-Policy: frame-ancestors *`.
+
+`/c/nepar` remains the demo fixture only.
+
+### Activating / renewing a paid Publisher tenant (ops)
+
+Preferred after trial: `POST /api/ops/renew` with operator bearer key.
+
+Manual SQL alternative:
+
+```sql
+UPDATE entitlements
+SET status = 'active',
+    period_end = datetime(MAX(CURRENT_TIMESTAMP, period_end), '+1 year'),
+    updated_at = CURRENT_TIMESTAMP
+WHERE tenant_id = (SELECT id FROM tenants WHERE slug = ?);
+```
+
+For legacy bootstrap without trial: create tenant + entitlement + `publication_targets` + `ensureTenantOwner`, then customer uses `/app` magic link.
+
+Anonymous uploads never publish to `nepar`.
 
 ## Lead forma i Email Sending
 

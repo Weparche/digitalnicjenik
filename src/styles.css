@@ -879,8 +879,73 @@ body:has(.premium-entry) { background: var(--nepar-canvas); color: var(--nepar-i
 .publisher-header-meta strong { color: var(--nepar-ink, #0f172a); }
 .publisher-dashboard { padding-bottom: 64px; }
 .publisher-dashboard .validator-app-intro h1 { max-width: 18ch; }
+.trial-claim-panel,
+.publisher-welcome,
+.publisher-upgrade-banner {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+  padding: 22px;
+  border: 1px solid var(--nepar-border, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+}
+.trial-claim-panel h2,
+.publisher-welcome h1,
+.publisher-upgrade-banner h2 {
+  margin: 0;
+  color: var(--nepar-ink, #0f172a);
+  letter-spacing: -.03em;
+  line-height: 1.15;
+}
+.trial-claim-form {
+  display: grid;
+  gap: 12px;
+}
+.trial-claim-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--nepar-body, #334155);
+  font-size: 13px;
+  font-weight: 600;
+}
+.trial-claim-form input {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: 14px inherit;
+}
+.trial-slug-preview,
+.publisher-welcome-url,
+.publisher-upgrade-slug,
+.validator-trial-note {
+  margin: 0;
+  color: var(--nepar-body, #334155);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.publisher-welcome-url a { color: var(--nepar-primary, #2563eb); font-weight: 700; overflow-wrap: anywhere; }
+.trial-claim-actions,
+.publisher-welcome-actions,
+.publisher-upgrade-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.publisher-upgrade-banner {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
 @media (max-width: 760px) {
   .publisher-shell .publisher-auth { width: calc(100% - 32px); margin-top: 28px; }
   .publisher-auth-panel { padding: 22px; }
   .publisher-header-meta { max-width: 180px; text-align: right; }
+  .trial-claim-actions,
+  .publisher-welcome-actions,
+  .publisher-upgrade-actions { flex-direction: column; align-items: stretch; }
+  .trial-claim-actions .app-button,
+  .publisher-welcome-actions .app-button,
+  .publisher-upgrade-actions .app-button { width: 100%; }
 }
