@@ -4,7 +4,7 @@
 
 ## Active root surface
 
-The `/` route combines Operate and Persuade. Its first viewport lets a non-technical website owner run the checker without scrolling while a distinct sales card offers full implementation from 129 €. The product proves value before asking for contact details, but help is always reachable.
+The `/` route combines Operate and Persuade. Its first viewport lets a non-technical website owner run the checker without scrolling while a distinct sales card offers plugin from 49,90 € or plugin + implementation at 89,90 €. The product proves value before asking for contact details, but help is always reachable.
 
 Use NEPAR slate neutrals on `#f8fafc`, white utility panels, and `#2563eb` primary actions. Cyan and violet are restrained brand accents. Green is reserved for success, amber for warning/manual review, and red for errors. Preserve visible focus states, 44px touch targets, safe URL/filename wrapping, and reduced-motion behavior at 390px.
 

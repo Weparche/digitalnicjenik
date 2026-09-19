@@ -9,7 +9,7 @@ describe('NEPAR regulatory validator', () => {
     const parsed = parseMarketinoCsv(fixture, { id: 'nepar', slug: 'nepar', name: 'NEPAR' })
     const validation = validatePriceList(parsed.priceList)
 
-    expect(parsed.priceList.items).toHaveLength(26)
+    expect(parsed.priceList.items).toHaveLength(29)
     expect(validation.status).toBe('manual_review')
     expect(validation.issues.some((issue) => issue.field === 'anchorPrice')).toBe(true)
   })

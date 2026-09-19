@@ -8,7 +8,7 @@ import { parseXmlPriceList, renderXml } from './xml'
 describe('MarketinoCsvAdapter against the real export', () => {
   it('parses all service rows, Croatian text, categories and numeric prices', () => {
     const result = parseMarketinoCsv(fixture)
-    expect(result.priceList.items).toHaveLength(26)
+    expect(result.priceList.items).toHaveLength(29)
     expect(result.priceList.items[0]).toMatchObject({ category: 'Usluge', name: 'Administracija sadržaja', price: 40 })
     expect(result.priceList.items.find((item) => item.name === 'Napredna tehnička i on-page SEO optimizacija')?.price).toBe(250)
     expect(result.priceList.items.every((item) => typeof item.price === 'number')).toBe(true)

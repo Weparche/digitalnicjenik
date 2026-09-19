@@ -82,7 +82,6 @@ function PublishedSuccessPanel({
   onLead?: (intent: LeadIntent) => void
   mode?: 'sandbox' | 'publisher'
 }) {
-  const [path, setPath] = useState<'choose' | 'plugin' | 'implementation'>('choose')
   const urls = publishedPublicUrls(slug, mode)
   const versionLabel = publication ? `verzija ${publication.sequence}` : null
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
@@ -142,15 +141,6 @@ function PublishedSuccessPanel({
     )
   }
 
-  function choosePlugin() {
-    setPath('plugin')
-  }
-
-  function chooseImplementation() {
-    setPath('implementation')
-    onLead?.('implementation')
-  }
-
   return (
     <div className="publish-success-panel" role="status">
       <div className="publish-success-hero">
@@ -160,88 +150,25 @@ function PublishedSuccessPanel({
             <path d="M14 24.5 21 31.5 34 16.5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h3>Cjenik je spreman{versionLabel ? ` · ${versionLabel}` : ''}</h3>
+        <h3>Provjera je gotova{versionLabel ? ` · ${versionLabel}` : ''}</h3>
         <p>
-          {message || 'Objava je uspjela.'} Sada birate kako će živjeti na <em>vašem</em> webu.
-          Linkovi i sandbox pregled su alat za ugradnju — ne besplatni trajni hosting za klijente.
-          Trajni Publisher link i dashboard dolaze nakon aktivacije.
+          {message || 'Cjenik je uspješno pripremljen.'} Ovo nije trajni hosting — zatražite ponudu za plugin, implementaciju ili oboje.
+          Preuzimanja CSV/XML iznad su radne datoteke za vas, ne javni linkovi za klijente.
         </p>
       </div>
 
-      {path === 'choose' && (
-        <div className="publish-path-grid" aria-label="Odaberite sljedeći korak">
-          <button type="button" className="publish-path-card" onClick={choosePlugin}>
-            <strong>Samo plugin / link</strong>
-            <span>Stable CSV i XML za vaš CMS ili plugin. Vi ugrađujete i hostate na vlastitom webu; NEPAR sandbox nije trajna stranica za klijente.</span>
-            <em>Prikaži linkove →</em>
-          </button>
-          <button type="button" className="publish-path-card publish-path-card-featured" onClick={chooseImplementation}>
-            <strong>Plugin + implementacija</strong>
-            <span>Priprema, povezivanje s postojećim webom i prva godina Publishera. Pošaljete što imate — mi postavimo.</span>
-            <em>Od 129 € →</em>
-          </button>
-        </div>
-      )}
-
-      {path === 'plugin' && (
-        <div className="publish-plugin-panel">
-          <div className="publish-plugin-intro">
-            <h4>Linkovi za plugin i ugradnju</h4>
-            <p>Koristite stable CSV/XML na svom webu. HTML pregled na NEPAR domeni je privremeni sandbox. Trajni link + dashboard aktiviraju se s Publisherom.</p>
-          </div>
-          <div className="publish-link-grid">
-            <div className="publish-link-card">
-              <strong>Stable CSV (plugin / dohvat)</strong>
-              <code>{urls.stableCsv}</code>
-              <div className="publish-link-row">
-                <a href={urls.stableCsv} target="_blank" rel="noreferrer">Otvori</a>
-                <button type="button" className="app-link-button" onClick={() => copyText(urls.stableCsv)}>Kopiraj</button>
-              </div>
-            </div>
-            <div className="publish-link-card">
-              <strong>Stable XML (plugin / dohvat)</strong>
-              <code>{urls.stableXml}</code>
-              <div className="publish-link-row">
-                <a href={urls.stableXml} target="_blank" rel="noreferrer">Otvori</a>
-                <button type="button" className="app-link-button" onClick={() => copyText(urls.stableXml)}>Kopiraj</button>
-              </div>
-            </div>
-            {versionCsv && versionXml && (
-              <div className="publish-link-card">
-                <strong>Ova verzija (immutable)</strong>
-                <code>{publication?.filenameStem}.csv / .xml</code>
-                <div className="publish-link-row">
-                  <a href={versionCsv} target="_blank" rel="noreferrer">CSV</a>
-                  <a href={versionXml} target="_blank" rel="noreferrer">XML</a>
-                </div>
-              </div>
-            )}
-            <div className="publish-link-card publish-link-card-muted">
-              <strong>Privremeni NEPAR pregled</strong>
-              <code>{urls.html}</code>
-              <div className="publish-link-row">
-                <a href={urls.html} target="_blank" rel="noreferrer">Otvori sandbox</a>
-                <a href={urls.archive} target="_blank" rel="noreferrer">Arhiva</a>
-              </div>
-            </div>
-          </div>
-          <div className="publish-plugin-footer">
-            <button type="button" className="app-button app-button-light" onClick={() => setPath('choose')}>← Natrag na izbor</button>
-            <button type="button" className="app-button app-button-primary" onClick={() => onLead?.('plugin')}>Trebate pomoć s pluginom?</button>
-          </div>
-        </div>
-      )}
-
-      {path === 'implementation' && (
-        <div className="publish-implement-panel">
-          <h4>Implementacija od 129 €</h4>
-          <p>Ispunite obrazac ispod — priložit ćemo kontekst ove objave{versionLabel ? ` (${versionLabel})` : ''}. NEPAR predlaže najkraći put do ugradnje na vaš postojeći web.</p>
-          <div className="publish-implement-actions">
-            <button type="button" className="app-button app-button-light" onClick={() => setPath('choose')}>← Natrag na izbor</button>
-            <button type="button" className="app-button app-button-primary" onClick={() => onLead?.('implementation')}>Idi na obrazac →</button>
-          </div>
-        </div>
-      )}
+      <div className="publish-path-grid" aria-label="Zatražite ponudu">
+        <button type="button" className="publish-path-card" onClick={() => onLead?.('plugin')}>
+          <strong>Plugin</strong>
+          <span>Priprema plugin / ugradnje na vaš postojeći CMS. Pošaljite upit — odgovaramo s ponudom, bez automatskog linka.</span>
+          <em>49,90 € →</em>
+        </button>
+        <button type="button" className="publish-path-card publish-path-card-featured" onClick={() => onLead?.('implementation')}>
+          <strong>Plugin + implementacija</strong>
+          <span>Plugin i tehničko postavljanje na vaš web. Pošaljete što imate — mi povežemo i predamo.</span>
+          <em>89,90 € →</em>
+        </button>
+      </div>
     </div>
   )
 }
@@ -455,16 +382,17 @@ function ValidationResultPanel({
         </div>
       </div>
       {message && <p className="app-success" role="status">{message}</p>}
-      <div className={'consultation-card ' + (incomplete ? '' : 'ready-card')}>
-        <div>
-          <span className="app-label">{incomplete ? 'TREBATE POMOĆ?' : 'SLJEDEĆI KORAK'}</span>
-          <h3>{incomplete ? 'Pošaljite nam cjenik na pregled.' : 'Cjenik je spreman za tehničko postavljanje.'}</h3>
-          <p>{incomplete ? 'Objasnit ćemo što nedostaje i pomoći s dopunama.' : 'NEPAR ga može povezati s vašim webom i preuzeti objavu.'}</p>
+      {incomplete && (
+        <div className="consultation-card">
+          <div>
+            <h3>Još treba dopuniti — možemo pomoći.</h3>
+            <p>Pošaljite nam cjenik na pregled. Objasnit ćemo što nedostaje i predložiti najkraći put.</p>
+          </div>
+          <button className="app-button app-button-primary" type="button" onClick={() => onLead?.('consultation')}>
+            Zatražite konzultaciju
+          </button>
         </div>
-        <button className="app-button app-button-primary" type="button" onClick={() => onLead?.(incomplete ? 'consultation' : 'implementation')}>
-          {incomplete ? 'Zatražite konzultaciju' : 'Postavljanje od 129 €'}
-        </button>
-      </div>
+      )}
         </>
       )}
     </section>
@@ -514,12 +442,21 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
   return <main className="public-shell">
     <div className="public-top"><Logo /><span className="public-badge">{demo ? 'DEMO PODACI' : isArchive ? 'JAVNA ARHIVA' : 'AKTUALNI CJENIK'}</span></div>
     <header className="public-header"><p className="eyebrow">NEPAR PUBLISHER</p><h1>{list.tenant.name}</h1><p className="public-updated">Zadnje objavljeno: {dateTime(list.updatedAt)}</p>{demo && <p className="public-demo-note">Demo podaci — ovo nije stvarni cjenik salona.</p>}</header>
+    {!isArchive && (
+      <aside className="public-checker-cta">
+        <div>
+          <strong>Provjerite svoju web stranicu</strong>
+          <p>Imate li javno dostupan ispravan CSV ili XML digitalni cjenik? Besplatna tehnička provjera.</p>
+        </div>
+        <a className="app-button app-button-primary" href="https://digitalnicjenik.nepar.hr/">Provjeri svoju stranicu →</a>
+      </aside>
+    )}
     {isArchive ? <section className="public-list public-archive" aria-label="Javna arhiva cjenika"><div className="public-list-title"><span>Arhiva objavljenih verzija</span><span className="item-count">{publications.length} verzija</span></div>{publications.map((publication) => <div className="public-archive-item" key={publication.id}><div><strong>{publication.isCurrent ? 'Aktualno · ' : ''}{dateTime(publication.publishedAt)}</strong><small>{publication.filenameStem}</small></div><div className="archive-links"><a href={'/' + publication.filenameStem + '.csv'}>CSV</a><a href={'/' + publication.filenameStem + '.xml'}>XML</a></div></div>)}<p className="public-archive-note">Prethodne objavljene verzije ostaju javno dostupne najmanje 30 dana od trenutka zamjene.</p></section> : <section className="public-list" aria-label="Aktualni digitalni cjenik">
       <div className="public-list-title"><span>Aktualni digitalni cjenik</span><span className="item-count">{list.items.length} stavki</span></div>
       {grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.salePrice != null && <del>{money(item.price)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
     </section>}
     {!isArchive && <section className="public-links"><div><strong>Aktualni digitalni cjenik</strong><span><a href={currentPublication ? '/' + currentPublication.filenameStem + '.csv' : '/cjenik.csv'}>{currentPublication ? currentPublication.filenameStem + '.csv' : 'Preuzmi CSV'}</a>{currentPublication && <a href={'/' + currentPublication.filenameStem + '.xml'}>{currentPublication.filenameStem + '.xml'}</a>}</span></div><div><strong>Stable URL za automatizirani dohvat</strong><span><a href="/cjenik.csv">cjenik.csv</a><a href="/cjenik.xml">cjenik.xml</a></span></div></section>}
-    <footer className="public-footer"><span>Pokreće NEPAR Publisher</span>{!isArchive && <a href={(customHost ? '/arhiva/' : '/c/' + slug + '/arhiva')}>Arhiva</a>}<a href={customHost ? '/cjenik.csv' : '/c/' + slug + '/cjenik.csv'}>CSV</a><a href={customHost ? '/cjenik.xml' : '/c/' + slug + '/cjenik.xml'}>XML</a></footer>
+    <footer className="public-footer"><span>Pokreće NEPAR Publisher</span>{!isArchive && <a href={(customHost ? '/arhiva/' : '/c/' + slug + '/arhiva')}>Arhiva</a>}<a href={customHost ? '/cjenik.csv' : '/c/' + slug + '/cjenik.csv'}>CSV</a><a href={customHost ? '/cjenik.xml' : '/c/' + slug + '/cjenik.xml'}>XML</a><a href="https://digitalnicjenik.nepar.hr/">Provjeri CSV/XML na webu</a></footer>
   </main>
 }
 
@@ -530,7 +467,7 @@ function ValidationSummary({ issues, itemCount }: { issues: ValidationIssue[]; i
 }
 
 function Pricing() {
-  return <section className="pricing-section" id="pricing"><div className="section-heading"><p className="eyebrow">JASNA PONUDA / 02</p><h2>Od besplatne provjere<br /><em>do cjenika na vašem webu.</em></h2><p>Odaberite koliko posla želite prepustiti NEPAR-u. Sve je objašnjeno jednostavno, bez tehničkog žargona.</p></div><div className="pricing-lead"><div><span className="pricing-kicker">NAJČEŠĆI IZBOR</span><h3>Sve ćemo vam postaviti — od 129 €</h3><p>Digitalni cjenik na vašem webu, objava, arhiva i prvih 12 mjeseci Publishera uključeni.</p></div><a className="button button-amber" href="https://nepar.hr/digitalni-cjenik">Zatraži postavljanje <span>→</span></a></div><div className="pricing-grid"><article><span>01 / BESPLATNO</span><h3>Validator</h3><strong>0 €</strong><p>Upload, provjera i preview bez objave.</p></article><article className="pricing-featured"><span>02 / SAMOSTALNO</span><h3>Publisher</h3><strong>49 €/god</strong><p>Samostalni upload, provjera, neograničene objave, hosting, CSV/XML izlazi i arhiva.</p></article><article><span>03 / ODRŽAVANJE</span><h3>Managed</h3><strong>149 €/god</strong><p>NEPAR provjerava, objavljuje i prati uobičajene izmjene postojećeg cjenika.</p></article></div><div className="pricing-details"><span>WordPress ključ u ruke 149 €</span><span>Custom / Wix / Google Sites od 169 €</span><span>Vizualni HTML cjenik +49 €</span><span>Ručna izmjena 39 € · Hitna 69 €</span><span>AutoSync uskoro · 79 €/god</span></div></section>
+  return <section className="pricing-section" id="pricing"><div className="section-heading"><p className="eyebrow">JASNA PONUDA / 02</p><h2>Od besplatne provjere<br /><em>do cjenika na vašem webu.</em></h2><p>Odaberite koliko posla želite prepustiti NEPAR-u. Sve je objašnjeno jednostavno, bez tehničkog žargona.</p></div><div className="pricing-lead"><div><span className="pricing-kicker">NAJČEŠĆI IZBOR</span><h3>Plugin + implementacija — 89,90 €</h3><p>Plugin 49,90 € · implementacija 49,90 € · zajedno 89,90 €. Pošaljite što imate — odgovaramo s ponudom.</p></div><a className="button button-amber" href="#posaljite-cjenik">Zatraži ponudu <span>→</span></a></div><div className="pricing-grid"><article><span>01 / BESPLATNO</span><h3>Validator</h3><strong>0 €</strong><p>Upload, provjera i preview bez trajnog hostinga.</p></article><article className="pricing-featured"><span>02 / PLUGIN</span><h3>Plugin</h3><strong>49,90 €</strong><p>Priprema plugin / ugradnje na vaš CMS — ponuda putem obrasca.</p></article><article><span>03 / ZAJEDNO</span><h3>Plugin + implementacija</h3><strong>89,90 €</strong><p>Plugin i tehničko postavljanje na postojeći web.</p></article></div></section>
 }
 
 type CheckerDetails = {
@@ -596,7 +533,7 @@ function ReadinessChecker() {
       <p className="checker-helper">Provjeravamo postoji li javno dostupan CSV ili XML cjenik. Ne potvrđujemo pravnu usklađenost.</p>
     </div>
     {result && <div className={'checker-result ' + resultClass} role="status" aria-live="polite"><div className="checker-result-heading"><span className="result-mark" aria-hidden="true">{result.status === 'green' ? '✓' : result.status === 'unavailable' ? '!' : '·'}</span><div><span className="checker-label">REZULTAT PROVJERE</span><h3>{resultTitle}</h3></div></div><p>{result.message}</p>{result.status === 'green' && <div className="checker-found"><span>CSV: {details.csvUrl ? <a href={details.csvUrl} target="_blank" rel="noreferrer">{details.csvUrl}</a> : 'nije pronađen'}</span><span>XML: {details.xmlUrl ? <a href={details.xmlUrl} target="_blank" rel="noreferrer">{details.xmlUrl}</a> : 'nije pronađen'}</span></div>}{result.status === 'green' && <a className="checker-result-cta" href="https://nepar.hr/digitalni-cjenik">Želite ga prikazati i održavati na webu? Pogledajte NEPAR Publisher →</a>}{result.status === 'red' && <p className="checker-next-step">Možete učitati CSV za besplatnu provjeru ili zatražiti da NEPAR pretvori i postavi vaš postojeći cjenik.</p>}{result.status === 'unavailable' && <button className="text-button" type="button" onClick={() => void check()}>Pokušajte ponovno →</button>}</div>}
-    <div className={'checker-paths ' + (result ? 'has-result' : '')}><h2>Što želite napraviti?</h2><div className="checker-path-grid"><a className="checker-path" href="#demo"><span>01</span><strong>Imam CSV</strong><small>Učitaj i besplatno provjeri</small></a><a className="checker-path" href="https://nepar.hr/digitalni-cjenik"><span>02</span><strong>Nemam CSV</strong><small>Pretvorite moj postojeći cjenik</small></a><a className="checker-path checker-path-featured" href="https://nepar.hr/digitalni-cjenik"><span>03</span><strong>Želim sve riješeno</strong><small>Postavljanje od 129 €</small></a></div></div>
+    <div className={'checker-paths ' + (result ? 'has-result' : '')}><h2>Što želite napraviti?</h2><div className="checker-path-grid"><a className="checker-path" href="#demo"><span>01</span><strong>Imam CSV</strong><small>Učitaj i besplatno provjeri</small></a><a className="checker-path" href="https://nepar.hr/digitalni-cjenik"><span>02</span><strong>Nemam CSV</strong><small>Pretvorite moj postojeći cjenik</small></a><a className="checker-path checker-path-featured" href="https://nepar.hr/digitalni-cjenik"><span>03</span><strong>Želim sve riješeno</strong><small>Plugin + implementacija 89,90 €</small></a></div></div>
   </div>
 }
 
@@ -702,7 +639,7 @@ function PublisherWorkspace() {
 
 function LandingLegacy() {
   return <div className="app-shell"><header className="site-header"><Logo /><nav><a href="#workflow">Kako radi</a><a href="#demo">Provjeri CSV</a><a href="#pricing">Cijene</a></nav><a className="header-cta" href="#demo">Besplatno provjeri <span>→</span></a></header><main>
-    <section className="hero"><div className="hero-copy"><p className="eyebrow">NEPAR PUBLISHER <span className="eyebrow-rule" /></p><h1>Sve ćemo vam postaviti — <em>od 129 €.</em></h1><p className="hero-sub">Digitalni cjenik na vašem webu, objava, arhiva i prvih 12 mjeseci Publishera uključeni. Ili ga sami održavajte za 49 €/god.</p><div className="hero-actions"><a className="button button-amber" href="#demo">Besplatno provjeri CSV <span>→</span></a><a className="button button-outline" href="#pricing">Pogledaj opcije <span>↘</span></a></div><p className="hero-note"><span className="status-dot" /> CSV upload, validacija i preview su besplatni.</p></div><div className="hero-visual" aria-label="Vizualni prikaz toka CSV datoteke do objavljenog cjenika"><picture className="visual-asset"><source media="(max-width: 520px)" srcSet="/assets/nepar-orchestration-mobile.webp" /><img src="/assets/nepar-orchestration-desktop.webp" alt="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik" /></picture><div className="visual-top"><span>PUBLICATION / READY</span><span>NP—001</span></div><div className="visual-grid" /><div className="visual-core"><span className="core-ring ring-one" /><span className="core-ring ring-two" /><span className="core-ring ring-three" /><div className="core-label"><span>NEPAR</span><strong>PUBLISH<br />READY</strong></div></div><div className="visual-rail rail-source"><span>01 / INPUT</span><strong>CSV EXPORT</strong><i /></div><div className="visual-rail rail-web"><span>02 / OUTPUT</span><strong>WEB</strong><i /></div><div className="visual-rail rail-csv"><span>03 / OUTPUT</span><strong>CSV · XML · ARHIVA</strong><i /></div><div className="visual-readout"><span>LAST EVENT</span><strong>PUBLICATION.CREATED</strong><b>●</b></div></div></section>
+    <section className="hero"><div className="hero-copy"><p className="eyebrow">NEPAR PUBLISHER <span className="eyebrow-rule" /></p><h1>Sve ćemo vam postaviti — <em>od 49,90 €.</em></h1><p className="hero-sub">Plugin 49,90 € · implementacija 49,90 € · zajedno 89,90 €. Ili zatražite konzultaciju nakon besplatne provjere.</p><div className="hero-actions"><a className="button button-amber" href="#demo">Besplatno provjeri CSV <span>→</span></a><a className="button button-outline" href="#pricing">Pogledaj opcije <span>↘</span></a></div><p className="hero-note"><span className="status-dot" /> CSV upload, validacija i preview su besplatni.</p></div><div className="hero-visual" aria-label="Vizualni prikaz toka CSV datoteke do objavljenog cjenika"><picture className="visual-asset"><source media="(max-width: 520px)" srcSet="/assets/nepar-orchestration-mobile.webp" /><img src="/assets/nepar-orchestration-desktop.webp" alt="CSV dokument prolazi kroz provjeru i postaje javni digitalni cjenik" /></picture><div className="visual-top"><span>PUBLICATION / READY</span><span>NP—001</span></div><div className="visual-grid" /><div className="visual-core"><span className="core-ring ring-one" /><span className="core-ring ring-two" /><span className="core-ring ring-three" /><div className="core-label"><span>NEPAR</span><strong>PUBLISH<br />READY</strong></div></div><div className="visual-rail rail-source"><span>01 / INPUT</span><strong>CSV EXPORT</strong><i /></div><div className="visual-rail rail-web"><span>02 / OUTPUT</span><strong>WEB</strong><i /></div><div className="visual-rail rail-csv"><span>03 / OUTPUT</span><strong>CSV · XML · ARHIVA</strong><i /></div><div className="visual-readout"><span>LAST EVENT</span><strong>PUBLICATION.CREATED</strong><b>●</b></div></div></section>
     <section className="proof-strip"><span>Učitajte jednom</span><span>→</span><strong>objavite ispravno</strong><span className="proof-fade">i čuvajte svaku verziju</span></section>
     <section className="engine-section" id="workflow"><div className="section-heading"><p className="eyebrow">JEDNOSTAVAN WORKFLOW</p><h2>Vaš poslovni sustav<br /><em>ostaje izvor istine.</em></h2><p>NEPAR provjerava podatke koje već imate, pomaže popuniti što nedostaje i objavljuje ih na pravom mjestu.</p></div><div className="interactive-flow"><PublisherFlow /><div className="workflow-explanation"><div><strong>Validator</strong><span>Besplatna provjera bez objave.</span></div><Arrow /><div><strong>Publisher</strong><span>Jedna immutable verzija po objavi.</span></div><Arrow /><div><strong>Arhiva</strong><span>Aktualna i prethodne verzije na dohvat.</span></div></div></div></section>
     <PublisherWorkspace /><Pricing />
@@ -720,9 +657,9 @@ function LandingVariant({ variant }: { variant: LandingVariant }) {
     ? { label: 'PREGLED ZA VLASNIKE WEB STRANICA', title: <>Prvo provjerite.<br /><em>Onda odlučite.</em></>, body: 'U nekoliko sekundi saznajte može li vaš web već ponuditi strojni cjenik. Ako ne može, pokazat ćemo vam najjednostavniji sljedeći korak.', sideTitle: 'Bez nagađanja', sideBody: 'Provjeravamo samo ono što je javno dostupno vašim kupcima.', sideItems: ['Javni CSV ili XML dokument', 'Dostupnost bez prijave', 'Tehnički rezultat, bez pravnih obećanja'] }
     : variant === '2'
       ? { label: 'NEPAR / WEB CHECKER', title: <>Ne nagađajte.<br /><em>Provjerite.</em></>, body: 'Jedan URL. Jedan jasan rezultat. Bez registracije, bez poziva i bez čitanja tehničke dokumentacije.', sideTitle: 'Vaš prvi odgovor', sideBody: 'Ako pronađemo datoteku, pokazujemo točan URL. Ako ne pronađemo, dobit ćete konkretan izbor.', sideItems: ['GREEN — dokument potvrđen', 'YELLOW — cjenik postoji, datoteka nije potvrđena', 'RED — nema potvrđenog strojnog cjenika'] }
-      : { label: 'NEPAR PUBLISHER', title: <>Vaš web, vaš cjenik,<br /><em>jedan jasan sljedeći korak.</em></>, body: 'Možda je sve već spremno. Možda samo treba izvesti CSV. Provjerite prvo — tek nakon toga odlučujete želite li sami ili da mi sve riješimo.', sideTitle: 'Za WordPress, Wix i Google Sites', sideBody: 'Ne morate biti programer. Ako vam je web izradio netko drugi, i dalje možete krenuti od ove provjere.', sideItems: ['Provjerite web bez registracije', 'Učitajte CSV iz svog programa', 'Zatražite postavljanje od 129 €'] }
+      : { label: 'NEPAR PUBLISHER', title: <>Vaš web, vaš cjenik,<br /><em>jedan jasan sljedeći korak.</em></>, body: 'Možda je sve već spremno. Možda samo treba izvesti CSV. Provjerite prvo — tek nakon toga odlučujete želite li sami ili da mi sve riješimo.', sideTitle: 'Za WordPress, Wix i Google Sites', sideBody: 'Ne morate biti programer. Ako vam je web izradio netko drugi, i dalje možete krenuti od ove provjere.', sideItems: ['Provjerite web bez registracije', 'Učitajte CSV iz svog programa', 'Zatražite plugin + implementaciju 89,90 €'] }
   return <div className={'app-shell variant-page variant-' + variant}><header className="site-header"><Logo /><nav><a href="#checker">Provjeri web</a><a href="#demo">Imam CSV</a><a href="#pricing">Cijene</a></nav><a className="header-cta" href="#checker">Provjeri web <span>→</span></a></header><main>
-    <section className="variant-hero"><div className="variant-intro"><p className="eyebrow">{content.label} <span className="eyebrow-rule" /></p><h1>{content.title}</h1><p className="hero-sub">{content.body}</p><ReadinessChecker /></div><aside className="variant-proof"><div className="proof-seal">N</div><span className="checker-label">ŠTO DOBIVATE</span><h2>{content.sideTitle}</h2><p>{content.sideBody}</p><ul>{content.sideItems.map((item) => <li key={item}><span aria-hidden="true">✓</span>{item}</li>)}</ul><a className="variant-proof-link" href="https://nepar.hr/digitalni-cjenik">Trebate da mi to postavimo? <strong>Od 129 € →</strong></a></aside></section>
+    <section className="variant-hero"><div className="variant-intro"><p className="eyebrow">{content.label} <span className="eyebrow-rule" /></p><h1>{content.title}</h1><p className="hero-sub">{content.body}</p><ReadinessChecker /></div><aside className="variant-proof"><div className="proof-seal">N</div><span className="checker-label">ŠTO DOBIVATE</span><h2>{content.sideTitle}</h2><p>{content.sideBody}</p><ul>{content.sideItems.map((item) => <li key={item}><span aria-hidden="true">✓</span>{item}</li>)}</ul><a className="variant-proof-link" href="#posaljite-cjenik">Trebate da mi to postavimo? <strong>Od 49,90 € →</strong></a></aside></section>
     <section className="variant-trust"><span>Jasan odgovor prije kupnje</span><span>•</span><strong>CSV cjenik · XML cjenik · javna provjera</strong><span>•</span><span>Za stranice koje već imate</span></section>
     <VariantBottom />
   </main><footer className="site-footer"><Logo /><span>NEPAR Publisher / varijanta {variant}</span><a href="/">Natrag na početnu ↗</a></footer></div>
@@ -1056,7 +993,7 @@ function PremiumEntry() {
 
   return <div className="validator-app-shell premium-entry"><header className="app-header"><Logo /><button className="header-lead" type="button" onClick={() => focusLead('consultation')}>Trebate pomoć? <strong>Zatražite konzultaciju →</strong></button></header><main className="validator-app premium-entry-main">
     <section className="premium-hero"><div className="premium-hero-content"><div className="premium-hero-copy"><span className="app-label">NEPAR PUBLISHER / TEHNIČKA PROVJERA</span><h1>Provjerite što imate. <em>Mi ćemo riješiti ostalo.</em></h1><p>Provjerite može li vaš web dohvatiti strojni cjenik ili nam odmah pošaljite ono što danas koristite.</p></div><div className="premium-hero-note"><span className="premium-note-dot" aria-hidden="true" /><span>Za WordPress, Wix, Google Sites, Webflow i stranice koje vam je izradio netko drugi.</span></div></div></section>
-    <div className="premium-hero-tools"><PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} /><aside className="hero-sales-card"><span className="app-label">MI ĆEMO SVE RIJEŠITI</span><h2>Implementacija na postojeći web <strong>od 129 €</strong></h2><p>Priprema, tehničko postavljanje i prva godina Publishera uključeni.</p><ul><li>pregled onoga što već imate</li><li>CSV/XML objava i arhiva</li><li>povezivanje s postojećim webom</li></ul><button className="app-button app-button-primary" type="button" onClick={() => focusLead('implementation')}>Pošaljite što imate</button><button className="sales-link" type="button" onClick={() => focusLead('consultation')}>Zatražite konzultaciju</button></aside></div>
+    <div className="premium-hero-tools"><PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} /><aside className="hero-sales-card"><h2>Plugin i implementacija <strong>od 49,90 €</strong></h2><p>Plugin 49,90 € · implementacija 49,90 € · zajedno 89,90 €. Pošaljite što imate — odgovaramo s ponudom.</p><ul><li>pregled onoga što već imate</li><li>plugin ili potpuna ugradnja na web</li><li>bez besplatnog trajnog hostinga</li></ul><button className="app-button app-button-primary" type="button" onClick={() => focusLead('implementation')}>Zatražite ponudu 89,90 €</button><button className="sales-link" type="button" onClick={() => focusLead('plugin')}>Samo plugin 49,90 €</button></aside></div>
     <div id="csv-validator" ref={validatorRef} className="premium-validator-anchor" tabIndex={-1} aria-labelledby="csv-validator-title">
       {foundUrls.length > 0 && <div className="premium-handoff"><span className="app-label">PRONAĐENO NA VAŠEM WEBU</span><div>{foundUrls.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer">{url}</a>)}</div><p>Datoteka nije automatski preuzeta. Učitajte je ovdje ako želite provjeriti njezin sadržaj i pravne podatke.</p></div>}
       <div className="premium-validator-heading"><span className="app-label">02 / PROVJERA DATOTEKE</span><h2 id="csv-validator-title">Već imate cjenik? Provjerite ga ovdje.</h2><p>Učitajte CSV ili XML. Ako imate Excel, pretvorite ga u istom alatu.</p></div>

@@ -173,7 +173,7 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   const privacy = form.get('privacy')
   const token = stringField(form, 'cf-turnstile-response', 2048)
   if (!['implementation', 'consultation', 'plugin'].includes(intent) || !name || !validEmail(email) || privacy !== 'on') return jsonResponse(400, { ok: false, code: 'invalid_input' })
-  const intentLabel = intent === 'implementation' ? 'Implementacija' : intent === 'plugin' ? 'Plugin / link' : 'Konzultacija'
+  const intentLabel = intent === 'implementation' ? 'Plugin + implementacija (89,90 €)' : intent === 'plugin' ? 'Plugin (49,90 €)' : 'Konzultacija'
 
   const ip = request.headers.get('cf-connecting-ip') ?? 'unknown'
   const attemptId = crypto.randomUUID()
