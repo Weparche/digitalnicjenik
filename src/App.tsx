@@ -13,6 +13,7 @@ import {
   regularSelfServicePriceLabel,
   selfServicePriceLabel,
 } from './publisherPricing'
+import { useTurnstileSiteKey } from './turnstileConfig'
 
 const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(value)
 const dateTime = (value: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
@@ -714,7 +715,7 @@ function TrialClaimForm({
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [turnstileToken, setTurnstileToken] = useState('')
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY
+  const { siteKey, loading: turnstileLoading } = useTurnstileSiteKey()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -820,7 +821,7 @@ function TrialClaimForm({
         <TurnstileField onToken={setTurnstileToken} />
         {error && <p className="app-error" role="alert">{error}</p>}
         <div className="trial-claim-actions">
-          <button className="app-button app-button-primary" type="submit" disabled={busy || !siteKey}>{busy ? 'Šaljemo…' : 'Pošalji potvrdni link →'}</button>
+          <button className="app-button app-button-primary" type="submit" disabled={busy || turnstileLoading || !siteKey}>{busy ? 'Šaljemo…' : 'Pošalji potvrdni link →'}</button>
           <button className="app-button app-button-light" type="button" onClick={onCancel} disabled={busy}>Odustani</button>
         </div>
       </form>

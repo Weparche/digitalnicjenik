@@ -118,7 +118,8 @@ EMAIL_FROM                  publisher@nepar.hr (vars)
 EMAIL_TO                    nepar@nepar.hr (vars)
 TURNSTILE_SECRET_KEY        secret
 LEAD_RATE_LIMIT_SECRET      secret
-VITE_TURNSTILE_SITE_KEY     build variable (Pages → Environment variables)
+VITE_TURNSTILE_SITE_KEY     optional build variable (Pages → Environment variables)
+TURNSTILE_SITE_KEY          wrangler var (public site key; also served at GET /api/public-config)
 ```
 
 Domenu `nepar.hr` prvo onboardajte za Email Sending i verificirajte odredište

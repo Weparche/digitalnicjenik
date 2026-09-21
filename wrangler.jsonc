@@ -23,7 +23,8 @@
     "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",
     "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
     "EMAIL_FROM": "publisher@nepar.hr",
-    "EMAIL_TO": "nepar@nepar.hr"
+    "EMAIL_TO": "nepar@nepar.hr",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE81Y0hv6uzetB4O"
   },
   "env": {
     "preview": {
@@ -40,7 +41,8 @@
         "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",
         "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
         "EMAIL_FROM": "publisher@nepar.hr",
-        "EMAIL_TO": "nepar@nepar.hr"
+        "EMAIL_TO": "nepar@nepar.hr",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAE81Y0hv6uzetB4O"
       }
     },
     "production": {
@@ -65,7 +67,8 @@
         "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",
         "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
         "EMAIL_FROM": "publisher@nepar.hr",
-        "EMAIL_TO": "nepar@nepar.hr"
+        "EMAIL_TO": "nepar@nepar.hr",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAE81Y0hv6uzetB4O"
       }
     }
   }

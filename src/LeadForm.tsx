@@ -5,6 +5,7 @@ import {
   regularSelfServicePriceLabel,
   selfServicePriceLabel,
 } from './publisherPricing'
+import { useTurnstileSiteKey } from './turnstileConfig'
 
 export type LeadIntent = 'implementation' | 'consultation' | 'plugin'
 export type LeadContext = {
@@ -55,7 +56,7 @@ function loadTurnstile() {
 export function TurnstileField({ onToken }: { onToken: (token: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetRef = useRef<string | null>(null)
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY
+  const { siteKey, loading } = useTurnstileSiteKey()
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return
@@ -79,6 +80,7 @@ export function TurnstileField({ onToken }: { onToken: (token: string) => void }
     }
   }, [onToken, siteKey])
 
+  if (loading) return <p className="turnstile-unconfigured" aria-live="polite">Učitavamo sigurnosnu provjeru…</p>
   if (!siteKey) return <p className="turnstile-unconfigured">Zaštitu obrasca treba povezati prije produkcijskog slanja.</p>
   return <div className="turnstile-field" ref={containerRef} aria-label="Sigurnosna provjera" />
 }
@@ -89,7 +91,7 @@ export function LeadForm({ intent, context, onIntentChange }: { intent: LeadInte
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
   const [error, setError] = useState('')
   const [attachment, setAttachment] = useState<File | null>(null)
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY
+  const { siteKey, loading: turnstileLoading } = useTurnstileSiteKey()
 
   useEffect(() => { setAttachCurrent(false) }, [context.sourceFile])
 
@@ -158,7 +160,7 @@ export function LeadForm({ intent, context, onIntentChange }: { intent: LeadInte
       <TurnstileField onToken={setTurnstileToken} />
       <label className="privacy-choice"><input name="privacy" type="checkbox" required /><span>Slažem se da NEPAR obradi podatke i privitak radi odgovora na upit. <a href="https://nepar.hr/privatnost" target="_blank" rel="noreferrer">Politika privatnosti</a></span></label>
       {error && <p className="app-error" role="alert">{error}</p>}
-      <button className="app-button app-button-primary lead-submit" type="submit" disabled={status === 'sending' || !siteKey}>{status === 'sending' ? 'Šaljemo…' : intent === 'implementation' ? `Pošaljite upit za ${implementationFirstYearLabel()}` : intent === 'plugin' ? `Pošaljite upit za ${selfServicePriceLabel()}` : 'Zatražite konzultaciju'}</button>
+      <button className="app-button app-button-primary lead-submit" type="submit" disabled={status === 'sending' || turnstileLoading || !siteKey}>{status === 'sending' ? 'Šaljemo…' : intent === 'implementation' ? `Pošaljite upit za ${implementationFirstYearLabel()}` : intent === 'plugin' ? `Pošaljite upit za ${selfServicePriceLabel()}` : 'Zatražite konzultaciju'}</button>
     </form>
   </section>
 }
