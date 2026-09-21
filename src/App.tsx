@@ -14,6 +14,10 @@ import {
   selfServicePriceLabel,
 } from './publisherPricing'
 import { useTurnstileSiteKey } from './turnstileConfig'
+import { Logo } from './Logo'
+import { NewsArticle } from './news/NewsArticle'
+import { NewsIndex } from './news/NewsIndex'
+import { RegulatoryNewsWidget } from './news/RegulatoryNewsWidget'
 
 const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(value)
 const dateTime = (value: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
@@ -36,10 +40,6 @@ function download(text: string, filename: string, type: string) {
   link.download = filename
   link.click()
   URL.revokeObjectURL(url)
-}
-
-function Logo() {
-  return <a className="logo" href="/" aria-label="NEPAR Publisher početna"><img src="/assets/nepar-logo.png" alt="NEPAR Solutions" /><span>Publisher</span></a>
 }
 
 function Arrow() { return <span className="arrow" aria-hidden="true">↘</span> }
@@ -1191,7 +1191,7 @@ function PremiumEntry() {
   }
 
   return <div className="validator-app-shell premium-entry"><header className="app-header"><Logo /><button className="header-lead" type="button" onClick={() => focusLead('consultation')}>Trebate pomoć? <strong>Konzultacija →</strong></button></header><main className="validator-app premium-entry-main">
-    <section className="premium-hero"><div className="premium-hero-content"><div className="premium-hero-copy"><p className="premium-hero-kicker">Koristite MIKROeRAČUN?</p><h1>MIKROeRAČUN je za eRačune. <em>NEPAR Publisher objavljuje vaš cjenik na webu.</em></h1><p>Publishing layer između Excela ili CSV-a i javne mrežne stranice: provjera podataka, propisani CSV/XML, aktualni link za dohvat i verzije koje ne prepisujete ručno.</p><ol className="premium-funnel" aria-label="Kako Publisher radi"><li>MIKROeRAČUN + vlastiti web</li><li>Imate Excel/CSV s cijenama?</li><li>Učitajte besplatno</li><li>Validacija</li><li>7 dana javne objave</li><li>{selfServicePriceLabel()}</li></ol></div></div></section>
+    <section className="premium-hero premium-hero-with-widget"><div className="premium-hero-main"><div className="premium-hero-content"><div className="premium-hero-copy"><p className="premium-hero-kicker">Koristite MIKROeRAČUN?</p><h1>MIKROeRAČUN je za eRačune. <em>NEPAR Publisher objavljuje vaš cjenik na webu.</em></h1><p>Publishing layer između Excela ili CSV-a i javne mrežne stranice: provjera podataka, propisani CSV/XML, aktualni link za dohvat i verzije koje ne prepisujete ručno.</p><ol className="premium-funnel" aria-label="Kako Publisher radi"><li>MIKROeRAČUN + vlastiti web</li><li>Imate Excel/CSV s cijenama?</li><li>Učitajte besplatno</li><li>Validacija</li><li>7 dana javne objave</li><li>{selfServicePriceLabel()}</li></ol></div></div></div><RegulatoryNewsWidget /></section>
     <aside className="premium-qualification-block" aria-label="Provjera prije kupnje"><p><strong>Već imate Marketino, Minimax, Pantheon ili drugi poslovni program?</strong> Vaš pružatelj možda već omogućuje objavu cjenika. Provjerite prije kupnje Publishera.</p></aside>
     <div className="premium-hero-tools">
       <PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} />
@@ -1439,6 +1439,9 @@ function PublisherEntry() {
 export default function App() {
   const path = typeof window !== 'undefined' ? window.location.pathname : '/'
   if (path === '/app' || path.startsWith('/app/')) return <PublisherEntry />
+  if (path === '/vijesti' || path === '/vijesti/') return <NewsIndex />
+  const newsMatch = path.match(/^\/vijesti\/([^/]+)\/?$/)
+  if (newsMatch) return <NewsArticle slug={newsMatch[1]!} />
   const slug = slugFromPath()
   if (slug) return <PublicPriceList slug={slug} />
   if (isCustomPublication()) return <PublicPriceList customHost />

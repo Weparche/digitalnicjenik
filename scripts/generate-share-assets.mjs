@@ -46,8 +46,21 @@ async function main() {
     clip: { x: 0, y: 0, width: 1200, height: 630 },
   })
 
+  const vijestiTemplatePath = resolve(root, 'scripts/og-vijesti-template.html')
+  let vijestiTemplate = await readFile(vijestiTemplatePath, 'utf8')
+  vijestiTemplate = vijestiTemplate.replace('MARK_SRC', markDataUri)
+  await page.setContent(vijestiTemplate, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(500)
+  await page.screenshot({
+    path: resolve(ogDir, 'vijesti-digitalni-cjenik-2026.png'),
+    type: 'png',
+    clip: { x: 0, y: 0, width: 1200, height: 630 },
+  })
+
   await browser.close()
-  console.log('Generated favicon-32x32.png, apple-touch-icon.png, og/digitalni-cjenik-og.png')
+  console.log(
+    'Generated favicon-32x32.png, apple-touch-icon.png, og/digitalni-cjenik-og.png, og/vijesti-digitalni-cjenik-2026.png',
+  )
 }
 
 await main()

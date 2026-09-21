@@ -18,8 +18,12 @@ export type SendEmailBinding = {
   }) => Promise<{ messageId?: string }>
 }
 
+export type EmailSenderService = { fetch: typeof fetch }
+
 export type EmailEnv = {
   EMAIL?: SendEmailBinding
+  EMAIL_SENDER?: EmailSenderService
+  MAILER_SECRET?: string
   CF_ACCOUNT_ID?: string
   CF_EMAIL_API_TOKEN?: string
   EMAIL_FROM?: string
@@ -39,8 +43,8 @@ function bytesToBase64(bytes: Uint8Array) {
 }
 
 /**
- * Pages Functions do not support `send_email` bindings — use REST with
- * CF_EMAIL_API_TOKEN (nepar.hr Email Sending). Workers may still pass EMAIL.
+ * Pages: prefer EMAIL_SENDER service binding → Worker with send_email; else REST
+ * with CF_EMAIL_API_TOKEN. Direct EMAIL binding works in Workers dev only.
  */
 export async function sendTransactionalEmail(
   env: EmailEnv,
@@ -72,6 +76,31 @@ export async function sendTransactionalEmail(
         disposition: 'attachment' as const,
       })),
     })
+    return
+  }
+
+  if (env.EMAIL_SENDER && env.MAILER_SECRET) {
+    const response = await env.EMAIL_SENDER.fetch('https://digitalnicjenik-email/send', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${env.MAILER_SECRET}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: message.to,
+        from,
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
+        replyTo: message.replyTo,
+        attachments: message.attachments?.map((item) => ({
+          filename: item.filename,
+          type: item.type,
+          contentBase64: typeof item.content === 'string' ? btoa(item.content) : bytesToBase64(item.content),
+        })),
+      }),
+    })
+    if (!response.ok) throw new Error('send_failed')
     return
   }
 
@@ -125,5 +154,12 @@ export async function sendTransactionalEmail(
 }
 
 export function emailConfigured(env: EmailEnv) {
-  return Boolean(env.EMAIL_FROM && (env.EMAIL || (env.CF_ACCOUNT_ID && env.CF_EMAIL_API_TOKEN)))
+  return Boolean(
+    env.EMAIL_FROM
+    && (
+      env.EMAIL
+      || (env.EMAIL_SENDER && env.MAILER_SECRET)
+      || (env.CF_ACCOUNT_ID && env.CF_EMAIL_API_TOKEN)
+    ),
+  )
 }

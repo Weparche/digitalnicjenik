@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 1200px; height: 630px; overflow: hidden; }
+    body {
+      font-family: Manrope, system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse 800px 420px at 90% 15%, rgba(57, 118, 74, 0.16), transparent 60%),
+        #f8fafc;
+      color: #17241b;
+    }
+    .frame {
+      width: 1200px;
+      height: 630px;
+      padding: 72px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .brand img.mark { width: 52px; height: 52px; border-radius: 12px; }
+    .brand span {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #39764a;
+    }
+    h1 {
+      max-width: 900px;
+      font-size: 54px;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      font-weight: 800;
+    }
+    .tags {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="brand">
+      <img class="mark" src="MARK_SRC" alt="" width="52" height="52" />
+      <span>NEPAR Publisher · Vijesti</span>
+    </div>
+    <h1>Digitalni cjenik od 1.10.2026.</h1>
+    <div class="tags" aria-hidden="true">
+      <span class="tag">CSV / XML</span>
+      <span class="tag">sidrena cijena</span>
+      <span class="tag">30 dana</span>
+    </div>
+  </div>
+</body>
+</html>

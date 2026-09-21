@@ -29,6 +29,12 @@
   "env": {
     "preview": {
       "name": "digitalnicjenik-preview",
+      "services": [
+        {
+          "binding": "EMAIL_SENDER",
+          "service": "digitalnicjenik-email"
+        }
+      ],
       "r2_buckets": [
         {
           "binding": "DRAFTS",
@@ -47,6 +53,12 @@
     },
     "production": {
       "name": "digitalnicjenik",
+      "services": [
+        {
+          "binding": "EMAIL_SENDER",
+          "service": "digitalnicjenik-email"
+        }
+      ],
       "d1_databases": [
         {
           "binding": "DB",

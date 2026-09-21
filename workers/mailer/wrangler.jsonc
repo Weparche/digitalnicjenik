@@ -1,0 +1,7 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "digitalnicjenik-email",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-17",
+  "send_email": [{ "name": "EMAIL" }]
+}

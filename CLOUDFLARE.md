@@ -107,13 +107,13 @@ Anonymous uploads never publish to `nepar`.
 ## Lead forma i Email Sending
 
 Nova ruta `POST /api/leads/digitalni-cjenik` koristi D1 binding `DB`, Turnstile
-Siteverify i Cloudflare Email Sending REST API (`nepar.hr`). Pages Functions ne
-podržavaju `send_email` binding — koristi se REST s `CF_EMAIL_API_TOKEN`. Prije
-javnog uključivanja forme u Pages production/preview konfiguraciji postavite:
+Siteverify i Cloudflare Email Sending (`nepar.hr`). Pages Functions ne podržavaju
+`send_email` direktno — produkcija koristi service binding `EMAIL_SENDER` → Worker
+`digitalnicjenik-email` (`workers/mailer/`). Opcionalni fallback je REST s
+`CF_EMAIL_API_TOKEN`. Prije javnog uključivanja forme postavite:
 
 ```text
-CF_ACCOUNT_ID               (već u wrangler vars)
-CF_EMAIL_API_TOKEN          secret · Account Email Sending
+MAILER_SECRET               secret · isti na Pages i Workeru digitalnicjenik-email
 EMAIL_FROM                  publisher@nepar.hr (vars)
 EMAIL_TO                    nepar@nepar.hr (vars)
 TURNSTILE_SECRET_KEY        secret
@@ -122,8 +122,10 @@ VITE_TURNSTILE_SITE_KEY     optional build variable (Pages → Environment varia
 TURNSTILE_SITE_KEY          wrangler var (public site key; also served at GET /api/public-config)
 ```
 
+Worker deploy: `cd workers/mailer && npx wrangler deploy && npx wrangler secret put MAILER_SECRET`
+
 Domenu `nepar.hr` prvo onboardajte za Email Sending i verificirajte odredište
-`nepar@nepar.hr`. `CF_EMAIL_API_TOKEN`, `TURNSTILE_SECRET_KEY` i
+`nepar@nepar.hr`. `MAILER_SECRET`, `TURNSTILE_SECRET_KEY` i
 `LEAD_RATE_LIMIT_SECRET` nikad se ne spremaju u repozitorij. Nakon migracije
 `0004_lead_rate_limit.sql` napravite production integration test s privitkom;
 REST API ima ukupni limit poruke od 5 MiB pa posebno provjerite graničnu
