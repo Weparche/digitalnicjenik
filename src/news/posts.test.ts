@@ -20,7 +20,8 @@ describe('news posts', () => {
   })
 
   it('resolves latest and paths', () => {
-    expect(getLatestPost().slug).toBe('primjer-csv-digitalnog-cjenika-usluge-2026')
+    expect(getLatestPost().slug).toBe('hok-excel-predlosci-digitalni-cjenik-2026')
+    expect(getPostBySlug('hok-excel-predlosci-digitalni-cjenik-2026')?.seoTitle).toContain('HOK')
     expect(getPostBySlug('primjer-csv-digitalnog-cjenika-usluge-2026')?.seoTitle).toContain('2026')
     expect(getPostBySlug('digitalni-cjenik-sidrena-cijena-2026')?.seoTitle).toContain('1.10.2026')
     expect(getAllNewsPaths().length).toBe(NEWS_POSTS.length)

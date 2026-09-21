@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
-import { EXCEL_MAX_COLUMNS, excelRowsToPriceList, headersForSheet, readExcelWorkbook, suggestExcelMapping, type ExcelSheet } from './excel'
+import { EXCEL_MAX_COLUMNS, excelRowsToPriceList, headersForSheet, isHokServiceTemplate, readExcelWorkbook, suggestExcelMapping, type ExcelSheet } from './excel'
 import { renderCsv, renderXml, validatePriceList, mergeValidationIssues } from './price-engine'
 
 function workbookBytes(bookType: 'xlsx' | 'xls' = 'xlsx') {
@@ -29,6 +29,48 @@ describe('Excel conversion', () => {
     expect(validatePriceList(list).issues.some((issue) => issue.field === 'anchorPrice')).toBe(false)
     expect(renderCsv(list)).toContain('Šišanje')
     expect(renderXml(list)).toContain('<name>Šišanje</name>')
+  })
+
+
+  it('recognizes and maps the HOK service price-list template headers', () => {
+    const headers = [
+      'Naziv usluge',
+      'Maloprodajna cijena',
+      'Poseban oblik prodaje (DA/NE)',
+      'Naziv posebnog oblika prodaje',
+      'Sidrena cijena 10.9.2026.',
+    ]
+    expect(isHokServiceTemplate(headers)).toBe(true)
+    expect(suggestExcelMapping(headers)).toMatchObject({
+      name: 'Naziv usluge',
+      price: 'Maloprodajna cijena',
+      specialSaleApplied: 'Poseban oblik prodaje (DA/NE)',
+      specialSaleName: 'Naziv posebnog oblika prodaje',
+      anchorPrice: 'Sidrena cijena 10.9.2026.',
+    })
+
+    const sheet: ExcelSheet = {
+      name: 'Cjenik USLUGA',
+      rows: [
+        headers,
+        ['Muško šišanje', '20,00', 'NE', '', '18,00'],
+        ['Bojanje', '45,00', 'DA', 'Akcija', '40,00'],
+      ],
+    }
+    const converted = excelRowsToPriceList(sheet, 0, suggestExcelMapping(headers))
+    expect(converted.priceList.items[0]).toMatchObject({
+      name: 'Muško šišanje',
+      price: 20,
+      anchorPrice: 18,
+      specialSaleApplied: false,
+    })
+    expect(converted.priceList.items[1]).toMatchObject({
+      name: 'Bojanje',
+      price: 45,
+      anchorPrice: 40,
+      specialSaleApplied: true,
+      specialSaleName: 'Akcija',
+    })
   })
 
   it('requires explicit name and price mapping and keeps sale completion in the shared validator', () => {

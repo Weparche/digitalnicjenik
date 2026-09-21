@@ -50,7 +50,7 @@ const HOK_2026 =
 
 const terminologyNote = `<p class="news-lead-note">U službenoj Odluci koristi se izraz „dodatna cijena”. U javnoj komunikaciji HOK-a i drugih institucija često se koristi naziv „sidrena cijena”. U ovom tekstu koristimo oba izraza radi lakšeg razumijevanja.</p>`
 
-export const SERVICE_CSV_EXAMPLE = `naziv_usluge;maloprodajna_cijena;posebni_oblik_prodaje;naziv_posebnog_oblika;sidrena_cijena
+export const SERVICE_CSV_EXAMPLE = `Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje (DA/NE);Naziv posebnog oblika prodaje;Sidrena cijena 10.9.2026.
 Muško šišanje;15.00;NE;;15.00
 Žensko šišanje;21.00;NE;;18.00
 Bojanje kose;45.00;DA;Akcija;40.00`
@@ -82,6 +82,104 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const NEWS_POSTS: NewsPost[] = [
   {
+    slug: 'hok-excel-predlosci-digitalni-cjenik-2026',
+    title: 'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti do 1. listopada',
+    seoTitle: 'HOK Excel predlošci za digitalni cjenik 2026. | NEPAR',
+    description:
+      'HOK je objavio Excel predloške cjenika proizvoda i usluga, upute i webinar za obveze od 1.10.2026. Pogledajte što još treba objaviti na webu.',
+    excerpt:
+      'HOK je objavio Excel predloške, upute i webinar. Excel pomaže pripremiti podatke, ali web obveza i dalje traži CSV/XML i automatizirani dohvat.',
+    readingTimeMinutes: 5,
+    publishedAt: '2026-09-21T17:00:00+02:00',
+    updatedAt: '2026-09-21T17:00:00+02:00',
+    author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
+    tags: ['HOK', 'Excel', 'digitalni cjenik', 'obrtnici', 'CSV', 'XML'],
+    kicker: 'Aktualno · HOK',
+    widgetEyebrow: 'NOVO · HOK',
+    widgetHeadline: 'HOK objavio Excel predloške za digitalni cjenik',
+    widgetSub: 'Što predložak rješava — i što još treba objaviti na webu',
+    schemaSection: 'Aktualno',
+    image: {
+      src: '/og/vijesti-digitalni-cjenik-2026.png',
+      alt: 'HOK Excel predlošci za digitalni cjenik i obveze od 1. listopada 2026.',
+      width: 1200,
+      height: 630,
+    },
+    cta: { label: 'Učitaj HOK Excel predložak usluga', href: '/#csv-validator' },
+    secondaryCta: {
+      label: 'Pogledaj primjer CSV cjenika za usluge',
+      href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026',
+    },
+    sources: [
+      {
+        title: 'HOK, 18.9.2026. — Dodatna cijena i objava cjenika: upute i Excel predlošci',
+        url: HOK_2026,
+        type: 'secondary',
+      },
+      {
+        title: 'NN 101/2026-1213 — Odluka o objavi cjenika proizvoda i usluga',
+        url: NN_1213,
+        type: 'primary',
+      },
+      {
+        title: 'NN 101/2026-1212 — Odluka o isticanju dodatne cijene',
+        url: NN_1212,
+        type: 'primary',
+      },
+    ],
+    sections: [
+      {
+        heading: 'Što je HOK objavio',
+        level: 2,
+        html: `<p>Hrvatska obrtnička komora objavila je 18. rujna 2026. objedinjene upute za nove obveze od 1. listopada, snimku webinara te <strong>dva Excel predloška cjenika</strong> — jedan za proizvode i jedan za usluge.</p>
+<p>Predlošci su praktična pomoć za pripremu podataka. Uz njih HOK na istoj stranici objavljuje prezentaciju, detaljne upute i tekstove odluka, pa je to koristan operativni početak za obrtnike koji tek slažu svoj cjenik.</p>`,
+      },
+      {
+        heading: 'Excel predložak nije završna objava na webu',
+        level: 2,
+        html: `<p>Ovdje je važna razlika: <strong>Excel služi za pripremu podataka</strong>. HOK u svojim uputama navodi da se digitalni cjenik na mrežnoj stranici objavljuje u <strong>.csv ili .xml formatu</strong> pogodnom za automatsku obradu te da PDF, Word i Excel nisu formati koje Odluka navodi za tu web-obvezu.</p>
+<p>Zato nije dovoljno samo popuniti <code>.xlsx</code> i spremiti ga na web. Potrebno je iz podataka napraviti odgovarajući CSV/XML, objaviti ga na mrežnoj stranici i osigurati tehnički način automatiziranog dohvaćanja.</p>`,
+      },
+      {
+        heading: 'Kako HOK Excel predložak usluga koristiti u NEPAR Publisheru',
+        level: 2,
+        html: `<p>NEPAR sada prepoznaje standardna zaglavlja <strong>HOK predloška cjenika usluga</strong>, uključujući naziv usluge, maloprodajnu cijenu, poseban oblik prodaje, njegov naziv i sidrenu/dodatnu cijenu.</p>
+<ol class="news-bullets">
+<li>Preuzmite HOK predložak za usluge i unesite svoje podatke.</li>
+<li>Na NEPAR Publisheru otvorite dio <strong>Učitajte Excel ili CSV</strong>.</li>
+<li>Učitajte <code>.xlsx</code>; standardna HOK polja bit će predložena za mapiranje.</li>
+<li>Provjerite vrijednosti i rezultate validacije.</li>
+<li>Nakon provjere nastavite prema CSV/XML objavi i probnom javnom URL-u.</li>
+</ol>
+<p><strong>Važno:</strong> automatsko prepoznavanje u ovom flowu odnosi se na HOK predložak za <strong>usluge</strong>. Za proizvode Odluka traži širi skup podataka pa ih treba provjeriti prema HOK predlošku i službenom tekstu Odluke.</p>`,
+      },
+      {
+        heading: 'HOK traži ukidanje odluka — znači li to da je rok odgođen?',
+        level: 2,
+        html: `<p>Ne treba to tako tumačiti. HOK na svojoj stranici navodi da <strong>traži ukidanje odluka</strong> o dodatnim cijenama i objavi cjenika na internetu. To je zahtjev Komore prema nadležnim tijelima, a ne samo po sebi promjena važećih pravila.</p>
+<p>Na istoj aktualnoj HOK objavi i dalje se kao početak primjene navodi <strong>1. listopada 2026.</strong> Ako Vlada ili drugo nadležno tijelo službeno promijeni datum ili sadržaj obveze, ovaj ćemo vodič ažurirati.</p>`,
+      },
+      {
+        heading: 'Što napraviti sada',
+        level: 2,
+        html: `<p>Ako pružate usluge i imate mrežnu stranicu, praktičan redoslijed je:</p>
+<ul class="news-bullets">
+<li>utvrdite aktualnu i dodatnu/sidrenu cijenu za svaku uslugu,</li>
+<li>popunite HOK Excel predložak usluga,</li>
+<li>provjerite podatke i pretvorite ih u strojno čitljiv CSV/XML,</li>
+<li>objavite datoteku na webu i osigurajte automatizirani dohvat,</li>
+<li>kod promjene cijena ažurirajte objavu u roku koji se odnosi na usluge i čuvajte prethodne verzije najmanje 30 dana.</li>
+</ul>
+<p><a href="/#csv-validator"><strong>Imate HOK Excel predložak? Učitajte ga za provjeru →</strong></a></p>`,
+      },
+      {
+        heading: 'Želite vidjeti kako izgleda CSV nakon Excela?',
+        level: 2,
+        html: `<p>Pripremili smo i praktičan <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026"><strong>primjer CSV digitalnog cjenika za pružatelje usluga</strong></a>, s HOK-nazivima stupaca, primjerima vrijednosti i XML varijantom.</p>`,
+      },
+    ],
+  },
+  {
     slug: 'primjer-csv-digitalnog-cjenika-usluge-2026',
     title: 'Primjer CSV digitalnog cjenika za pružatelje usluga',
     seoTitle: 'Primjer CSV digitalnog cjenika za usluge 2026. | NEPAR',
@@ -90,8 +188,8 @@ export const NEWS_POSTS: NewsPost[] = [
     excerpt:
       'Praktičan primjer CSV/XML cjenika usluga — obvezni podaci, sidrena cijena, preuzimanje i provjera prije objave.',
     readingTimeMinutes: 5,
-    publishedAt: '2026-09-22T09:00:00+02:00',
-    updatedAt: '2026-09-22T09:00:00+02:00',
+    publishedAt: '2026-09-21T16:50:00+02:00',
+    updatedAt: '2026-09-21T17:00:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['primjer', 'CSV', 'usluge', 'digitalni cjenik'],
     kicker: 'Praktični vodič',
@@ -119,6 +217,11 @@ export const NEWS_POSTS: NewsPost[] = [
         type: 'primary',
       },
       {
+        title: 'HOK, 18.9.2026. — upute i Excel predlošci cjenika',
+        url: HOK_2026,
+        type: 'secondary',
+      },
+      {
         title: 'NEPAR — XML/CSV format i zahtjevi',
         url: 'https://nepar.hr/digitalni-cjenik/xml-csv',
         type: 'secondary',
@@ -129,7 +232,7 @@ export const NEWS_POSTS: NewsPost[] = [
         heading: 'Za koga je ovaj primjer',
         level: 2,
         html: `<p>Vodič je namijenjen <strong>pružateljima registriranih usluga</strong> koji imaju mrežnu stranicu i trebaju objaviti digitalni cjenik u CSV ili XML obliku — npr. frizerski i kozmetički saloni, servisi, obrti i druge uslužne djelatnosti.</p>
-<p>Opći pregled obveze i datuma početka (1. listopada 2026.) nalazi se u vodiču <a href="/vijesti/digitalni-cjenik-sidrena-cijena-2026">Digitalni cjenik i sidrena cijena</a>.</p>`,
+<p>Ako krećete iz HOK-ova Excel predloška, pogledajte i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026">što HOK predložak rješava, a što još treba objaviti na webu</a>. Opći pregled obveze i datuma početka (1. listopada 2026.) nalazi se u vodiču <a href="/vijesti/digitalni-cjenik-sidrena-cijena-2026">Digitalni cjenik i sidrena cijena</a>.</p>`,
       },
       {
         heading: 'Koje podatke cjenik usluga mora sadržavati',
@@ -147,7 +250,7 @@ export const NEWS_POSTS: NewsPost[] = [
         heading: 'Primjer strukture CSV i XML',
         level: 2,
         html: `<p>U primjeru koristimo točku-zarez (<code>;</code>) kao separator — u praksi je čest u HR Excel izvozima. Možete koristiti i zarez ako je cijeli cjenik konzistentan i strojno čitljiv.</p>
-<p>Polja <code>posebni_oblik_prodaje</code> i <code>naziv_posebnog_oblika</code> u primjeru mapiraju obvezu Odluke da se uz cijenu vidi je li usluga u posebnom obliku prodaje i pod kojim nazivom.</p>`,
+<p>Stupci <code>Poseban oblik prodaje (DA/NE)</code> i <code>Naziv posebnog oblika prodaje</code> mapiraju obvezu Odluke da se uz cijenu vidi je li usluga u posebnom obliku prodaje i pod kojim nazivom. Nazivi u ovom primjeru prate HOK predložak za usluge.</p>`,
       },
       {
         heading: 'Naziv datoteke nije isto što i stupci CSV-a',

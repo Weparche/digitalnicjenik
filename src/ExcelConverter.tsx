@@ -3,6 +3,7 @@ import {
   EXCEL_MAX_BYTES,
   excelRowsToPriceList,
   headersForSheet,
+  isHokServiceTemplate,
   readExcelWorkbook,
   suggestExcelMapping,
   type ExcelField,
@@ -37,6 +38,7 @@ export function ExcelConverter({ onConverted }: { onConverted: (list: Normalized
   const sheet = workbook?.sheets[sheetIndex]
   const headers = useMemo(() => sheet ? headersForSheet(sheet, headerRow) : [], [sheet, headerRow])
   const previewRows = sheet?.rows.slice(headerRow + 1, headerRow + 6) ?? []
+  const hokServiceTemplate = useMemo(() => isHokServiceTemplate(headers), [headers])
 
   function applySuggestedMapping(nextHeaders: string[]) {
     setMapping(suggestExcelMapping(nextHeaders))
@@ -97,10 +99,11 @@ export function ExcelConverter({ onConverted }: { onConverted: (list: Normalized
 
   return <section className="excel-converter" aria-labelledby="excel-title">
     <div className="excel-intro">
-      <div><span className="app-label">IMATE EXCEL CJENIK?</span><h2 id="excel-title">Pretvorite Excel u provjerljivi CSV ili XML.</h2><p>Datoteka se obrađuje u vašem pregledniku. Vi potvrđujete koji stupac znači naziv, cijenu i ostale podatke.</p></div>
+      <div><span className="app-label">IMATE EXCEL CJENIK?</span><h2 id="excel-title">Pretvorite Excel u provjerljivi CSV ili XML.</h2><p>Datoteka se obrađuje u vašem pregledniku. HOK predložak cjenika usluga prepoznajemo automatski; kod ostalih datoteka vi potvrđujete koji stupac znači naziv, cijenu i ostale podatke.</p></div>
       <label className="excel-upload"><input type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onChange={(event) => void loadExcel(event.target.files?.[0])} /><strong>{busy ? 'Čitamo Excel…' : 'Odaberite Excel'}</strong><span>.xlsx ili .xls · do 5 MB</span></label>
     </div>
     {error && <p className="app-error" role="alert">{error}</p>}
+    {hokServiceTemplate && <p className="app-success" role="status"><strong>Prepoznat HOK predložak cjenika usluga.</strong> Standardna polja su automatski mapirana; prije nastavka provjerite stupce i vrijednosti.</p>}
     {workbook && sheet && <div className="excel-workspace">
       <div className="excel-controls">
         <label>Worksheet<select value={sheetIndex} onChange={(event) => changeSheet(Number(event.target.value))}>{workbook.sheets.map((entry, index) => <option value={index} key={entry.name}>{entry.name}</option>)}</select></label>
