@@ -24,14 +24,29 @@ export type ExcelSheet = { name: string; rows: unknown[][] }
 export type ExcelWorkbook = { sheets: ExcelSheet[] }
 
 const aliases: Record<ExcelField, string[]> = {
-  name: ['naziv', 'naziv usluge', 'naziv artikla', 'artikl', 'usluga', 'name'],
+  name: ['naziv', 'naziv usluge', 'naziv proizvoda', 'naziv artikla', 'artikl', 'usluga', 'name'],
   price: ['cijena', 'maloprodajna cijena', 'mp cijena', 'prodajna cijena', 'price'],
   type: ['vrsta', 'tip', 'vrsta stavke', 'type'],
   category: ['grupa', 'kategorija', 'category'],
   externalId: ['šifra', 'sifra', 'interna šifra', 'interna sifra', 'id', 'code'],
-  anchorPrice: ['sidrena cijena', 'dodatna cijena', 'anchor price', 'reference price'],
+  anchorPrice: [
+    'sidrena cijena',
+    'sidrena cijena 10.9.2026.',
+    'sidrena cijena 10. 9. 2026.',
+    'dodatna cijena',
+    'dodatna cijena 10.9.2026.',
+    'dodatna cijena 10. 9. 2026.',
+    'anchor price',
+    'reference price',
+  ],
   salePrice: ['akcijska cijena', 'akcija', 'sale price'],
-  specialSaleApplied: ['poseban oblik prodaje', 'posebni oblik prodaje', 'special sale applied'],
+  specialSaleApplied: [
+    'poseban oblik prodaje',
+    'poseban oblik prodaje (da/ne)',
+    'posebni oblik prodaje',
+    'posebni oblik prodaje (da/ne)',
+    'special sale applied',
+  ],
   specialSaleName: ['naziv posebnog oblika prodaje', 'naziv posebne prodaje', 'special sale name'],
   unit: ['jedinica', 'jedinica mjere', 'unit'],
   isNewSinceReferenceDate: ['nova usluga', 'novouvedena usluga', 'new service'],
@@ -76,6 +91,23 @@ export async function readExcelWorkbook(buffer: ArrayBuffer): Promise<ExcelWorkb
 export function headersForSheet(sheet: ExcelSheet, headerRowIndex: number): string[] {
   const row = sheet.rows[headerRowIndex] ?? []
   return row.slice(0, EXCEL_MAX_COLUMNS).map((value, index) => clean(value) || `Stupac ${index + 1}`)
+}
+
+export function isHokServiceTemplate(headers: string[]): boolean {
+  const normalized = new Set(headers.map(normalizedHeader))
+  const requiredGroups = [
+    ['naziv usluge'],
+    ['maloprodajna cijena'],
+    ['poseban oblik prodaje (da/ne)', 'posebni oblik prodaje (da/ne)'],
+    ['naziv posebnog oblika prodaje'],
+    [
+      'sidrena cijena 10.9.2026.',
+      'sidrena cijena 10. 9. 2026.',
+      'dodatna cijena 10.9.2026.',
+      'dodatna cijena 10. 9. 2026.',
+    ],
+  ]
+  return requiredGroups.every((group) => group.some((header) => normalized.has(header)))
 }
 
 export function suggestExcelMapping(headers: string[]): ExcelMapping {
