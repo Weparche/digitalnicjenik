@@ -90,8 +90,8 @@ export const NEWS_POSTS: NewsPost[] = [
     excerpt:
       'HOK je objavio Excel predloške, upute i webinar. Excel pomaže pripremiti podatke, ali web obveza i dalje traži CSV/XML i automatizirani dohvat.',
     readingTimeMinutes: 5,
-    publishedAt: '2026-09-21T17:30:00+02:00',
-    updatedAt: '2026-09-21T17:30:00+02:00',
+    publishedAt: '2026-09-21T17:00:00+02:00',
+    updatedAt: '2026-09-21T17:00:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['HOK', 'Excel', 'digitalni cjenik', 'obrtnici', 'CSV', 'XML'],
     kicker: 'Aktualno · HOK',
@@ -188,8 +188,8 @@ export const NEWS_POSTS: NewsPost[] = [
     excerpt:
       'Praktičan primjer CSV/XML cjenika usluga — obvezni podaci, sidrena cijena, preuzimanje i provjera prije objave.',
     readingTimeMinutes: 5,
-    publishedAt: '2026-09-21T17:10:00+02:00',
-    updatedAt: '2026-09-21T17:30:00+02:00',
+    publishedAt: '2026-09-21T16:50:00+02:00',
+    updatedAt: '2026-09-21T17:00:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['primjer', 'CSV', 'usluge', 'digitalni cjenik'],
     kicker: 'Praktični vodič',
