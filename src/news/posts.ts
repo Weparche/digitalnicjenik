@@ -50,7 +50,7 @@ export const NEWS_POSTS: NewsPost[] = [
       'Digitalni cjenik od 1. listopada 2026. — što vlasnici web stranica trebaju pripremiti: dodatna (sidrena) cijena, CSV/XML objava, arhiva i automatizirani dohvat.',
     readingTimeMinutes: 6,
     publishedAt: '2026-09-21T08:00:00+02:00',
-    updatedAt: '2026-09-21T08:00:00+02:00',
+    updatedAt: '2026-09-21T16:15:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['regulativa', 'digitalni cjenik', 'sidrena cijena', 'CSV', 'XML'],
     image: {
@@ -107,14 +107,14 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         heading: 'Koji podaci moraju biti u cjeniku?',
         level: 2,
-        html: `<p>Odluka propisuje sadržaj cjenika proizvoda odnosno usluga (identifikacija, cijene, jedinice, PDV status i ostala polja prema vrsti djelatnosti). Točan popis polja i format treba uskladiti s tekstom NN 101/2026-1213 i prilagoditi vrsti poslovanja (roba naspram usluge).</p>
+        html: `<p>Odluka propisuje različita obvezna polja za proizvode i usluge. Za proizvode to uključuje, među ostalim, naziv, šifru, marku, maloprodajnu i sidrenu cijenu, podatke o posebnom obliku prodaje, barkod i dostupnost; za usluge naziv usluge, maloprodajnu cijenu, podatke o posebnom obliku prodaje i sidrenu cijenu.</p>
 <p>NEPAR Publisher pri uploadu provjerava strukturu i obavezna polja prema našem validacijskom profilu — to je <strong>tehnička provjera spremnosti</strong>, ne zamjena za čitanje Odluke ni pravni savjet.</p>`,
       },
       {
         heading: 'Zašto PDF nije dovoljan: CSV ili XML',
         level: 2,
         html: `<p>Digitalni cjenik mora biti u obliku pogodnom za <strong>automatsku obradu</strong>. Službeni tekst predviđa objavu u <strong>.csv</strong> ili <strong>.xml</strong> formatu, s propisanim podacima i načinom objave na mrežnoj stranici.</p>
-<p>PDF, skenirana slika ili samo HTML tablica bez strojno čitljive datoteke obično ne zadovoljavaju zahtjev za automatizirani dohvat — i zato mnogi vlasnici weba moraju dodati stabilan link na CSV/XML datoteku ili API endpoint.</p>`,
+<p>PDF, skenirana slika ili samo HTML tablica bez strojno čitljive datoteke obično ne zadovoljavaju zahtjev za automatizirani dohvat — i zato mnogi vlasnici weba moraju objaviti <strong>javno dostupan CSV/XML cjenik na stabilnom URL-u</strong>, uz tehničko rješenje koje omogućuje automatizirani dohvat podataka.</p>`,
       },
       {
         heading: 'Koliko dugo prethodni cjenici moraju ostati dostupni?',
@@ -124,8 +124,8 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         heading: 'Što znači automatizirani dohvat podataka?',
         level: 2,
-        html: `<p>Pod automatiziranim dohvatom podrazumijeva se da cjenik na mrežnoj stranici mora biti dostupan na način koji omogućuje <strong>strojno preuzimanje i obradu</strong> bez ručnog prepisivanja — tipično stabilan URL na CSV/XML datoteku ili servis koji vraća iste podatke u propisanom formatu.</p>
-<p>NEPAR Publisher objavljuje javne feedove (CSV/XML) i verzioniranje objava kako link ne bi „pucao” pri svakoj promjeni cijena — to je tehnički sloj između vašeg Excela ili CSV-a i weba.</p>`,
+        html: `<p>Odluka zahtijeva objavu važećeg cjenika u <strong>.csv</strong> ili <strong>.xml</strong> formatu te da trgovac odnosno pružatelj usluge na mrežnoj stranici omogući softverske alate odnosno automatizirane programe za <strong>dohvat podataka u realnom vremenu</strong> — bez ručnog prepisivanja.</p>
+<p>NEPAR Publisher objavljuje javne CSV/XML feedove na stabilnom URL-u i verzioniranje objava kako link ne bi „pucao” pri svakoj promjeni cijena — to je tehnički sloj između vašeg Excela ili CSV-a i weba.</p>`,
       },
       {
         heading: 'Koliko često se cjenik mora ažurirati?',
