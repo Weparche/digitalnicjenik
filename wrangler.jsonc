@@ -20,11 +20,14 @@
   "vars": {
     "DEMO_WRITE_TENANT": "nepar",
     "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",
-    "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb"
+    "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",
+    "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
+    "EMAIL_FROM": "publisher@nepar.hr",
+    "EMAIL_TO": "nepar@nepar.hr"
   },
   "env": {
     "preview": {
-      "name": "digitalni-cjenik-nepar-preview",
+      "name": "digitalnicjenik-preview",
       "r2_buckets": [
         {
           "binding": "DRAFTS",
@@ -34,11 +37,14 @@
       "vars": {
         "DEMO_WRITE_TENANT": "nepar",
         "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",
-        "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb"
+        "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",
+        "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
+        "EMAIL_FROM": "publisher@nepar.hr",
+        "EMAIL_TO": "nepar@nepar.hr"
       }
     },
     "production": {
-      "name": "digitalni-cjenik-nepar",
+      "name": "digitalnicjenik",
       "d1_databases": [
         {
           "binding": "DB",
@@ -56,7 +62,10 @@
       "vars": {
         "DEMO_WRITE_TENANT": "nepar",
         "DEMO_PUBLIC_HOSTNAME": "digitalnicjenik.nepar.hr",
-        "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb"
+        "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",
+        "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
+        "EMAIL_FROM": "publisher@nepar.hr",
+        "EMAIL_TO": "nepar@nepar.hr"
       }
     }
   }

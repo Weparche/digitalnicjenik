@@ -69,8 +69,9 @@ describe('digitalni cjenik lead delivery', () => {
     const response = await handleLeadRequest(request({ intent: 'plugin', message: 'Trebam WordPress plugin' }), leadEnv(), fetcher)
     expect(response.status).toBe(200)
     const emailBody = JSON.parse(String(((fetcher as unknown as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit).body)) as { subject: string; html: string }
-    expect(emailBody.subject).toContain('Plugin (49,90 €)')
-    expect(emailBody.html).toContain('Plugin (49,90 €)')
+    expect(emailBody.subject).toContain('39,90')
+    expect(emailBody.subject).toContain('Self-service')
+    expect(emailBody.html).toContain('100 aktiviranih pretplata')
   })
 
   it('reports Email API errors without claiming success', async () => {

@@ -18,9 +18,11 @@ const APP_ID = `${SITE_URL}/#app`
 const PRICE_ENGINE_ID = `${NEPAR_URL}/digitalni-cjenik#price-engine`
 const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
 
-const TITLE = 'NEPAR Digital Price Checker — je li vaš web spreman za 1.10.2026.?'
-const DESCRIPTION = 'Provjerite postoji li na vašem webu javno dostupan CSV/XML cjenik, validirajte njegov sadržaj i pripremite implementaciju.'
-const TWITTER_DESCRIPTION = 'Provjera javnog CSV/XML cjenika, validator i implementacija.'
+const TITLE = 'NEPAR Publisher — cjenik na webu uz MIKROeRAČUN'
+const DESCRIPTION =
+  'MIKROeRAČUN je za eRačune. NEPAR Publisher objavljuje Excel/CSV cjenik na vašem webu — validacija, javni CSV/XML, probni rok 7 dana, akcija 39,90 €/god.'
+const TWITTER_DESCRIPTION =
+  'Publishing layer za javni cjenik: Excel/CSV → validacija → 7 dana probe → Publisher self-service.'
 
 function escapeHtml(value) {
   return String(value)
@@ -49,7 +51,7 @@ function buildSchema(productFaq) {
       {
         '@type': 'WebSite',
         '@id': WEBSITE_ID,
-        name: 'NEPAR Digital Price Checker',
+        name: 'NEPAR Publisher',
         url: `${SITE_URL}/`,
         inLanguage: 'hr',
         publisher: { '@id': ORGANIZATION_ID },
@@ -72,7 +74,7 @@ function buildSchema(productFaq) {
       {
         '@type': 'SoftwareApplication',
         '@id': APP_ID,
-        name: 'NEPAR Digital Price Checker',
+        name: 'NEPAR Publisher',
         description: DESCRIPTION,
         url: `${SITE_URL}/`,
         applicationCategory: 'BusinessApplication',
@@ -156,7 +158,7 @@ async function main() {
   if (!html.includes(`property="og:image" content="${OG_IMAGE}"`)) {
     html = html.replace(
       '</head>',
-      `    <meta property="og:image" content="${OG_IMAGE}" />\n    <meta property="og:image:secure_url" content="${OG_IMAGE}" />\n    <meta property="og:image:type" content="image/png" />\n    <meta property="og:image:width" content="1200" />\n    <meta property="og:image:height" content="630" />\n    <meta property="og:image:alt" content="NEPAR Digital Price Checker — provjera CSV/XML cjenika" />\n  </head>`,
+      `    <meta property="og:image" content="${OG_IMAGE}" />\n    <meta property="og:image:secure_url" content="${OG_IMAGE}" />\n    <meta property="og:image:type" content="image/png" />\n    <meta property="og:image:width" content="1200" />\n    <meta property="og:image:height" content="630" />\n    <meta property="og:image:alt" content="NEPAR Publisher — digitalni cjenik" />\n  </head>`,
     )
   }
   html = html.replace(

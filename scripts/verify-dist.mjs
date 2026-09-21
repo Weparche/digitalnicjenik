@@ -29,7 +29,7 @@ const indexHtml = read('index.html')
 const h1Count = (indexHtml.match(/<h1\b/gi) || []).length
 if (h1Count !== 1) failures.push(`index.html: expected exactly one <h1>, found ${h1Count}`)
 expect('index.html', /<h1[^>]*>/, 'prerendered H1 is missing')
-expect('index.html', 'Provjerite što imate', 'prerendered hero copy is missing')
+expect('index.html', 'Koristite MIKROeRAČUN', 'prerendered hero copy is missing')
 expect('index.html', '<link rel="canonical" href="https://digitalnicjenik.nepar.hr/" />', 'self-canonical is missing')
 expect('index.html', /<title>[^<]{10,}<\/title>/, 'title is missing or too short')
 expect('index.html', /<meta name="description" content="[^"]{20,}" \/>/, 'meta description is missing or too short')

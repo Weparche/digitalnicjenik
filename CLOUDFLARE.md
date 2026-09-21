@@ -107,17 +107,18 @@ Anonymous uploads never publish to `nepar`.
 ## Lead forma i Email Sending
 
 Nova ruta `POST /api/leads/digitalni-cjenik` koristi D1 binding `DB`, Turnstile
-Siteverify i Cloudflare Email Sending REST API. Prije javnog uključivanja forme u
-Pages production/preview konfiguraciji postavite:
+Siteverify i Cloudflare Email Sending REST API (`nepar.hr`). Pages Functions ne
+podržavaju `send_email` binding — koristi se REST s `CF_EMAIL_API_TOKEN`. Prije
+javnog uključivanja forme u Pages production/preview konfiguraciji postavite:
 
 ```text
-CF_ACCOUNT_ID
-CF_EMAIL_API_TOKEN          secret
-EMAIL_FROM                  publisher@nepar.hr
-EMAIL_TO                    nepar@nepar.hr
+CF_ACCOUNT_ID               (već u wrangler vars)
+CF_EMAIL_API_TOKEN          secret · Account Email Sending
+EMAIL_FROM                  publisher@nepar.hr (vars)
+EMAIL_TO                    nepar@nepar.hr (vars)
 TURNSTILE_SECRET_KEY        secret
 LEAD_RATE_LIMIT_SECRET      secret
-VITE_TURNSTILE_SITE_KEY     build variable
+VITE_TURNSTILE_SITE_KEY     build variable (Pages → Environment variables)
 ```
 
 Domenu `nepar.hr` prvo onboardajte za Email Sending i verificirajte odredište
@@ -127,9 +128,10 @@ Domenu `nepar.hr` prvo onboardajte za Email Sending i verificirajte odredište
 REST API ima ukupni limit poruke od 5 MiB pa posebno provjerite graničnu
 datoteku prije javnog lansiranja.
 
-Turnstile widget mora imati hostname `digitalnicjenik.nepar.hr` i action
-`turnstile-spin-v2`. Backend prihvaća poruku tek kada Siteverify vrati
-`success: true` za isti action/hostname. D1 zapisuje samo HMAC hash IP-a, status
-pokušaja i vrijeme; ime, e-mail, poruka i datoteka ostaju izvan baze i logova.
+Turnstile widget mora imati hostname `digitalnicjenik.nepar.hr` (i
+`digitalnicjenik.pages.dev` / localhost za preview) i action `turnstile-spin-v2`.
+Backend prihvaća poruku tek kada Siteverify vrati `success: true` za isti
+action/hostname. D1 zapisuje samo HMAC hash IP-a, status pokušaja i vrijeme;
+ime, e-mail, poruka i datoteka ostaju izvan baze i logova.
 
 Buduća automatska sinkronizacija s providerom zahtijevat će zasebne vjerodajnice.

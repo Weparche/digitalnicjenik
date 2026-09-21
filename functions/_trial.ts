@@ -6,10 +6,12 @@ import {
   validEmail,
   type AuthEnv,
 } from './_auth'
-import { escapeHtml, hmacIp } from './_lead'
+import { emailConfigured, sendTransactionalEmail } from './_email'
+import { escapeHtml, hmacIp, verifyTurnstile } from './_lead'
 import { entitlementCanPublish } from './_public-access'
 import { createDraft, publishDraft, readEntitlement, resolveTenant, type D1DatabaseLike, type RuntimeEnv } from './_repository'
 import { slugifyBusinessName, suggestSlugAlternatives, validSlug } from './_slug'
+import { implementationIntentLabel, selfServiceIntentLabel } from './_pricing'
 import { AccessDeniedError } from './_write-auth'
 import type { NormalizedPriceList, ValidationIssue } from '../src/price-engine/types'
 import { mergeValidationIssues, validatePriceList } from '../src/price-engine/validate'
@@ -216,12 +218,15 @@ export function previewSlugFromBusinessName(businessName: string) {
 export async function startTrialClaim(
   request: Request,
   env: TrialEnv,
-  input: { draftId: string; email: string; businessName: string; slug: string },
+  input: { draftId: string; email: string; businessName: string; slug: string; turnstileToken?: string },
   fetcher: typeof fetch = fetch,
 ) {
   const db = requireDb(env)
-  if (!env.CF_ACCOUNT_ID || !env.CF_EMAIL_API_TOKEN || !env.EMAIL_FROM) {
+  if (!emailConfigured(env)) {
     throw new AccessDeniedError(503, 'email_misconfigured', 'Email Sending nije konfiguriran.')
+  }
+  if (!env.TURNSTILE_SECRET_KEY) {
+    throw new AccessDeniedError(503, 'turnstile_misconfigured', 'Turnstile nije konfiguriran.')
   }
   const email = normalizeEmail(input.email)
   if (!validEmail(email)) throw new AccessDeniedError(400, 'invalid_input', 'Unesite valjanu e-mail adresu.')
@@ -229,6 +234,15 @@ export async function startTrialClaim(
   if (businessName.length < 2) throw new AccessDeniedError(400, 'invalid_input', 'Unesite naziv poslovanja.')
   const slug = input.slug.trim().toLocaleLowerCase('en-US')
   if (!validSlug(slug)) throw new AccessDeniedError(400, 'invalid_slug', 'Slug nije valjan.')
+
+  const turnstileOk = await verifyTurnstile(
+    input.turnstileToken || '',
+    clientIp(request),
+    new URL(request.url),
+    env.TURNSTILE_SECRET_KEY,
+    fetcher,
+  )
+  if (!turnstileOk) throw new AccessDeniedError(403, 'turnstile_failed', 'Sigurnosna provjera nije uspjela.')
 
   const availability = await checkSlugAvailability(env, slug)
   if (!availability.available) throw new AccessDeniedError(409, 'slug_taken', 'Odabrani slug nije dostupan.')
@@ -262,24 +276,15 @@ export async function startTrialClaim(
   const text = `Potvrdite e-mail i objavite probni cjenik na ${origin}/c/${slug}:\n\n${link}\n\nLink vrijedi 30 minuta i može se iskoristiti jednom.`
   const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><p>Potvrdite e-mail za probni NEPAR Publisher.</p><p>Vaš cjenik bit će na <strong>${escapeHtml(origin)}/c/${escapeHtml(slug)}</strong>.</p><p><a href="${escapeHtml(link)}">Potvrdi i objavi probno</a></p><p style="color:#64748b;font-size:13px">Link vrijedi 30 minuta.</p></body></html>`
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 15_000)
   try {
-    const response = await fetcher(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CF_ACCOUNT_ID)}/email/sending/send`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.CF_EMAIL_API_TOKEN}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        to: email,
-        from: { address: env.EMAIL_FROM, name: 'NEPAR Publisher' },
-        subject: 'Potvrda probnog cjenika — NEPAR Publisher',
-        text,
-        html,
-      }),
-      signal: controller.signal,
-    })
-    if (!response.ok) throw new AccessDeniedError(502, 'send_failed', 'Potvrdni link trenutačno nije moguće poslati.')
-  } finally {
-    clearTimeout(timeout)
+    await sendTransactionalEmail(env, {
+      to: email,
+      subject: 'Potvrda probnog cjenika — NEPAR Publisher',
+      text,
+      html,
+    }, fetcher)
+  } catch {
+    throw new AccessDeniedError(502, 'send_failed', 'Potvrdni link trenutačno nije moguće poslati.')
   }
 
   return { claimId, slug, email, expiresAt }
@@ -491,14 +496,14 @@ export async function sendPublisherUpgradeRequest(
   },
   fetcher: typeof fetch = fetch,
 ) {
-  if (!env.CF_ACCOUNT_ID || !env.CF_EMAIL_API_TOKEN || !env.EMAIL_FROM || !env.EMAIL_TO) {
+  if (!emailConfigured(env) || !env.EMAIL_TO) {
     throw new AccessDeniedError(503, 'email_misconfigured', 'Email Sending nije konfiguriran.')
   }
   const intentLabel =
     input.intent === 'self_service'
-      ? 'Self-service — 49,90 €/god'
+      ? selfServiceIntentLabel()
       : input.intent === 'implementation'
-        ? 'Implementacija — 89,90 € prva godina'
+        ? implementationIntentLabel()
         : 'Konzultacija / pomoć'
   const text = [
     'Novi Publisher upit',
@@ -517,17 +522,16 @@ export async function sendPublisherUpgradeRequest(
     input.message ? `\nPoruka:\n${input.message}` : '',
   ].join('\n')
 
-  const response = await fetcher(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CF_ACCOUNT_ID)}/email/sending/send`, {
-    method: 'POST',
-    headers: { authorization: `Bearer ${env.CF_EMAIL_API_TOKEN}`, 'content-type': 'application/json' },
-    body: JSON.stringify({
+  try {
+    await sendTransactionalEmail(env, {
       to: env.EMAIL_TO,
-      from: { address: env.EMAIL_FROM, name: 'NEPAR Publisher' },
       subject: `Publisher upit — ${input.tenantSlug} — ${intentLabel}`,
       text,
-    }),
-  })
-  if (!response.ok) throw new AccessDeniedError(502, 'send_failed', 'Upit trenutačno nije moguće poslati.')
+      replyTo: { email: input.email, name: input.businessName },
+    }, fetcher)
+  } catch {
+    throw new AccessDeniedError(502, 'send_failed', 'Upit trenutačno nije moguće poslati.')
+  }
   return { ok: true as const }
 }
 

@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  implementationFirstYearLabel,
+  launchOfferDetail,
+  regularSelfServicePriceLabel,
+  selfServicePriceLabel,
+} from './publisherPricing'
 
 export type LeadIntent = 'implementation' | 'consultation' | 'plugin'
 export type LeadContext = {
@@ -46,7 +52,7 @@ function loadTurnstile() {
   return turnstileScriptPromise
 }
 
-function TurnstileField({ onToken }: { onToken: (token: string) => void }) {
+export function TurnstileField({ onToken }: { onToken: (token: string) => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetRef = useRef<string | null>(null)
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY
@@ -134,16 +140,16 @@ export function LeadForm({ intent, context, onIntentChange }: { intent: LeadInte
   if (status === 'sent') return <section id="posaljite-cjenik" className="lead-section lead-success" tabIndex={-1}><span className="lead-success-mark" aria-hidden="true">✓</span><div><h2>Upit je poslan.</h2><p>Javit ćemo vam se na unesenu e-mail adresu nakon pregleda materijala.</p></div></section>
 
   return <section id="posaljite-cjenik" className="lead-section" aria-labelledby="lead-title" tabIndex={-1}>
-    <div className="lead-copy"><span className="app-label">NE MORATE ZNATI TEHNIČKE DETALJE</span><h2 id="lead-title">{intent === 'plugin' ? 'Zatražite Publisher self-service' : intent === 'implementation' ? 'Zatražite Publisher + postavljanje' : consultationTitle}</h2><p>{intent === 'plugin' ? 'Publisher 49,90 €/god — sami ugradite link/iframe na web. Pošaljite platformu i što imate.' : intent === 'implementation' ? 'Publisher + postavljanje na vaš web — 89,90 € prva godina, zatim 49,90 €/god. Pošaljite što imate.' : consultationCopy}</p><div className="lead-price"><strong>{intent === 'plugin' ? 'Publisher 49,90 €/god' : intent === 'implementation' ? '89,90 € prva godina' : 'Konzultacija'}</strong><span>{intent === 'plugin' ? 'Isti URL ostaje nakon aktivacije. Bez besplatnog trajnog hostinga bez pretplate.' : intent === 'implementation' ? 'Uključuje Publisher i ugradnju; nakon prve godine 49,90 €/god.' : context.checkerStatus === 'green' ? 'Tehnički pregled pronađenog URL-a: arhiva, naziv, sadržaj, dohvat.' : 'Pregled vašeg slučaja i preporuka sljedećeg koraka.'}</span></div></div>
+    <div className="lead-copy"><h2 id="lead-title">{intent === 'plugin' ? 'Zatražite Publisher self-service' : intent === 'implementation' ? 'Zatražite Publisher + postavljanje' : consultationTitle}</h2><p>{intent === 'plugin' ? `${launchOfferDetail()} Sami ugradite link na web. Pošaljite platformu i što imate (Excel/CSV).` : intent === 'implementation' ? `Publisher + postavljanje na vaš web — ${implementationFirstYearLabel()} prva godina, zatim ${regularSelfServicePriceLabel()}. Pošaljite što imate.` : consultationCopy}</p><div className="lead-price"><strong>{intent === 'plugin' ? `Publisher ${selfServicePriceLabel()}` : intent === 'implementation' ? `${implementationFirstYearLabel()} prva godina` : 'Konzultacija'}</strong><span>{intent === 'plugin' ? 'Isti URL ostaje nakon aktivacije. Bez besplatnog trajnog hostinga bez pretplate.' : intent === 'implementation' ? 'Uključuje Publisher i ugradnju; nakon prve godine redovna self-service cijena.' : context.checkerStatus === 'green' ? 'Tehnički pregled pronađenog URL-a: arhiva, naziv, sadržaj, dohvat.' : 'Pregled vašeg slučaja i preporuka sljedećeg koraka.'}</span></div></div>
     <form className="lead-form" onSubmit={submit} encType="multipart/form-data">
-      <fieldset className="intent-switch"><legend>Što vam treba?</legend><label><input type="radio" name="intent-choice" checked={intent === 'plugin'} onChange={() => onIntentChange('plugin')} /><span>Self-service · 49,90 €/god</span></label><label><input type="radio" name="intent-choice" checked={intent === 'implementation'} onChange={() => onIntentChange('implementation')} /><span>S postavljanjem · 89,90 €</span></label><label><input type="radio" name="intent-choice" checked={intent === 'consultation'} onChange={() => onIntentChange('consultation')} /><span>Konzultacija</span></label></fieldset>
+      <fieldset className="intent-switch"><legend>Što vam treba?</legend><label><input type="radio" name="intent-choice" checked={intent === 'plugin'} onChange={() => onIntentChange('plugin')} /><span>Self-service · {selfServicePriceLabel()}</span></label><label><input type="radio" name="intent-choice" checked={intent === 'implementation'} onChange={() => onIntentChange('implementation')} /><span>S postavljanjem · {implementationFirstYearLabel()}</span></label><label><input type="radio" name="intent-choice" checked={intent === 'consultation'} onChange={() => onIntentChange('consultation')} /><span>Konzultacija</span></label></fieldset>
       <div className="lead-fields">
         <label>Ime ili naziv tvrtke<input name="name" required maxLength={120} autoComplete="name" /></label>
         <label>E-mail<input name="email" type="email" required maxLength={254} autoComplete="email" /></label>
         <label>Telefon <small>opcionalno</small><input name="phone" type="tel" maxLength={40} autoComplete="tel" /></label>
         <label>Web stranica <small>opcionalno</small><input name="website" type="url" maxLength={500} defaultValue={context.website ?? ''} placeholder="https://" autoComplete="url" /></label>
-        <label>Platforma<select name="platform" defaultValue="ne-znam"><option value="wordpress">WordPress</option><option value="wix">Wix</option><option value="google-sites">Google Sites</option><option value="webflow">Webflow</option><option value="custom">Custom</option><option value="ne-znam">Ne znam</option></select></label>
-        <label>Što trenutno imate?<select name="materials" defaultValue={context.sourceFilename ? 'datoteka' : context.website ? 'web' : 'nista'}><option value="csv">CSV</option><option value="xml">XML</option><option value="excel">Excel</option><option value="pdf">PDF</option><option value="slika">Sliku cjenika</option><option value="web">Samo web stranicu</option><option value="datoteka">Učitanu datoteku</option><option value="nista">Ništa pripremljeno</option></select></label>
+        <label>Platforma<select name="platform" defaultValue="mikro-eracun"><option value="mikro-eracun">MIKROeRAČUN (+ vlastiti web)</option><option value="wordpress">WordPress</option><option value="wix">Wix</option><option value="google-sites">Google Sites</option><option value="webflow">Webflow</option><option value="custom">Custom</option><option value="ne-znam">Ne znam</option></select></label>
+        <label>Što trenutno imate?<select name="materials" defaultValue={context.sourceFilename ? 'datoteka' : context.website ? 'web' : 'nista'}><option value="csv">CSV</option><option value="xml">XML</option><option value="excel">Excel</option><option value="web">Samo web stranicu</option><option value="datoteka">Učitanu datoteku</option><option value="nista">Ništa pripremljeno</option></select></label>
       </div>
       <label className="lead-message">Poruka<textarea name="message" rows={5} maxLength={3000} placeholder="Ukratko opišite što želite riješiti." /></label>
       {context.sourceFile && <label className="attachment-choice"><input type="checkbox" checked={attachCurrent} onChange={(event) => setAttachCurrent(event.target.checked)} /><span>Priloži već učitanu datoteku <strong>{context.sourceFile.name}</strong></span></label>}
@@ -152,7 +158,7 @@ export function LeadForm({ intent, context, onIntentChange }: { intent: LeadInte
       <TurnstileField onToken={setTurnstileToken} />
       <label className="privacy-choice"><input name="privacy" type="checkbox" required /><span>Slažem se da NEPAR obradi podatke i privitak radi odgovora na upit. <a href="https://nepar.hr/privatnost" target="_blank" rel="noreferrer">Politika privatnosti</a></span></label>
       {error && <p className="app-error" role="alert">{error}</p>}
-      <button className="app-button app-button-primary lead-submit" type="submit" disabled={status === 'sending' || !siteKey}>{status === 'sending' ? 'Šaljemo…' : intent === 'implementation' ? 'Pošaljite upit za 89,90 €' : intent === 'plugin' ? 'Pošaljite upit za 49,90 €/god' : 'Zatražite konzultaciju'}</button>
+      <button className="app-button app-button-primary lead-submit" type="submit" disabled={status === 'sending' || !siteKey}>{status === 'sending' ? 'Šaljemo…' : intent === 'implementation' ? `Pošaljite upit za ${implementationFirstYearLabel()}` : intent === 'plugin' ? `Pošaljite upit za ${selfServicePriceLabel()}` : 'Zatražite konzultaciju'}</button>
     </form>
   </section>
 }

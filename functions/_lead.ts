@@ -1,15 +1,13 @@
 import type { D1DatabaseLike } from './_repository'
+import { emailConfigured, sendTransactionalEmail, type EmailEnv } from './_email'
+import { implementationIntentLabel, selfServiceIntentLabel } from './_pricing'
 
 export const MAX_ATTACHMENT_BYTES = 4_000_000
 export const MAX_REQUEST_BYTES = 4_600_000
 const TURNSTILE_ACTION = 'turnstile-spin-v2'
 
-export type LeadEnv = {
+export type LeadEnv = EmailEnv & {
   DB?: D1DatabaseLike
-  CF_ACCOUNT_ID?: string
-  CF_EMAIL_API_TOKEN?: string
-  EMAIL_FROM?: string
-  EMAIL_TO?: string
   TURNSTILE_SECRET_KEY?: string
   LEAD_RATE_LIMIT_SECRET?: string
 }
@@ -102,12 +100,6 @@ function validEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254
 }
 
-function bytesToBase64(bytes: Uint8Array) {
-  let binary = ''
-  for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
-  return btoa(binary)
-}
-
 async function recordAttempt(env: LeadEnv, ipHash: string, status: string, attemptId: string) {
   if (!env.DB) throw new Error('send_failed')
   try {
@@ -122,7 +114,7 @@ async function updateAttempt(env: LeadEnv, attemptId: string, status: string) {
   await env.DB?.prepare('UPDATE lead_delivery_attempts SET status = ? WHERE id = ?').bind(status, attemptId).run()
 }
 
-async function verifyTurnstile(token: string, ip: string, requestUrl: URL, secret: string, fetcher: typeof fetch) {
+export async function verifyTurnstile(token: string, ip: string, requestUrl: URL, secret: string, fetcher: typeof fetch = fetch) {
   if (!token || token.length > 2048) return false
   const response = await fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
@@ -158,7 +150,7 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   if (!origin || origin !== requestUrl.origin) return jsonResponse(403, { ok: false, code: 'invalid_input' })
   const contentLength = Number(request.headers.get('content-length') ?? 0)
   if (contentLength > MAX_REQUEST_BYTES) return jsonResponse(413, { ok: false, code: 'file_rejected' })
-  if (!env.CF_ACCOUNT_ID || !env.CF_EMAIL_API_TOKEN || !env.EMAIL_FROM || !env.EMAIL_TO || !env.TURNSTILE_SECRET_KEY || !env.LEAD_RATE_LIMIT_SECRET || !env.DB) return jsonResponse(503, { ok: false, code: 'send_failed' })
+  if (!emailConfigured(env) || !env.EMAIL_TO || !env.TURNSTILE_SECRET_KEY || !env.LEAD_RATE_LIMIT_SECRET || !env.DB) return jsonResponse(503, { ok: false, code: 'send_failed' })
 
   let form: FormData
   try { form = await request.formData() } catch { return jsonResponse(400, { ok: false, code: 'invalid_input' }) }
@@ -173,7 +165,12 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   const privacy = form.get('privacy')
   const token = stringField(form, 'cf-turnstile-response', 2048)
   if (!['implementation', 'consultation', 'plugin'].includes(intent) || !name || !validEmail(email) || privacy !== 'on') return jsonResponse(400, { ok: false, code: 'invalid_input' })
-  const intentLabel = intent === 'implementation' ? 'Plugin + implementacija (89,90 €)' : intent === 'plugin' ? 'Plugin (49,90 €)' : 'Konzultacija'
+  const intentLabel =
+    intent === 'implementation'
+      ? implementationIntentLabel()
+      : intent === 'plugin'
+        ? selfServiceIntentLabel()
+        : 'Konzultacija'
 
   const ip = request.headers.get('cf-connecting-ip') ?? 'unknown'
   const attemptId = crypto.randomUUID()
@@ -209,28 +206,19 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   ]
   const text = rows.map(([label, value]) => `${label}: ${value}`).join('\n\n')
   const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><h1>Novi upit za digitalni cjenik</h1><table role="presentation" style="border-collapse:collapse;width:100%">${rows.map(([label, value]) => `<tr><th style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top">${escapeHtml(label)}</th><td style="padding:8px;border-bottom:1px solid #e2e8f0;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`).join('')}</table></body></html>`
-  const emailPayload: Record<string, unknown> = {
-    to: env.EMAIL_TO,
-    from: { address: env.EMAIL_FROM, name: 'NEPAR Publisher' },
-    reply_to: { address: email, name },
-    subject: `${intentLabel} · digitalni cjenik · ${name}`.slice(0, 180),
-    text,
-    html,
-  }
-  if (attachment) emailPayload.attachments = [{ content: bytesToBase64(attachment.bytes), filename: attachment.filename, type: attachment.type, disposition: 'attachment' }]
-
   let sent = false
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15_000)
-    const response = await fetcher(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CF_ACCOUNT_ID)}/email/sending/send`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.CF_EMAIL_API_TOKEN}`, 'content-type': 'application/json' },
-      body: JSON.stringify(emailPayload),
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timeout))
-    const result = await response.json().catch(() => null) as { success?: boolean; result?: { delivered?: string[]; queued?: string[]; permanent_bounces?: string[] } } | null
-    sent = response.ok && result?.success === true && (result.result?.permanent_bounces?.length ?? 0) === 0 && ((result.result?.delivered?.length ?? 0) + (result.result?.queued?.length ?? 0) > 0)
+    await sendTransactionalEmail(env, {
+      to: env.EMAIL_TO,
+      subject: `${intentLabel} · digitalni cjenik · ${name}`.slice(0, 180),
+      text,
+      html,
+      replyTo: { email, name },
+      attachments: attachment
+        ? [{ content: attachment.bytes, filename: attachment.filename, type: attachment.type }]
+        : undefined,
+    }, fetcher)
+    sent = true
   } catch { sent = false }
   await updateAttempt(env, attemptId, sent ? 'sent' : 'send_failed')
   return sent ? jsonResponse(200, { ok: true, leadId: attemptId }) : jsonResponse(502, { ok: false, code: 'send_failed' })

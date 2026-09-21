@@ -3,7 +3,16 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 import { ExcelConverter } from './ExcelConverter'
 import { EducationSection } from './EducationSection'
-import { LeadForm, type LeadContext, type LeadIntent } from './LeadForm'
+import { LeadForm, TurnstileField, type LeadContext, type LeadIntent } from './LeadForm'
+import {
+  COMMERCIAL_INTERMEDIARY_LINE,
+  implementationFirstYearLabel,
+  launchAfterCapLine,
+  launchOfferShort,
+  LAUNCH_ACTIVE,
+  regularSelfServicePriceLabel,
+  selfServicePriceLabel,
+} from './publisherPricing'
 
 const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(value)
 const dateTime = (value: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
@@ -152,21 +161,21 @@ function PublishedSuccessPanel({
         </div>
         <h3>Provjera je gotova{versionLabel ? ` · ${versionLabel}` : ''}</h3>
         <p>
-          {message || 'Cjenik je uspješno pripremljen.'} Ovo nije trajni hosting — zatražite ponudu za plugin, implementaciju ili oboje.
+          {message || 'Cjenik je uspješno pripremljen.'} Ovo nije trajni hosting — zatražite Publisher self-service ili postavljanje na web.
           Preuzimanja CSV/XML iznad su radne datoteke za vas, ne javni linkovi za klijente.
         </p>
       </div>
 
       <div className="publish-path-grid" aria-label="Zatražite ponudu">
         <button type="button" className="publish-path-card" onClick={() => onLead?.('plugin')}>
-          <strong>Plugin</strong>
-          <span>Priprema plugin / ugradnje na vaš postojeći CMS. Pošaljite upit — odgovaramo s ponudom, bez automatskog linka.</span>
-          <em>49,90 € →</em>
+          <strong>Publisher self-service</strong>
+          <span>Javni CSV/XML, aktualni link i verzije — sami ugradite link na web.</span>
+          <em>{selfServicePriceLabel()} →</em>
         </button>
         <button type="button" className="publish-path-card publish-path-card-featured" onClick={() => onLead?.('implementation')}>
-          <strong>Plugin + implementacija</strong>
-          <span>Plugin i tehničko postavljanje na vaš web. Pošaljete što imate — mi povežemo i predamo.</span>
-          <em>89,90 € →</em>
+          <strong>Publisher + postavljanje</strong>
+          <span>NEPAR ugradi cjenik na vašu mrežnu stranicu. Prva godina uključuje Publisher.</span>
+          <em>{implementationFirstYearLabel()} →</em>
         </button>
       </div>
     </div>
@@ -703,6 +712,8 @@ function TrialClaimForm({
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY
 
   useEffect(() => {
     const controller = new AbortController()
@@ -738,6 +749,11 @@ function TrialClaimForm({
     event.preventDefault()
     setBusy(true)
     setError('')
+    if (!turnstileToken) {
+      setError('Dovršite sigurnosnu provjeru prije slanja.')
+      setBusy(false)
+      return
+    }
     try {
       const draftResponse = await fetch('/api/drafts', {
         method: 'POST',
@@ -758,15 +774,21 @@ function TrialClaimForm({
           email,
           businessName: businessName.trim(),
           slug: slug.trim().toLocaleLowerCase('en-US'),
+          turnstileToken,
         }),
       })
       const claimPayload = await claimResponse.json() as { ok?: boolean; error?: string; code?: string }
       if (!claimResponse.ok || !claimPayload.ok) {
+        if (claimPayload.code === 'turnstile_failed' || claimResponse.status === 403) {
+          throw new Error('Sigurnosna provjera nije uspjela. Osvježite provjeru i pokušajte ponovno.')
+        }
         throw new Error(claimPayload.error || 'Potvrdni link nije moguće poslati.')
       }
       setSent(true)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Zahtjev nije uspio.')
+      if (window.turnstile) window.turnstile.reset()
+      setTurnstileToken('')
     } finally {
       setBusy(false)
     }
@@ -794,9 +816,10 @@ function TrialClaimForm({
         <label>Slug (URL)<input value={slug} onChange={(event) => setSlug(event.target.value.toLocaleLowerCase('en-US').replace(/[^a-z0-9-]/g, ''))} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={48} /></label>
         <p className="trial-slug-preview">Vaš cjenik bit će dostupan na <strong>{typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'}/c/{slug || '…'}</strong></p>
         {slugHint && <p className="premium-inline-error">{slugHint}</p>}
+        <TurnstileField onToken={setTurnstileToken} />
         {error && <p className="app-error" role="alert">{error}</p>}
         <div className="trial-claim-actions">
-          <button className="app-button app-button-primary" type="submit" disabled={busy}>{busy ? 'Šaljemo…' : 'Pošalji potvrdni link →'}</button>
+          <button className="app-button app-button-primary" type="submit" disabled={busy || !siteKey}>{busy ? 'Šaljemo…' : 'Pošalji potvrdni link →'}</button>
           <button className="app-button app-button-light" type="button" onClick={onCancel} disabled={busy}>Odustani</button>
         </div>
       </form>
@@ -989,7 +1012,7 @@ function ValidatorApp({
     : <section className="validator-app-intro">{embedded ? null : <span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span>}{embedded ? <h2>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h2> : <h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1>}{embedded ? null : <p>Učitajte CSV ili XML. Pregledajte podatke, zatim objavite probni cjenik na vlastitom URL-u (7 dana).</p>}</section>
 
   const tool = <>
-    <section className="validator-tool" aria-label={mode === 'publisher' ? 'Publisher cjenik' : 'Validator cjenika'}><div className="upload-card"><div className="upload-card-heading"><div><span className="app-label">{mode === 'publisher' ? 'UČITAJTE ILI UREDITE' : '1 / UČITAJTE'}</span><h2>CSV ili XML cjenik</h2><p>{mode === 'publisher' ? 'Nova datoteka zamjenjuje draft. Ručne izmjene u tablici ostaju dok ne objavite.' : 'Za besplatni pregled nije potrebna registracija.'}</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">{mode === 'publisher' ? 'PRIJE OBJAVE' : '2 / ŠTO PROVJERAVAMO'}</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena za usluge</li><li><span>03</span>Potvrda posebnog oblika prodaje kod akcijske cijene</li><li><span>04</span>Nova usluga ide na ručni pregled</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
+    <section className="validator-tool" aria-label={mode === 'publisher' ? 'Publisher cjenik' : 'Validator cjenika'}><div className="upload-card"><div className="upload-card-heading"><div><h2>CSV ili XML cjenik</h2><p>{mode === 'publisher' ? 'Nova datoteka zamjenjuje draft. Ručne izmjene u tablici ostaju dok ne objavite.' : 'Za besplatni pregled nije potrebna registracija.'}</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">{mode === 'publisher' ? 'PRIJE OBJAVE' : '2 / ŠTO PROVJERAVAMO'}</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena za usluge</li><li><span>03</span>Potvrda posebnog oblika prodaje kod akcijske cijene</li><li><span>04</span>Nova usluga ide na ručni pregled</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
     {list && claimOpen && mode === 'sandbox' && (
       <TrialClaimForm list={list} sourceFilename={sourceFilename} onCancel={() => setClaimOpen(false)} />
     )}
@@ -1073,17 +1096,16 @@ function PremiumReadinessChecker({ onResult, onChooseCsv, onLead }: { onResult: 
   const resultTitle = result?.status === 'green'
     ? 'Datoteka je pronađena — to još nije potvrda usklađenosti'
     : result?.status === 'yellow'
-      ? 'Cjenik postoji, ali strojna datoteka nije potvrđena'
+      ? 'Cjenik postoji, ali CSV/XML nije potvrđen'
       : result?.status === 'red'
-        ? 'Strojni cjenik nije pronađen'
+        ? 'Javni CSV/XML cjenik nije pronađen'
         : 'Provjeru trenutačno nije moguće dovršiti'
   const resultClass = result ? 'is-' + result.status : ''
 
   return <section className="premium-checker" id="checker" aria-labelledby="checker-title">
     <div className="premium-checker-intro">
-      <span className="app-label">01 / PROVJERA WEBA</span>
-      <h2 id="checker-title">Je li vaš web spreman za strojni cjenik?</h2>
-      <p>Unesite adresu weba. Provjerit ćemo postoji li javno dostupan CSV ili XML cjenik.</p>
+      <h2 id="checker-title">Je li vaš web spreman?</h2>
+      <p>Unesite adresu. Provjerit ćemo postoji li javno dostupan CSV ili XML cjenik.</p>
     </div>
     <form className="premium-checker-form" onSubmit={check} noValidate>
       <label className="sr-only" htmlFor="premium-website-url">Adresa web stranice</label>
@@ -1093,7 +1115,7 @@ function PremiumReadinessChecker({ onResult, onChooseCsv, onLead }: { onResult: 
     {urlError && <p id="premium-website-error" className="premium-inline-error" role="alert">{urlError}</p>}
     <div className="premium-trust-row" aria-label="Informacije o provjeri"><span>Bez registracije</span><span>Javno dostupna provjera</span><span>CSV ili XML rezultat</span></div>
     {result && <div className={'premium-checker-result ' + resultClass} role="status" aria-live="polite">
-      <div className="premium-result-heading"><span className="premium-result-mark" aria-hidden="true">{result.status === 'green' ? '!' : result.status === 'unavailable' ? '!' : '·'}</span><div><span className="app-label">REZULTAT PROVJERE</span><h3>{resultTitle}</h3></div></div>
+      <div className="premium-result-heading"><span className="premium-result-mark" aria-hidden="true">{result.status === 'green' ? '✓' : result.status === 'unavailable' ? '!' : '·'}</span><div><h3>{resultTitle}</h3></div></div>
       <p>{result.message}</p>
       {result.status === 'green' && (
         <>
@@ -1102,27 +1124,31 @@ function PremiumReadinessChecker({ onResult, onChooseCsv, onLead }: { onResult: 
             <span>XML {details.xmlUrl ? <a href={details.xmlUrl} target="_blank" rel="noreferrer">{details.xmlUrl}</a> : 'nije pronađen'}</span>
           </div>
           <div className="premium-sufficiency-note">
-            <h4>Zašto sama datoteka možda nije dovoljna?</h4>
-            <p>Ova provjera potvrđuje samo da je CSV/XML <em>tehnički dostupan</em> na webu. Ne potvrđuje da ispunjavate Odluku o digitalnom cjeniku. Često i dalje nedostaje:</p>
-            <ul>
-              <li><strong>Arhiva</strong> — prethodne objavljene verzije moraju ostati javno dostupne najmanje 30 dana</li>
-              <li><strong>Naziv datoteke</strong> — propisani elementi (objekt, adresa, oznaka, broj pohrane, datum i vrijeme)</li>
-              <li><strong>Sadržaj</strong> — obavezna polja, sidrena/dodatna cijena, posebni oblici prodaje gdje treba</li>
-              <li><strong>Strojna vidljivost</strong> — softverski alati moraju moći dohvatiti aktualne cijene bez prijave</li>
-              <li><strong>Ažurnost</strong> — aktualni cjenik mora odgovarati stvarnim cijenama u propisanom roku</li>
-            </ul>
-            <p className="premium-sufficiency-disclaimer">Ovo nije pravni savjet — tehnička napomena što ova automatska provjera ne pokriva.</p>
+            <p>Pronađena datoteka potvrđuje samo tehničku dostupnost — ne i potpunu usklađenost (arhiva, naziv, sadržaj).</p>
+            <details className="premium-sufficiency-details">
+              <summary>Što ova automatska provjera ne pokriva</summary>
+              <ul>
+                <li><strong>Arhiva i naziv</strong> — prethodne verzije i propisani naziv datoteke</li>
+                <li><strong>Sadržaj i dohvat</strong> — obavezna polja i strojno čitljiv pristup bez prijave</li>
+              </ul>
+              <p className="premium-sufficiency-disclaimer">Ovo nije pravni savjet.</p>
+            </details>
           </div>
-          <button className="app-button app-button-primary premium-result-cta" type="button" onClick={() => onLead('consultation')}>
-            Pošaljite pronađeni URL na konzultaciju →
-          </button>
+          <div className="premium-result-actions">
+            <button className="app-button app-button-primary premium-result-cta" type="button" onClick={onChooseCsv}>
+              Učitajte datoteku i objavite probno →
+            </button>
+            <button className="premium-result-action" type="button" onClick={() => onLead('consultation')}>
+              Ili pošaljite URL na konzultaciju
+            </button>
+          </div>
         </>
       )}
       {result.status === 'yellow' && <button className="premium-result-action" type="button" onClick={() => onLead('consultation')}>Pošaljite postojeću stranicu — provjerit ćemo što nedostaje →</button>}
       {result.status === 'red' && <button className="premium-result-action" type="button" onClick={onChooseCsv}>Imam CSV → besplatna provjera</button>}
       {result.status === 'unavailable' && <button className="premium-result-action" type="button" onClick={() => void check()}>Pokušajte ponovno →</button>}
     </div>}
-    <div className="premium-checker-next"><div><strong>Imate CSV ili XML?</strong><span>Učitajte ga i provjerite nedostaju li podaci za objavu.</span></div><button type="button" onClick={onChooseCsv}>Učitajte datoteku <span aria-hidden="true">↓</span></button></div>
+    <div className="premium-checker-next"><div><strong>Imate CSV, XML ili Excel?</strong><span>Učitajte ga, zatim objavite probni cjenik 7 dana na vlastitom URL-u.</span></div><button type="button" onClick={onChooseCsv}>Započni probni →</button></div>
   </section>
 }
 
@@ -1162,12 +1188,27 @@ function PremiumEntry() {
     discoveredUrls: foundUrls,
   }
 
-  return <div className="validator-app-shell premium-entry"><header className="app-header"><Logo /><button className="header-lead" type="button" onClick={() => focusLead('consultation')}>Trebate pomoć? <strong>Zatražite konzultaciju →</strong></button></header><main className="validator-app premium-entry-main">
-    <section className="premium-hero"><div className="premium-hero-content"><div className="premium-hero-copy"><span className="app-label">NEPAR PUBLISHER / TEHNIČKA PROVJERA</span><h1>Provjerite što imate. <em>Mi ćemo riješiti ostalo.</em></h1><p>Provjerite može li vaš web dohvatiti strojni cjenik ili nam odmah pošaljite ono što danas koristite.</p></div><div className="premium-hero-note"><span className="premium-note-dot" aria-hidden="true" /><span>Za WordPress, Wix, Google Sites, Webflow i stranice koje vam je izradio netko drugi.</span></div></div></section>
-    <div className="premium-hero-tools"><PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} /><aside className="hero-sales-card"><h2>Publisher od <strong>49,90 €/god</strong></h2><p>Sam ugradite link na web — 49,90 €/god. Ili Publisher + postavljanje 89,90 € prva godina, zatim 49,90 €/god.</p><ul><li>probni cjenik 7 dana na vašem URL-u</li><li>isti link ostaje nakon aktivacije</li><li>dashboard za CSV, Excel i ponovnu objavu</li></ul><button className="app-button app-button-primary" type="button" onClick={() => focusLead('implementation')}>Zatražite postavljanje 89,90 €</button><button className="sales-link" type="button" onClick={() => focusLead('plugin')}>Self-service 49,90 €/god</button></aside></div>
+  return <div className="validator-app-shell premium-entry"><header className="app-header"><Logo /><button className="header-lead" type="button" onClick={() => focusLead('consultation')}>Trebate pomoć? <strong>Konzultacija →</strong></button></header><main className="validator-app premium-entry-main">
+    <section className="premium-hero"><div className="premium-hero-content"><div className="premium-hero-copy"><p className="premium-hero-kicker">Koristite MIKROeRAČUN?</p><h1>MIKROeRAČUN je za eRačune. <em>NEPAR Publisher objavljuje vaš cjenik na webu.</em></h1><p>Publishing layer između Excela ili CSV-a i javne mrežne stranice: provjera podataka, propisani CSV/XML, aktualni link za dohvat i verzije koje ne prepisujete ručno.</p><ol className="premium-funnel" aria-label="Kako Publisher radi"><li>MIKROeRAČUN + vlastiti web</li><li>Imate Excel/CSV s cijenama?</li><li>Učitajte besplatno</li><li>Validacija</li><li>7 dana javne objave</li><li>{selfServicePriceLabel()}</li></ol></div></div></section>
+    <aside className="premium-qualification-block" aria-label="Provjera prije kupnje"><p><strong>Već imate Marketino, Minimax, Pantheon ili drugi poslovni program?</strong> Vaš pružatelj možda već omogućuje objavu cjenika. Provjerite prije kupnje Publishera.</p></aside>
+    <div className="premium-hero-tools">
+      <PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} />
+      <aside className="hero-offer-strip" aria-label="Publisher ponuda">
+        <div className="hero-offer-copy">
+          <p className="hero-offer-price">{LAUNCH_ACTIVE ? (<><strong className="price-launch">{selfServicePriceLabel()}</strong> <span className="price-regular-strike">{regularSelfServicePriceLabel()}</span> <span className="hero-offer-launch-tag">· akcija: prvih 100 aktiviranih pretplata</span></>) : (<strong>{selfServicePriceLabel()}</strong>)} · <strong>{implementationFirstYearLabel()}</strong> prva godina s postavljanjem</p>
+          <p>{COMMERCIAL_INTERMEDIARY_LINE} Probni cjenik 7 dana na /c/vaš-slug — isti link ostaje nakon aktivacije.</p>
+          {LAUNCH_ACTIVE && launchAfterCapLine() && <p className="hero-offer-footnote">{launchAfterCapLine()}</p>}
+        </div>
+        <div className="hero-offer-actions">
+          <button className="app-button app-button-primary" type="button" onClick={focusValidator}>Započni 7-dnevni probni →</button>
+          <button className="sales-link" type="button" onClick={() => focusLead('implementation')}>Postavljanje {implementationFirstYearLabel()} prva godina</button>
+          <button className="sales-link sales-link-quiet" type="button" onClick={() => focusLead('plugin')}>Self-service {selfServicePriceLabel()}</button>
+        </div>
+      </aside>
+    </div>
     <div id="csv-validator" ref={validatorRef} className="premium-validator-anchor" tabIndex={-1} aria-labelledby="csv-validator-title">
-      {foundUrls.length > 0 && <div className="premium-handoff"><span className="app-label">PRONAĐENO NA VAŠEM WEBU</span><div>{foundUrls.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer">{url}</a>)}</div><p>Datoteka nije automatski preuzeta. Dostupnost URL-a nije dovoljna — učitajte datoteku ovdje za sadržaj ili pošaljite URL na konzultaciju za arhivu, naziv datoteke i strojnu vidljivost.</p></div>}
-      <div className="premium-validator-heading"><span className="app-label">02 / PROVJERA DATOTEKE</span><h2 id="csv-validator-title">Već imate cjenik? Provjerite ga ovdje.</h2><p>Učitajte CSV ili XML. Ako imate Excel, pretvorite ga u istom alatu.</p></div>
+      {foundUrls.length > 0 && <div className="premium-handoff"><div>{foundUrls.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer">{url}</a>)}</div><p>Datoteka nije automatski preuzeta. Učitajte je ovdje za sadržaj ili pošaljite URL na konzultaciju.</p></div>}
+      <div className="premium-validator-heading"><h2 id="csv-validator-title">Učitajte Excel ili CSV i objavite probno</h2><p>CSV, XML ili Excel. Nakon pregleda šaljemo potvrdni e-mail i otvaramo /c/vaš-slug na 7 dana.</p></div>
       <ValidatorApp embedded onContextChange={setValidatorContext} onLead={focusLead} />
     </div>
     <LeadForm intent={leadIntent} context={leadContext} onIntentChange={setLeadIntent} />
@@ -1259,13 +1300,14 @@ function PublisherUpgradeBanner({
         <p>
           {expired
             ? 'Podaci su sačuvani. Uređivanje je moguće; javna objava je zaključana dok ne aktivirate Publisher.'
-            : 'Publisher 49,90 €/god · sam ugradite link. Ili 89,90 € prva godina s postavljanjem na vaš web, zatim 49,90 €/god.'}
+            : `${launchOfferShort()}. ${COMMERCIAL_INTERMEDIARY_LINE} Ili ${implementationFirstYearLabel()} prva godina s postavljanjem, zatim ${regularSelfServicePriceLabel()}.`}
         </p>
+        {LAUNCH_ACTIVE && launchAfterCapLine() && <p className="publisher-upgrade-note">{launchAfterCapLine()}</p>}
         <p className="publisher-upgrade-slug">Tenant: <strong>{slug}</strong></p>
       </div>
       <div className="publisher-upgrade-actions">
-        <button className="app-button app-button-primary" type="button" disabled={busy} onClick={() => void request('self_service')}>Nastavi sam — 49,90 €/god</button>
-        <button className="app-button app-button-light" type="button" disabled={busy} onClick={() => void request('implementation')}>Želim da NEPAR ugradi — 89,90 €</button>
+        <button className="app-button app-button-primary" type="button" disabled={busy} onClick={() => void request('self_service')}>Nastavi sam — {selfServicePriceLabel()}</button>
+        <button className="app-button app-button-light" type="button" disabled={busy} onClick={() => void request('implementation')}>Želim da NEPAR ugradi — {implementationFirstYearLabel()}</button>
         <button className="sales-link" type="button" disabled={busy} onClick={() => void request('consultation')}>Trebam pomoć</button>
       </div>
       {error && <p className="app-error" role="alert">{error}</p>}

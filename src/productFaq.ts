@@ -3,31 +3,41 @@
 // generated at prerender time (scripts/prerender.mjs) — the two must always match.
 // Kept short and factual by design: detailed regulation lives on nepar.hr, not here.
 
+import { launchOfferDetail, regularSelfServicePriceLabel } from './publisherPricing'
+
 export type ProductFaqEntry = { question: string; answer: string }
 
 export const productFaq: ProductFaqEntry[] = [
   {
-    question: 'Što je NEPAR Digitalni cjenik?',
-    answer: 'Alat kojim provjerite ima li vaš web javno dostupan strojno čitljiv cjenik, validirate CSV ili XML te po potrebi zatražite da NEPAR sve tehnički postavi.',
+    question: 'Što je NEPAR Publisher?',
+    answer:
+      'Publishing layer između vašeg Excel/CSV cjenika i javnog weba: provjera podataka, propisani CSV/XML, aktualni link za dohvat i verzioniranje objava. MIKROeRAČUN pokriva eRačune; Publisher pokriva cjenik na mrežnoj stranici.',
   },
   {
-    question: 'Što alat provjerava?',
-    answer: 'Provjera gleda samo javno dostupne tehničke signale na unesenoj adresi — postoji li dohvatljiv CSV ili XML cjenik. Ne provjerava pravnu usklađenost.',
+    question: 'Za koga je Publisher?',
+    answer:
+      'Za malog poduzetnika izvan sustava PDV-a koji koristi ili planira MIKROeRAČUN, ima vlastitu web stranicu i nema komercijalni POS/ERP koji mu već objavljuje cjenik. Ako imate Marketino, Minimax ili Pantheon — provjerite kod providera prije kupnje.',
   },
   {
-    question: 'Podržava li XML i CSV?',
-    answer: 'Da. Validator prihvaća CSV i XML, a oba izlazna formata generiramo iz jednog normaliziranog zapisa.',
+    question: 'Što alat provjerava na webu?',
+    answer:
+      'Provjera gleda javno dostupne signale na unesenoj adresi — postoji li dohvatljiv CSV ili XML cjenik. Ne provjerava pravnu usklađenost cijelog poslovanja.',
   },
   {
-    question: 'Može li se postojeći cjenik automatizirati?',
-    answer: 'Da. Ako cijene već vodite u poslovnom sustavu, cilj je da taj sustav ostane izvor istine, a objava na webu se ažurira iz njega bez dvostrukog unosa.',
+    question: 'Podržava li Excel, XML i CSV?',
+    answer: 'Da. Validator prihvaća CSV i XML, Excel pretvorite u istom alatu. Oba izlazna formata dolaze iz jednog normaliziranog zapisa.',
   },
   {
-    question: 'Moram li mijenjati postojeći web?',
-    answer: 'Ne nužno. Rješenje se povezuje s postojećim webom (WordPress, Wix, Google Sites, Webflow i drugi) bez potrebe za redizajnom.',
+    question: 'Što dobivam u probnom roku?',
+    answer:
+      'Nakon potvrde e-maila dobivate stvarni javni link /c/vaš-slug, CSV/XML feedove i dashboard. Ako ne aktivirate Publisher u 7 dana, javni URL se gasi — podaci ostaju.',
+  },
+  {
+    question: 'Koliko košta nakon probe?',
+    answer: `${launchOfferDetail()} Postavljanje na web: prva godina uključuje Publisher, zatim ${regularSelfServicePriceLabel()}.`,
   },
   {
     question: 'Kako započeti?',
-    answer: 'Provjerite svoj web besplatno, ili odmah učitajte CSV/XML/Excel cjenik za provjeru — oboje bez registracije.',
+    answer: 'Učitajte Excel/CSV/XML besplatno ili provjerite svoj web — zatim 7-dnevni probni bez registracije unaprijed.',
   },
 ]

@@ -151,7 +151,7 @@ describe('magic-link auth', () => {
     })
     expect(cross.status).toBe(403)
 
-    const fetcher = vi.fn(async () => Response.json({ success: true, result: { delivered: [], queued: [], permanent_bounces: [] } })) as unknown as typeof fetch
+    const fetcher = vi.fn(async () => Response.json({ success: true, result: { delivered: ['vlasnik@example.hr'], queued: [], permanent_bounces: [] } })) as unknown as typeof fetch
     for (let index = 0; index < 5; index += 1) {
       await requestMagicLink(
         new Request('https://digitalnicjenik.nepar.hr/api/auth/magic-link', { method: 'POST', headers: { origin: 'https://digitalnicjenik.nepar.hr', 'cf-connecting-ip': '198.51.100.77' } }),

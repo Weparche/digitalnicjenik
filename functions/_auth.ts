@@ -1,4 +1,5 @@
 import { escapeHtml, hmacIp } from './_lead'
+import { emailConfigured, sendTransactionalEmail, type EmailEnv } from './_email'
 import type { D1DatabaseLike, RuntimeEnv } from './_repository'
 import { AccessDeniedError } from './_write-auth'
 
@@ -8,10 +9,7 @@ export const SESSION_TTL_MS = 30 * 24 * 60 * 60_000
 const MAGIC_LINK_LIMIT_PER_HOUR = 5
 const HOUR_MS = 3_600_000
 
-export type AuthEnv = RuntimeEnv & {
-  CF_ACCOUNT_ID?: string
-  CF_EMAIL_API_TOKEN?: string
-  EMAIL_FROM?: string
+export type AuthEnv = RuntimeEnv & EmailEnv & {
   LEAD_RATE_LIMIT_SECRET?: string
   AUTH_RATE_LIMIT_SECRET?: string
 }
@@ -152,7 +150,7 @@ export async function requestMagicLink(
   fetcher: typeof fetch = fetch,
 ) {
   if (!env.DB) throw new AccessDeniedError(503, 'db_unavailable', 'D1 binding DB nije konfiguriran.')
-  if (!env.CF_ACCOUNT_ID || !env.CF_EMAIL_API_TOKEN || !env.EMAIL_FROM) {
+  if (!emailConfigured(env)) {
     throw new AccessDeniedError(503, 'email_misconfigured', 'Email Sending nije konfiguriran.')
   }
   const email = normalizeEmail(emailRaw)
@@ -181,24 +179,15 @@ export async function requestMagicLink(
   const text = `Prijavite se u NEPAR Publisher:\n\n${link}\n\nLink vrijedi 15 minuta i može se iskoristiti jednom.\nAko niste zatražili prijavu, zanemarite ovu poruku.`
   const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><p>Prijavite se u NEPAR Publisher.</p><p><a href="${escapeHtml(link)}">Otvori prijavu</a></p><p style="color:#64748b;font-size:13px">Link vrijedi 15 minuta i može se iskoristiti jednom.</p></body></html>`
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 15_000)
   try {
-    const response = await fetcher(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CF_ACCOUNT_ID)}/email/sending/send`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.CF_EMAIL_API_TOKEN}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        to: email,
-        from: { address: env.EMAIL_FROM, name: 'NEPAR Publisher' },
-        subject: 'Prijava u NEPAR Publisher',
-        text,
-        html,
-      }),
-      signal: controller.signal,
-    })
-    if (!response.ok) throw new AccessDeniedError(502, 'send_failed', 'Prijavni link trenutačno nije moguće poslati.')
-  } finally {
-    clearTimeout(timeout)
+    await sendTransactionalEmail(env, {
+      to: email,
+      subject: 'Prijava u NEPAR Publisher',
+      text,
+      html,
+    }, fetcher)
+  } catch {
+    throw new AccessDeniedError(502, 'send_failed', 'Prijavni link trenutačno nije moguće poslati.')
   }
 
   return { sent: true as const }
