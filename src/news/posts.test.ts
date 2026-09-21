@@ -20,9 +20,10 @@ describe('news posts', () => {
   })
 
   it('resolves latest and paths', () => {
-    expect(getLatestPost().slug).toBe('digitalni-cjenik-sidrena-cijena-2026')
+    expect(getLatestPost().slug).toBe('primjer-csv-digitalnog-cjenika-usluge-2026')
+    expect(getPostBySlug('primjer-csv-digitalnog-cjenika-usluge-2026')?.seoTitle).toContain('2026')
     expect(getPostBySlug('digitalni-cjenik-sidrena-cijena-2026')?.seoTitle).toContain('1.10.2026')
     expect(getAllNewsPaths().length).toBe(NEWS_POSTS.length)
-    expect(newsArticleUrl('digitalni-cjenik-sidrena-cijena-2026')).toContain('/vijesti/')
+    expect(newsArticleUrl('primjer-csv-digitalnog-cjenika-usluge-2026')).toContain('/vijesti/')
   })
 })

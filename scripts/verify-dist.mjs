@@ -94,65 +94,90 @@ if (!redirects.includes('/app /app-shell 200')) failures.push('_redirects: missi
 if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: missing the /app/* route mapping to app-shell')
 
 const HOME_TITLE = 'NEPAR Publisher — cjenik na webu uz MIKROeRAČUN'
-const ARTICLE_SLUG = 'digitalni-cjenik-sidrena-cijena-2026'
-const ARTICLE_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${ARTICLE_SLUG}`
-const ARTICLE_REL = `vijesti/${ARTICLE_SLUG}/index.html`
+const LATEST_SLUG = 'primjer-csv-digitalnog-cjenika-usluge-2026'
+const REGULATORY_SLUG = 'digitalni-cjenik-sidrena-cijena-2026'
+const LATEST_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${LATEST_SLUG}`
+const REGULATORY_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${REGULATORY_SLUG}`
+const LATEST_REL = `vijesti/${LATEST_SLUG}/index.html`
+const REGULATORY_REL = `vijesti/${REGULATORY_SLUG}/index.html`
 
-expect('index.html', `href="/vijesti/${ARTICLE_SLUG}"`, 'landing prerender must link to the news article')
-expect('sitemap.xml', `<loc>${ARTICLE_CANONICAL}</loc>`, 'sitemap must include article canonical URL')
+expect('index.html', `href="/vijesti/${LATEST_SLUG}"`, 'landing widget must link to latest news article')
+expect('sitemap.xml', `<loc>${LATEST_CANONICAL}</loc>`, 'sitemap must include latest article canonical URL')
+expect('sitemap.xml', `<loc>${REGULATORY_CANONICAL}</loc>`, 'sitemap must include regulatory article canonical URL')
 expect('sitemap.xml', `<loc>https://digitalnicjenik.nepar.hr/vijesti</loc>`, 'sitemap must include news index')
-expect('llms.txt', ARTICLE_CANONICAL, 'llms.txt must list article canonical URL')
+expect('llms.txt', LATEST_CANONICAL, 'llms.txt must list latest article canonical URL')
+expect('llms.txt', REGULATORY_CANONICAL, 'llms.txt must list regulatory article canonical URL')
 
 if (existsSync(resolve(distDir, 'vijesti/unknown-slug/index.html'))) {
   failures.push('dist/vijesti/unknown-slug/index.html must not exist')
 }
 
-const articleHtml = read(ARTICLE_REL)
-const articleH1 = (articleHtml.match(/<h1\b/gi) || []).length
-if (articleH1 !== 1) failures.push(`${ARTICLE_REL}: expected exactly one <h1>, found ${articleH1}`)
-const articleTitleMatch = articleHtml.match(/<title>([^<]+)<\/title>/)
-if (!articleTitleMatch) failures.push(`${ARTICLE_REL}: missing <title>`)
-else if (articleTitleMatch[1] === HOME_TITLE) {
-  failures.push(`${ARTICLE_REL}: title must differ from homepage title`)
-}
-expect(ARTICLE_REL, `<link rel="canonical" href="${ARTICLE_CANONICAL}" />`, 'article canonical missing')
-expect(ARTICLE_REL, /<meta name="description" content="[^"]{20,}" \/>/, 'article meta description missing')
-expect(ARTICLE_REL, 'NewsArticle', 'JSON-LD must include NewsArticle')
-expect(ARTICLE_REL, 'datePublished', 'JSON-LD must include datePublished')
-expect(ARTICLE_REL, 'dateModified', 'JSON-LD must include dateModified')
-expect(ARTICLE_REL, 'narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html', 'article HTML must link NN 1213')
-expect(ARTICLE_REL, 'hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika', 'article HTML must link HOK')
-if (/noindex/i.test(articleHtml)) failures.push(`${ARTICLE_REL}: must not be noindex`)
-expect(
-  ARTICLE_REL,
-  'https://digitalnicjenik.nepar.hr/og/vijesti-digitalni-cjenik-2026.png',
-  'article og:image must use editorial image',
-)
+function verifyArticle(relPath, canonical, expectedHeadline, extraChecks) {
+  const articleHtml = read(relPath)
+  const articleH1 = (articleHtml.match(/<h1\b/gi) || []).length
+  if (articleH1 !== 1) failures.push(`${relPath}: expected exactly one <h1>, found ${articleH1}`)
+  const articleTitleMatch = articleHtml.match(/<title>([^<]+)<\/title>/)
+  if (!articleTitleMatch) failures.push(`${relPath}: missing <title>`)
+  else if (articleTitleMatch[1] === HOME_TITLE) {
+    failures.push(`${relPath}: title must differ from homepage title`)
+  }
+  expect(relPath, `<link rel="canonical" href="${canonical}" />`, `${relPath}: canonical missing`)
+  expect(relPath, /<meta name="description" content="[^"]{20,}" \/>/, `${relPath}: meta description missing`)
+  expect(relPath, 'NewsArticle', `${relPath}: JSON-LD must include NewsArticle`)
+  expect(relPath, 'datePublished', `${relPath}: JSON-LD must include datePublished`)
+  expect(relPath, 'dateModified', `${relPath}: JSON-LD must include dateModified`)
+  if (/noindex/i.test(articleHtml)) failures.push(`${relPath}: must not be noindex`)
+  expect(
+    relPath,
+    'https://digitalnicjenik.nepar.hr/og/vijesti-digitalni-cjenik-2026.png',
+    `${relPath}: og:image must use editorial image`,
+  )
 
-const schemaMatch = articleHtml.match(
-  /<script type="application\/ld\+json" data-nepar-schema>([\s\S]*?)<\/script>/,
-)
-if (!schemaMatch) failures.push(`${ARTICLE_REL}: missing JSON-LD script`)
-else {
-  try {
-    const schema = JSON.parse(schemaMatch[1])
-    const graph = schema['@graph'] ?? []
-    const newsArticle = graph.find((node) => node['@type'] === 'NewsArticle')
-    if (!newsArticle) failures.push(`${ARTICLE_REL}: JSON-LD graph missing NewsArticle node`)
-    else if (newsArticle.headline !== 'Digitalni cjenik od 1. listopada 2026.: što se mijenja za vlasnike web stranica') {
-      failures.push(`${ARTICLE_REL}: NewsArticle headline must match article H1 title`)
+  const schemaMatch = articleHtml.match(
+    /<script type="application\/ld\+json" data-nepar-schema>([\s\S]*?)<\/script>/,
+  )
+  if (!schemaMatch) failures.push(`${relPath}: missing JSON-LD script`)
+  else {
+    try {
+      const schema = JSON.parse(schemaMatch[1])
+      const graph = schema['@graph'] ?? []
+      const newsArticle = graph.find((node) => node['@type'] === 'NewsArticle')
+      if (!newsArticle) failures.push(`${relPath}: JSON-LD graph missing NewsArticle node`)
+      else if (newsArticle.headline !== expectedHeadline) {
+        failures.push(`${relPath}: NewsArticle headline must match article H1 title`)
+      }
+    } catch {
+      failures.push(`${relPath}: JSON-LD is not valid JSON`)
     }
-  } catch {
-    failures.push(`${ARTICLE_REL}: JSON-LD is not valid JSON`)
+  }
+
+  if (!articleHtml.includes(`href="${canonical}"`)) {
+    failures.push(`${relPath}: canonical href must match sitemap loc`)
+  }
+
+  for (const [needle, message] of extraChecks) {
+    expect(relPath, needle, message)
   }
 }
 
-if (!articleHtml.includes(`href="${ARTICLE_CANONICAL}"`)) {
-  failures.push(`${ARTICLE_REL}: canonical href must match sitemap loc`)
-}
+verifyArticle(LATEST_REL, LATEST_CANONICAL, 'Primjer CSV digitalnog cjenika za pružatelje usluga', [
+  ['narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html', 'latest article HTML must link NN 1213'],
+  ['naziv_usluge;maloprodajna_cijena', 'latest article must include CSV example in HTML'],
+  ['/examples/primjer-digitalni-cjenik-usluge-2026.csv', 'latest article must link downloadable CSV example'],
+])
 
-const newsIndexHtml = read('vijesti/index.html')
-expect('vijesti/index.html', `href="/vijesti/${ARTICLE_SLUG}"`, 'news index must link to article')
+verifyArticle(
+  REGULATORY_REL,
+  REGULATORY_CANONICAL,
+  'Digitalni cjenik od 1. listopada 2026.: što se mijenja za vlasnike web stranica',
+  [
+    ['narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html', 'regulatory article HTML must link NN 1213'],
+    ['hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika', 'regulatory article HTML must link HOK'],
+  ],
+)
+
+expect('vijesti/index.html', `href="/vijesti/${LATEST_SLUG}"`, 'news index must link to latest article')
+expect('vijesti/index.html', `href="/vijesti/${REGULATORY_SLUG}"`, 'news index must link to regulatory article')
 
 if (!existsSync(resolve(distDir, 'og/vijesti-digitalni-cjenik-2026.png'))) {
   failures.push('Missing dist/og/vijesti-digitalni-cjenik-2026.png')

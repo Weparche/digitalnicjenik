@@ -129,7 +129,7 @@ function buildNewsArticleSchema(post, pageUrl, imageUrl) {
         datePublished: post.publishedAt,
         dateModified: post.updatedAt,
         inLanguage: 'hr-HR',
-        articleSection: 'Regulativa',
+        articleSection: post.schemaSection ?? 'Vijesti',
         author: { '@type': 'Organization', name: post.author.name, url: post.author.url },
         publisher: { '@id': ORGANIZATION_ID },
         image: [imageUrl],

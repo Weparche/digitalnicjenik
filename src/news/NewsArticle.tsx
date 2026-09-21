@@ -41,7 +41,7 @@ export function NewsArticle({ slug }: { slug: string }) {
     >
       <article className="news-article">
         <header className="news-article-header">
-          <p className="news-kicker">Regulativa</p>
+          <p className="news-kicker">{post.kicker ?? 'Vijesti'}</p>
           <h1>{post.title}</h1>
           <p className="news-article-meta">
             <time dateTime={post.publishedAt}>{formatNewsDate(post.publishedAt)}</time>
@@ -59,6 +59,8 @@ export function NewsArticle({ slug }: { slug: string }) {
         </header>
         {post.sections.map((section) => {
           const Tag = section.level === 2 ? 'h2' : 'h3'
+          const showFormatExample =
+            post.formatExample && section.heading === 'Primjer strukture CSV i XML'
           return (
             <section key={section.heading} className="news-section">
               <Tag>{section.heading}</Tag>
@@ -66,6 +68,30 @@ export function NewsArticle({ slug }: { slug: string }) {
                 className="news-section-body"
                 dangerouslySetInnerHTML={{ __html: section.html }}
               />
+              {showFormatExample && post.formatExample && (
+                <div className="news-format-examples">
+                  <h3 className="news-format-examples-title">CSV za pružatelja usluga</h3>
+                  <pre className="news-code-sample">
+                    <code>{post.formatExample.csvText}</code>
+                  </pre>
+                  <h3 className="news-format-examples-title">XML za pružatelja usluga</h3>
+                  <pre className="news-code-sample">
+                    <code>{post.formatExample.xmlText}</code>
+                  </pre>
+                  <div className="news-format-actions">
+                    <a
+                      className="app-button app-button-light"
+                      href={post.formatExample.csvDownloadHref}
+                      download
+                    >
+                      Preuzmi primjer CSV
+                    </a>
+                    <a className="app-button app-button-primary" href="/#csv-validator">
+                      Provjeri svoj CSV →
+                    </a>
+                  </div>
+                </div>
+              )}
             </section>
           )
         })}
@@ -88,11 +114,18 @@ export function NewsArticle({ slug }: { slug: string }) {
             ))}
           </ul>
         </section>
-        {post.cta && (
+        {(post.cta || post.secondaryCta) && (
           <p className="news-article-cta">
-            <a className="app-button app-button-primary" href={post.cta.href}>
-              {post.cta.label} →
-            </a>
+            {post.cta && (
+              <a className="app-button app-button-primary" href={post.cta.href}>
+                {post.cta.label} →
+              </a>
+            )}
+            {post.secondaryCta && (
+              <a className="app-button app-button-light" href={post.secondaryCta.href}>
+                {post.secondaryCta.label} →
+              </a>
+            )}
           </p>
         )}
         <p className="news-back-link">

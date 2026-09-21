@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cjenik_usluga verzija="1">
+  <usluga>
+    <naziv_usluge>Muško šišanje</naziv_usluge>
+    <maloprodajna_cijena>15.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>NE</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika></naziv_posebnog_oblika>
+    <sidrena_cijena>15.00</sidrena_cijena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Žensko šišanje</naziv_usluge>
+    <maloprodajna_cijena>21.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>NE</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika></naziv_posebnog_oblika>
+    <sidrena_cijena>18.00</sidrena_cijena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Bojanje kose</naziv_usluge>
+    <maloprodajna_cijena>45.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>DA</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika>Akcija</naziv_posebnog_oblika>
+    <sidrena_cijena>40.00</sidrena_cijena>
+  </usluga>
+</cjenik_usluga>
