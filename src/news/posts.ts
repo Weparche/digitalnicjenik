@@ -131,19 +131,19 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         heading: 'Što je HOK objavio',
         level: 2,
-        html: \`<p>Hrvatska obrtnička komora objavila je 18. rujna 2026. objedinjene upute za nove obveze od 1. listopada, snimku webinara te <strong>dva Excel predloška cjenika</strong> — jedan za proizvode i jedan za usluge.</p>
-<p>Predlošci su praktična pomoć za pripremu podataka. Uz njih HOK na istoj stranici objavljuje prezentaciju, detaljne upute i tekstove odluka, pa je to koristan operativni početak za obrtnike koji tek slažu svoj cjenik.</p>\`,
+        html: `<p>Hrvatska obrtnička komora objavila je 18. rujna 2026. objedinjene upute za nove obveze od 1. listopada, snimku webinara te <strong>dva Excel predloška cjenika</strong> — jedan za proizvode i jedan za usluge.</p>
+<p>Predlošci su praktična pomoć za pripremu podataka. Uz njih HOK na istoj stranici objavljuje prezentaciju, detaljne upute i tekstove odluka, pa je to koristan operativni početak za obrtnike koji tek slažu svoj cjenik.</p>`,
       },
       {
         heading: 'Excel predložak nije završna objava na webu',
         level: 2,
-        html: \`<p>Ovdje je važna razlika: <strong>Excel služi za pripremu podataka</strong>. HOK u svojim uputama navodi da se digitalni cjenik na mrežnoj stranici objavljuje u <strong>.csv ili .xml formatu</strong> pogodnom za automatsku obradu te da PDF, Word i Excel nisu formati koje Odluka navodi za tu web-obvezu.</p>
-<p>Zato nije dovoljno samo popuniti <code>.xlsx</code> i spremiti ga na web. Potrebno je iz podataka napraviti odgovarajući CSV/XML, objaviti ga na mrežnoj stranici i osigurati tehnički način automatiziranog dohvaćanja.</p>\`,
+        html: `<p>Ovdje je važna razlika: <strong>Excel služi za pripremu podataka</strong>. HOK u svojim uputama navodi da se digitalni cjenik na mrežnoj stranici objavljuje u <strong>.csv ili .xml formatu</strong> pogodnom za automatsku obradu te da PDF, Word i Excel nisu formati koje Odluka navodi za tu web-obvezu.</p>
+<p>Zato nije dovoljno samo popuniti <code>.xlsx</code> i spremiti ga na web. Potrebno je iz podataka napraviti odgovarajući CSV/XML, objaviti ga na mrežnoj stranici i osigurati tehnički način automatiziranog dohvaćanja.</p>`,
       },
       {
         heading: 'Kako HOK Excel predložak usluga koristiti u NEPAR Publisheru',
         level: 2,
-        html: \`<p>NEPAR sada prepoznaje standardna zaglavlja <strong>HOK predloška cjenika usluga</strong>, uključujući naziv usluge, maloprodajnu cijenu, poseban oblik prodaje, njegov naziv i sidrenu/dodatnu cijenu.</p>
+        html: `<p>NEPAR sada prepoznaje standardna zaglavlja <strong>HOK predloška cjenika usluga</strong>, uključujući naziv usluge, maloprodajnu cijenu, poseban oblik prodaje, njegov naziv i sidrenu/dodatnu cijenu.</p>
 <ol class="news-bullets">
 <li>Preuzmite HOK predložak za usluge i unesite svoje podatke.</li>
 <li>Na NEPAR Publisheru otvorite dio <strong>Učitajte Excel ili CSV</strong>.</li>
@@ -151,18 +151,18 @@ export const NEWS_POSTS: NewsPost[] = [
 <li>Provjerite vrijednosti i rezultate validacije.</li>
 <li>Nakon provjere nastavite prema CSV/XML objavi i probnom javnom URL-u.</li>
 </ol>
-<p><strong>Važno:</strong> automatsko prepoznavanje u ovom flowu odnosi se na HOK predložak za <strong>usluge</strong>. Za proizvode Odluka traži širi skup podataka pa ih treba provjeriti prema HOK predlošku i službenom tekstu Odluke.</p>\`,
+<p><strong>Važno:</strong> automatsko prepoznavanje u ovom flowu odnosi se na HOK predložak za <strong>usluge</strong>. Za proizvode Odluka traži širi skup podataka pa ih treba provjeriti prema HOK predlošku i službenom tekstu Odluke.</p>`,
       },
       {
         heading: 'HOK traži ukidanje odluka — znači li to da je rok odgođen?',
         level: 2,
-        html: \`<p>Ne treba to tako tumačiti. HOK na svojoj stranici navodi da <strong>traži ukidanje odluka</strong> o dodatnim cijenama i objavi cjenika na internetu. To je zahtjev Komore prema nadležnim tijelima, a ne samo po sebi promjena važećih pravila.</p>
-<p>Na istoj aktualnoj HOK objavi i dalje se kao početak primjene navodi <strong>1. listopada 2026.</strong> Ako Vlada ili drugo nadležno tijelo službeno promijeni datum ili sadržaj obveze, ovaj ćemo vodič ažurirati.</p>\`,
+        html: `<p>Ne treba to tako tumačiti. HOK na svojoj stranici navodi da <strong>traži ukidanje odluka</strong> o dodatnim cijenama i objavi cjenika na internetu. To je zahtjev Komore prema nadležnim tijelima, a ne samo po sebi promjena važećih pravila.</p>
+<p>Na istoj aktualnoj HOK objavi i dalje se kao početak primjene navodi <strong>1. listopada 2026.</strong> Ako Vlada ili drugo nadležno tijelo službeno promijeni datum ili sadržaj obveze, ovaj ćemo vodič ažurirati.</p>`,
       },
       {
         heading: 'Što napraviti sada',
         level: 2,
-        html: \`<p>Ako pružate usluge i imate mrežnu stranicu, praktičan redoslijed je:</p>
+        html: `<p>Ako pružate usluge i imate mrežnu stranicu, praktičan redoslijed je:</p>
 <ul class="news-bullets">
 <li>utvrdite aktualnu i dodatnu/sidrenu cijenu za svaku uslugu,</li>
 <li>popunite HOK Excel predložak usluga,</li>
@@ -170,12 +170,12 @@ export const NEWS_POSTS: NewsPost[] = [
 <li>objavite datoteku na webu i osigurajte automatizirani dohvat,</li>
 <li>kod promjene cijena ažurirajte objavu u roku koji se odnosi na usluge i čuvajte prethodne verzije najmanje 30 dana.</li>
 </ul>
-<p><a href="/#csv-validator"><strong>Imate HOK Excel predložak? Učitajte ga za provjeru →</strong></a></p>\`,
+<p><a href="/#csv-validator"><strong>Imate HOK Excel predložak? Učitajte ga za provjeru →</strong></a></p>`,
       },
       {
         heading: 'Želite vidjeti kako izgleda CSV nakon Excela?',
         level: 2,
-        html: \`<p>Pripremili smo i praktičan <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026"><strong>primjer CSV digitalnog cjenika za pružatelje usluga</strong></a>, s HOK-nazivima stupaca, primjerima vrijednosti i XML varijantom.</p>\`,
+        html: `<p>Pripremili smo i praktičan <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026"><strong>primjer CSV digitalnog cjenika za pružatelje usluga</strong></a>, s HOK-nazivima stupaca, primjerima vrijednosti i XML varijantom.</p>`,
       },
     ],
   },
@@ -250,7 +250,7 @@ export const NEWS_POSTS: NewsPost[] = [
         heading: 'Primjer strukture CSV i XML',
         level: 2,
         html: `<p>U primjeru koristimo točku-zarez (<code>;</code>) kao separator — u praksi je čest u HR Excel izvozima. Možete koristiti i zarez ako je cijeli cjenik konzistentan i strojno čitljiv.</p>
-<p>Polja <code>posebni_oblik_prodaje</code> i <code>naziv_posebnog_oblika</code> u primjeru mapiraju obvezu Odluke da se uz cijenu vidi je li usluga u posebnom obliku prodaje i pod kojim nazivom.</p>`,
+<p>Stupci <code>Poseban oblik prodaje (DA/NE)</code> i <code>Naziv posebnog oblika prodaje</code> mapiraju obvezu Odluke da se uz cijenu vidi je li usluga u posebnom obliku prodaje i pod kojim nazivom. Nazivi u ovom primjeru prate HOK predložak za usluge.</p>`,
       },
       {
         heading: 'Naziv datoteke nije isto što i stupci CSV-a',
