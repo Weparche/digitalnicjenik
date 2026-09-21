@@ -94,18 +94,23 @@ if (!redirects.includes('/app /app-shell 200')) failures.push('_redirects: missi
 if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: missing the /app/* route mapping to app-shell')
 
 const HOME_TITLE = 'NEPAR Publisher — cjenik na webu uz MIKROeRAČUN'
-const LATEST_SLUG = 'primjer-csv-digitalnog-cjenika-usluge-2026'
+const LATEST_SLUG = 'hok-excel-predlosci-digitalni-cjenik-2026'
+const CSV_SLUG = 'primjer-csv-digitalnog-cjenika-usluge-2026'
 const REGULATORY_SLUG = 'digitalni-cjenik-sidrena-cijena-2026'
 const LATEST_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${LATEST_SLUG}`
+const CSV_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${CSV_SLUG}`
 const REGULATORY_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${REGULATORY_SLUG}`
 const LATEST_REL = `vijesti/${LATEST_SLUG}/index.html`
+const CSV_REL = `vijesti/${CSV_SLUG}/index.html`
 const REGULATORY_REL = `vijesti/${REGULATORY_SLUG}/index.html`
 
 expect('index.html', `href="/vijesti/${LATEST_SLUG}"`, 'landing widget must link to latest news article')
 expect('sitemap.xml', `<loc>${LATEST_CANONICAL}</loc>`, 'sitemap must include latest article canonical URL')
+expect('sitemap.xml', `<loc>${CSV_CANONICAL}</loc>`, 'sitemap must include CSV guide canonical URL')
 expect('sitemap.xml', `<loc>${REGULATORY_CANONICAL}</loc>`, 'sitemap must include regulatory article canonical URL')
 expect('sitemap.xml', `<loc>https://digitalnicjenik.nepar.hr/vijesti</loc>`, 'sitemap must include news index')
 expect('llms.txt', LATEST_CANONICAL, 'llms.txt must list latest article canonical URL')
+expect('llms.txt', CSV_CANONICAL, 'llms.txt must list CSV guide canonical URL')
 expect('llms.txt', REGULATORY_CANONICAL, 'llms.txt must list regulatory article canonical URL')
 
 if (existsSync(resolve(distDir, 'vijesti/unknown-slug/index.html'))) {
@@ -160,10 +165,21 @@ function verifyArticle(relPath, canonical, expectedHeadline, extraChecks) {
   }
 }
 
-verifyArticle(LATEST_REL, LATEST_CANONICAL, 'Primjer CSV digitalnog cjenika za pružatelje usluga', [
-  ['narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html', 'latest article HTML must link NN 1213'],
-  ['naziv_usluge;maloprodajna_cijena', 'latest article must include CSV example in HTML'],
-  ['/examples/primjer-digitalni-cjenik-usluge-2026.csv', 'latest article must link downloadable CSV example'],
+verifyArticle(
+  LATEST_REL,
+  LATEST_CANONICAL,
+  'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti do 1. listopada',
+  [
+    ['hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika', 'HOK article HTML must link HOK source'],
+    ['href="/#csv-validator"', 'HOK article must link the Excel/CSV validator'],
+    ['/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026', 'HOK article must link the CSV guide'],
+  ],
+)
+
+verifyArticle(CSV_REL, CSV_CANONICAL, 'Primjer CSV digitalnog cjenika za pružatelje usluga', [
+  ['narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html', 'CSV guide HTML must link NN 1213'],
+  ['Naziv usluge;Maloprodajna cijena', 'CSV guide must include HOK-style CSV example in HTML'],
+  ['/examples/primjer-digitalni-cjenik-usluge-2026.csv', 'CSV guide must link downloadable CSV example'],
 ])
 
 verifyArticle(
@@ -176,7 +192,8 @@ verifyArticle(
   ],
 )
 
-expect('vijesti/index.html', `href="/vijesti/${LATEST_SLUG}"`, 'news index must link to latest article')
+expect('vijesti/index.html', `href="/vijesti/${LATEST_SLUG}"`, 'news index must link to latest HOK article')
+expect('vijesti/index.html', `href="/vijesti/${CSV_SLUG}"`, 'news index must link to CSV guide')
 expect('vijesti/index.html', `href="/vijesti/${REGULATORY_SLUG}"`, 'news index must link to regulatory article')
 
 if (!existsSync(resolve(distDir, 'og/vijesti-digitalni-cjenik-2026.png'))) {
