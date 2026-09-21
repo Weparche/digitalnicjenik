@@ -201,7 +201,7 @@ function ValidationResultPanel({
   publishBlocked = false,
 }: {
   list: NormalizedPriceList
-  validation: { blockingCount: number; warningCount: number; issues: ValidationIssue[] }
+  validation: { status: string; blockingCount: number; warningCount: number; issues: ValidationIssue[] }
   sourceFilename: string
   published: boolean
   busy: boolean
@@ -220,6 +220,7 @@ function ValidationResultPanel({
   const { missingAnchorCount, otherIssues } = summarizeValidationIssues(validation.issues)
   const needsAnchors = missingAnchorCount > 0
   const incomplete = validation.blockingCount > 0
+  const hasValidationErrors = validation.issues.some((issue) => issue.severity === 'error')
   const tableRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -389,7 +390,7 @@ function ValidationResultPanel({
             <button className="app-button app-button-primary" type="button" onClick={onPublish} disabled={incomplete || busy || published || publishBlocked}>{publishBlocked ? 'Objava zaključana' : 'Objavi novi cjenik'}</button>
           </>
         ) : (
-          <button className="app-button app-button-primary" type="button" onClick={onStartTrial} disabled={busy || !list}>
+          <button className="app-button app-button-primary" type="button" onClick={onStartTrial} disabled={busy || !list || hasValidationErrors}>
             Objavi probno 7 dana →
           </button>
         )}
