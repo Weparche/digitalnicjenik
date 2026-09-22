@@ -7,6 +7,8 @@ type CheckerResult = {
   status: 'green' | 'yellow' | 'red' | 'unavailable'
   message: string
   details?: {
+    reachable?: boolean
+    fetchBlocked?: boolean
     csvUrl?: string
     xmlUrl?: string
   }
@@ -57,9 +59,13 @@ function ArticleWebsiteChecker() {
     result?.status === 'green'
       ? 'Pronađen je javno dostupan CSV/XML'
       : result?.status === 'yellow'
-        ? 'Cjenik postoji, ali CSV/XML nije potvrđen'
+        ? result.details?.fetchBlocked
+          ? 'Automatski dohvat je blokiran'
+          : 'Cjenik postoji, ali CSV/XML nije potvrđen'
         : result?.status === 'red'
-          ? 'Javni CSV/XML cjenik nije pronađen'
+          ? result.details?.reachable === false
+            ? 'Web stranica nije pronađena'
+            : 'Javni CSV/XML cjenik nije pronađen'
           : 'Provjeru trenutačno nije moguće dovršiti'
 
   const mailBody = url.trim()

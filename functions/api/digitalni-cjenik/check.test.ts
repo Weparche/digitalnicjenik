@@ -140,4 +140,86 @@ describe('digital price list checker hardening', () => {
     expect(checked.status).toBe('unavailable')
     expect(checked.message).toContain('Pokušajte ponovno')
   })
+
+  it('returns red when the hostname does not exist', async () => {
+    const missing = {
+      resolve4: async () => [],
+      resolve6: async () => [],
+    }
+    const fetch = vi.fn()
+    vi.stubGlobal('fetch', fetch)
+    const checked = await runDigitalPriceListCheck('www.mile.hr', { DIGITAL_PRICE_LIST_DNS_RESOLVER: missing })
+    expect(checked.status).toBe('red')
+    expect(checked.message).toContain('nije pronađena')
+    expect(checked.details.reachable).toBe(false)
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('treats DoH NXDOMAIN as host not found without fetching the site', async () => {
+    const fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('cloudflare-dns.com')) return Response.json({ Status: 3, Answer: [] })
+      throw new Error('should not fetch site')
+    })
+    vi.stubGlobal('fetch', fetch)
+    const checked = await runDigitalPriceListCheck('www.mile.hr')
+    expect(checked.status).toBe('red')
+    expect(checked.message).toBe('Web stranica nije pronađena. Provjerite adresu.')
+    expect(fetch.mock.calls.every(([input]) => String(input).includes('cloudflare-dns.com'))).toBe(true)
+  })
+
+  it('keeps a DNS resolver outage as unavailable', async () => {
+    const failing = {
+      resolve4: async () => { throw new Error('servfail') },
+      resolve6: async () => { throw new Error('servfail') },
+    }
+    const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: failing })
+    expect(checked.status).toBe('unavailable')
+    expect(checked.message).toContain('Pokušajte ponovno')
+  })
+
+  it('continues after a Cloudflare homepage challenge and reports missing CSV as red', async () => {
+    const challenge = () => new Response('<!doctype html><title>Just a moment...</title>', {
+      status: 403,
+      headers: { 'cf-mitigated': 'challenge', 'content-type': 'text/html' },
+    })
+    const fetch = routeFetch({
+      '/': challenge,
+      '/cjenik/': challenge,
+      '/cjenici/': challenge,
+      '/cjenik.xml': challenge,
+      '/cjenik/arhiva/': challenge,
+      '/cjenik/arhiva': challenge,
+      '/cjenik.csv': () => new Response('Not found', { status: 404 }),
+    })
+    vi.stubGlobal('fetch', fetch)
+    const checked = await runDigitalPriceListCheck('https://www.mall.hr', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+    expect(checked.status).toBe('red')
+    expect(checked.message).toBe('Strojni cjenik nije pronađen.')
+    expect(checked.details.reachable).toBe(true)
+    expect(checked.details.fetchBlocked).toBe(true)
+    expect(checked.details.csvFound).toBe(false)
+  })
+
+  it('explains a full bot challenge instead of asking the user to retry', async () => {
+    const challenge = () => new Response('<!doctype html><title>Just a moment...</title>', {
+      status: 403,
+      headers: { 'cf-mitigated': 'challenge', 'content-type': 'text/html' },
+    })
+    const fetch = routeFetch({
+      '/': challenge,
+      '/cjenik/': challenge,
+      '/cjenici/': challenge,
+      '/cjenik.csv': challenge,
+      '/cjenik.xml': challenge,
+      '/cjenik/arhiva/': challenge,
+      '/cjenik/arhiva': challenge,
+    }, challenge())
+    vi.stubGlobal('fetch', fetch)
+    const checked = await runDigitalPriceListCheck('https://www.mall.hr', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+    expect(checked.status).toBe('yellow')
+    expect(checked.message).toContain('zaštićen od automatskog dohvata')
+    expect(checked.details.fetchBlocked).toBe(true)
+    expect(checked.details.reachable).toBe(true)
+  })
 })

@@ -24,6 +24,7 @@ type CheckDetails = {
   csvLinkDiscovered: boolean;
   xmlLinkDiscovered: boolean;
   archiveLinkDiscovered: boolean;
+  fetchBlocked: boolean;
 };
 
 type CheckResult = {
@@ -63,6 +64,7 @@ const emptyDetails = (): CheckDetails => ({
   csvLinkDiscovered: false,
   xmlLinkDiscovered: false,
   archiveLinkDiscovered: false,
+  fetchBlocked: false,
 });
 
 const result = (status: CheckResult["status"], message: string, details: Partial<CheckDetails> = {}): CheckResult => ({
@@ -120,26 +122,34 @@ async function resolveWithDoh(hostname: string): Promise<string[]> {
       cache: "no-store",
     });
     if (!response.ok) throw new Error("dns_unavailable");
-    const payload = await response.json() as { Answer?: Array<{ type?: number; data?: string }> };
+    const payload = await response.json() as { Status?: number; Answer?: Array<{ type?: number; data?: string }> };
+    if (payload.Status === 3) continue;
+    if (payload.Status != null && payload.Status !== 0) throw new Error("dns_unavailable");
     for (const answer of payload.Answer ?? []) {
       if ((type === "A" && answer.type === 1) || (type === "AAAA" && answer.type === 28)) {
         if (typeof answer.data === "string") addresses.push(answer.data);
       }
     }
   }
-  if (!addresses.length) throw new Error("dns_unavailable");
+  if (!addresses.length) throw new Error("host_not_found");
   return addresses;
 }
 
 export async function resolvePublicHostname(hostname: string, configured?: Resolver | null): Promise<string[]> {
   const host = normalizedHostname(hostname);
   if (isForbiddenHostname(host)) throw new Error("blocked_destination");
-  const addresses = configured
-    ? (await Promise.allSettled([configured.resolve4(host), configured.resolve6(host)])).flatMap((entry) => entry.status === "fulfilled" && Array.isArray(entry.value) ? entry.value : [])
-    : await resolveWithDoh(host);
-  if (!addresses.length) throw new Error("dns_unavailable");
-  if (addresses.some((address) => isForbiddenIp(address))) throw new Error("blocked_destination");
-  return addresses;
+  if (!configured) {
+    const addresses = await resolveWithDoh(host);
+    if (addresses.some((address) => isForbiddenIp(address))) throw new Error("blocked_destination");
+    return addresses;
+  }
+  const settled = await Promise.allSettled([configured.resolve4(host), configured.resolve6(host)]);
+  const addresses = settled.flatMap((entry) => entry.status === "fulfilled" && Array.isArray(entry.value) ? entry.value : []);
+  if (addresses.length) {
+    if (addresses.some((address) => isForbiddenIp(address))) throw new Error("blocked_destination");
+    return addresses;
+  }
+  throw new Error(settled.some((entry) => entry.status === "fulfilled") ? "host_not_found" : "dns_unavailable");
 }
 
 async function assertPublicUrl(url: URL, env: CheckerEnv): Promise<void> {
@@ -240,6 +250,13 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
 
 function appendUnique(list: URL[], value: URL, limit: number) {
   if (list.length < limit && !list.some((item) => item.href === value.href)) list.push(value);
+}
+
+export function isBotChallenge(response: Response, body = ""): boolean {
+  const mitigated = (response.headers.get("cf-mitigated") || "").toLowerCase();
+  if (mitigated === "challenge") return true;
+  if (response.status !== 401 && response.status !== 403) return false;
+  return /just a moment|cf-browser-verification|challenge-platform|cdn-cgi\/challenge|attention required/i.test(body);
 }
 
 function isHtml(response: Response, body: string) {
@@ -347,12 +364,27 @@ export function documentLooksValid(kind: "csv" | "xml", response: Response, body
   return fallbackXmlIsWellFormed(trimmed);
 }
 
-async function findDocument(kind: "csv" | "xml", candidates: URL[], env: CheckerEnv, network: { failed: boolean }) {
+async function findDocument(
+  kind: "csv" | "xml",
+  candidates: URL[],
+  env: CheckerEnv,
+  network: { failed: boolean; blocked: boolean; checked: boolean },
+) {
   for (const candidate of candidates) {
     try {
       const fetched = await safeDigitalPriceListFetch(candidate, env);
+      if (fetched.response.status >= 500) {
+        network.failed = true;
+        continue;
+      }
+      let body = "";
+      try { body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES); } catch { network.failed = true; continue; }
+      if (isBotChallenge(fetched.response, body)) {
+        network.blocked = true;
+        continue;
+      }
+      network.checked = true;
       if (!fetched.response.ok) continue;
-      const body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES);
       if (documentLooksValid(kind, fetched.response, body)) return fetched.url.href;
     } catch {
       network.failed = true;
@@ -376,18 +408,32 @@ function parseBody(request: Request): Promise<{ url?: unknown } | null> {
 export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv = {}): Promise<CheckResult> {
   let initialUrl: URL;
   try { initialUrl = normalizeDigitalPriceListUrl(input); } catch { return result("red", "Unesite ispravnu adresu web stranice."); }
-  const network = { failed: false };
+  const network = { failed: false, blocked: false, checked: false };
   let homepage: { response: Response; url: URL };
   try {
     homepage = await safeDigitalPriceListFetch(initialUrl, env);
-    if (!homepage.response.ok) throw new Error("homepage_unavailable");
-  } catch {
+  } catch (caught) {
+    if (caught instanceof Error && caught.message === "host_not_found") {
+      return result("red", "Web stranica nije pronađena. Provjerite adresu.");
+    }
     return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.");
   }
-  let html: string;
-  try { html = await readLimited(homepage.response, MAX_HTML_BYTES); } catch { return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno."); }
-  const details: CheckDetails = { ...emptyDetails(), reachable: true, https: homepage.url.protocol === "https:" };
-  const links = extractLinks(html, homepage.url);
+  let html = "";
+  try { html = await readLimited(homepage.response, MAX_HTML_BYTES); } catch {
+    if (homepage.response.ok) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.");
+  }
+  const homepageChallenge = isBotChallenge(homepage.response, html);
+  if (homepageChallenge) network.blocked = true;
+  if (homepage.response.status >= 500) network.failed = true;
+  const homepageReadable = homepage.response.ok && !homepageChallenge;
+  if (homepageReadable || homepage.response.status === 404) network.checked = true;
+  const details: CheckDetails = {
+    ...emptyDetails(),
+    reachable: true,
+    https: homepage.url.protocol === "https:",
+    fetchBlocked: homepageChallenge,
+  };
+  const links = homepageReadable ? extractLinks(html, homepage.url) : [];
   const secondary: URL[] = [];
   const csv: URL[] = [];
   const xml: URL[] = [];
@@ -408,8 +454,11 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
   for (const page of secondary) {
     try {
       const fetched = await safeDigitalPriceListFetch(page, env);
-      if (!fetched.response.ok) continue;
+      if (fetched.response.status >= 500) { network.failed = true; continue; }
       const secondaryHtml = await readLimited(fetched.response, MAX_HTML_BYTES);
+      if (isBotChallenge(fetched.response, secondaryHtml)) { network.blocked = true; continue; }
+      if (!fetched.response.ok) { network.checked = true; continue; }
+      network.checked = true;
       if (pageLooksLikePriceList(fetched.response, secondaryHtml)) {
         details.pricePageFound = true;
         details.pricePageUrl ||= fetched.url.href;
@@ -425,11 +474,15 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
   details.xmlUrl = await findDocument("xml", xml, env, network);
   details.csvFound = Boolean(details.csvUrl);
   details.xmlFound = Boolean(details.xmlUrl);
+  details.fetchBlocked = network.blocked;
   for (const candidate of archive) {
     try {
       const fetched = await safeDigitalPriceListFetch(candidate, env);
-      if (!fetched.response.ok) continue;
+      if (fetched.response.status >= 500) { network.failed = true; continue; }
       const archiveHtml = await readLimited(fetched.response, MAX_HTML_BYTES);
+      if (isBotChallenge(fetched.response, archiveHtml)) { network.blocked = true; details.fetchBlocked = true; continue; }
+      if (!fetched.response.ok) { network.checked = true; continue; }
+      network.checked = true;
       if (pageLooksLikeArchive(fetched.response, archiveHtml)) {
         details.archiveFound = true;
         details.archiveUrl = fetched.url.href;
@@ -439,7 +492,10 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
   }
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
   if (details.pricePageFound) return result("yellow", "Pronađena je stranica ili cjenik, ali nije potvrđen valjan javni CSV/XML dokument.", details);
-  if (network.failed) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.", details);
+  if (network.blocked && !network.checked) {
+    return result("yellow", "Web je zaštićen od automatskog dohvata, pa javni CSV/XML nismo mogli potvrditi.", details);
+  }
+  if (network.failed && !network.checked) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.", details);
   return result("red", "Strojni cjenik nije pronađen.", details);
 }
 
