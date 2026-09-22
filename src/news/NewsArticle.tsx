@@ -111,19 +111,19 @@ function ArticleWebsiteChecker() {
               {result.details.xmlUrl && <a href={result.details.xmlUrl} target="_blank" rel="noopener noreferrer">XML ↗</a>}
             </div>
           )}
-          <div className="news-web-checker-actions">
-            <a className="app-button app-button-primary" href={PUBLISHER_URL}>
-              Otvori NEPAR Publisher →
-            </a>
-            <a className="app-button app-button-light" href={mailHref}>
-              Pošalji upit e-mailom
-            </a>
-          </div>
           <p className="news-web-checker-disclaimer">
             Automatska provjera ne potvrđuje pravnu usklađenost, sadržaj svih obveznih polja ni 30-dnevnu arhivu.
           </p>
         </div>
       )}
+      <div className="news-web-checker-actions">
+        <a className="app-button app-button-primary" href={PUBLISHER_URL}>
+          Otvori NEPAR Publisher →
+        </a>
+        <a className="app-button app-button-light" href={mailHref}>
+          Pošalji upit e-mailom
+        </a>
+      </div>
     </section>
   )
 }
