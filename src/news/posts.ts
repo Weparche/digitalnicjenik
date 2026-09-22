@@ -47,6 +47,8 @@ const NN_1212 = 'https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1212.h
 const NN_1213 = 'https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html'
 const HOK_2026 =
   'https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika-od-1-listopada-2026-najvaznije-informacije'
+const HRT_SUSNJAR_2026 =
+  'https://vijesti.hrt.hr/gospodarstvo/ante-susnjar-dnevnik-htv-a-12918686'
 
 const terminologyNote = `<p class="news-lead-note">U službenoj Odluci koristi se izraz „dodatna cijena”. U javnoj komunikaciji HOK-a i drugih institucija često se koristi naziv „sidrena cijena”. U ovom tekstu koristimo oba izraza radi lakšeg razumijevanja.</p>`
 
@@ -81,6 +83,92 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 </cjenik_usluga>`
 
 export const NEWS_POSTS: NewsPost[] = [
+  {
+    slug: 'digitalni-cjenik-bez-web-stranice-drustvene-mreze',
+    title: 'Nemate web stranicu? Ministar pojasnio tko ne mora imati digitalni cjenik',
+    seoTitle: 'Morate li imati digitalni cjenik bez web stranice? | NEPAR',
+    description:
+      'Ministar gospodarstva pojasnio je da oni bez web stranice ne moraju izrađivati web radi digitalnog cjenika te da se društvene mreže ne smatraju web stranicom.',
+    excerpt:
+      'Pojašnjenje za obrtnike i pružatelje usluga: vlastita web stranica, samo Facebook/Instagram ili bez online prisutnosti — kada se primjenjuje obveza CSV/XML cjenika.',
+    readingTimeMinutes: 4,
+    publishedAt: '2026-09-22T16:10:00+02:00',
+    updatedAt: '2026-09-22T16:10:00+02:00',
+    author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
+    tags: ['digitalni cjenik', 'web stranica', 'društvene mreže', 'CSV', 'XML', 'regulativa'],
+    kicker: 'Aktualno · pojašnjenje',
+    widgetEyebrow: 'NOVO · POJAŠNJENJE',
+    widgetHeadline: 'Nemate web? Ne morate ga izrađivati zbog digitalnog cjenika',
+    widgetSub: 'Ministar pojasnio i status Facebooka, Instagrama i drugih društvenih mreža',
+    schemaSection: 'Aktualno',
+    image: {
+      src: '/og/vijesti-digitalni-cjenik-2026.png',
+      alt: 'Digitalni cjenik bez web stranice i pojašnjenje za društvene mreže',
+      width: 1200,
+      height: 630,
+    },
+    cta: { label: 'Provjeri svoj web', href: '/' },
+    secondaryCta: {
+      label: 'Pročitaj glavni vodič za digitalni cjenik',
+      href: '/vijesti/digitalni-cjenik-sidrena-cijena-2026',
+    },
+    sources: [
+      {
+        title: 'HRT, 21.9.2026. — razgovor s ministrom gospodarstva Antom Šušnjarom',
+        url: HRT_SUSNJAR_2026,
+        type: 'secondary',
+      },
+      {
+        title: 'NN 101/2026-1213 — Odluka o objavi cjenika proizvoda i usluga',
+        url: NN_1213,
+        type: 'primary',
+      },
+      {
+        title: 'HOK, 18.9.2026. — Dodatna cijena i objava cjenika od 1. listopada 2026.',
+        url: HOK_2026,
+        type: 'secondary',
+      },
+    ],
+    sections: [
+      {
+        heading: 'Što je novo pojašnjeno',
+        level: 2,
+        html: `<p>U Dnevniku HTV-a 21. rujna 2026. ministar gospodarstva Ante Šušnjar govorio je o novim pravilima koja se primjenjuju od 1. listopada. HRT prenosi njegovo pojašnjenje da oni koji <strong>nemaju web stranicu neće biti obvezni uvoditi je niti zbog toga izrađivati digitalni cjenik</strong>.</p>
+<p>HRT također prenosi njegovu izjavu da se <strong>društvene mreže ne smatraju web stranicama</strong> pružatelja usluga ili proizvoda.</p>
+<p class="news-lead-note">To je dodatno javno pojašnjenje ministra. Pravna osnova za obvezu digitalnog cjenika i dalje je NN 101/2026-1213, koja kaže da se obveza objave primjenjuje na trgovce i pružatelje usluga koji imaju <strong>uspostavljene mrežne stranice</strong>.</p>`,
+      },
+      {
+        heading: 'Imam samo Facebook ili Instagram — što to znači?',
+        level: 2,
+        html: `<p>Prema navedenom pojašnjenju ministra koje prenosi HRT, sama prisutnost na Facebooku, Instagramu, TikToku ili drugoj društvenoj mreži <strong>ne znači da imate mrežnu stranicu za potrebe ove obveze</strong>.</p>
+<p>Drugim riječima, ako nemate vlastitu web stranicu i poslujete samo preko društvenih mreža, ovo pojašnjenje ide u smjeru da ne morate izrađivati novu web stranicu samo zato da biste na njoj objavili CSV/XML cjenik.</p>
+<p>I dalje ostaje zasebna obveza isticanja dodatne odnosno sidrene cijene iz NN 101/2026-1212 gdje se ona primjenjuje — nemojte miješati tu obvezu s obvezom objave digitalnog cjenika na webu.</p>`,
+      },
+      {
+        heading: 'Brzi pregled: trebam li digitalni cjenik na webu?',
+        level: 2,
+        html: `<ul class="news-bullets">
+<li><strong>Imate vlastitu web stranicu:</strong> provjerite primjenjuje li se na vas NN 101/2026-1213 i je li na webu objavljen odgovarajući CSV/XML cjenik.</li>
+<li><strong>Imate samo Facebook/Instagram ili drugu društvenu mrežu:</strong> prema pojašnjenju ministra koje prenosi HRT, društvene mreže se ne smatraju web stranicom.</li>
+<li><strong>Nemate web ni društvene mreže:</strong> Odluka ne propisuje da morate izrađivati novu web stranicu samo radi digitalnog cjenika.</li>
+<li><strong>Imate web i na njemu objavljujete cijene:</strong> obvezu digitalnog cjenika treba provjeriti prema službenoj Odluci; CSV/XML objava je zasebna od običnog prikaza cijena u HTML-u ili PDF-u.</li>
+</ul>`,
+      },
+      {
+        heading: 'Što službena Odluka kaže',
+        level: 2,
+        html: `<p>Točka V. NN 101/2026-1213 propisuje da se obveza objave cjenika primjenjuje na trgovce odnosno pružatelje usluga koji imaju <strong>uspostavljene mrežne stranice</strong>.</p>
+<p>Za one na koje se obveza primjenjuje Odluka dalje traži objavu važećeg cjenika u <strong>.csv ili .xml</strong> formatu pogodnom za automatsku obradu, dostupnost prethodnih verzija 30 dana i tehničko rješenje za automatizirani dohvat podataka.</p>
+<p>Za detaljan pregled pročitajte <a href="/vijesti/digitalni-cjenik-sidrena-cijena-2026"><strong>glavni vodič za digitalni cjenik od 1. listopada 2026.</strong></a></p>`,
+      },
+      {
+        heading: 'Imate web? Provjerite ga prije 1. listopada',
+        level: 2,
+        html: `<p>Ako imate vlastitu mrežnu stranicu, najbrže je prvo provjeriti postoji li na njoj javno dostupan CSV/XML cjenik. Automatska provjera na ovoj stranici provjerava tehničke signale, a zatim možete učitati Excel, CSV ili HOK predložak za detaljniju provjeru i objavu.</p>
+<p>Za praktičnu pripremu podataka pogledajte i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026">HOK Excel predloške</a> te <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026">primjer CSV cjenika za usluge</a>.</p>`,
+      },
+    ],
+  },
   {
     slug: 'hok-excel-predlosci-digitalni-cjenik-2026',
     title: 'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti do 1. listopada',
@@ -339,7 +427,7 @@ export const NEWS_POSTS: NewsPost[] = [
         heading: 'Tko mora objaviti digitalni cjenik na webu?',
         level: 2,
         html: `<p>Odluka o objavi cjenika (NN 101/2026-1213) propisuje obvezu objave <strong>važećih cjenika proizvoda i usluga na mrežnim stranicama</strong> trgovca odnosno pružatelja usluge.</p>
-<p>Obveza se primjenjuje ako imate <strong>uspostavljenu mrežnu stranicu</strong> — ne na sve subjekte bez weba. Cilj je da potrošači i nadležna tijela mogu pouzdano doći do strojno čitljivog cjenika, ne samo do PDF-a ili slike.</p>`,
+<p>Obveza se primjenjuje ako imate <strong>uspostavljenu mrežnu stranicu</strong> — ne na sve subjekte bez weba. Ministar gospodarstva dodatno je javno pojasnio da oni bez web stranice ne moraju izrađivati novu te da se društvene mreže ne smatraju web stranicom; više u tekstu <a href="/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze">Digitalni cjenik bez web stranice i društvene mreže</a>. Cilj je da potrošači i nadležna tijela mogu pouzdano doći do strojno čitljivog cjenika, ne samo do PDF-a ili slike.</p>`,
       },
       {
         heading: 'Koji podaci moraju biti u cjeniku?',
