@@ -49,6 +49,10 @@ const HOK_2026 =
   'https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika-od-1-listopada-2026-najvaznije-informacije'
 const HRT_SUSNJAR_2026 =
   'https://vijesti.hrt.hr/gospodarstvo/ante-susnjar-dnevnik-htv-a-12918686'
+const MINGO_CLARIFICATION_2026 =
+  'https://mingo.gov.hr/vijesti/pojasnjenja-za-primjenu-dodatne-cijene-i-objavu-cjenika-od-1-listopada/10440'
+const RRIF_CLARIFICATION_2026 =
+  'https://www.rrif.hr/pojasnjenje_ministarstva_gospodarstva_u_vezi_istic-2531-vijest/'
 
 const terminologyNote = `<p class="news-lead-note">U službenoj Odluci koristi se izraz „dodatna cijena”. U javnoj komunikaciji HOK-a i drugih institucija često se koristi naziv „sidrena cijena”. U ovom tekstu koristimo oba izraza radi lakšeg razumijevanja.</p>`
 
@@ -84,6 +88,137 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const NEWS_POSTS: NewsPost[] = [
   {
+    slug: 'ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026',
+    title: 'Ministarstvo objavilo detaljna pojašnjenja za digitalni cjenik i sidrene cijene',
+    seoTitle: 'Ministarstvo: pojašnjenja za digitalni cjenik 2026. | NEPAR',
+    description:
+      'Ministarstvo gospodarstva objavilo je detaljna pojašnjenja: informativni web ulazi u obvezu, svaka poslovnica i web shop trebaju zaseban CSV/XML, a pojašnjena su i pravila sidrene cijene.',
+    excerpt:
+      'Nova pisana pojašnjenja Ministarstva donose konkretna pravila za informativne webove, više poslovnica, web shopove, CSV/XML objavu i dodatnu odnosno sidrenu cijenu.',
+    readingTimeMinutes: 7,
+    publishedAt: '2026-09-22T22:45:00+02:00',
+    updatedAt: '2026-09-22T22:45:00+02:00',
+    author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
+    tags: ['Ministarstvo gospodarstva', 'digitalni cjenik', 'sidrena cijena', 'CSV', 'XML', 'web shop', 'poslovnice'],
+    kicker: 'Aktualno · Ministarstvo',
+    widgetEyebrow: 'NOVO · SLUŽBENO POJAŠNJENJE',
+    widgetHeadline: 'Ministarstvo objavilo detaljna pravila za digitalni cjenik',
+    widgetSub: 'Informativni web, više poslovnica, web shop i sidrene cijene — što je sada pojašnjeno',
+    schemaSection: 'Aktualno',
+    image: {
+      src: '/og/vijesti-digitalni-cjenik-2026.png',
+      alt: 'Pojašnjenja Ministarstva gospodarstva za digitalni cjenik i sidrene cijene',
+      width: 1200,
+      height: 630,
+    },
+    cta: { label: 'Provjeri svoj web', href: '/' },
+    secondaryCta: {
+      label: 'Učitaj Excel ili CSV',
+      href: '/#csv-validator',
+    },
+    sources: [
+      {
+        title: 'Ministarstvo gospodarstva, 22.9.2026. — Pojašnjenja za primjenu dodatne cijene i objavu cjenika',
+        url: MINGO_CLARIFICATION_2026,
+        type: 'primary',
+      },
+      {
+        title: 'NN 101/2026-1213 — Odluka o objavi cjenika proizvoda i usluga',
+        url: NN_1213,
+        type: 'primary',
+      },
+      {
+        title: 'NN 101/2026-1212 — Odluka o isticanju dodatne cijene',
+        url: NN_1212,
+        type: 'primary',
+      },
+      {
+        title: 'RRiF, 22.9.2026. — preneseno pojašnjenje Ministarstva',
+        url: RRIF_CLARIFICATION_2026,
+        type: 'secondary',
+      },
+    ],
+    sections: [
+      {
+        heading: 'Najvažnije: što je Ministarstvo sada pojasnilo',
+        level: 2,
+        html: `<p>Ministarstvo gospodarstva objavilo je 22. rujna 2026. detaljna pojašnjenja primjene odluka o dodatnoj cijeni i objavi digitalnog cjenika koje se primjenjuju od <strong>1. listopada 2026.</strong></p>
+<ul class="news-bullets">
+<li><strong>I informativna ili prezentacijska web stranica ulazi u obvezu.</strong> Nije potrebno imati web shop niti online prodaju.</li>
+<li><strong>Profil na društvenoj mreži nije mrežna stranica</strong> za ovu obvezu.</li>
+<li>Ako imate <strong>više poslovnica ili uslužnih objekata</strong>, za svaku lokaciju objavljujete zasebnu CSV/XML datoteku, čak i ako su cijene jednake.</li>
+<li>Ako imate <strong>web shop</strong>, za njega se objavljuje zasebna CSV/XML datoteka.</li>
+<li>Za lanac ili mrežu objekata tehnička struktura datoteka mora biti <strong>jedinstvena</strong> za sve objekte.</li>
+<li>Ministarstvo navodi da se obveza omogućavanja automatiziranog dohvaćanja u praksi ispunjava već <strong>javnom objavom CSV/XML cjenika na mrežnoj stranici</strong>.</li>
+</ul>
+<p class="news-lead-note">Ovo je službeno pojašnjenje primjene postojećih Odluka. Ne mijenja datum početka primjene: i dalje je 1. listopada 2026.</p>`,
+      },
+      {
+        heading: 'Informativni web također znači obvezu CSV/XML cjenika',
+        level: 2,
+        html: `<p>Jedna od važnijih nejasnoća sada je izričito razriješena. Ministarstvo navodi da se obveza odnosi na trgovce na malo i pružatelje usluga koji imaju uspostavljenu mrežnu stranicu, <strong>uključujući web stranice koje služe samo u informativne ili prezentacijske svrhe</strong>.</p>
+<p>Drugim riječima, nije potrebno prodavati online. Ako imate klasičan poslovni web s informacijama o tvrtki, uslugama, kontaktom i cijenama, sama činjenica da web nije web shop ne izuzima ga iz obveze.</p>
+<p>S druge strane, profil na Facebooku, Instagramu, TikToku ili drugoj društvenoj mreži Ministarstvo ne smatra uspostavljenom mrežnom stranicom. Više o subjektima bez weba pročitajte u vodiču <a href="/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze">Digitalni cjenik bez web stranice i društvene mreže</a>.</p>`,
+      },
+      {
+        heading: 'Više poslovnica: zaseban cjenik za svaku lokaciju',
+        level: 2,
+        html: `<p>Poslovni subjekti s više prodajnih ili uslužnih mjesta moraju objaviti <strong>zasebnu CSV/XML datoteku za svaku pojedinu lokaciju</strong>. Ministarstvo navodi da to vrijedi i kada sve poslovnice imaju isti asortiman i identične cijene.</p>
+<p>Razlog je što se datoteka veže uz konkretni objekt i njegovu adresu, oznaku i broj pohrane, a kod proizvoda se raspoloživost prati po pojedinom prodajnom mjestu.</p>
+<p>Za lance i mreže datoteke trebaju imati jedinstvenu tehničku strukturu, ali svaki objekt i dalje ima svoju objavu.</p>`,
+      },
+      {
+        heading: 'Web shop treba zaseban CSV ili XML',
+        level: 2,
+        html: `<p>Ako subjekt ima internetsku trgovinu, Ministarstvo pojašnjava da je za <strong>web shop potrebno generirati i objaviti zasebnu CSV/XML datoteku</strong>, neovisno o tome što su svi proizvodi i cijene već prikazani na samim stranicama trgovine.</p>
+<p>U nazivu datoteke kao oblik objekta može se navesti, primjerice, <code>webshop</code>. To znači da fizička poslovnica i web shop nisu jedna te ista objava digitalnog cjenika.</p>`,
+      },
+      {
+        heading: 'Automatizirani dohvat: što pojašnjenje mijenja u praksi',
+        level: 2,
+        html: `<p>Odluka NN 101/2026-1213 propisuje da trgovac ili pružatelj usluge mora omogućiti uporabu softverskih alata i automatiziranih programa za dohvat podataka o cijenama.</p>
+<p>Ministarstvo sada dodatno pojašnjava da se ta obveza <strong>u praksi ispunjava već objavljivanjem cjenika u CSV ili XML obliku na mrežnoj stranici subjekta</strong>. To je važna operativna informacija: za osnovnu usklađenost nije nužno graditi zaseban kompleksan API ako je datoteka javno i strojno dohvatljiva.</p>
+<p>I dalje ostaju druge obveze: pravilan sadržaj datoteke, naziv i identifikacija objekta, ažuriranje, javna dostupnost aktualne verzije te najmanje 30 dana dostupnosti prethodno objavljenih cjenika.</p>`,
+      },
+      {
+        heading: 'Sidrena cijena: isto mjesto, isti cjenik i može biti jednaka aktualnoj',
+        level: 2,
+        html: `<p>Za dodatnu odnosno sidrenu cijenu Ministarstvo pojašnjava da mora biti prikazana <strong>na istom mjestu na kojem je prikazana aktualna cijena</strong>. Kod cjenika usluga to znači na istom cjeniku; nije predviđen zaseban cjenik samo sa sidrenim cijenama.</p>
+<p>Nije potrebno uz iznos pisati naziv „sidrena cijena” ili „dodatna cijena”. Ministarstvo preporučuje jednostavnu oznaku poput <strong>„Cijena na 10.9.2026.”</strong>.</p>
+<p>Dodatna cijena mora biti prikazana i ako je potpuno jednaka aktualnoj cijeni. Ako se cijena od 10. rujna nije mijenjala, obje će vrijednosti biti jednake.</p>`,
+      },
+      {
+        heading: 'Akcije, nove usluge i cijene po narudžbi',
+        level: 2,
+        html: `<ul class="news-bullets">
+<li>Ako je proizvod ili usluga 10. rujna bila na akciji ili popustu, dodatna cijena nije akcijska cijena nego <strong>prethodna redovna cijena</strong>.</li>
+<li>Za proizvod ili uslugu prvi put uvedenu nakon 10. rujna, dodatna cijena je <strong>cijena prvog uvrštenja</strong>, uz datum kada je primijenjena.</li>
+<li>Kod proizvoda i usluga po narudžbi, gdje konačna cijena nije unaprijed određena, iskazuju se <strong>elementi od kojih se cijena formira</strong> i njihove dodatne cijene.</li>
+<li>Kod dinamičkih usluga, gdje cijena ovisi o potražnji, relaciji, algoritmu ili sličnom, dodatna cijena također se veže uz <strong>pojedinačne elemente konačne cijene</strong>.</li>
+</ul>`,
+      },
+      {
+        heading: 'Na akciji mogu biti istaknute tri cijene',
+        level: 2,
+        html: `<p>Obveza dodatne cijene ne ukida postojeće pravilo o najnižoj cijeni u prethodnih 30 dana tijekom akcije ili drugog posebnog oblika prodaje.</p>
+<p>Zato kod sniženja proizvod može imati istaknute <strong>tri cijene</strong>: trenutačnu sniženu cijenu, najnižu cijenu u zadnjih 30 dana i dodatnu odnosno sidrenu cijenu.</p>`,
+      },
+      {
+        heading: 'Što sada napraviti ako imate web',
+        level: 2,
+        html: `<p>Praktičan redoslijed je sada jasniji:</p>
+<ol class="news-bullets">
+<li>utvrdite koje prodajne i uslužne lokacije te web shopove imate,</li>
+<li>za svaki objekt pripremite zasebnu CSV/XML datoteku gdje je potrebno,</li>
+<li>provjerite sadržaj i dodatnu cijenu za svaku stavku,</li>
+<li>objavite datoteke javno na webu,</li>
+<li>osigurajte ažuriranje i 30-dnevnu dostupnost prethodnih verzija.</li>
+</ol>
+<p>Na vrhu ovog članka možete odmah provjeriti nalazi li naš checker javno dostupan CSV/XML na vašoj domeni. Ako krećete iz Excela, možete koristiti i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026">HOK Excel predložak</a> ili pogledati <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026">primjer CSV cjenika za usluge</a>.</p>`,
+      },
+    ],
+  },
+  {
     slug: 'digitalni-cjenik-bez-web-stranice-drustvene-mreze',
     title: 'Nemate web stranicu? Ministar pojasnio tko ne mora imati digitalni cjenik',
     seoTitle: 'Morate li imati digitalni cjenik bez web stranice? | NEPAR',
@@ -93,7 +228,7 @@ export const NEWS_POSTS: NewsPost[] = [
       'Pojašnjenje za obrtnike i pružatelje usluga: vlastita web stranica, samo Facebook/Instagram ili bez online prisutnosti — kada se primjenjuje obveza CSV/XML cjenika.',
     readingTimeMinutes: 4,
     publishedAt: '2026-09-22T16:10:00+02:00',
-    updatedAt: '2026-09-22T16:10:00+02:00',
+    updatedAt: '2026-09-22T22:45:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['digitalni cjenik', 'web stranica', 'društvene mreže', 'CSV', 'XML', 'regulativa'],
     kicker: 'Aktualno · pojašnjenje',
@@ -135,7 +270,7 @@ export const NEWS_POSTS: NewsPost[] = [
         level: 2,
         html: `<p>U Dnevniku HTV-a 21. rujna 2026. ministar gospodarstva Ante Šušnjar govorio je o novim pravilima koja se primjenjuju od 1. listopada. HRT prenosi njegovo pojašnjenje da oni koji <strong>nemaju web stranicu neće biti obvezni uvoditi je niti zbog toga izrađivati digitalni cjenik</strong>.</p>
 <p>HRT također prenosi njegovu izjavu da se <strong>društvene mreže ne smatraju web stranicama</strong> pružatelja usluga ili proizvoda.</p>
-<p class="news-lead-note">To je dodatno javno pojašnjenje ministra. Pravna osnova za obvezu digitalnog cjenika i dalje je NN 101/2026-1213, koja kaže da se obveza objave primjenjuje na trgovce i pružatelje usluga koji imaju <strong>uspostavljene mrežne stranice</strong>.</p>`,
+<p class="news-lead-note">Ministarstvo je 22. rujna objavilo i detaljno pisano pojašnjenje: obveza vrijedi i za web stranice koje služe samo u informativne ili prezentacijske svrhe, dok se profil na društvenoj mreži ne smatra uspostavljenom mrežnom stranicom. <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026">Pročitajte nova službena pojašnjenja →</a></p>`,
       },
       {
         heading: 'Imam samo Facebook ili Instagram — što to znači?',
