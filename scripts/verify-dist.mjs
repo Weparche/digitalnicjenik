@@ -131,6 +131,9 @@ function verifyArticle(relPath, canonical, expectedHeadline, extraChecks) {
   expect(relPath, 'NewsArticle', `${relPath}: JSON-LD must include NewsArticle`)
   expect(relPath, 'datePublished', `${relPath}: JSON-LD must include datePublished`)
   expect(relPath, 'dateModified', `${relPath}: JSON-LD must include dateModified`)
+  expect(relPath, 'Provjerite digitalni cjenik svoje web stranice', `${relPath}: article website checker is missing`)
+  expect(relPath, 'https://digitalnicjenik.nepar.hr/#csv-validator', `${relPath}: article checker must link to Publisher`)
+  expect(relPath, 'mailto:nepar@nepar.hr', `${relPath}: article checker must include email inquiry CTA`)
   if (/noindex/i.test(articleHtml)) failures.push(`${relPath}: must not be noindex`)
   expect(
     relPath,
