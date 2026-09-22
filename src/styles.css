@@ -1349,6 +1349,7 @@ body:has(.premium-entry) { background: var(--nepar-canvas); color: var(--nepar-i
 
 .news-web-checker-actions {
   display: flex;
+  margin-top: 12px;
   flex-wrap: wrap;
   gap: 8px;
 }
