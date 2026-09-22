@@ -133,6 +133,18 @@ describe('digital price list checker hardening', () => {
     expect(checked.status).toBe('yellow')
   })
 
+  it('reads a large homepage instead of aborting the check', async () => {
+    const padding = ' '.repeat(600 * 1024)
+    const fetch = routeFetch({
+      '/': () => new Response(`<a href="/exports/current.csv">CSV</a>${padding}`, { status: 200, headers: { 'content-type': 'text/html' } }),
+      '/exports/current.csv': () => new Response('Naziv,Cijena\nŠišanje,15', { status: 200, headers: { 'content-type': 'text/plain' } }),
+    })
+    vi.stubGlobal('fetch', fetch)
+    const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+    expect(checked.status).toBe('green')
+    expect(checked.details.csvUrl).toBe('https://example.com/exports/current.csv')
+  })
+
   it('keeps a network failure separate from red', async () => {
     const fetch = vi.fn(async () => { throw new Error('timeout') })
     vi.stubGlobal('fetch', fetch)
@@ -195,7 +207,7 @@ describe('digital price list checker hardening', () => {
     vi.stubGlobal('fetch', fetch)
     const checked = await runDigitalPriceListCheck('https://www.mall.hr', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
     expect(checked.status).toBe('red')
-    expect(checked.message).toBe('Strojni cjenik nije pronađen.')
+    expect(checked.message).toContain('zaštićena od automatskog dohvata')
     expect(checked.details.reachable).toBe(true)
     expect(checked.details.fetchBlocked).toBe(true)
     expect(checked.details.csvFound).toBe(false)

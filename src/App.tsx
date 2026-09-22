@@ -553,7 +553,7 @@ function ReadinessChecker() {
   }
 
   const details = result?.details ?? {}
-  const resultTitle = result?.status === 'green' ? 'Strojni cjenik pronađen' : result?.status === 'yellow' ? (result.details?.fetchBlocked ? 'Automatski dohvat je blokiran' : 'Cjenik postoji, ali strojna datoteka nije potvrđena') : result?.status === 'red' ? (result.details?.reachable === false ? 'Web stranica nije pronađena' : 'Strojni cjenik nije pronađen') : 'Provjera trenutačno nije dostupna'
+  const resultTitle = result?.status === 'green' ? 'Strojni cjenik pronađen' : result?.status === 'yellow' ? (result.details?.fetchBlocked ? 'Automatski dohvat je blokiran' : 'Cjenik postoji, ali strojna datoteka nije potvrđena') : result?.status === 'red' ? (result.details?.reachable === false ? 'Web stranica nije pronađena' : result.details?.fetchBlocked ? 'Naslovnica blokira automatski dohvat' : 'Strojni cjenik nije pronađen') : 'Provjera trenutačno nije dostupna'
   const resultClass = result?.status === 'green' ? 'is-green' : result?.status === 'yellow' ? 'is-yellow' : result?.status === 'red' ? 'is-red' : 'is-unavailable'
 
   return <div className="readiness-checker" id="checker">
@@ -1106,7 +1106,9 @@ function PremiumReadinessChecker({ onResult, onChooseCsv, onLead }: { onResult: 
       : result?.status === 'red'
         ? result.details?.reachable === false
           ? 'Web stranica nije pronađena'
-          : 'Javni CSV/XML cjenik nije pronađen'
+          : result.details?.fetchBlocked
+            ? 'Naslovnica blokira automatski dohvat'
+            : 'Javni CSV/XML cjenik nije pronađen'
         : 'Provjeru trenutačno nije moguće dovršiti'
   const resultClass = result ? 'is-' + result.status : ''
 

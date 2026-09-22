@@ -65,7 +65,9 @@ function ArticleWebsiteChecker() {
         : result?.status === 'red'
           ? result.details?.reachable === false
             ? 'Web stranica nije pronađena'
-            : 'Javni CSV/XML cjenik nije pronađen'
+            : result.details?.fetchBlocked
+              ? 'Naslovnica blokira automatski dohvat'
+              : 'Javni CSV/XML cjenik nije pronađen'
           : 'Provjeru trenutačno nije moguće dovršiti'
 
   const mailBody = url.trim()

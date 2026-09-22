@@ -35,7 +35,7 @@ type CheckResult = {
 
 const MAX_REQUEST_BYTES = 4096;
 const MAX_URL_LENGTH = 2048;
-const MAX_HTML_BYTES = 512 * 1024;
+const MAX_HTML_BYTES = 2 * 1024 * 1024;
 const MAX_DOCUMENT_BYTES = 128 * 1024;
 const MAX_REDIRECTS = 5;
 const MAX_SECONDARY_PAGES = 3;
@@ -205,12 +205,14 @@ async function readLimited(response: Response, maxBytes: number): Promise<string
     while (true) {
       const part = await reader.read();
       if (part.done) break;
-      total += part.value.byteLength;
-      if (total > maxBytes) {
+      const room = maxBytes - total;
+      const chunk = part.value.byteLength > room ? part.value.slice(0, room) : part.value;
+      chunks.push(chunk);
+      total += chunk.byteLength;
+      if (part.value.byteLength > room) {
         await reader.cancel();
-        throw new Error("response_too_large");
+        break;
       }
-      chunks.push(part.value);
     }
   } finally {
     reader.releaseLock();
@@ -496,6 +498,7 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
     return result("yellow", "Web je zaštićen od automatskog dohvata, pa javni CSV/XML nismo mogli potvrditi.", details);
   }
   if (network.failed && !network.checked) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.", details);
+  if (details.fetchBlocked) return result("red", "Naslovnica je zaštićena od automatskog dohvata. Javni CSV/XML na uobičajenim adresama nije pronađen.", details);
   return result("red", "Strojni cjenik nije pronađen.", details);
 }
 
