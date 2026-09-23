@@ -186,8 +186,10 @@ function verifyArticle(relPath, canonical, expectedHeadline, extraChecks) {
 verifyArticle(
   LATEST_REL,
   LATEST_CANONICAL,
-  'Javni digitalni cjenici već su online: 4 primjera iz Hrvatske',
+  'Javni digitalni cjenici već su online: 5 primjera iz Hrvatske',
   [
+    ['https://autogubic.hr/cjenik', 'examples article must link NEPAR Auto Gubic reference implementation'],
+    ['NEPAR-ova referentna implementacija za Auto Gubić', 'examples article must identify NEPAR reference implementation'],
     ['https://www.knofek.hr/digitalni-cjenik/', 'examples article must link KNOFEK'],
     ['https://optikavisual.com/cjenik/', 'examples article must link Optika VISUAL'],
     ['https://modusdesignshop.hr/cjenik/', 'examples article must link Modus Design Shop'],
