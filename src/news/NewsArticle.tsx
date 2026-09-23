@@ -146,7 +146,7 @@ export function NewsArticle({ slug }: { slug: string }) {
           <>
             <a href="/">Početna</a>
             <span aria-hidden="true"> / </span>
-            <a href="/vijesti">Vijesti</a>
+            <a href="/vijesti/">Vijesti</a>
             <span aria-hidden="true"> / </span>
             <span>Nije pronađeno</span>
           </>
@@ -154,7 +154,7 @@ export function NewsArticle({ slug }: { slug: string }) {
       >
         <h1>Članak nije pronađen</h1>
         <p>
-          <a href="/vijesti">Povratak na vijesti →</a>
+          <a href="/vijesti/">Povratak na vijesti →</a>
         </p>
       </NewsLayout>
     )
@@ -168,7 +168,7 @@ export function NewsArticle({ slug }: { slug: string }) {
         <>
           <a href="/">Početna</a>
           <span aria-hidden="true"> / </span>
-          <a href="/vijesti">Vijesti</a>
+          <a href="/vijesti/">Vijesti</a>
           <span aria-hidden="true"> / </span>
           <span>{post.title}</span>
         </>
@@ -265,7 +265,7 @@ export function NewsArticle({ slug }: { slug: string }) {
           </p>
         )}
         <p className="news-back-link">
-          <a href="/vijesti">← Svi vodiči</a>
+          <a href="/vijesti/">← Svi vodiči</a>
         </p>
       </article>
     </NewsLayout>

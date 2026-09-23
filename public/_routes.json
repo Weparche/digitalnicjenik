@@ -3,8 +3,8 @@
   "include": ["/*"],
   "exclude": [
     "/robots.txt",
-    "/sitemap.xml",
     "/llms.txt",
+    "/feed.xml",
     "/_redirects",
     "/favicon.svg",
     "/favicon-32x32.png",

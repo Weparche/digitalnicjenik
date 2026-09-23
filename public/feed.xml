@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>NEPAR Publisher — vijesti o digitalnom cjeniku</title>
+    <link>https://digitalnicjenik.nepar.hr/vijesti/</link>
+    <description>Vodiči o digitalnom cjeniku, sidrenoj cijeni i CSV/XML objavi.</description>
+    <language>hr</language>
+    <atom:link href="https://digitalnicjenik.nepar.hr/feed.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Javni digitalni cjenici već su online: 5 primjera iz Hrvatske</title>
+      <link>https://digitalnicjenik.nepar.hr/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/</link>
+      <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/</guid>
+      <pubDate>Wed, 23 Sep 2026 20:25:00 GMT</pubDate>
+      <description>Pogledali smo pet javno dostupnih digitalnih cjenika u Hrvatskoj, počevši od NEPAR referentne implementacije za Auto Gubić. Evo kako su riješeni CSV/XML, arhiva i javni prikaz.</description>
+    </item>
+    <item>
+      <title>Ministarstvo objavilo detaljna pojašnjenja za digitalni cjenik i sidrene cijene</title>
+      <link>https://digitalnicjenik.nepar.hr/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/</link>
+      <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/</guid>
+      <pubDate>Tue, 22 Sep 2026 20:45:00 GMT</pubDate>
+      <description>Ministarstvo gospodarstva objavilo je detaljna pojašnjenja: informativni web ulazi u obvezu, svaka poslovnica i web shop trebaju zaseban CSV/XML, a pojašnjena su i pravila sidrene cijene.</description>
+    </item>
+    <item>
+      <title>Nemate web stranicu? Ministar pojasnio tko ne mora imati digitalni cjenik</title>
+      <link>https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze/</link>
+      <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze/</guid>
+      <pubDate>Tue, 22 Sep 2026 14:10:00 GMT</pubDate>
+      <description>Ministar gospodarstva pojasnio je da oni bez web stranice ne moraju izrađivati web radi digitalnog cjenika te da se društvene mreže ne smatraju web stranicom.</description>
+    </item>
+    <item>
+      <title>HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti do 1. listopada</title>
+      <link>https://digitalnicjenik.nepar.hr/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/</link>
+      <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/</guid>
+      <pubDate>Mon, 21 Sep 2026 15:00:00 GMT</pubDate>
+      <description>HOK je objavio Excel predloške cjenika proizvoda i usluga, upute i webinar za obveze od 1.10.2026. Pogledajte što još treba objaviti na webu.</description>
+    </item>
+    <item>
+      <title>Primjer CSV digitalnog cjenika za pružatelje usluga</title>
+      <link>https://digitalnicjenik.nepar.hr/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/</link>
+      <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/</guid>
+      <pubDate>Mon, 21 Sep 2026 14:50:00 GMT</pubDate>
+      <description>Pogledajte praktičan primjer CSV digitalnog cjenika za usluge prema NN 101/2026-1213: obvezni podaci, sidrena cijena, CSV struktura i provjera datoteke.</description>
+    </item>
+    <item>
+      <title>Digitalni cjenik od 1. listopada 2026.: što se mijenja za vlasnike web stranica</title>
+      <link>https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-sidrena-cijena-2026/</link>
+      <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-sidrena-cijena-2026/</guid>
+      <pubDate>Mon, 21 Sep 2026 06:00:00 GMT</pubDate>
+      <description>Što od 1.10.2026. donose nova pravila: CSV/XML cjenik, dodatna odnosno sidrena cijena, 30-dnevna dostupnost i automatizirani dohvat podataka.</description>
+    </item>
+  </channel>
+</rss>

@@ -4,11 +4,11 @@ export const ORGANIZATION_ID = `${NEPAR_URL}/#organization`
 export const WEBSITE_ID = `${SITE_URL}/#website`
 
 export function newsIndexUrl() {
-  return `${SITE_URL}/vijesti`
+  return `${SITE_URL}/vijesti/`
 }
 
 export function newsArticleUrl(slug: string) {
-  return `${SITE_URL}/vijesti/${slug}`
+  return `${SITE_URL}/vijesti/${slug}/`
 }
 
 export function absoluteAssetUrl(path: string) {

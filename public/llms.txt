@@ -1,20 +1,47 @@
 # NEPAR Publisher — Digitalni cjenik
 
+> Publishing sloj za javni CSV/XML cjenik na webu: provjera stranice, validacija Excela/CSV-a i objava aktualnog cjenika s arhivom.
+
 NEPAR Publisher je alat kojim vlasnik web stranice provjerava ima li javno dostupan
 strojno čitljiv (CSV ili XML) digitalni cjenik, validira postojeću datoteku, pretvara
 Excel cjenik u CSV/XML i po potrebi naruči potpunu tehničku implementaciju.
 
 Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https://nepar.hr
 
-Kanonski URL proizvoda: https://digitalnicjenik.nepar.hr/
+## Stranice
 
-Detaljna pravna i tehnička dokumentacija o obvezi digitalnog cjenika, sidrenoj cijeni
-i automatizaciji objavljena je na nepar.hr, ne na ovoj poddomeni:
+- [Početna](https://digitalnicjenik.nepar.hr/): provjera weba, validator Excel/CSV cjenika i ponuda Publishera.
+- [Vijesti](https://digitalnicjenik.nepar.hr/vijesti/): vodiči o digitalnom cjeniku, sidrenoj cijeni i CSV/XML objavi.
+- [RSS](https://digitalnicjenik.nepar.hr/feed.xml): feed svih vijesti.
+- [Sitemap](https://digitalnicjenik.nepar.hr/sitemap.xml): sve indeksabilne podstranice, uključujući javne cjenike.
 
-- https://nepar.hr/digitalni-cjenik — pregled obveze i NEPAR Digital Price Engine
-- https://nepar.hr/digitalni-cjenik/sidrena-cijena — sidrena/dodatna cijena
-- https://nepar.hr/digitalni-cjenik/xml-csv — XML/CSV format i zahtjevi
-- https://nepar.hr/digitalni-cjenik/automatizacija — automatizacija objave cjenika
+## Vijesti
+
+- [Javni digitalni cjenici već su online: 5 primjera iz Hrvatske](https://digitalnicjenik.nepar.hr/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/): Prije 1. listopada već se pojavljuju stvarne implementacije digitalnih cjenika. Prvi primjer je NEPAR implementacija za Auto Gubić, a zatim četiri neovisna tržišna primjera.
+- [Ministarstvo objavilo detaljna pojašnjenja za digitalni cjenik i sidrene cijene](https://digitalnicjenik.nepar.hr/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/): Nova pisana pojašnjenja Ministarstva donose konkretna pravila za informativne webove, više poslovnica, web shopove, CSV/XML objavu i dodatnu odnosno sidrenu cijenu.
+- [Nemate web stranicu? Ministar pojasnio tko ne mora imati digitalni cjenik](https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze/): Pojašnjenje za obrtnike i pružatelje usluga: vlastita web stranica, samo Facebook/Instagram ili bez online prisutnosti — kada se primjenjuje obveza CSV/XML cjenika.
+- [HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti do 1. listopada](https://digitalnicjenik.nepar.hr/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/): HOK je objavio Excel predloške, upute i webinar. Excel pomaže pripremiti podatke, ali web obveza i dalje traži CSV/XML i automatizirani dohvat.
+- [Primjer CSV digitalnog cjenika za pružatelje usluga](https://digitalnicjenik.nepar.hr/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/): Praktičan primjer CSV/XML cjenika usluga — obvezni podaci, sidrena cijena, preuzimanje i provjera prije objave.
+- [Digitalni cjenik od 1. listopada 2026.: što se mijenja za vlasnike web stranica](https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-sidrena-cijena-2026/): Digitalni cjenik od 1. listopada 2026. — što vlasnici web stranica trebaju pripremiti: dodatna (sidrena) cijena, CSV/XML objava, arhiva i automatizirani dohvat.
+
+## Javni primjeri i datoteke
+
+- [Demo cjenik](https://digitalnicjenik.nepar.hr/c/nepar): javni primjer aktualnog digitalnog cjenika.
+- [Demo arhiva](https://digitalnicjenik.nepar.hr/c/nepar/arhiva): prethodne objave demo cjenika.
+- [Demo CSV](https://digitalnicjenik.nepar.hr/c/nepar/cjenik.csv): stabilni CSV za automatizirani dohvat.
+- [Demo XML](https://digitalnicjenik.nepar.hr/c/nepar/cjenik.xml): stabilni XML za automatizirani dohvat.
+- [Primjer CSV za usluge](https://digitalnicjenik.nepar.hr/examples/primjer-digitalni-cjenik-usluge-2026.csv): preuzimanje primjera iz vodiča.
+- [Primjer XML za usluge](https://digitalnicjenik.nepar.hr/examples/primjer-digitalni-cjenik-usluge-2026.xml): XML varijanta istog primjera.
+
+Aktivni javni cjenici kupaca na /c/slug, njihova arhiva i CSV/XML feedovi dodaju se u
+sitemap.xml. Probni cjenici nose noindex i nisu u sitemapu.
+
+## Dokumentacija na nepar.hr
+
+- [https://nepar.hr/digitalni-cjenik](https://nepar.hr/digitalni-cjenik): pregled obveze i NEPAR Digital Price Engine
+- [https://nepar.hr/digitalni-cjenik/sidrena-cijena](https://nepar.hr/digitalni-cjenik/sidrena-cijena): sidrena/dodatna cijena
+- [https://nepar.hr/digitalni-cjenik/xml-csv](https://nepar.hr/digitalni-cjenik/xml-csv): XML/CSV format i zahtjevi
+- [https://nepar.hr/digitalni-cjenik/automatizacija](https://nepar.hr/digitalni-cjenik/automatizacija): automatizacija objave cjenika
 
 Napomena: ovaj llms.txt je informativni artefakt za strojno čitanje i ne utječe na
 Google rangiranje.

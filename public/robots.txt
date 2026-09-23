@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /app$
+Disallow: /app/
 
 Sitemap: https://digitalnicjenik.nepar.hr/sitemap.xml

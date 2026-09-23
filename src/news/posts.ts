@@ -114,7 +114,7 @@ export const NEWS_POSTS: NewsPost[] = [
     cta: { label: 'Provjeri svoj web', href: '/' },
     secondaryCta: {
       label: 'Pogledaj primjer CSV cjenika',
-      href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026',
+      href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/',
     },
     sources: [
       {
@@ -210,7 +210,7 @@ export const NEWS_POSTS: NewsPost[] = [
         level: 2,
         html: `<p>Najvažniji zaključak nije da trebate kopirati tuđi dizajn. Bitno je da <strong>podaci o cijenama imaju jedan pouzdan izvor</strong>, a iz njega se generiraju javni prikaz, CSV/XML i arhiva.</p>
 <p>Ako danas imate samo HTML cjenik, PDF ili tablicu koju ručno uređujete, najveći rizik nije izgled nego održavanje više kopija istih cijena. Zato NEPAR Publisher polazi od Excela/CSV-a i iz istih podataka generira objavu i verzije.</p>
-<p>Na vrhu ovog članka možete odmah provjeriti nalazi li se na vašoj domeni javno dostupan CSV/XML cjenik. Za strukturu usluga pogledajte i <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026">primjer CSV digitalnog cjenika</a>, a za zadnja službena pojašnjenja <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026">pojašnjenja Ministarstva od 22. rujna</a>.</p>`,
+<p>Na vrhu ovog članka možete odmah provjeriti nalazi li se na vašoj domeni javno dostupan CSV/XML cjenik. Za strukturu usluga pogledajte i <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/">primjer CSV digitalnog cjenika</a>, a za zadnja službena pojašnjenja <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/">pojašnjenja Ministarstva od 22. rujna</a>.</p>`,
       },
     ],
   },
@@ -285,7 +285,7 @@ export const NEWS_POSTS: NewsPost[] = [
         level: 2,
         html: `<p>Jedna od važnijih nejasnoća sada je izričito razriješena. Ministarstvo navodi da se obveza odnosi na trgovce na malo i pružatelje usluga koji imaju uspostavljenu mrežnu stranicu, <strong>uključujući web stranice koje služe samo u informativne ili prezentacijske svrhe</strong>.</p>
 <p>Drugim riječima, nije potrebno prodavati online. Ako imate klasičan poslovni web s informacijama o tvrtki, uslugama, kontaktom i cijenama, sama činjenica da web nije web shop ne izuzima ga iz obveze.</p>
-<p>S druge strane, profil na Facebooku, Instagramu, TikToku ili drugoj društvenoj mreži Ministarstvo ne smatra uspostavljenom mrežnom stranicom. Više o subjektima bez weba pročitajte u vodiču <a href="/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze">Digitalni cjenik bez web stranice i društvene mreže</a>.</p>`,
+<p>S druge strane, profil na Facebooku, Instagramu, TikToku ili drugoj društvenoj mreži Ministarstvo ne smatra uspostavljenom mrežnom stranicom. Više o subjektima bez weba pročitajte u vodiču <a href="/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze/">Digitalni cjenik bez web stranice i društvene mreže</a>.</p>`,
       },
       {
         heading: 'Više poslovnica: zaseban cjenik za svaku lokaciju',
@@ -341,7 +341,7 @@ export const NEWS_POSTS: NewsPost[] = [
 <li>objavite datoteke javno na webu,</li>
 <li>osigurajte ažuriranje i 30-dnevnu dostupnost prethodnih verzija.</li>
 </ol>
-<p>Na vrhu ovog članka možete odmah provjeriti nalazi li naš checker javno dostupan CSV/XML na vašoj domeni. Ako krećete iz Excela, možete koristiti i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026">HOK Excel predložak</a> ili pogledati <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026">primjer CSV cjenika za usluge</a>.</p>`,
+<p>Na vrhu ovog članka možete odmah provjeriti nalazi li naš checker javno dostupan CSV/XML na vašoj domeni. Ako krećete iz Excela, možete koristiti i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/">HOK Excel predložak</a> ili pogledati <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/">primjer CSV cjenika za usluge</a>.</p>`,
       },
     ],
   },
@@ -372,7 +372,7 @@ export const NEWS_POSTS: NewsPost[] = [
     cta: { label: 'Provjeri svoj web', href: '/' },
     secondaryCta: {
       label: 'Pročitaj glavni vodič za digitalni cjenik',
-      href: '/vijesti/digitalni-cjenik-sidrena-cijena-2026',
+      href: '/vijesti/digitalni-cjenik-sidrena-cijena-2026/',
     },
     sources: [
       {
@@ -397,7 +397,7 @@ export const NEWS_POSTS: NewsPost[] = [
         level: 2,
         html: `<p>U Dnevniku HTV-a 21. rujna 2026. ministar gospodarstva Ante Šušnjar govorio je o novim pravilima koja se primjenjuju od 1. listopada. HRT prenosi njegovo pojašnjenje da oni koji <strong>nemaju web stranicu neće biti obvezni uvoditi je niti zbog toga izrađivati digitalni cjenik</strong>.</p>
 <p>HRT također prenosi njegovu izjavu da se <strong>društvene mreže ne smatraju web stranicama</strong> pružatelja usluga ili proizvoda.</p>
-<p class="news-lead-note">Ministarstvo je 22. rujna objavilo i detaljno pisano pojašnjenje: obveza vrijedi i za web stranice koje služe samo u informativne ili prezentacijske svrhe, dok se profil na društvenoj mreži ne smatra uspostavljenom mrežnom stranicom. <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026">Pročitajte nova službena pojašnjenja →</a></p>`,
+<p class="news-lead-note">Ministarstvo je 22. rujna objavilo i detaljno pisano pojašnjenje: obveza vrijedi i za web stranice koje služe samo u informativne ili prezentacijske svrhe, dok se profil na društvenoj mreži ne smatra uspostavljenom mrežnom stranicom. <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/">Pročitajte nova službena pojašnjenja →</a></p>`,
       },
       {
         heading: 'Imam samo Facebook ili Instagram — što to znači?',
@@ -421,13 +421,13 @@ export const NEWS_POSTS: NewsPost[] = [
         level: 2,
         html: `<p>Točka V. NN 101/2026-1213 propisuje da se obveza objave cjenika primjenjuje na trgovce odnosno pružatelje usluga koji imaju <strong>uspostavljene mrežne stranice</strong>.</p>
 <p>Za one na koje se obveza primjenjuje Odluka dalje traži objavu važećeg cjenika u <strong>.csv ili .xml</strong> formatu pogodnom za automatsku obradu, dostupnost prethodnih verzija 30 dana i tehničko rješenje za automatizirani dohvat podataka.</p>
-<p>Za detaljan pregled pročitajte <a href="/vijesti/digitalni-cjenik-sidrena-cijena-2026"><strong>glavni vodič za digitalni cjenik od 1. listopada 2026.</strong></a></p>`,
+<p>Za detaljan pregled pročitajte <a href="/vijesti/digitalni-cjenik-sidrena-cijena-2026/"><strong>glavni vodič za digitalni cjenik od 1. listopada 2026.</strong></a></p>`,
       },
       {
         heading: 'Imate web? Provjerite ga prije 1. listopada',
         level: 2,
         html: `<p>Ako imate vlastitu mrežnu stranicu, najbrže je prvo provjeriti postoji li na njoj javno dostupan CSV/XML cjenik. Automatska provjera na ovoj stranici provjerava tehničke signale, a zatim možete učitati Excel, CSV ili HOK predložak za detaljniju provjeru i objavu.</p>
-<p>Za praktičnu pripremu podataka pogledajte i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026">HOK Excel predloške</a> te <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026">primjer CSV cjenika za usluge</a>.</p>`,
+<p>Za praktičnu pripremu podataka pogledajte i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/">HOK Excel predloške</a> te <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/">primjer CSV cjenika za usluge</a>.</p>`,
       },
     ],
   },
@@ -458,7 +458,7 @@ export const NEWS_POSTS: NewsPost[] = [
     cta: { label: 'Učitaj HOK Excel predložak usluga', href: '/#csv-validator' },
     secondaryCta: {
       label: 'Pogledaj primjer CSV cjenika za usluge',
-      href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026',
+      href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/',
     },
     sources: [
       {
@@ -525,7 +525,7 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         heading: 'Želite vidjeti kako izgleda CSV nakon Excela?',
         level: 2,
-        html: `<p>Pripremili smo i praktičan <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026"><strong>primjer CSV digitalnog cjenika za pružatelje usluga</strong></a>, s HOK-nazivima stupaca, primjerima vrijednosti i XML varijantom.</p>`,
+        html: `<p>Pripremili smo i praktičan <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/"><strong>primjer CSV digitalnog cjenika za pružatelje usluga</strong></a>, s HOK-nazivima stupaca, primjerima vrijednosti i XML varijantom.</p>`,
       },
     ],
   },
@@ -582,7 +582,7 @@ export const NEWS_POSTS: NewsPost[] = [
         heading: 'Za koga je ovaj primjer',
         level: 2,
         html: `<p>Vodič je namijenjen <strong>pružateljima registriranih usluga</strong> koji imaju mrežnu stranicu i trebaju objaviti digitalni cjenik u CSV ili XML obliku — npr. frizerski i kozmetički saloni, servisi, obrti i druge uslužne djelatnosti.</p>
-<p>Ako krećete iz HOK-ova Excel predloška, pogledajte i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026">što HOK predložak rješava, a što još treba objaviti na webu</a>. Opći pregled obveze i datuma početka (1. listopada 2026.) nalazi se u vodiču <a href="/vijesti/digitalni-cjenik-sidrena-cijena-2026">Digitalni cjenik i sidrena cijena</a>.</p>`,
+<p>Ako krećete iz HOK-ova Excel predloška, pogledajte i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/">što HOK predložak rješava, a što još treba objaviti na webu</a>. Opći pregled obveze i datuma početka (1. listopada 2026.) nalazi se u vodiču <a href="/vijesti/digitalni-cjenik-sidrena-cijena-2026/">Digitalni cjenik i sidrena cijena</a>.</p>`,
       },
       {
         heading: 'Koje podatke cjenik usluga mora sadržavati',
@@ -689,7 +689,7 @@ export const NEWS_POSTS: NewsPost[] = [
         heading: 'Tko mora objaviti digitalni cjenik na webu?',
         level: 2,
         html: `<p>Odluka o objavi cjenika (NN 101/2026-1213) propisuje obvezu objave <strong>važećih cjenika proizvoda i usluga na mrežnim stranicama</strong> trgovca odnosno pružatelja usluge.</p>
-<p>Obveza se primjenjuje ako imate <strong>uspostavljenu mrežnu stranicu</strong> — ne na sve subjekte bez weba. Ministar gospodarstva dodatno je javno pojasnio da oni bez web stranice ne moraju izrađivati novu te da se društvene mreže ne smatraju web stranicom; više u tekstu <a href="/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze">Digitalni cjenik bez web stranice i društvene mreže</a>. Cilj je da potrošači i nadležna tijela mogu pouzdano doći do strojno čitljivog cjenika, ne samo do PDF-a ili slike.</p>`,
+<p>Obveza se primjenjuje ako imate <strong>uspostavljenu mrežnu stranicu</strong> — ne na sve subjekte bez weba. Ministar gospodarstva dodatno je javno pojasnio da oni bez web stranice ne moraju izrađivati novu te da se društvene mreže ne smatraju web stranicom; više u tekstu <a href="/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze/">Digitalni cjenik bez web stranice i društvene mreže</a>. Cilj je da potrošači i nadležna tijela mogu pouzdano doći do strojno čitljivog cjenika, ne samo do PDF-a ili slike.</p>`,
       },
       {
         heading: 'Koji podaci moraju biti u cjeniku?',
@@ -740,7 +740,7 @@ export const NEWS_POSTS: NewsPost[] = [
 <li>pokrenuti <strong>7-dnevni probni</strong> javni cjenik na vlastitom URL-u prije aktivacije Publishera.</li>
 </ul>
 <p><a href="/#csv-validator">Učitajte cjenik za besplatnu provjeru →</a> · <a href="/">Provjera postojeće stranice →</a></p>
-<p>Za praktičan primjer CSV/XML za usluge pogledajte <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026">Primjer CSV digitalnog cjenika za pružatelje usluga</a>.</p>`,
+<p>Za praktičan primjer CSV/XML za usluge pogledajte <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/">Primjer CSV digitalnog cjenika za pružatelje usluga</a>.</p>`,
       },
     ],
   },
@@ -773,7 +773,7 @@ export function formatNewsDate(iso: string) {
 }
 
 export function newsArticlePath(slug: string) {
-  return `/vijesti/${slug}`
+  return `/vijesti/${slug}/`
 }
 
 export { newsArticleUrl }

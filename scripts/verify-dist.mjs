@@ -63,6 +63,10 @@ if (rootText.length <= 200) failures.push(`index.html: prerendered #root text is
 const robots = read('robots.txt')
 if (!robots.startsWith('User-agent:')) failures.push('robots.txt: is not a plain-text robots file (looks like the SPA shell)')
 if (!robots.includes('Sitemap: https://digitalnicjenik.nepar.hr/sitemap.xml')) failures.push('robots.txt: missing Sitemap directive')
+if (!robots.includes('Disallow: /api/')) failures.push('robots.txt: must keep /api/ out of the crawl')
+if (!robots.includes('Disallow: /app$')) failures.push('robots.txt: must block /app without blocking /apple-touch-icon.png')
+if (!robots.includes('Disallow: /app/')) failures.push('robots.txt: must block /app/ routes')
+if (robots.includes('Disallow: /vijesti') || robots.includes('Disallow: /c')) failures.push('robots.txt: must not block public news or cjenik URLs')
 
 // --- sitemap.xml ---
 const sitemap = read('sitemap.xml')
@@ -100,12 +104,12 @@ const NO_WEB_SLUG = 'digitalni-cjenik-bez-web-stranice-drustvene-mreze'
 const HOK_SLUG = 'hok-excel-predlosci-digitalni-cjenik-2026'
 const CSV_SLUG = 'primjer-csv-digitalnog-cjenika-usluge-2026'
 const REGULATORY_SLUG = 'digitalni-cjenik-sidrena-cijena-2026'
-const LATEST_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${LATEST_SLUG}`
-const MINISTRY_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${MINISTRY_SLUG}`
-const NO_WEB_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${NO_WEB_SLUG}`
-const HOK_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${HOK_SLUG}`
-const CSV_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${CSV_SLUG}`
-const REGULATORY_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${REGULATORY_SLUG}`
+const LATEST_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${LATEST_SLUG}/`
+const MINISTRY_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${MINISTRY_SLUG}/`
+const NO_WEB_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${NO_WEB_SLUG}/`
+const HOK_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${HOK_SLUG}/`
+const CSV_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${CSV_SLUG}/`
+const REGULATORY_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${REGULATORY_SLUG}/`
 const LATEST_REL = `vijesti/${LATEST_SLUG}/index.html`
 const MINISTRY_REL = `vijesti/${MINISTRY_SLUG}/index.html`
 const NO_WEB_REL = `vijesti/${NO_WEB_SLUG}/index.html`
@@ -113,14 +117,26 @@ const HOK_REL = `vijesti/${HOK_SLUG}/index.html`
 const CSV_REL = `vijesti/${CSV_SLUG}/index.html`
 const REGULATORY_REL = `vijesti/${REGULATORY_SLUG}/index.html`
 
-expect('index.html', `href="/vijesti/${LATEST_SLUG}"`, 'landing widget must link to latest news article')
+expect('index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'landing widget must link to latest news article')
+expect('index.html', 'index,follow,max-image-preview:large', 'homepage must be explicitly indexable')
+expect('index.html', 'hreflang="hr"', 'homepage must declare Croatian hreflang')
+expect('index.html', 'https://digitalnicjenik.nepar.hr/feed.xml', 'homepage must link the news feed')
 expect('sitemap.xml', `<loc>${LATEST_CANONICAL}</loc>`, 'sitemap must include latest article canonical URL')
 expect('sitemap.xml', `<loc>${MINISTRY_CANONICAL}</loc>`, 'sitemap must include Ministry article canonical URL')
 expect('sitemap.xml', `<loc>${NO_WEB_CANONICAL}</loc>`, 'sitemap must include no-web article canonical URL')
 expect('sitemap.xml', `<loc>${HOK_CANONICAL}</loc>`, 'sitemap must include HOK article canonical URL')
 expect('sitemap.xml', `<loc>${CSV_CANONICAL}</loc>`, 'sitemap must include CSV guide canonical URL')
 expect('sitemap.xml', `<loc>${REGULATORY_CANONICAL}</loc>`, 'sitemap must include regulatory article canonical URL')
-expect('sitemap.xml', `<loc>https://digitalnicjenik.nepar.hr/vijesti</loc>`, 'sitemap must include news index')
+expect('sitemap.xml', '<loc>https://digitalnicjenik.nepar.hr/vijesti/</loc>', 'sitemap must include news index')
+expect('sitemap.xml', '<loc>https://digitalnicjenik.nepar.hr/c/nepar</loc>', 'sitemap must include the public demo cjenik')
+expect('sitemap.xml', '<loc>https://digitalnicjenik.nepar.hr/c/nepar/arhiva</loc>', 'sitemap must include the demo archive')
+expect('sitemap.xml', '<loc>https://digitalnicjenik.nepar.hr/c/nepar/cjenik.csv</loc>', 'sitemap must include the demo CSV')
+expect('sitemap.xml', '<loc>https://digitalnicjenik.nepar.hr/c/nepar/cjenik.xml</loc>', 'sitemap must include the demo XML')
+expect('sitemap.xml', '<loc>https://digitalnicjenik.nepar.hr/examples/primjer-digitalni-cjenik-usluge-2026.csv</loc>', 'sitemap must include the CSV example')
+expect('sitemap.xml', '<loc>https://digitalnicjenik.nepar.hr/examples/primjer-digitalni-cjenik-usluge-2026.xml</loc>', 'sitemap must include the XML example')
+expect('llms.txt', 'https://digitalnicjenik.nepar.hr/c/nepar', 'llms.txt must list the demo cjenik')
+expect('feed.xml', `<link>${LATEST_CANONICAL}</link>`, 'feed must include the latest article')
+expect('feed.xml', `<link>${REGULATORY_CANONICAL}</link>`, 'feed must include the regulatory article')
 expect('llms.txt', LATEST_CANONICAL, 'llms.txt must list latest article canonical URL')
 expect('llms.txt', MINISTRY_CANONICAL, 'llms.txt must list Ministry article canonical URL')
 expect('llms.txt', NO_WEB_CANONICAL, 'llms.txt must list no-web article canonical URL')
@@ -150,6 +166,9 @@ function verifyArticle(relPath, canonical, expectedHeadline, extraChecks) {
   expect(relPath, 'https://digitalnicjenik.nepar.hr/#csv-validator', `${relPath}: article checker must link to Publisher`)
   expect(relPath, 'mailto:nepar@nepar.hr', `${relPath}: article checker must include email inquiry CTA`)
   if (/noindex/i.test(articleHtml)) failures.push(`${relPath}: must not be noindex`)
+  expect(relPath, '<meta property="og:type" content="article" />', `${relPath}: og:type must be article`)
+  expect(relPath, 'article:published_time', `${relPath}: article published time is missing`)
+  expect(relPath, 'hreflang="hr"', `${relPath}: hreflang is missing`)
   expect(
     relPath,
     'https://digitalnicjenik.nepar.hr/og/vijesti-digitalni-cjenik-2026.png',
@@ -247,12 +266,13 @@ verifyArticle(
   ],
 )
 
-expect('vijesti/index.html', `href="/vijesti/${LATEST_SLUG}"`, 'news index must link to latest examples article')
-expect('vijesti/index.html', `href="/vijesti/${MINISTRY_SLUG}"`, 'news index must link to Ministry article')
-expect('vijesti/index.html', `href="/vijesti/${NO_WEB_SLUG}"`, 'news index must link to no-web article')
-expect('vijesti/index.html', `href="/vijesti/${HOK_SLUG}"`, 'news index must link to HOK article')
-expect('vijesti/index.html', `href="/vijesti/${CSV_SLUG}"`, 'news index must link to CSV guide')
-expect('vijesti/index.html', `href="/vijesti/${REGULATORY_SLUG}"`, 'news index must link to regulatory article')
+expect('vijesti/index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'news index must link to latest examples article')
+expect('vijesti/index.html', `href="/vijesti/${MINISTRY_SLUG}/"`, 'news index must link to Ministry article')
+expect('vijesti/index.html', `href="/vijesti/${NO_WEB_SLUG}/"`, 'news index must link to no-web article')
+expect('vijesti/index.html', `href="/vijesti/${HOK_SLUG}/"`, 'news index must link to HOK article')
+expect('vijesti/index.html', `href="/vijesti/${CSV_SLUG}/"`, 'news index must link to CSV guide')
+expect('vijesti/index.html', `href="/vijesti/${REGULATORY_SLUG}/"`, 'news index must link to regulatory article')
+expect('vijesti/index.html', '<link rel="canonical" href="https://digitalnicjenik.nepar.hr/vijesti/" />', 'news index canonical must use the trailing-slash URL')
 
 if (!existsSync(resolve(distDir, 'og/vijesti-digitalni-cjenik-2026.png'))) {
   failures.push('Missing dist/og/vijesti-digitalni-cjenik-2026.png')

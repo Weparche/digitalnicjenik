@@ -28,6 +28,8 @@ describe('news posts', () => {
     expect(getPostBySlug('primjer-csv-digitalnog-cjenika-usluge-2026')?.seoTitle).toContain('2026')
     expect(getPostBySlug('digitalni-cjenik-sidrena-cijena-2026')?.seoTitle).toContain('1.10.2026')
     expect(getAllNewsPaths().length).toBe(NEWS_POSTS.length)
-    expect(newsArticleUrl('primjer-csv-digitalnog-cjenika-usluge-2026')).toContain('/vijesti/')
+    expect(newsArticleUrl('primjer-csv-digitalnog-cjenika-usluge-2026')).toBe(
+      'https://digitalnicjenik.nepar.hr/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/',
+    )
   })
 })

@@ -13,6 +13,8 @@ const PAGE_ID = `${SITE_URL}/#page`
 const APP_ID = `${SITE_URL}/#app`
 const PRICE_ENGINE_ID = `${NEPAR_URL}/digitalni-cjenik#price-engine`
 const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
+const INDEXABLE_ROBOTS = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
+const FEED_URL = `${SITE_URL}/feed.xml`
 
 export const HOME_TITLE = 'NEPAR Publisher — cjenik na webu uz MIKROeRAČUN'
 const DESCRIPTION =
@@ -51,6 +53,7 @@ function buildHomeSchema(productFaq) {
         url: `${SITE_URL}/`,
         inLanguage: 'hr',
         publisher: { '@id': ORGANIZATION_ID },
+        logo: `${SITE_URL}/favicon.svg`,
       },
       {
         '@type': 'WebPage',
@@ -139,7 +142,7 @@ function buildNewsArticleSchema(post, pageUrl, imageUrl) {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Početna', item: `${SITE_URL}/` },
-          { '@type': 'ListItem', position: 2, name: 'Vijesti', item: `${SITE_URL}/vijesti` },
+          { '@type': 'ListItem', position: 2, name: 'Vijesti', item: `${SITE_URL}/vijesti/` },
           { '@type': 'ListItem', position: 3, name: post.title, item: pageUrl },
         ],
       },
@@ -148,7 +151,7 @@ function buildNewsArticleSchema(post, pageUrl, imageUrl) {
 }
 
 function buildNewsIndexSchema(posts) {
-  const indexUrl = `${SITE_URL}/vijesti`
+  const indexUrl = `${SITE_URL}/vijesti/`
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -170,7 +173,10 @@ function buildNewsIndexSchema(posts) {
         '@type': 'CollectionPage',
         '@id': `${indexUrl}#page`,
         name: 'Vijesti o digitalnom cjeniku',
+        description:
+          'Regulativa digitalnog cjenika, sidrena odnosno dodatna cijena i CSV/XML objava — vodiči NEPAR Publishera.',
         url: indexUrl,
+        inLanguage: 'hr-HR',
         isPartOf: { '@id': WEBSITE_ID },
       },
       {
@@ -178,7 +184,7 @@ function buildNewsIndexSchema(posts) {
         itemListElement: posts.map((post, index) => ({
           '@type': 'ListItem',
           position: index + 1,
-          url: `${SITE_URL}/vijesti/${post.slug}`,
+          url: `${SITE_URL}/vijesti/${post.slug}/`,
           name: post.title,
         })),
       },
@@ -225,13 +231,22 @@ function applyPageMeta(html, {
   ogTitle,
   ogDescription,
   schema,
+  ogType = 'website',
+  imageAlt,
+  publishedTime,
+  modifiedTime,
 }) {
   let out = stripExistingSchema(html)
   out = out.replace(/<link\s+rel="canonical"[^>]*>\s*/gi, '')
+  out = out.replace(/<link\s+rel="alternate"[^>]*>\s*/gi, '')
   out = out.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(title)}</title>`)
   out = out.replace(
     /<meta name="description" content="[^"]*" \/>/,
     `<meta name="description" content="${escapeHtml(description)}" />`,
+  )
+  out = out.replace(
+    /<meta property="og:type" content="[^"]*" \/>/,
+    `<meta property="og:type" content="${escapeHtml(ogType)}" />`,
   )
   out = out.replace(
     /<meta property="og:url" content="[^"]*" \/>/,
@@ -253,6 +268,12 @@ function applyPageMeta(html, {
     /<meta property="og:image:secure_url" content="[^"]*" \/>/,
     `<meta property="og:image:secure_url" content="${escapeHtml(ogImage)}" />`,
   )
+  if (imageAlt) {
+    out = out.replace(
+      /<meta property="og:image:alt" content="[^"]*" \/>/,
+      `<meta property="og:image:alt" content="${escapeHtml(imageAlt)}" />`,
+    )
+  }
   out = out.replace(
     /<meta name="twitter:title" content="[^"]*" \/>/,
     `<meta name="twitter:title" content="${escapeHtml(ogTitle ?? title)}" />`,
@@ -265,10 +286,25 @@ function applyPageMeta(html, {
     /<meta name="twitter:image" content="[^"]*" \/>/,
     `<meta name="twitter:image" content="${escapeHtml(ogImage)}" />`,
   )
+  if (/name="robots"/i.test(out)) {
+    out = out.replace(
+      /<meta\s+name="robots"\s+content="[^"]*"\s*\/>/i,
+      `<meta name="robots" content="${INDEXABLE_ROBOTS}" />`,
+    )
+  } else {
+    out = out.replace('<head>', `<head>\n    <meta name="robots" content="${INDEXABLE_ROBOTS}" />`)
+  }
   const canonicalTag = `    <link rel="canonical" href="${escapeHtml(canonical)}" />\n  `
   out = out.replace('<head>', `<head>\n${canonicalTag}`)
+  const discovery = [
+    `    <link rel="alternate" hreflang="hr" href="${escapeHtml(canonical)}" />`,
+    `    <link rel="alternate" hreflang="x-default" href="${escapeHtml(canonical)}" />`,
+    `    <link rel="alternate" type="application/rss+xml" title="NEPAR Publisher — vijesti" href="${FEED_URL}" />`,
+  ]
+  if (publishedTime) discovery.push(`    <meta property="article:published_time" content="${escapeHtml(publishedTime)}" />`)
+  if (modifiedTime) discovery.push(`    <meta property="article:modified_time" content="${escapeHtml(modifiedTime)}" />`)
   const schemaScript = `    <script type="application/ld+json" data-nepar-schema>${safeJson(schema)}</script>\n  `
-  out = out.replace('</head>', `${schemaScript}</head>`)
+  out = out.replace('</head>', `${discovery.join('\n')}\n${schemaScript}</head>`)
   return out
 }
 
@@ -282,68 +318,24 @@ function writeHtmlPage(filePath, shellHtml, bodyHtml, meta, schema) {
   writeFileSync(filePath, html, 'utf8')
 }
 
-function isoDateForSitemap(iso) {
-  return iso.slice(0, 10)
-}
-
-function generateSitemap(posts) {
-  const urls = [
-    { loc: `${SITE_URL}/`, lastmod: null },
-    { loc: `${SITE_URL}/vijesti`, lastmod: null },
-    ...posts.map((post) => ({
-      loc: `${SITE_URL}/vijesti/${post.slug}`,
-      lastmod: isoDateForSitemap(post.updatedAt),
-    })),
-  ]
-  const body = urls
-    .map((entry) => {
-      const lastmod = entry.lastmod ? `\n    <lastmod>${entry.lastmod}</lastmod>` : ''
-      return `  <url>\n    <loc>${entry.loc}</loc>${lastmod}\n  </url>`
-    })
-    .join('\n')
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`
-}
-
-function generateLlms(posts) {
-  const lines = [
-    '# NEPAR Publisher — Digitalni cjenik',
-    '',
-    'NEPAR Publisher je alat kojim vlasnik web stranice provjerava ima li javno dostupan',
-    'strojno čitljiv (CSV ili XML) digitalni cjenik, validira postojeću datoteku, pretvara',
-    'Excel cjenik u CSV/XML i po potrebi naruči potpunu tehničku implementaciju.',
-    '',
-    'Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https://nepar.hr',
-    '',
-    `Kanonski URL proizvoda: ${SITE_URL}/`,
-    '',
-    '## Vijesti (digitalnicjenik.nepar.hr)',
-    '',
-    `Index: ${SITE_URL}/vijesti`,
-    '',
-  ]
-  for (const post of posts) {
-    lines.push(`- ${SITE_URL}/vijesti/${post.slug} — ${post.excerpt}`)
-  }
-  lines.push(
-    '',
-    'Detaljna pravna i tehnička dokumentacija o obvezi digitalnog cjenika, sidrenoj cijeni',
-    'i automatizaciji objavljena je na nepar.hr:',
-    '',
-    '- https://nepar.hr/digitalni-cjenik — pregled obveze i NEPAR Digital Price Engine',
-    '- https://nepar.hr/digitalni-cjenik/sidrena-cijena — sidrena/dodatna cijena',
-    '- https://nepar.hr/digitalni-cjenik/xml-csv — XML/CSV format i zahtjevi',
-    '- https://nepar.hr/digitalni-cjenik/automatizacija — automatizacija objave cjenika',
-    '',
-    'Napomena: ovaj llms.txt je informativni artefakt za strojno čitanje i ne utječe na',
-    'Google rangiranje.',
-    '',
-  )
-  return lines.join('\n')
-}
 
 function applyHomeMeta(html) {
   let out = html
   out = out.replace(/<div id="root"><\/div>/, (match) => match) // noop placeholder
+  if (/name="robots"/i.test(out)) {
+    out = out.replace(
+      /<meta\s+name="robots"\s+content="[^"]*"\s*\/>/i,
+      `<meta name="robots" content="${INDEXABLE_ROBOTS}" />`,
+    )
+  } else {
+    out = out.replace('<head>', `<head>\n    <meta name="robots" content="${INDEXABLE_ROBOTS}" />`)
+  }
+  if (!out.includes('hreflang="hr"')) {
+    out = out.replace(
+      '</head>',
+      `    <link rel="alternate" hreflang="hr" href="${SITE_URL}/" />\n    <link rel="alternate" hreflang="x-default" href="${SITE_URL}/" />\n    <link rel="alternate" type="application/rss+xml" title="NEPAR Publisher — vijesti" href="${FEED_URL}" />\n  </head>`,
+    )
+  }
   out = out.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(HOME_TITLE)}</title>`)
   out = out.replace(
     /<meta name="description" content="[^"]*" \/>/,
@@ -386,13 +378,14 @@ function applyHomeMeta(html) {
 
 async function main() {
   const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
-  const [{ Landing }, { productFaq }, { NEWS_POSTS }, { NewsIndex }, { NewsArticle }] =
+  const [{ Landing }, { productFaq }, { NEWS_POSTS }, { NewsIndex }, { NewsArticle }, seo] =
     await Promise.all([
       vite.ssrLoadModule('/src/App.tsx'),
       vite.ssrLoadModule('/src/productFaq.ts'),
       vite.ssrLoadModule('/src/news/posts.ts'),
       vite.ssrLoadModule('/src/news/NewsIndex.tsx'),
       vite.ssrLoadModule('/src/news/NewsArticle.tsx'),
+      vite.ssrLoadModule('/src/seo/catalog.ts'),
     ])
   const landingHtml = renderToString(React.createElement(Landing))
   const newsIndexHtml = renderToString(React.createElement(NewsIndex))
@@ -414,7 +407,7 @@ async function main() {
   writeFileSync(distIndex, homeHtml, 'utf8')
   console.log('Prerendered / (Landing) with product copy, meta, and JSON-LD.')
 
-  const newsIndexUrl = `${SITE_URL}/vijesti`
+  const newsIndexUrl = `${SITE_URL}/vijesti/`
   writeHtmlPage(
     resolve('dist/vijesti/index.html'),
     pristineShell,
@@ -425,13 +418,14 @@ async function main() {
         'Regulativa digitalnog cjenika, sidrena odnosno dodatna cijena i CSV/XML objava — vodiči NEPAR Publishera.',
       canonical: newsIndexUrl,
       ogImage: OG_IMAGE,
+      imageAlt: 'Vijesti o digitalnom cjeniku | NEPAR Publisher',
     },
     buildNewsIndexSchema(NEWS_POSTS),
   )
   console.log('Prerendered /vijesti index.')
 
   for (const post of NEWS_POSTS) {
-    const pageUrl = `${SITE_URL}/vijesti/${post.slug}`
+    const pageUrl = `${SITE_URL}/vijesti/${post.slug}/`
     const imageUrl = `${SITE_URL}${post.image.src}`
     const bodyHtml = renderToString(React.createElement(NewsArticle, { slug: post.slug }))
     writeHtmlPage(
@@ -445,15 +439,30 @@ async function main() {
         ogImage: imageUrl,
         ogTitle: post.seoTitle,
         ogDescription: post.description,
+        ogType: 'article',
+        imageAlt: post.image.alt,
+        publishedTime: post.publishedAt,
+        modifiedTime: post.updatedAt,
       },
       buildNewsArticleSchema(post, pageUrl, imageUrl),
     )
     console.log(`Prerendered /vijesti/${post.slug}`)
   }
 
-  writeFileSync(resolve('dist/sitemap.xml'), generateSitemap(NEWS_POSTS), 'utf8')
-  writeFileSync(resolve('dist/llms.txt'), generateLlms(NEWS_POSTS), 'utf8')
-  console.log('Generated dist/sitemap.xml and dist/llms.txt from posts.')
+  const { renderSitemap, renderLlms, renderRobots, renderFeed, staticSitemapUrls } = seo
+  const sitemapXml = renderSitemap(staticSitemapUrls(NEWS_POSTS))
+  const llmsTxt = renderLlms(NEWS_POSTS)
+  const robotsTxt = renderRobots()
+  const feedXml = renderFeed(NEWS_POSTS)
+  writeFileSync(resolve('dist/sitemap.xml'), sitemapXml, 'utf8')
+  writeFileSync(resolve('dist/llms.txt'), llmsTxt, 'utf8')
+  writeFileSync(resolve('dist/robots.txt'), robotsTxt, 'utf8')
+  writeFileSync(resolve('dist/feed.xml'), feedXml, 'utf8')
+  writeFileSync(resolve('public/sitemap.xml'), sitemapXml, 'utf8')
+  writeFileSync(resolve('public/llms.txt'), llmsTxt, 'utf8')
+  writeFileSync(resolve('public/robots.txt'), robotsTxt, 'utf8')
+  writeFileSync(resolve('public/feed.xml'), feedXml, 'utf8')
+  console.log('Generated sitemap.xml, robots.txt, llms.txt, and feed.xml for every public subpage.')
 }
 
 await main()
