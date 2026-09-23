@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getAllNewsPaths,
   getLatestPost,
+  getLatestPosts,
   getPostBySlug,
   NEWS_POSTS,
   newsArticleUrl,
@@ -21,6 +22,11 @@ describe('news posts', () => {
 
   it('resolves latest and paths', () => {
     expect(getLatestPost().slug).toBe('primjeri-digitalnih-cjenika-hrvatska-2026')
+    expect(getLatestPosts(3).map((post) => post.slug)).toEqual([
+      'primjeri-digitalnih-cjenika-hrvatska-2026',
+      'ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026',
+      'digitalni-cjenik-bez-web-stranice-drustvene-mreze',
+    ])
     expect(getPostBySlug('primjeri-digitalnih-cjenika-hrvatska-2026')?.seoTitle).toContain('Primjeri')
     expect(getPostBySlug('ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026')?.seoTitle).toContain('Ministarstvo')
     expect(getPostBySlug('digitalni-cjenik-bez-web-stranice-drustvene-mreze')?.seoTitle).toContain('bez web stranice')

@@ -750,11 +750,14 @@ export function getPostBySlug(slug: string): NewsPost | undefined {
   return NEWS_POSTS.find((post) => post.slug === slug)
 }
 
+export function getLatestPosts(limit = 3): NewsPost[] {
+  return [...NEWS_POSTS]
+    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
+    .slice(0, limit)
+}
+
 export function getLatestPost(): NewsPost {
-  const sorted = [...NEWS_POSTS].sort(
-    (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
-  )
-  const latest = sorted[0]
+  const latest = getLatestPosts(1)[0]
   if (!latest) throw new Error('news_posts_empty')
   return latest
 }

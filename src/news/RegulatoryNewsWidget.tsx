@@ -1,7 +1,8 @@
-import { formatNewsDate, getLatestPost, newsArticlePath } from './posts'
+import { formatNewsDate, getLatestPost, getLatestPosts, newsArticlePath } from './posts'
 
 export function RegulatoryNewsWidget() {
   const post = getLatestPost()
+  const latestPosts = getLatestPosts(3)
   const articleHref = newsArticlePath(post.slug)
   const eyebrow = post.widgetEyebrow ?? 'NOVO · VIJESTI'
   const headline = post.widgetHeadline ?? post.title
@@ -23,6 +24,18 @@ export function RegulatoryNewsWidget() {
       <a className="regulatory-news-widget-cta" href={articleHref}>
         Pročitaj vodič →
       </a>
+      <nav className="regulatory-news-widget-more" aria-label="Zadnje vijesti">
+        <ul>
+          {latestPosts.slice(1).map((item) => (
+            <li key={item.slug}>
+              <a href={newsArticlePath(item.slug)}>{item.widgetHeadline ?? item.title}</a>
+            </li>
+          ))}
+        </ul>
+        <a className="regulatory-news-widget-cta" href="/vijesti/">
+          Sve vijesti →
+        </a>
+      </nav>
       {post.sources.length > 0 && (
         <div className="regulatory-news-widget-sources">
           <p className="regulatory-news-widget-sources-label">Izvori</p>

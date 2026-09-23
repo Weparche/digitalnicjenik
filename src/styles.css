@@ -1035,6 +1035,31 @@ body:has(.premium-entry) { background: var(--nepar-canvas); color: var(--nepar-i
   text-underline-offset: 3px;
 }
 
+.regulatory-news-widget-more {
+  margin: 0 0 14px;
+}
+
+.regulatory-news-widget-more ul {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.regulatory-news-widget-more a {
+  color: var(--nepar-primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.regulatory-news-widget-more .regulatory-news-widget-cta {
+  margin-bottom: 0;
+}
+
 .regulatory-news-widget-sources-label {
   margin: 0 0 8px;
   color: var(--nepar-muted);
