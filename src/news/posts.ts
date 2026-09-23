@@ -88,6 +88,120 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const NEWS_POSTS: NewsPost[] = [
   {
+    slug: 'primjeri-digitalnih-cjenika-hrvatska-2026',
+    title: 'Javni digitalni cjenici već su online: 4 primjera iz Hrvatske',
+    seoTitle: 'Primjeri digitalnog cjenika u Hrvatskoj 2026. | NEPAR',
+    description:
+      'Pogledali smo četiri javno dostupna digitalna cjenika u Hrvatskoj: KNOFEK, Optika VISUAL, Modus Design Shop i Web Studio Šime. Evo kako su riješili CSV/XML, arhivu i javni prikaz.',
+    excerpt:
+      'Prije 1. listopada već se pojavljuju stvarne implementacije digitalnih cjenika. Usporedili smo četiri javno dostupna primjera i obrasce koji se ponavljaju.',
+    readingTimeMinutes: 6,
+    publishedAt: '2026-09-23T22:25:00+02:00',
+    updatedAt: '2026-09-23T22:25:00+02:00',
+    author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
+    tags: ['digitalni cjenik', 'primjeri', 'CSV', 'XML', 'arhiva', 'Hrvatska'],
+    kicker: 'Praksa · primjeri',
+    widgetEyebrow: 'NOVO · PRIMJERI IZ PRAKSE',
+    widgetHeadline: 'Digitalni cjenici već su online',
+    widgetSub: 'Četiri javna primjera pokazuju kako izgleda CSV/XML + arhiva u praksi',
+    schemaSection: 'Praksa',
+    image: {
+      src: '/og/vijesti-digitalni-cjenik-2026.png',
+      alt: 'Primjeri javno objavljenih digitalnih cjenika u Hrvatskoj 2026.',
+      width: 1200,
+      height: 630,
+    },
+    cta: { label: 'Provjeri svoj web', href: '/' },
+    secondaryCta: {
+      label: 'Pogledaj primjer CSV cjenika',
+      href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026',
+    },
+    sources: [
+      {
+        title: 'KNOFEK — javni digitalni cjenik',
+        url: 'https://www.knofek.hr/digitalni-cjenik/',
+        type: 'secondary',
+      },
+      {
+        title: 'Optika VISUAL — javni digitalni cjenik',
+        url: 'https://optikavisual.com/cjenik/',
+        type: 'secondary',
+      },
+      {
+        title: 'Modus Design Shop — javni digitalni cjenik',
+        url: 'https://modusdesignshop.hr/cjenik/',
+        type: 'secondary',
+      },
+      {
+        title: 'Web Studio Šime — javni digitalni cjenik',
+        url: 'https://webstudiosime.hr/digitalni-cjenik/',
+        type: 'secondary',
+      },
+      {
+        title: 'NN 101/2026-1213 — Odluka o objavi cjenika proizvoda i usluga',
+        url: NN_1213,
+        type: 'primary',
+      },
+    ],
+    sections: [
+      {
+        heading: 'Što smo pronašli 23. rujna',
+        level: 2,
+        html: `<p>Nekoliko dana prije početka primjene novih pravila već su javno dostupne stvarne implementacije digitalnih cjenika. Pregledali smo četiri primjera koji se mogu otvoriti bez prijave i koji javno prikazuju strojno čitljive datoteke ili arhivu.</p>
+<p class="news-lead-note"><strong>Važno:</strong> ovo je tehnički pregled onoga što je javno vidljivo na webu, a ne potvrda da je pojedina stranica pravno potpuno usklađena s Odlukom ili svim kasnijim pojašnjenjima.</p>`,
+      },
+      {
+        heading: 'KNOFEK: jednostavan javni prikaz + CSV/XML arhiva',
+        level: 2,
+        html: `<p>Na stranici KNOFEK-a 23. rujna vidljiv je javni digitalni cjenik s datumom i vremenom ažuriranja, brojem pohrane te tablicom proizvoda. Uz aktualnu cijenu prikazuje se referentna cijena na 10.9.2026., a kod proizvoda su vidljivi i podaci poput marke, dostupnosti i jedinice.</p>
+<p>Na dnu stranice dostupna je arhiva dnevnih cjenika s poveznicama na <strong>CSV i XML</strong>. To je vrlo jasan obrazac: ljudski čitljiv prikaz na webu + strojno čitljive datoteke + verzioniranje.</p>
+<p><a href="https://www.knofek.hr/digitalni-cjenik/" target="_blank" rel="noopener noreferrer">Pogledaj KNOFEK digitalni cjenik ↗</a></p>`,
+      },
+      {
+        heading: 'Optika VISUAL: stotine artikala, CSV/XML i dnevna arhiva',
+        level: 2,
+        html: `<p>Optika VISUAL ima javni cjenik s više od 300 artikala. Stranica prikazuje aktualnu cijenu, cijenu na 10.9.2026. i dostupnost artikla, a u zaglavlju navodi strojno čitljive formate <strong>CSV, XML i JSON</strong>.</p>
+<p>U arhivi se vide odvojene CSV i XML datoteke s vremenom objave i brojem artikala. To pokazuje kako digitalni cjenik može biti koristan i korisniku i softverskom dohvaćanju bez potrebe da posjetitelj otvara samu datoteku.</p>
+<p><a href="https://optikavisual.com/cjenik/" target="_blank" rel="noopener noreferrer">Pogledaj Optika VISUAL cjenik ↗</a></p>`,
+      },
+      {
+        heading: 'Modus Design Shop: više od 3.000 artikala',
+        level: 2,
+        html: `<p>Modus Design Shop je zanimljiv primjer zbog opsega. Javni cjenik prikazuje više od <strong>3.000 artikala</strong>, pretraživanje, aktualnu cijenu, referentnu cijenu i polje za najnižu cijenu prije sniženja.</p>
+<p>Stranica navodi CSV, XML i JSON kao strojno čitljive izlaze, a arhiva objavljenih cjenika prikazuje datoteke i broj artikala. To je dobar primjer da isti princip može raditi i na katalogu koji nije malen.</p>
+<p><a href="https://modusdesignshop.hr/cjenik/" target="_blank" rel="noopener noreferrer">Pogledaj Modus Design Shop cjenik ↗</a></p>`,
+      },
+      {
+        heading: 'Web Studio Šime: primjer za usluge i API dohvat',
+        level: 2,
+        html: `<p>Web Studio Šime koristi isti koncept za <strong>usluge</strong>. Javni cjenik grupira usluge i uz aktualnu cijenu prikazuje sidrenu odnosno referentnu cijenu na 10.9.2026.</p>
+<p>Uz arhivirane CSV/XML verzije stranica javno navodi i aktualne live CSV/XML adrese, JSON API i manifest. Na dan pregleda bilo je vidljivo više arhiviranih pohrana. To ide dalje od minimuma javne datoteke i pokazuje kako se cjenik može pretvoriti u podatkovni servis.</p>
+<p><a href="https://webstudiosime.hr/digitalni-cjenik/" target="_blank" rel="noopener noreferrer">Pogledaj Web Studio Šime cjenik ↗</a></p>`,
+      },
+      {
+        heading: 'Što se ponavlja u dobrim implementacijama',
+        level: 2,
+        html: `<p>U pregledanim primjerima ponavlja se vrlo sličan tehnički obrazac:</p>
+<ul class="news-bullets">
+<li><strong>normalna web stranica</strong> na kojoj čovjek može pretraživati i čitati cijene,</li>
+<li><strong>javni CSV i/ili XML</strong> koji se može otvoriti bez prijave,</li>
+<li><strong>datum i vrijeme objave</strong> odnosno broj pohrane,</li>
+<li><strong>arhiva prethodnih verzija</strong>,</li>
+<li>kod proizvoda dodatna polja kao što su šifra, marka i dostupnost,</li>
+<li>referentna odnosno dodatna cijena prikazana uz aktualnu cijenu.</li>
+</ul>
+<p>To se dobro poklapa s osnovnom logikom NN 101/2026-1213 i službenim pojašnjenjima Ministarstva: datoteka mora biti strojno čitljiva i javno dostupna, a prethodno objavljene verzije moraju ostati dostupne najmanje 30 dana.</p>`,
+      },
+      {
+        heading: 'Što iz ovoga znači za vlasnika običnog weba',
+        level: 2,
+        html: `<p>Najvažniji zaključak nije da trebate kopirati tuđi dizajn. Bitno je da <strong>podaci o cijenama imaju jedan pouzdan izvor</strong>, a iz njega se generiraju javni prikaz, CSV/XML i arhiva.</p>
+<p>Ako danas imate samo HTML cjenik, PDF ili tablicu koju ručno uređujete, najveći rizik nije izgled nego održavanje više kopija istih cijena. Zato NEPAR Publisher polazi od Excela/CSV-a i iz istih podataka generira objavu i verzije.</p>
+<p>Na vrhu ovog članka možete odmah provjeriti nalazi li se na vašoj domeni javno dostupan CSV/XML cjenik. Za strukturu usluga pogledajte i <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026">primjer CSV digitalnog cjenika</a>, a za zadnja službena pojašnjenja <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026">pojašnjenja Ministarstva od 22. rujna</a>.</p>`,
+      },
+    ],
+  },
+  {
     slug: 'ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026',
     title: 'Ministarstvo objavilo detaljna pojašnjenja za digitalni cjenik i sidrene cijene',
     seoTitle: 'Ministarstvo: pojašnjenja za digitalni cjenik 2026. | NEPAR',
