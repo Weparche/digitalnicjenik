@@ -89,21 +89,21 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 export const NEWS_POSTS: NewsPost[] = [
   {
     slug: 'primjeri-digitalnih-cjenika-hrvatska-2026',
-    title: 'Javni digitalni cjenici već su online: 4 primjera iz Hrvatske',
+    title: 'Javni digitalni cjenici već su online: 5 primjera iz Hrvatske',
     seoTitle: 'Primjeri digitalnog cjenika u Hrvatskoj 2026. | NEPAR',
     description:
-      'Pogledali smo četiri javno dostupna digitalna cjenika u Hrvatskoj: KNOFEK, Optika VISUAL, Modus Design Shop i Web Studio Šime. Evo kako su riješili CSV/XML, arhivu i javni prikaz.',
+      'Pogledali smo pet javno dostupnih digitalnih cjenika u Hrvatskoj, počevši od NEPAR referentne implementacije za Auto Gubić. Evo kako su riješeni CSV/XML, arhiva i javni prikaz.',
     excerpt:
-      'Prije 1. listopada već se pojavljuju stvarne implementacije digitalnih cjenika. Usporedili smo četiri javno dostupna primjera i obrasce koji se ponavljaju.',
-    readingTimeMinutes: 6,
+      'Prije 1. listopada već se pojavljuju stvarne implementacije digitalnih cjenika. Prvi primjer je NEPAR implementacija za Auto Gubić, a zatim četiri neovisna tržišna primjera.',
+    readingTimeMinutes: 7,
     publishedAt: '2026-09-23T22:25:00+02:00',
-    updatedAt: '2026-09-23T22:25:00+02:00',
+    updatedAt: '2026-09-23T22:35:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['digitalni cjenik', 'primjeri', 'CSV', 'XML', 'arhiva', 'Hrvatska'],
     kicker: 'Praksa · primjeri',
     widgetEyebrow: 'NOVO · PRIMJERI IZ PRAKSE',
     widgetHeadline: 'Digitalni cjenici već su online',
-    widgetSub: 'Četiri javna primjera pokazuju kako izgleda CSV/XML + arhiva u praksi',
+    widgetSub: 'NEPAR referentni primjer + četiri tržišne implementacije CSV/XML cjenika',
     schemaSection: 'Praksa',
     image: {
       src: '/og/vijesti-digitalni-cjenik-2026.png',
@@ -117,6 +117,11 @@ export const NEWS_POSTS: NewsPost[] = [
       href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026',
     },
     sources: [
+      {
+        title: 'Auto Gubić — NEPAR referentna implementacija digitalnog cjenika',
+        url: 'https://autogubic.hr/cjenik',
+        type: 'secondary',
+      },
       {
         title: 'KNOFEK — javni digitalni cjenik',
         url: 'https://www.knofek.hr/digitalni-cjenik/',
@@ -147,8 +152,16 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         heading: 'Što smo pronašli 23. rujna',
         level: 2,
-        html: `<p>Nekoliko dana prije početka primjene novih pravila već su javno dostupne stvarne implementacije digitalnih cjenika. Pregledali smo četiri primjera koji se mogu otvoriti bez prijave i koji javno prikazuju strojno čitljive datoteke ili arhivu.</p>
+        html: `<p>Nekoliko dana prije početka primjene novih pravila već su javno dostupne stvarne implementacije digitalnih cjenika. Pregledali smo pet primjera koji se mogu otvoriti bez prijave i koji javno prikazuju strojno čitljive datoteke ili arhivu. Prvi je <strong>NEPAR-ova referentna implementacija za Auto Gubić</strong>, a nakon nje četiri neovisna tržišna primjera.</p>
 <p class="news-lead-note"><strong>Važno:</strong> ovo je tehnički pregled onoga što je javno vidljivo na webu, a ne potvrda da je pojedina stranica pravno potpuno usklađena s Odlukom ili svim kasnijim pojašnjenjima.</p>`,
+      },
+      {
+        heading: 'NEPAR referentna implementacija: Auto Gubić',
+        level: 2,
+        html: `<p>Prvi primjer je naš vlastiti: <strong>Auto Gubić</strong>, za koji je NEPAR izradio web i digitalni cjenik. Na javnoj stranici <code>/cjenik</code> prikazan je važeći cjenik usluga, aktualna i sidrena cijena, vrijeme zadnjeg ažuriranja te broj pohrane.</p>
+<p>CSV i XML dostupni su bez prijave i bez izvršavanja JavaScripta, a stabilne poveznice vode na aktualnu verziju. Taj pristup je referentni NEPAR obrazac: <strong>jedan javni prikaz za korisnika + strojno čitljiv CSV/XML + verzioniranje objava</strong>.</p>
+<p>Ovaj primjer navodimo odvojeno od ostalih jer je riječ o našoj implementaciji, a ne neovisnom tržišnom primjeru.</p>
+<p><a href="https://autogubic.hr/cjenik" target="_blank" rel="noopener noreferrer">Pogledaj Auto Gubić digitalni cjenik ↗</a></p>`,
       },
       {
         heading: 'KNOFEK: jednostavan javni prikaz + CSV/XML arhiva',
