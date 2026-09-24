@@ -1,21 +1,5 @@
 import { formatNewsDate, getLatestPost, getLatestPosts, newsArticlePath } from './posts'
 
-export function MobileNewsLinks() {
-  const posts = getLatestPosts(3)
-  return (
-    <nav className="premium-news-links" aria-label="Zadnje vijesti">
-      <ul>
-        {posts.map((item) => (
-          <li key={item.slug}>
-            <a href={newsArticlePath(item.slug)}>{item.widgetHeadline ?? item.title}</a>
-          </li>
-        ))}
-      </ul>
-      <a href="/vijesti/">Sve vijesti →</a>
-    </nav>
-  )
-}
-
 export function RegulatoryNewsWidget() {
   const post = getLatestPost()
   const latestPosts = getLatestPosts(3)

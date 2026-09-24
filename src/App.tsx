@@ -17,7 +17,7 @@ import { useTurnstileSiteKey } from './turnstileConfig'
 import { Logo } from './Logo'
 import { NewsArticle } from './news/NewsArticle'
 import { NewsIndex } from './news/NewsIndex'
-import { MobileNewsLinks, RegulatoryNewsWidget } from './news/RegulatoryNewsWidget'
+import { RegulatoryNewsWidget } from './news/RegulatoryNewsWidget'
 
 const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(value)
 const dateTime = (value: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
@@ -1199,10 +1199,12 @@ function PremiumEntry() {
   }
 
   return <div className="validator-app-shell premium-entry"><header className="app-header"><Logo /><button className="header-lead" type="button" onClick={() => focusLead('consultation')}>Trebate pomoć? <strong>Konzultacija →</strong></button></header><main className="validator-app premium-entry-main">
-    <section className="premium-hero premium-hero-with-widget"><div className="premium-hero-main"><div className="premium-hero-content"><div className="premium-hero-copy"><p className="premium-hero-kicker">Koristite MIKROeRAČUN?</p><h1>MIKROeRAČUN je za eRačune. <em>NEPAR Publisher objavljuje vaš cjenik na webu.</em></h1><p>Publishing layer između Excela ili CSV-a i javne mrežne stranice: provjera podataka, propisani CSV/XML, aktualni link za dohvat i verzije koje ne prepisujete ručno.</p><MobileNewsLinks /><ol className="premium-funnel" aria-label="Kako Publisher radi"><li>MIKROeRAČUN + vlastiti web</li><li>Imate Excel/CSV s cijenama?</li><li>Učitajte besplatno</li><li>Validacija</li><li>7 dana javne objave</li><li>{selfServicePriceLabel()}</li></ol></div></div></div><RegulatoryNewsWidget /></section>
-    <aside className="premium-qualification-block" aria-label="Provjera prije kupnje"><p><strong>Već imate Marketino, Minimax, Pantheon ili drugi poslovni program?</strong> Vaš pružatelj možda već omogućuje objavu cjenika. Provjerite prije kupnje Publishera.</p></aside>
-    <div className="premium-hero-tools">
-      <PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} />
+    <div className="premium-top">
+      <div className="premium-hero-copy"><p className="premium-hero-kicker">Koristite MIKROeRAČUN?</p><h1>MIKROeRAČUN je za eRačune. <em>NEPAR Publisher objavljuje vaš cjenik na webu.</em></h1><p>Publishing layer između Excela ili CSV-a i javne mrežne stranice: provjera podataka, propisani CSV/XML, aktualni link za dohvat i verzije koje ne prepisujete ručno.</p></div>
+      <RegulatoryNewsWidget />
+      <ol className="premium-funnel" aria-label="Kako Publisher radi"><li>MIKROeRAČUN + vlastiti web</li><li>Imate Excel/CSV s cijenama?</li><li>Učitajte besplatno</li><li>Validacija</li><li>7 dana javne objave</li><li>{selfServicePriceLabel()}</li></ol>
+      <aside className="premium-qualification-block" aria-label="Provjera prije kupnje"><p><strong>Već imate Marketino, Minimax, Pantheon ili drugi poslovni program?</strong> Vaš pružatelj možda već omogućuje objavu cjenika. Provjerite prije kupnje Publishera.</p></aside>
+      <div className="premium-checker-slot"><PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} /></div>
       <aside className="hero-offer-strip" aria-label="Publisher ponuda">
         <div className="hero-offer-copy">
           <p className="hero-offer-price">{LAUNCH_ACTIVE ? (<><strong className="price-launch">{selfServicePriceLabel()}</strong> <span className="price-regular-strike">{regularSelfServicePriceLabel()}</span> <span className="hero-offer-launch-tag">· akcija: prvih 100 aktiviranih pretplata</span></>) : (<strong>{selfServicePriceLabel()}</strong>)} · <strong>{implementationFirstYearLabel()}</strong> prva godina s postavljanjem</p>
