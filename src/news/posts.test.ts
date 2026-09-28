@@ -23,9 +23,9 @@ describe('news posts', () => {
   it('resolves latest and paths', () => {
     expect(getLatestPost().slug).toBe('odgoda-digitalnih-cjenika-sidrenih-cijena-2026')
     expect(getLatestPosts(3).map((post) => post.slug)).toEqual([
+      'odgoda-digitalnih-cjenika-sidrenih-cijena-2026',
       'primjeri-digitalnih-cjenika-hrvatska-2026',
       'ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026',
-      'digitalni-cjenik-bez-web-stranice-drustvene-mreze',
     ])
     expect(getPostBySlug('odgoda-digitalnih-cjenika-sidrenih-cijena-2026')?.seoTitle).toContain('Odgoda')
     expect(getPostBySlug('primjeri-digitalnih-cjenika-hrvatska-2026')?.seoTitle).toContain('Primjeri')
