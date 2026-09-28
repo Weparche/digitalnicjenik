@@ -122,7 +122,7 @@ const REGULATORY_REL = `vijesti/${REGULATORY_SLUG}/index.html`
 
 expect('index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'landing widget must link to latest news article')
 expect('index.html', `href="/vijesti/${EXAMPLES_SLUG}/"`, 'landing must link to the second latest article')
-expect('index.html', `href="/vijesti/${NO_WEB_SLUG}/"`, 'landing must link to the third latest article')
+expect('index.html', `href="/vijesti/${MINISTRY_SLUG}/"`, 'landing must link to the third latest article')
 expect('index.html', 'href="/vijesti/"', 'landing must link to the news index')
 expect('index.html', 'Sve vijesti', 'landing must label the news index link')
 expect('index.html', 'index,follow,max-image-preview:large', 'homepage must be explicitly indexable')
@@ -219,7 +219,7 @@ verifyArticle(
     ['vijesti.hrt.hr/gospodarstvo/susnjar-najavio-odgodu-primjene-novih-pravila-o-sidrenim-cijenama-12930078', 'delay article must link HRT/Hina report'],
     ['najava buduće odluke', 'delay article must state that the change is not yet formalized'],
     ['29. rujna', 'delay article must state the expected proposal date'],
-    ['studeni', 'delay article must mention announced regulations in November'],
+    ['studenome', 'delay article must mention announced regulations in November'],
   ],
 )
 
