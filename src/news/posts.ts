@@ -53,6 +53,8 @@ const MINGO_CLARIFICATION_2026 =
   'https://mingo.gov.hr/vijesti/pojasnjenja-za-primjenu-dodatne-cijene-i-objavu-cjenika-od-1-listopada/10440'
 const RRIF_CLARIFICATION_2026 =
   'https://www.rrif.hr/pojasnjenje_ministarstva_gospodarstva_u_vezi_istic-2531-vijest/'
+const HRT_DELAY_2026 =
+  'https://vijesti.hrt.hr/gospodarstvo/susnjar-najavio-odgodu-primjene-novih-pravila-o-sidrenim-cijenama-12930078'
 
 const terminologyNote = `<p class="news-lead-note">U službenoj Odluci koristi se izraz „dodatna cijena”. U javnoj komunikaciji HOK-a i drugih institucija često se koristi naziv „sidrena cijena”. U ovom tekstu koristimo oba izraza radi lakšeg razumijevanja.</p>`
 
@@ -87,6 +89,94 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 </cjenik_usluga>`
 
 export const NEWS_POSTS: NewsPost[] = [
+  {
+    slug: 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026',
+    title: 'Odgoda digitalnih cjenika: Šušnjar najavio povlačenje odluka prije 1. listopada',
+    seoTitle: 'Odgoda digitalnih cjenika i sidrenih cijena 2026. | NEPAR',
+    description:
+      'Ministar Ante Šušnjar 28.9. najavio je da će 29.9. predložiti odgodu odnosno povlačenje odluka koje su trebale krenuti 1.10. Formalna odluka još nije objavljena.',
+    excerpt:
+      'Veliki preokret tri dana prije početka primjene: Ministarstvo najavljuje odgodu odnosno povlačenje odluka, dok važeći tekstovi u Narodnim novinama večeras još formalno nose datum 1. listopada.',
+    readingTimeMinutes: 5,
+    publishedAt: '2026-09-28T21:20:00+02:00',
+    updatedAt: '2026-09-28T21:20:00+02:00',
+    author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
+    tags: ['odgoda', 'digitalni cjenik', 'sidrena cijena', 'Ministarstvo gospodarstva', '1. listopada', 'regulativa'],
+    kicker: 'Breaking · najava odgode',
+    widgetEyebrow: 'BREAKING · 28.9.2026.',
+    widgetHeadline: 'Najavljena odgoda odluka prije 1. listopada',
+    widgetSub: 'Šušnjar: sutra ide prijedlog za odgodu odnosno povlačenje; formalna odluka još nije objavljena',
+    schemaSection: 'Aktualno',
+    image: {
+      src: '/og/vijesti-digitalni-cjenik-2026.png',
+      alt: 'Najava odgode digitalnih cjenika i sidrenih cijena u rujnu 2026.',
+      width: 1200,
+      height: 630,
+    },
+    cta: { label: 'Provjeri svoj web', href: '/' },
+    secondaryCta: {
+      label: 'Pogledaj dosadašnja pravila',
+      href: '/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/',
+    },
+    sources: [
+      {
+        title: 'HRT/Hina, 28.9.2026. — Šušnjar najavio odgodu primjene novih pravila',
+        url: HRT_DELAY_2026,
+        type: 'secondary',
+      },
+      {
+        title: 'NN 101/2026-1213 — Odluka o objavi cjenika proizvoda i usluga',
+        url: NN_1213,
+        type: 'primary',
+      },
+      {
+        title: 'NN 101/2026-1212 — Odluka o isticanju dodatne cijene',
+        url: NN_1212,
+        type: 'primary',
+      },
+      {
+        title: 'HOK — najvažnije informacije o obvezama od 1. listopada',
+        url: HOK_2026,
+        type: 'secondary',
+      },
+    ],
+    sections: [
+      {
+        heading: 'Što je objavljeno 28. rujna',
+        level: 2,
+        html: `<p>Ministar gospodarstva Ante Šušnjar 28. rujna 2026. najavio je da će <strong>29. rujna predložiti odgodu primjene, odnosno povlačenje odluka</strong> koje su trebale stupiti na snagu 1. listopada.</p>
+<p>HRT/Hina prenose da je predlagač odgode Ministarstvo gospodarstva te da je Šušnjar najavio razgovore s poduzetničkim udrugama i novo, trajnije uređenje pravila.</p>
+<p class="news-lead-note"><strong>Važno:</strong> ovo je večeras još najava buduće odluke. U Narodnim novinama važeći tekstovi NN 101/2026-1212 i NN 101/2026-1213 i dalje formalno navode 1. listopada 2026. kao datum stupanja na snagu.</p>`,
+      },
+      {
+        heading: 'Odnosi li se najava i na digitalne cjenike?',
+        level: 2,
+        html: `<p>Šušnjar govori o <strong>odgodi odnosno povlačenju odluka</strong> koje su trebale krenuti 1. listopada, a HRT prenosi i njegovu najavu da bi se u studenome pravilnicima trebalo trajno urediti <strong>bazna cijena i objava cjenika</strong>.</p>
+<p>Zato je razumno ovu najavu čitati kao najavu promjene i za režim digitalnih cjenika, ali konačan opseg treba potvrditi tek kada Vlada donese formalnu odluku i kada bude objavljen novi pravni tekst.</p>
+<p>Do tada ne treba tvrditi da je NN 101/2026-1213 već prestao vrijediti ili da je formalno povučen — to večeras još nije objavljeno u Narodnim novinama.</p>`,
+      },
+      {
+        heading: 'Što to znači za rok 1. listopada',
+        level: 2,
+        html: `<p>Ako Vlada 29. rujna prihvati najavljeni prijedlog i formalno odgodi ili povuče odluke, obveze koje su trebale krenuti 1. listopada više se neće primjenjivati prema dosadašnjem rasporedu.</p>
+<p>Međutim, dok nova odluka nije donesena i objavljena, pravno je preciznije govoriti o <strong>najavljenoj odgodi</strong>, a ne o već dovršenom povlačenju.</p>
+<p>NEPAR će ovaj članak ažurirati čim bude poznat formalni tekst odluke Vlade, uključujući točan status digitalnih cjenika, dodatnih cijena i eventualni novi datum primjene.</p>`,
+      },
+      {
+        heading: 'Nova pravila očekuju se u studenome',
+        level: 2,
+        html: `<p>Prema Šušnjarovoj najavi koju prenosi HRT, u studenome bi trebali stupiti na snagu pravilnici kojima bi se trajnije uredili <strong>bazna cijena i objava cjenika</strong>, definirala razumna izuzeća i uklonile administrativne obveze koje ne donose stvarnu korist potrošačima.</p>
+<p>To znači da ova najava nije odustajanje od transparentnosti cijena, nego signal da će se postojeći model prije primjene ponovno doraditi.</p>`,
+      },
+      {
+        heading: 'Što sada napraviti ako ste već pripremili CSV/XML',
+        level: 2,
+        html: `<p>Ako ste već pripremili digitalni cjenik, nema potrebe brisati napravljeno. CSV/XML, arhiva verzija i strukturirani podaci mogu ostati koristan tehnički temelj bez obzira na to kako će se konačna pravila promijeniti.</p>
+<p>Ako pak još niste završili implementaciju samo zbog roka 1. listopada, pričekajte formalnu odluku Vlade od 29. rujna prije dodatnih troškova ili većih tehničkih zahvata.</p>
+<p>Za dosadašnji sadržaj pravila pogledajte <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/">službena pojašnjenja Ministarstva od 22. rujna</a>, a za praktične implementacije <a href="/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/">primjere javnih digitalnih cjenika u Hrvatskoj</a>.</p>`,
+      },
+    ],
+  },
   {
     slug: 'primjeri-digitalnih-cjenika-hrvatska-2026',
     title: 'Javni digitalni cjenici već su online: 5 primjera iz Hrvatske',
