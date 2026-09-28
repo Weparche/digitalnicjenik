@@ -98,19 +98,22 @@ if (!redirects.includes('/app /app-shell 200')) failures.push('_redirects: missi
 if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: missing the /app/* route mapping to app-shell')
 
 const HOME_TITLE = 'NEPAR Publisher — cjenik na webu uz MIKROeRAČUN'
-const LATEST_SLUG = 'primjeri-digitalnih-cjenika-hrvatska-2026'
+const LATEST_SLUG = 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026'
+const EXAMPLES_SLUG = 'primjeri-digitalnih-cjenika-hrvatska-2026'
 const MINISTRY_SLUG = 'ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026'
 const NO_WEB_SLUG = 'digitalni-cjenik-bez-web-stranice-drustvene-mreze'
 const HOK_SLUG = 'hok-excel-predlosci-digitalni-cjenik-2026'
 const CSV_SLUG = 'primjer-csv-digitalnog-cjenika-usluge-2026'
 const REGULATORY_SLUG = 'digitalni-cjenik-sidrena-cijena-2026'
 const LATEST_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${LATEST_SLUG}/`
+const EXAMPLES_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${EXAMPLES_SLUG}/`
 const MINISTRY_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${MINISTRY_SLUG}/`
 const NO_WEB_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${NO_WEB_SLUG}/`
 const HOK_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${HOK_SLUG}/`
 const CSV_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${CSV_SLUG}/`
 const REGULATORY_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${REGULATORY_SLUG}/`
 const LATEST_REL = `vijesti/${LATEST_SLUG}/index.html`
+const EXAMPLES_REL = `vijesti/${EXAMPLES_SLUG}/index.html`
 const MINISTRY_REL = `vijesti/${MINISTRY_SLUG}/index.html`
 const NO_WEB_REL = `vijesti/${NO_WEB_SLUG}/index.html`
 const HOK_REL = `vijesti/${HOK_SLUG}/index.html`
@@ -118,7 +121,7 @@ const CSV_REL = `vijesti/${CSV_SLUG}/index.html`
 const REGULATORY_REL = `vijesti/${REGULATORY_SLUG}/index.html`
 
 expect('index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'landing widget must link to latest news article')
-expect('index.html', `href="/vijesti/${MINISTRY_SLUG}/"`, 'landing must link to the second latest article')
+expect('index.html', `href="/vijesti/${EXAMPLES_SLUG}/"`, 'landing must link to the second latest article')
 expect('index.html', `href="/vijesti/${NO_WEB_SLUG}/"`, 'landing must link to the third latest article')
 expect('index.html', 'href="/vijesti/"', 'landing must link to the news index')
 expect('index.html', 'Sve vijesti', 'landing must label the news index link')
@@ -126,6 +129,7 @@ expect('index.html', 'index,follow,max-image-preview:large', 'homepage must be e
 expect('index.html', 'hreflang="hr"', 'homepage must declare Croatian hreflang')
 expect('index.html', 'https://digitalnicjenik.nepar.hr/feed.xml', 'homepage must link the news feed')
 expect('sitemap.xml', `<loc>${LATEST_CANONICAL}</loc>`, 'sitemap must include latest article canonical URL')
+expect('sitemap.xml', `<loc>${EXAMPLES_CANONICAL}</loc>`, 'sitemap must include examples article canonical URL')
 expect('sitemap.xml', `<loc>${MINISTRY_CANONICAL}</loc>`, 'sitemap must include Ministry article canonical URL')
 expect('sitemap.xml', `<loc>${NO_WEB_CANONICAL}</loc>`, 'sitemap must include no-web article canonical URL')
 expect('sitemap.xml', `<loc>${HOK_CANONICAL}</loc>`, 'sitemap must include HOK article canonical URL')
@@ -142,6 +146,7 @@ expect('llms.txt', 'https://digitalnicjenik.nepar.hr/c/nepar', 'llms.txt must li
 expect('feed.xml', `<link>${LATEST_CANONICAL}</link>`, 'feed must include the latest article')
 expect('feed.xml', `<link>${REGULATORY_CANONICAL}</link>`, 'feed must include the regulatory article')
 expect('llms.txt', LATEST_CANONICAL, 'llms.txt must list latest article canonical URL')
+expect('llms.txt', EXAMPLES_CANONICAL, 'llms.txt must list examples article canonical URL')
 expect('llms.txt', MINISTRY_CANONICAL, 'llms.txt must list Ministry article canonical URL')
 expect('llms.txt', NO_WEB_CANONICAL, 'llms.txt must list no-web article canonical URL')
 expect('llms.txt', HOK_CANONICAL, 'llms.txt must list HOK article canonical URL')
@@ -209,6 +214,18 @@ function verifyArticle(relPath, canonical, expectedHeadline, extraChecks) {
 verifyArticle(
   LATEST_REL,
   LATEST_CANONICAL,
+  'Odgoda digitalnih cjenika: Šušnjar najavio povlačenje odluka prije 1. listopada',
+  [
+    ['vijesti.hrt.hr/gospodarstvo/susnjar-najavio-odgodu-primjene-novih-pravila-o-sidrenim-cijenama-12930078', 'delay article must link HRT/Hina report'],
+    ['najava buduće odluke', 'delay article must state that the change is not yet formalized'],
+    ['29. rujna', 'delay article must state the expected proposal date'],
+    ['studeni', 'delay article must mention announced regulations in November'],
+  ],
+)
+
+verifyArticle(
+  EXAMPLES_REL,
+  EXAMPLES_CANONICAL,
   'Javni digitalni cjenici već su online: 5 primjera iz Hrvatske',
   [
     ['https://autogubic.hr/cjenik', 'examples article must link NEPAR Auto Gubic reference implementation'],
@@ -270,7 +287,8 @@ verifyArticle(
   ],
 )
 
-expect('vijesti/index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'news index must link to latest examples article')
+expect('vijesti/index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'news index must link to latest delay article')
+expect('vijesti/index.html', `href="/vijesti/${EXAMPLES_SLUG}/"`, 'news index must link to examples article')
 expect('vijesti/index.html', `href="/vijesti/${MINISTRY_SLUG}/"`, 'news index must link to Ministry article')
 expect('vijesti/index.html', `href="/vijesti/${NO_WEB_SLUG}/"`, 'news index must link to no-web article')
 expect('vijesti/index.html', `href="/vijesti/${HOK_SLUG}/"`, 'news index must link to HOK article')
