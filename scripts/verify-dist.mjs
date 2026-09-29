@@ -214,14 +214,14 @@ function verifyArticle(relPath, canonical, expectedHeadline, extraChecks) {
 verifyArticle(
   LATEST_REL,
   LATEST_CANONICAL,
-  'Odgoda digitalnih cjenika: Šušnjar najavio povlačenje odluka prije 1. listopada',
+  'Digitalni cjenici i sidrene cijene odgođeni do 17. studenoga 2026.',
   [
     ['vijesti.hrt.hr/gospodarstvo/susnjar-najavio-odgodu-primjene-novih-pravila-o-sidrenim-cijenama-12930078', 'delay article must link HRT/Hina report'],
-    ['najava buduće odluke', 'delay article must state that the change is not yet formalized'],
-    ['29. rujna', 'delay article must state the expected proposal date'],
-    ['studenome', 'delay article must mention announced regulations in November'],
-    ['UPDATE 29.9.: formalna odluka još nije objavljena', 'delay article must include the 29 September update'],
-    ['Trenutni status:', 'delay article must clearly state current legal status'],
+    ['vlada.gov.hr/izmjene-zakona-o-trzistu-kapitala-povecat-ce-transparentnost-i-zastitu-ulagatelja/47361', 'delay article must link the official report confirming both decisions were amended'],
+    ['vlada.gov.hr/produljuje-se-rok-za-isticanje-sidrenih-cijena-na-17-studenoga/47358', 'delay article must link the official deadline and reference dates'],
+    ['Potvrđeno 29.9.: novi rok je 17. studenoga 2026.', 'delay article must show the confirmed new deadline'],
+    ['Referentni datumi ostaju 10.9.2026. i 2.5.2025.', 'delay article must distinguish reference dates from the new deadline'],
+    ['Novi pravilnici tek idu u javno savjetovanje', 'delay article must distinguish the confirmed delay from upcoming regulations'],
   ],
 )
 

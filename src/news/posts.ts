@@ -55,6 +55,10 @@ const RRIF_CLARIFICATION_2026 =
   'https://www.rrif.hr/pojasnjenje_ministarstva_gospodarstva_u_vezi_istic-2531-vijest/'
 const HRT_DELAY_2026 =
   'https://vijesti.hrt.hr/gospodarstvo/susnjar-najavio-odgodu-primjene-novih-pravila-o-sidrenim-cijenama-12930078'
+const GOVERNMENT_DELAY_2026 =
+  'https://vlada.gov.hr/produljuje-se-rok-za-isticanje-sidrenih-cijena-na-17-studenoga/47358'
+const GOVERNMENT_DECISIONS_2026 =
+  'https://vlada.gov.hr/izmjene-zakona-o-trzistu-kapitala-povecat-ce-transparentnost-i-zastitu-ulagatelja/47361'
 
 const terminologyNote = `<p class="news-lead-note">U službenoj Odluci koristi se izraz „dodatna cijena”. U javnoj komunikaciji HOK-a i drugih institucija često se koristi naziv „sidrena cijena”. U ovom tekstu koristimo oba izraza radi lakšeg razumijevanja.</p>`
 
@@ -91,25 +95,25 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 export const NEWS_POSTS: NewsPost[] = [
   {
     slug: 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026',
-    title: 'Odgoda digitalnih cjenika: Šušnjar najavio povlačenje odluka prije 1. listopada',
-    seoTitle: 'Odgoda digitalnih cjenika i sidrenih cijena 2026. | NEPAR',
+    title: 'Digitalni cjenici i sidrene cijene odgođeni do 17. studenoga 2026.',
+    seoTitle: 'Odgoda digitalnih cjenika do 17.11.2026. | NEPAR',
     description:
-      'Ministar Ante Šušnjar 28.9. najavio je da će 29.9. predložiti odgodu odnosno povlačenje odluka koje su trebale krenuti 1.10. Formalna odluka još nije objavljena.',
+      'Vlada je 29.9.2026. izmijenila obje odluke: rok za digitalne cjenike i sidrene cijene pomaknut je s 1. listopada na 17. studenoga 2026.',
     excerpt:
-      'Veliki preokret tri dana prije početka primjene: Ministarstvo najavljuje odgodu odnosno povlačenje odluka, dok važeći tekstovi u Narodnim novinama večeras još formalno nose datum 1. listopada.',
-    readingTimeMinutes: 5,
+      'Vlada je potvrdila odgodu do 17.11.2026. Referentni datumi ostaju 10.9.2026. i, za ranije obuhvaćene kategorije, 2.5.2025.; novi pravilnici tek idu u savjetovanje.',
+    readingTimeMinutes: 3,
     publishedAt: '2026-09-28T21:20:00+02:00',
-    updatedAt: '2026-09-29T15:47:00+02:00',
+    updatedAt: '2026-09-29T21:40:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
-    tags: ['odgoda', 'digitalni cjenik', 'sidrena cijena', 'Ministarstvo gospodarstva', '1. listopada', 'regulativa'],
-    kicker: 'Breaking · ažurirano 29.9.',
-    widgetEyebrow: 'UPDATE · 29.9.2026.',
-    widgetHeadline: 'Najavljena odgoda odluka prije 1. listopada',
-    widgetSub: 'Provjera 29.9.: formalni akt o povlačenju ili odgodi još nije objavljen u Narodnim novinama',
+    tags: ['odgoda', 'digitalni cjenik', 'sidrena cijena', 'Vlada RH', '17. studenoga', 'regulativa'],
+    kicker: 'Odgoda potvrđena · 29.9.',
+    widgetEyebrow: 'POTVRĐENO · 29.9.2026.',
+    widgetHeadline: 'Digitalni cjenici odgođeni do 17.11.2026.',
+    widgetSub: 'Vlada izmijenila obje odluke; referentni datumi za sidrene cijene ostaju isti',
     schemaSection: 'Aktualno',
     image: {
       src: '/og/vijesti-digitalni-cjenik-2026.png',
-      alt: 'Najava odgode digitalnih cjenika i sidrenih cijena u rujnu 2026.',
+      alt: 'Odgoda digitalnih cjenika i sidrenih cijena do 17. studenoga 2026.',
       width: 1200,
       height: 630,
     },
@@ -120,67 +124,67 @@ export const NEWS_POSTS: NewsPost[] = [
     },
     sources: [
       {
+        title: 'Vlada RH, 29.9.2026. — izvješće sa sjednice: izmijenjene obje odluke i produljen rok',
+        url: GOVERNMENT_DECISIONS_2026,
+        type: 'primary',
+      },
+      {
+        title: 'Vlada RH, 29.9.2026. — rok 17. studenoga i referentni datumi cijena',
+        url: GOVERNMENT_DELAY_2026,
+        type: 'primary',
+      },
+      {
         title: 'HRT/Hina, 28.9.2026. — Šušnjar najavio odgodu primjene novih pravila',
         url: HRT_DELAY_2026,
         type: 'secondary',
       },
       {
-        title: 'NN 101/2026-1213 — Odluka o objavi cjenika proizvoda i usluga',
+        title: 'NN 101/2026-1213 — izvorna odluka o objavi cjenika, prije odgode',
         url: NN_1213,
         type: 'primary',
       },
       {
-        title: 'NN 101/2026-1212 — Odluka o isticanju dodatne cijene',
+        title: 'NN 101/2026-1212 — izvorna odluka o dodatnoj cijeni, prije odgode',
         url: NN_1212,
         type: 'primary',
-      },
-      {
-        title: 'HOK — najvažnije informacije o obvezama od 1. listopada',
-        url: HOK_2026,
-        type: 'secondary',
       },
     ],
     sections: [
       {
-        heading: 'UPDATE 29.9.: formalna odluka još nije objavljena',
+        heading: 'Potvrđeno 29.9.: novi rok je 17. studenoga 2026.',
         level: 2,
-        html: `<p>Na dan <strong>29. rujna 2026. poslijepodne</strong> ponovno smo provjerili službene objave. Izvorni tekstovi NN 101/2026-1212 i NN 101/2026-1213 i dalje su javno dostupni u neizmijenjenom obliku i kao datum stupanja na snagu navode <strong>1. listopada 2026.</strong></p>
-<p>Javna najava ministra Ante Šušnjara od 28. rujna da će Vladi biti predložena <strong>odgoda primjene odnosno povlačenje odluka</strong> i dalje je ključna nova informacija. Međutim, u trenutku ove provjere još nije objavljen novi tekst u Narodnim novinama kojim bi se formalno promijenio status tih odluka.</p>
-<p class="news-lead-note"><strong>Trenutni status:</strong> odgoda je javno najavljena, ali za pravni status digitalnih cjenika i dodatnih/sidrenih cijena još čekamo formalni akt Vlade i njegovu objavu. Članak ćemo ponovno ažurirati čim taj tekst bude dostupan.</p>`,
+        html: `<p>Vlada RH na sjednici <strong>29. rujna 2026.</strong> izmijenila je Odluku o isticanju dodatne cijene i Odluku o objavi cjenika proizvoda i usluga. Prema <a href="${GOVERNMENT_DECISIONS_2026}" target="_blank" rel="noopener noreferrer">službenom izvješću sa sjednice</a>, rok se produljuje do <strong>17. studenoga 2026.</strong>, umjesto ranije predviđenog 1. listopada.</p>
+<p class="news-lead-note"><strong>Ažuriranje:</strong> raniju informaciju da je odgoda tek najavljena zamjenjujemo potvrdom Vlade o izmjeni obiju odluka. Poveznice na NN 101/2026 u izvorima vode na izvorne odluke, a ne na tekst njihovih izmjena.</p>`,
       },
       {
-        heading: 'Što je objavljeno 28. rujna',
+        heading: 'Odgoda obuhvaća i objavu cjenika na webu',
         level: 2,
-        html: `<p>Ministar gospodarstva Ante Šušnjar 28. rujna 2026. najavio je da će <strong>29. rujna predložiti odgodu primjene, odnosno povlačenje odluka</strong> koje su trebale stupiti na snagu 1. listopada.</p>
-<p>HRT/Hina prenose da je predlagač odgode Ministarstvo gospodarstva te da je Šušnjar najavio razgovore s poduzetničkim udrugama i novo, trajnije uređenje pravila.</p>
-<p class="news-lead-note"><strong>Važno:</strong> ovo je večeras još najava buduće odluke. U Narodnim novinama važeći tekstovi NN 101/2026-1212 i NN 101/2026-1213 i dalje formalno navode 1. listopada 2026. kao datum stupanja na snagu.</p>`,
+        html: `<p>Produljenje se odnosi i na dodatne, odnosno sidrene cijene, i na <strong>objavu digitalnih cjenika</strong>. Vlada u <a href="${GOVERNMENT_DELAY_2026}" target="_blank" rel="noopener noreferrer">službenoj objavi o novom roku</a> izričito navodi cjenike na webu.</p>
+<p>Odgoda novih obveza ne ukida postojeću obvezu isticanja cijena za trgovce i pružatelje usluga koji posluju s građanima.</p>`,
       },
       {
-        heading: 'Odnosi li se najava i na digitalne cjenike?',
+        heading: 'Referentni datumi ostaju 10.9.2026. i 2.5.2025.',
         level: 2,
-        html: `<p>Šušnjar govori o <strong>odgodi odnosno povlačenju odluka</strong> koje su trebale krenuti 1. listopada, a HRT prenosi i njegovu najavu da bi se u studenome pravilnicima trebalo trajno urediti <strong>bazna cijena i objava cjenika</strong>.</p>
-<p>Zato je razumno ovu najavu čitati kao najavu promjene i za režim digitalnih cjenika, ali konačan opseg treba potvrditi tek kada Vlada donese formalnu odluku i kada bude objavljen novi pravni tekst.</p>
-<p>Do tada ne treba tvrditi da je NN 101/2026-1213 već prestao vrijediti ili da je formalno povučen — to večeras još nije objavljeno u Narodnim novinama.</p>`,
+        html: `<p>Vlada je uz odgodu ponovno navela <strong>10. rujna 2026.</strong> kao referentni datum za novouključene proizvode i usluge, a <strong>2. svibnja 2025.</strong> za ranije obuhvaćene kategorije hrane, pića, higijenskih potrepština i proizvoda za kućanstvo.</p>
+<p>Novi rok 17.11.2026. zato ne treba upisivati kao datum sidrene cijene u već pripremljene podatke.</p>`,
       },
       {
-        heading: 'Što to znači za rok 1. listopada',
+        heading: 'Novi pravilnici tek idu u javno savjetovanje',
         level: 2,
-        html: `<p>Ako Vlada 29. rujna prihvati najavljeni prijedlog i formalno odgodi ili povuče odluke, obveze koje su trebale krenuti 1. listopada više se neće primjenjivati prema dosadašnjem rasporedu.</p>
-<p>Međutim, dok nova odluka nije donesena i objavljena, pravno je preciznije govoriti o <strong>najavljenoj odgodi</strong>, a ne o već dovršenom povlačenju.</p>
-<p>NEPAR će ovaj članak ažurirati čim bude poznat formalni tekst odluke Vlade, uključujući točan status digitalnih cjenika, dodatnih cijena i eventualni novi datum primjene.</p>`,
+        html: `<p>Vlada je za studeni najavila pravilnike o načinu isticanja bazne cijene proizvoda te o sadržaju i načinu objave cjenika proizvoda, na temelju Zakona o zaštiti potrošača. Prema objavi od 29. rujna, oni tek trebaju u javno savjetovanje.</p>
+<p>Njihov konačan obuhvat, izuzeća i tehničke zahtjeve treba provjeriti u objavljenim tekstovima. Današnja potvrda odgode nije potvrda konačnog sadržaja tih pravilnika.</p>`,
       },
       {
-        heading: 'Nova pravila očekuju se u studenome',
+        heading: 'Što s već pripremljenim CSV/XML cjenikom?',
         level: 2,
-        html: `<p>Prema Šušnjarovoj najavi koju prenosi HRT, u studenome bi trebali stupiti na snagu pravilnici kojima bi se trajnije uredili <strong>bazna cijena i objava cjenika</strong>, definirala razumna izuzeća i uklonile administrativne obveze koje ne donose stvarnu korist potrošačima.</p>
-<p>To znači da ova najava nije odustajanje od transparentnosti cijena, nego signal da će se postojeći model prije primjene ponovno doraditi.</p>`,
+        html: `<p><strong>Naša praktična preporuka:</strong> sačuvajte pripremljene CSV/XML datoteke, izvorne podatke i arhivu. Sam pomak roka nije razlog za brisanje cjenika ili izradu svega ispočetka.</p>
+<p>To ipak nije jamstvo da će postojeća datoteka bez prilagodbe zadovoljiti buduće pravilnike. Kada budu objavljeni, usporedite tražena polja i način objave sa svojim rješenjem.</p>`,
       },
       {
-        heading: 'Što sada napraviti ako ste već pripremili CSV/XML',
+        heading: 'Kako se vijest mijenjala',
         level: 2,
-        html: `<p>Ako ste već pripremili digitalni cjenik, nema potrebe brisati napravljeno. CSV/XML, arhiva verzija i strukturirani podaci mogu ostati koristan tehnički temelj bez obzira na to kako će se konačna pravila promijeniti.</p>
-<p>Ako pak još niste završili implementaciju samo zbog roka 1. listopada, pričekajte formalni akt Vlade i njegovu objavu prije dodatnih troškova ili većih tehničkih zahvata.</p>
-<p>Za dosadašnji sadržaj pravila pogledajte <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/">službena pojašnjenja Ministarstva od 22. rujna</a>, a za praktične implementacije <a href="/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/">primjere javnih digitalnih cjenika u Hrvatskoj</a>.</p>`,
+        html: `<p>Ministar Ante Šušnjar 28. rujna najavio je prijedlog odgode, što je prenio HRT/Hina. Nakon sjednice 29. rujna Vlada je potvrdila izmjene obiju odluka i rok 17.11.2026.; ovaj postojeći članak ažuriran je tim informacijama.</p>
+<p><a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/">Pojašnjenja Ministarstva od 22. rujna</a> opisuju pravila prije ove odgode. Za tehničke primjere pogledajte <a href="/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/">javne digitalne cjenike u Hrvatskoj</a>.</p>`,
       },
     ],
   },
