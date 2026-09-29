@@ -99,13 +99,13 @@ export const NEWS_POSTS: NewsPost[] = [
       'Veliki preokret tri dana prije početka primjene: Ministarstvo najavljuje odgodu odnosno povlačenje odluka, dok važeći tekstovi u Narodnim novinama večeras još formalno nose datum 1. listopada.',
     readingTimeMinutes: 5,
     publishedAt: '2026-09-28T21:20:00+02:00',
-    updatedAt: '2026-09-28T21:20:00+02:00',
+    updatedAt: '2026-09-29T15:47:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['odgoda', 'digitalni cjenik', 'sidrena cijena', 'Ministarstvo gospodarstva', '1. listopada', 'regulativa'],
-    kicker: 'Breaking · najava odgode',
-    widgetEyebrow: 'BREAKING · 28.9.2026.',
+    kicker: 'Breaking · ažurirano 29.9.',
+    widgetEyebrow: 'UPDATE · 29.9.2026.',
     widgetHeadline: 'Najavljena odgoda odluka prije 1. listopada',
-    widgetSub: 'Šušnjar: sutra ide prijedlog za odgodu odnosno povlačenje; formalna odluka još nije objavljena',
+    widgetSub: 'Provjera 29.9.: formalni akt o povlačenju ili odgodi još nije objavljen u Narodnim novinama',
     schemaSection: 'Aktualno',
     image: {
       src: '/og/vijesti-digitalni-cjenik-2026.png',
@@ -142,6 +142,13 @@ export const NEWS_POSTS: NewsPost[] = [
     ],
     sections: [
       {
+        heading: 'UPDATE 29.9.: formalna odluka još nije objavljena',
+        level: 2,
+        html: `<p>Na dan <strong>29. rujna 2026. poslijepodne</strong> ponovno smo provjerili službene objave. Izvorni tekstovi NN 101/2026-1212 i NN 101/2026-1213 i dalje su javno dostupni u neizmijenjenom obliku i kao datum stupanja na snagu navode <strong>1. listopada 2026.</strong></p>
+<p>Javna najava ministra Ante Šušnjara od 28. rujna da će Vladi biti predložena <strong>odgoda primjene odnosno povlačenje odluka</strong> i dalje je ključna nova informacija. Međutim, u trenutku ove provjere još nije objavljen novi tekst u Narodnim novinama kojim bi se formalno promijenio status tih odluka.</p>
+<p class="news-lead-note"><strong>Trenutni status:</strong> odgoda je javno najavljena, ali za pravni status digitalnih cjenika i dodatnih/sidrenih cijena još čekamo formalni akt Vlade i njegovu objavu. Članak ćemo ponovno ažurirati čim taj tekst bude dostupan.</p>`,
+      },
+      {
         heading: 'Što je objavljeno 28. rujna',
         level: 2,
         html: `<p>Ministar gospodarstva Ante Šušnjar 28. rujna 2026. najavio je da će <strong>29. rujna predložiti odgodu primjene, odnosno povlačenje odluka</strong> koje su trebale stupiti na snagu 1. listopada.</p>
@@ -172,7 +179,7 @@ export const NEWS_POSTS: NewsPost[] = [
         heading: 'Što sada napraviti ako ste već pripremili CSV/XML',
         level: 2,
         html: `<p>Ako ste već pripremili digitalni cjenik, nema potrebe brisati napravljeno. CSV/XML, arhiva verzija i strukturirani podaci mogu ostati koristan tehnički temelj bez obzira na to kako će se konačna pravila promijeniti.</p>
-<p>Ako pak još niste završili implementaciju samo zbog roka 1. listopada, pričekajte formalnu odluku Vlade od 29. rujna prije dodatnih troškova ili većih tehničkih zahvata.</p>
+<p>Ako pak još niste završili implementaciju samo zbog roka 1. listopada, pričekajte formalni akt Vlade i njegovu objavu prije dodatnih troškova ili većih tehničkih zahvata.</p>
 <p>Za dosadašnji sadržaj pravila pogledajte <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/">službena pojašnjenja Ministarstva od 22. rujna</a>, a za praktične implementacije <a href="/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/">primjere javnih digitalnih cjenika u Hrvatskoj</a>.</p>`,
       },
     ],
