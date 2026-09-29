@@ -17,6 +17,7 @@ Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https:/
 
 ## Vijesti
 
+- [Digitalni cjenici i sidrene cijene odgođeni do 17. studenoga 2026.](https://digitalnicjenik.nepar.hr/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/): Vlada je potvrdila odgodu do 17.11.2026. Referentni datumi ostaju 10.9.2026. i, za ranije obuhvaćene kategorije, 2.5.2025.; novi pravilnici tek idu u savjetovanje.
 - [Javni digitalni cjenici već su online: 5 primjera iz Hrvatske](https://digitalnicjenik.nepar.hr/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/): Prije 1. listopada već se pojavljuju stvarne implementacije digitalnih cjenika. Prvi primjer je NEPAR implementacija za Auto Gubić, a zatim četiri neovisna tržišna primjera.
 - [Ministarstvo objavilo detaljna pojašnjenja za digitalni cjenik i sidrene cijene](https://digitalnicjenik.nepar.hr/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/): Nova pisana pojašnjenja Ministarstva donose konkretna pravila za informativne webove, više poslovnica, web shopove, CSV/XML objavu i dodatnu odnosno sidrenu cijenu.
 - [Nemate web stranicu? Ministar pojasnio tko ne mora imati digitalni cjenik](https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-bez-web-stranice-drustvene-mreze/): Pojašnjenje za obrtnike i pružatelje usluga: vlastita web stranica, samo Facebook/Instagram ili bez online prisutnosti — kada se primjenjuje obveza CSV/XML cjenika.
