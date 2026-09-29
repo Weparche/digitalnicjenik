@@ -220,6 +220,8 @@ verifyArticle(
     ['najava buduće odluke', 'delay article must state that the change is not yet formalized'],
     ['29. rujna', 'delay article must state the expected proposal date'],
     ['studenome', 'delay article must mention announced regulations in November'],
+    ['UPDATE 29.9.: formalna odluka još nije objavljena', 'delay article must include the 29 September update'],
+    ['Trenutni status:', 'delay article must clearly state current legal status'],
   ],
 )
 
