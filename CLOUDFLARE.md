@@ -138,3 +138,31 @@ action/hostname. D1 zapisuje samo HMAC hash IP-a, status pokušaja i vrijeme;
 ime, e-mail, poruka i datoteka ostaju izvan baze i logova.
 
 Buduća automatska sinkronizacija s providerom zahtijevat će zasebne vjerodajnice.
+
+## Compliance Monitor (workers/monitor)
+
+A separate Worker (`digitalnicjenik-monitor`) runs the daily checks; Pages Functions only read results and delegate the manual "Provjeri sada" run to it, so cron, retry and manual runs share one implementation (`shared/compliance/run-check.ts`).
+
+- **Schedule (UTC):** `30 4 * * *` first pass and `30 5 * * *` retry (only tenants whose latest run is warn/fail or that have no recent run). That is 05:30/06:30 CET and 06:30/07:30 CEST, so the retry always finishes before the 08:00 product-price deadline.
+- **Rules** live in `shared/compliance/rulesets.ts` (`ACTIVE_RULESET`, currently `nn-101-2026`). The new Pravilnik is a new entry plus switching `ACTIVE_RULESET`; every `monitor_runs` row stores the ruleset id it was checked against.
+- **Profiles:** `publication_metadata.compliance_profile` is `products` (default) or `services`. Migration 0008 classifies `patrisa-sisa` as services; classify every other service provider **before the first monitor run**:
+  `UPDATE publication_metadata SET compliance_profile = 'services' WHERE tenant_id IN (SELECT id FROM tenants WHERE slug IN ('<slug>', ...));`
+- `warn` never pages; only `fail` e-mails the tenant owner(s) and `EMAIL_TO`. Recovery mail is sent only after a real `fail` returns to `ok`.
+
+Deploy order (the Pages `MONITOR` service binding needs the Worker to exist first):
+
+```
+npx wrangler d1 migrations apply digitalni-cjenik-nepar --remote --config wrangler.d1.jsonc
+cd workers/monitor && npx wrangler deploy
+npx wrangler secret put MONITOR_SECRET            # inside workers/monitor
+# then set the SAME value on the Pages project and deploy Pages
+npx wrangler pages secret put MONITOR_SECRET --project-name digitalnicjenik
+```
+
+The Worker has `workers_dev: false` (no public URL); production traffic reaches it only through cron and the Pages `MONITOR` service binding. Local smoke test: `cd workers/monitor && npx wrangler dev --test-scheduled`, then `curl "http://localhost:8787/__scheduled?cron=30+4+*+*+*"` (cron path) or `curl -X POST http://localhost:8787/run -H "authorization: Bearer $MONITOR_SECRET" -d '{"slug":"nepar"}'` (manual path).
+
+## Embed, QR and print
+
+- `public/embed.js`: `<script src="https://digitalnicjenik.nepar.hr/embed.js" data-cjenik="<slug>"></script>` injects an iframe of `/c/<slug>?embed=1`. It accepts resize messages only from its own iframe (`event.source` + origin) with the exact `{type:'nepar-cjenik-resize', slug, height}` shape.
+- `/c/<slug>?embed=1` and `?print=1` are `noindex` variants; all `/c/*` HTML responses send `content-security-policy: frame-ancestors *` and no `X-Frame-Options`. Do not add a global `X-Frame-Options` header (Pages `_headers`, Transform Rules) or embedding breaks.
+- Print/PDF is the browser print dialog on `?print=1` (A4 stylesheet, repeating table header); the button is labelled "Ispis / Spremi kao PDF" because no PDF file is generated.

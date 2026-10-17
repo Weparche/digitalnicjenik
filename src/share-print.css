@@ -1,0 +1,46 @@
+/* Share / print card (publisher dashboard) */
+.share-card { margin-top: 20px; padding: 18px; border: 1px solid var(--nepar-border); border-radius: 8px; background: #fff; color: var(--nepar-ink); }
+.share-card h3 { margin: 0 0 12px; font-size: 16px; letter-spacing: 0; }
+.share-card-grid { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; }
+.share-card-qr { display: grid; gap: 8px; justify-items: center; }
+.share-card-body { display: grid; gap: 8px; min-width: 0; }
+.share-card-body p { margin: 0; font-size: 13px; color: var(--nepar-body); }
+.share-card-body .app-button { justify-self: start; min-height: 44px; }
+.share-snippet { margin: 0; padding: 10px 12px; overflow-x: auto; border: 1px solid var(--nepar-border); border-radius: 6px; background: var(--nepar-canvas); color: var(--nepar-ink); font-size: 12px; white-space: pre; }
+.qr-code { display: block; background: #fff; border: 1px solid var(--nepar-border); }
+@media (max-width: 640px) { .share-card-grid { grid-template-columns: 1fr; } .share-card-qr { justify-items: start; } }
+
+/* Public price list: embed (iframe) and print (A4) variants */
+body:has(.public-shell--embed) { background: transparent; }
+.public-shell--embed { width: 100%; min-height: 0; background: transparent; }
+.public-shell--embed .public-header { padding: 20px 4% 16px; }
+.public-shell--embed .public-header .eyebrow, .public-shell--embed .public-header h1 { display: none; }
+.public-shell--embed .public-list { padding: 0 4% 24px; }
+.public-shell--embed .public-footer { padding-inline: 4%; }
+.print-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
+.print-toolbar a { color: var(--nepar-primary); font-size: 13px; }
+.print-toolbar .app-button { min-height: 44px; }
+.print-qr { display: flex; align-items: center; gap: 18px; padding: 18px 7%; border-bottom: 1px solid #c3bfb4; }
+.print-qr div { display: grid; gap: 4px; font-size: 13px; }
+.print-url { font-family: var(--mono); word-break: break-all; }
+.print-table { width: 100%; border-collapse: collapse; margin: 0 0 40px; font-size: 13px; color: var(--ink); }
+.print-table th, .print-table td { padding: 7px 8px; border-bottom: 1px solid #c3bfb4; text-align: left; vertical-align: top; }
+.print-table thead th { border-bottom: 2px solid var(--ink); font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.print-table .print-category th { padding-top: 18px; color: #766f64; font-family: var(--mono); font-size: 11px; font-weight: 400; text-transform: uppercase; border-bottom: 0; }
+.print-table td.print-price-col, .print-table th.print-price-col { text-align: right; white-space: nowrap; }
+.public-shell--print .public-list { padding: 0 7%; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body, body:has(.public-shell) { background: #fff !important; }
+  .public-shell--print { width: 100%; background: #fff; }
+  .public-shell--print .print-toolbar, .public-shell--print .public-top, .public-shell--print .public-checker-cta { display: none !important; }
+  .public-shell--print .public-header { padding: 0 0 12px; }
+  .public-shell--print .public-header h1 { font-size: 26px; margin-bottom: 6px; }
+  .public-shell--print .print-qr { padding: 12px 0; }
+  .public-shell--print .public-list { padding: 0; }
+  .print-table { font-size: 10.5pt; }
+  .print-table thead { display: table-header-group; }
+  .print-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .print-table .print-category { break-after: avoid; }
+  .public-shell--print .public-footer { padding: 10px 0 0; }
+}

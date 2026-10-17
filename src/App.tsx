@@ -1,5 +1,8 @@
+import { MonitorPanel } from './MonitorPanel'
+import { QrCode } from './QrCode'
+import { ShareAndPrintCard } from './ShareAndPrintCard'
 import { PublisherLogin, usePublisherSession } from './PublisherAuth'
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 import { ExcelConverter } from './ExcelConverter'
 import { EducationSection } from './EducationSection'
@@ -147,6 +150,7 @@ function PublishedSuccessPanel({
             </div>
           )}
         </div>
+        <ShareAndPrintCard slug={slug} publicUrl={urls.html} />
       </div>
     )
   }
@@ -432,6 +436,23 @@ function PublisherFlow() {
   </section>
 }
 
+function PrintPriceTable({ groups }: { groups: Array<[string, NormalizedPriceList['items']]> }) {
+  // A real table so browsers repeat the header on every A4 page (thead { display: table-header-group }).
+  return <table className="print-table">
+    <thead><tr><th scope="col">Naziv</th><th scope="col">Napomena</th><th scope="col" className="print-price-col">Cijena</th></tr></thead>
+    <tbody>
+      {groups.map(([category, items]) => <Fragment key={category}>
+        <tr className="print-category"><th scope="colgroup" colSpan={3}>{category}</th></tr>
+        {items.map((item) => <tr key={category + ':' + (item.externalId || item.name)}>
+          <td>{item.name}</td>
+          <td>{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</td>
+          <td className="print-price-col">{item.salePrice != null && <del>{money(item.price)} </del>}<strong>{money(item.salePrice ?? item.price)}</strong></td>
+        </tr>)}
+      </Fragment>)}
+    </tbody>
+  </table>
+}
+
 function PublicPriceList({ slug, customHost = false }: { slug?: string; customHost?: boolean }) {
   const [list, setList] = useState<NormalizedPriceList | null>(null)
   const [publications, setPublications] = useState<PricePublication[]>([])
@@ -466,16 +487,32 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
     })()
     return () => { cancelled = true }
   }, [customHost, slug, isArchive])
+  const variantParams = new URLSearchParams(window.location.search)
+  const mode: 'embed' | 'print' | 'normal' = isArchive ? 'normal' : variantParams.get('embed') === '1' ? 'embed' : variantParams.get('print') === '1' ? 'print' : 'normal'
+  const embedSlug = slug ?? list?.tenant.slug ?? ''
+  useEffect(() => {
+    // Embedded in a customer site by embed.js: report our content height (not documentElement.scrollHeight, which never drops below the iframe height).
+    if (mode !== 'embed' || window.parent === window || typeof ResizeObserver === 'undefined') return
+    const post = () => window.parent.postMessage({ type: 'nepar-cjenik-resize', slug: embedSlug, height: Math.ceil(document.body.getBoundingClientRect().height) }, '*')
+    post()
+    const observer = new ResizeObserver(post)
+    observer.observe(document.body)
+    return () => observer.disconnect()
+  }, [mode, embedSlug, list])
   if (gone) return <main className="public-shell"><div className="public-top"><Logo /><span className="public-badge">NEDOSTUPNO</span></div><div className="public-not-found"><p className="eyebrow">NEPAR PUBLISHER</p><h1>Ovaj cjenik trenutačno nije dostupan.</h1></div></main>
   if (error) return <main className="public-shell"><div className="public-top"><Logo /><span className="public-badge">PUBLICATION ERROR</span></div><div className="public-not-found"><p className="eyebrow">NEPAR PUBLISHER</p><h1>Cjenik trenutno nije dostupan.</h1><p>{error}</p></div></main>
   if (!list) return <main className="public-shell"><div className="loading-state">Učitavam objavljeni cjenik…</div></main>
   const grouped = Object.entries(list.items.reduce<Record<string, NormalizedPriceList['items']>>((groups, item) => { const key = item.category || 'Usluge'; (groups[key] ||= []).push(item); return groups }, {}))
   const demo = slug === 'patrisa-sisa'
   const currentPublication = publications.find((publication) => publication.isCurrent)
-  return <main className="public-shell">
-    <div className="public-top"><Logo /><span className="public-badge">{demo ? 'DEMO PODACI' : isArchive ? 'JAVNA ARHIVA' : 'AKTUALNI CJENIK'}</span></div>
+  const publicUrl = customHost ? `${window.location.origin}/` : `${window.location.origin}/c/${slug}`
+  const showChrome = mode === 'normal'
+  return <main className={`public-shell${mode === 'normal' ? '' : ` public-shell--${mode}`}`}>
+    {mode === 'print' && <div className="print-toolbar"><button className="app-button app-button-primary" type="button" onClick={() => window.print()}>Ispis / Spremi kao PDF</button><a href={customHost ? '/' : '/c/' + slug}>← Natrag na cjenik</a></div>}
+    {showChrome && <div className="public-top"><Logo /><span className="public-badge">{demo ? 'DEMO PODACI' : isArchive ? 'JAVNA ARHIVA' : 'AKTUALNI CJENIK'}</span></div>}
     <header className="public-header"><p className="eyebrow">NEPAR PUBLISHER</p><h1>{list.tenant.name}</h1><p className="public-updated">Zadnje objavljeno: {dateTime(list.updatedAt)}</p>{demo && <p className="public-demo-note">Demo podaci — ovo nije stvarni cjenik salona.</p>}</header>
-    {!isArchive && (
+    {mode === 'print' && <section className="print-qr" aria-label="QR kod za aktualni cjenik"><QrCode value={publicUrl} label={'QR kod: ' + publicUrl} size={112} /><div><strong>Aktualni digitalni cjenik</strong><span>Skenirajte QR kod ili otvorite:</span><span className="print-url">{publicUrl}</span>{currentPublication && <span>Verzija {currentPublication.sequence} · objavljeno {dateTime(currentPublication.publishedAt)}</span>}</div></section>}
+    {showChrome && !isArchive && (
       <aside className="public-checker-cta">
         <div>
           <strong>Provjerite svoju web stranicu</strong>
@@ -486,9 +523,9 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
     )}
     {isArchive ? <section className="public-list public-archive" aria-label="Javna arhiva cjenika"><div className="public-list-title"><span>Arhiva objavljenih verzija</span><span className="item-count">{publications.length} verzija</span></div>{publications.map((publication) => <div className="public-archive-item" key={publication.id}><div><strong>{publication.isCurrent ? 'Aktualno · ' : ''}{dateTime(publication.publishedAt)}</strong><small>{publication.filenameStem}</small></div><div className="archive-links"><a href={'/' + publication.filenameStem + '.csv'}>CSV</a><a href={'/' + publication.filenameStem + '.xml'}>XML</a></div></div>)}<p className="public-archive-note">Prethodne objavljene verzije ostaju javno dostupne najmanje 30 dana od trenutka zamjene.</p></section> : <section className="public-list" aria-label="Aktualni digitalni cjenik">
       <div className="public-list-title"><span>Aktualni digitalni cjenik</span><span className="item-count">{list.items.length} stavki</span></div>
-      {grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.salePrice != null && <del>{money(item.price)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
+      {mode === 'print' ? <PrintPriceTable groups={grouped} /> : grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.salePrice != null && <del>{money(item.price)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
     </section>}
-    {!isArchive && <section className="public-links"><div><strong>Aktualni digitalni cjenik</strong><span><a href={currentPublication ? '/' + currentPublication.filenameStem + '.csv' : '/cjenik.csv'}>{currentPublication ? currentPublication.filenameStem + '.csv' : 'Preuzmi CSV'}</a>{currentPublication && <a href={'/' + currentPublication.filenameStem + '.xml'}>{currentPublication.filenameStem + '.xml'}</a>}</span></div><div><strong>Stable URL za automatizirani dohvat</strong><span><a href="/cjenik.csv">cjenik.csv</a><a href="/cjenik.xml">cjenik.xml</a></span></div></section>}
+    {showChrome && !isArchive && <section className="public-links"><div><strong>Aktualni digitalni cjenik</strong><span><a href={currentPublication ? '/' + currentPublication.filenameStem + '.csv' : '/cjenik.csv'}>{currentPublication ? currentPublication.filenameStem + '.csv' : 'Preuzmi CSV'}</a>{currentPublication && <a href={'/' + currentPublication.filenameStem + '.xml'}>{currentPublication.filenameStem + '.xml'}</a>}</span></div><div><strong>Stable URL za automatizirani dohvat</strong><span><a href="/cjenik.csv">cjenik.csv</a><a href="/cjenik.xml">cjenik.xml</a></span></div></section>}
     <footer className="public-footer"><span>Pokreće NEPAR Publisher</span>{!isArchive && <a href={(customHost ? '/arhiva/' : '/c/' + slug + '/arhiva')}>Arhiva</a>}<a href={customHost ? '/cjenik.csv' : '/c/' + slug + '/cjenik.csv'}>CSV</a><a href={customHost ? '/cjenik.xml' : '/c/' + slug + '/cjenik.xml'}>XML</a><a href="https://digitalnicjenik.nepar.hr/">Provjeri CSV/XML na webu</a></footer>
   </main>
 }
@@ -1432,6 +1469,7 @@ function PublisherEntry() {
             onSent={() => setUpgradeSent(true)}
           />
         )}
+        <MonitorPanel slug={tenant.slug} />
         <ValidatorApp
           mode="publisher"
           tenantSlug={tenant.slug}

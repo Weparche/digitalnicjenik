@@ -136,3 +136,18 @@ export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug:
   if (!items.length) throw new Error('XML nema nijednu valjanu stavku s nazivom i cijenom.')
   return { tenant, source: 'nepar', currency: 'EUR', updatedAt: new Date().toISOString(), items }
 }
+
+/** Raw per-item field map (lowercased child names → trimmed text) for compliance checks; unlike parseXmlPriceList it keeps items that lack a name or price. */
+export function parseXmlItemRecords(xmlText: string): Array<Record<string, string>> {
+  const root = parseXmlTree(xmlText)
+  const records: Array<Record<string, string>> = []
+  const collect = (node: XmlTree) => {
+    if (localXmlName(node.name) === 'item') {
+      records.push(Object.fromEntries(node.children.map((child) => [localXmlName(child.name), child.text.trim()])))
+      return
+    }
+    node.children.forEach(collect)
+  }
+  collect(root)
+  return records
+}

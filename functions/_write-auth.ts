@@ -142,6 +142,24 @@ export async function requireTenantAccess(options: {
   throw new AccessDeniedError(401, 'unauthorized', 'Prijava ili operator autentikacija je obavezna.')
 }
 
+/**
+ * Owner/operator only — unlike requireTenantAccess there is no anonymous demo bypass,
+ * because monitor data is operational and a manual run triggers outbound requests.
+ */
+export async function requireOwnerOrOperator(options: { request: Request; env: RuntimeEnv; slug: string }): Promise<ResolvedTenant> {
+  const { request, env, slug } = options
+  await assertNotCustomerPublicationHost(env, request)
+  if (!env.DB) throw new AccessDeniedError(503, 'db_unavailable', 'D1 binding DB nije konfiguriran.')
+  const tenant = await resolveTenantBySlug(env, slug)
+  if (operatorAuthorized(env, request)) {
+    if (!tenant) throw new AccessDeniedError(404, 'tenant_not_found', 'Tenant nije pronađen.')
+    return tenant
+  }
+  const session = await resolveSession(env, request)
+  if (session && tenant && await userHasTenantMembership(env, session.user.id, tenant.id)) return tenant
+  throw new AccessDeniedError(401, 'unauthorized', 'Prijava ili operator autentikacija je obavezna.')
+}
+
 export function accessErrorResponse(error: unknown) {
   if (error instanceof AccessDeniedError) {
     return Response.json({ error: error.message, code: error.code }, { status: error.status })

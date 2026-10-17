@@ -1,4 +1,5 @@
 import type { Entitlement } from '../src/price-engine/types'
+import { entitlementIsLive } from '../shared/entitlements'
 import { resolveTenant, readEntitlement, type RuntimeEnv } from './_repository'
 
 export type PublicTenantAccess = {
@@ -12,13 +13,7 @@ export type PublicTenantAccess = {
 
 const DEMO_SLUG = (env: RuntimeEnv) => env.DEMO_WRITE_TENANT || 'nepar'
 
-export function entitlementIsLive(entitlement: Entitlement | null, now = Date.now()) {
-  if (!entitlement) return false
-  if (entitlement.status !== 'trial' && entitlement.status !== 'active') return false
-  if (entitlement.plan === 'validator') return false
-  if (!entitlement.periodEnd) return false
-  return new Date(entitlement.periodEnd).getTime() >= now
-}
+export { entitlementIsLive }
 
 export function entitlementCanPublish(entitlement: Entitlement | null, now = Date.now()) {
   return entitlementIsLive(entitlement, now)

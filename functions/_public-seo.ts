@@ -137,11 +137,24 @@ export function decoratePublicationShell(html: string, page: PublicationSeo) {
   return out
 }
 
-export function publicationHtmlResponse(html: string, page: PublicationSeo) {
+export type PublicationVariant = 'embed' | 'print'
+
+export function publicationVariantFromUrl(url: URL): PublicationVariant | undefined {
+  if (url.searchParams.get('embed') === '1') return 'embed'
+  if (url.searchParams.get('print') === '1') return 'print'
+  return undefined
+}
+
+export function publicationHtmlResponse(html: string, page: PublicationSeo, variant?: PublicationVariant) {
+  // Embed/print variants duplicate the canonical page, so they are never indexable.
+  const effective = variant ? { ...page, index: false } : page
   const headers = new Headers({
     'content-type': 'text/html; charset=utf-8',
-    'cache-control': page.index ? 'public, max-age=60' : 'no-store',
+    'cache-control': effective.index || variant === 'embed' ? 'public, max-age=60' : 'no-store',
   })
-  if (!page.index) headers.set('x-robots-tag', 'noindex, nofollow')
-  return new Response(decoratePublicationShell(html, page), { headers })
+  if (!effective.index) headers.set('x-robots-tag', 'noindex, nofollow')
+  // Public price lists may be embedded in any customer site (embed.js); no X-Frame-Options may be present.
+  headers.set('content-security-policy', 'frame-ancestors *')
+  headers.delete('x-frame-options')
+  return new Response(decoratePublicationShell(html, effective), { headers })
 }

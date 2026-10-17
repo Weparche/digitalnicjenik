@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "digitalnicjenik-monitor",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-17",
+  // Reached only through the Pages service binding (MONITOR) and cron; no public workers.dev route.
+  "workers_dev": false,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "digitalni-cjenik-nepar",
+      "database_id": "5fab5acf-0d2d-4355-895b-39da1f0462e1",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "send_email": [{ "name": "EMAIL" }],
+  // Cron runs in UTC. 04:30 → 05:30 CET / 06:30 CEST first pass; 05:30 → 06:30 CET / 07:30 CEST retry
+  // (only warn/fail/unchecked tenants). Both land before the 08:00 deadline all year.
+  "triggers": { "crons": ["30 4 * * *", "30 5 * * *"] },
+  "vars": {
+    "DEMO_WRITE_TENANT": "nepar",
+    "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",
+    "EMAIL_FROM": "publisher@nepar.hr",
+    "EMAIL_TO": "nepar@nepar.hr",
+    "PUBLIC_APP_URL": "https://digitalnicjenik.nepar.hr"
+  }
+  // Secrets: MONITOR_SECRET (shared with the Pages project). Deploy: npx wrangler deploy
+}

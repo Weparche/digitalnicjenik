@@ -53,6 +53,15 @@ if (!existsSync(resolve(distDir, 'og/digitalni-cjenik-og.png'))) {
 }
 if (!existsSync(resolve(distDir, 'favicon.svg'))) failures.push('Missing dist/favicon.svg')
 if (!existsSync(resolve(distDir, 'favicon-32x32.png'))) failures.push('Missing dist/favicon-32x32.png')
+
+// --- embed.js (customer-facing embed script; must bypass Functions and keep the strict postMessage guards) ---
+if (!existsSync(resolve(distDir, 'embed.js'))) failures.push('Missing dist/embed.js')
+else {
+  const embed = readFileSync(resolve(distDir, 'embed.js'), 'utf8')
+  if (!embed.includes('event.source !== iframe.contentWindow')) failures.push('embed.js must verify event.source against its iframe')
+  if (!embed.includes("data.type !== 'nepar-cjenik-resize'")) failures.push('embed.js must only accept the structured resize message')
+}
+if (!readFileSync(resolve(distDir, '_routes.json'), 'utf8').includes('"/embed.js"')) failures.push('_routes.json must exclude /embed.js from Functions')
 if (!existsSync(resolve(distDir, 'apple-touch-icon.png'))) failures.push('Missing dist/apple-touch-icon.png')
 
 const rootMatch = indexHtml.match(/<div id="root"[^>]*>([\s\S]*)<\/div>\s*<\/body>/)
