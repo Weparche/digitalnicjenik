@@ -21,7 +21,7 @@ export function NewsIndex() {
         <h1>Vijesti o digitalnom cjeniku</h1>
         <p className="news-index-intro">
           Sažeci i vodiči usklađeni sa službenim izvorima — fokus na objavu CSV/XML cjenika i dodatnu
-          (sidrenu) cijenu od 1. listopada 2026.
+          (sidrenu) cijenu, uz privremenu odgodu primjene do 17.11.2026.
         </p>
       </header>
       <ul className="news-index-list">
