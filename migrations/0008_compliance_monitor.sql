@@ -4,11 +4,11 @@
 ALTER TABLE publication_metadata ADD COLUMN compliance_profile TEXT NOT NULL DEFAULT 'products'
   CHECK (compliance_profile IN ('products', 'services'));
 
--- Known service tenants. Add every other service-provider slug here (or run the same UPDATE by hand)
+-- Known service tenants (the demo tenant 'nepar' publishes a service-provider price list). Add every other service-provider slug here (or run the same UPDATE by hand)
 -- BEFORE the first monitor run, otherwise product-only rules will raise false warnings.
 UPDATE publication_metadata
 SET compliance_profile = 'services'
-WHERE tenant_id IN (SELECT id FROM tenants WHERE slug IN ('patrisa-sisa'));
+WHERE tenant_id IN (SELECT id FROM tenants WHERE slug IN ('nepar', 'patrisa-sisa'));
 
 CREATE TABLE IF NOT EXISTS monitor_runs (
   id TEXT PRIMARY KEY NOT NULL,

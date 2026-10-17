@@ -145,7 +145,7 @@ A separate Worker (`digitalnicjenik-monitor`) runs the daily checks; Pages Funct
 
 - **Schedule (UTC):** `30 4 * * *` first pass and `30 5 * * *` retry (only tenants whose latest run is warn/fail or that have no recent run). That is 05:30/06:30 CET and 06:30/07:30 CEST, so the retry always finishes before the 08:00 product-price deadline.
 - **Rules** live in `shared/compliance/rulesets.ts` (`ACTIVE_RULESET`, currently `nn-101-2026`). The new Pravilnik is a new entry plus switching `ACTIVE_RULESET`; every `monitor_runs` row stores the ruleset id it was checked against.
-- **Profiles:** `publication_metadata.compliance_profile` is `products` (default) or `services`. Migration 0008 classifies `patrisa-sisa` as services; classify every other service provider **before the first monitor run**:
+- **Profiles:** `publication_metadata.compliance_profile` is `products` (default) or `services`. Migration 0008 classifies the demo tenant `nepar` and `patrisa-sisa` as services; classify every other service provider **before the first monitor run**:
   `UPDATE publication_metadata SET compliance_profile = 'services' WHERE tenant_id IN (SELECT id FROM tenants WHERE slug IN ('<slug>', ...));`
 - `warn` never pages; only `fail` e-mails the tenant owner(s) and `EMAIL_TO`. Recovery mail is sent only after a real `fail` returns to `ok`.
 
