@@ -7,6 +7,7 @@ export type AdminTenant = {
   ownerEmail: string | null
   monitorOverall: string | null
   monitorCheckedAt: string | null
+  request: { intent: string; createdAt: string | null; email: string | null } | null
 }
 
 export type AdminState = 'active' | 'trial' | 'expired' | 'none'
@@ -38,3 +39,12 @@ export const STATE_LABEL: Record<AdminState, string> = {
   expired: 'Istekao — javni cjenik je ugašen',
   none: 'Bez licence',
 }
+
+export const REQUEST_LABEL: Record<string, string> = {
+  self_service: 'Čeka uplatu — Publisher',
+  implementation: 'Čeka uplatu — s postavljanjem',
+  consultation: 'Traži pomoć',
+}
+
+/** Requests that mean "I will pay" — only these are treated as awaiting payment. */
+export const isPaymentRequest = (request: AdminTenant['request']) => request !== null && request.intent !== 'consultation'

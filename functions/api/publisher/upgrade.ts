@@ -1,5 +1,5 @@
 import { resolveSession, type AuthEnv } from '../../_auth'
-import { sendPublisherUpgradeRequest, type TrialEnv } from '../../_trial'
+import { recordUpgradeRequest, sendPublisherUpgradeRequest, type TrialEnv } from '../../_trial'
 import { readCurrentPublication, readEntitlement } from '../../_repository'
 import { accessErrorResponse } from '../../_write-auth'
 
@@ -15,6 +15,7 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: T
     }
     const tenant = session.tenants[0]
     const origin = new URL(request.url).origin
+    await recordUpgradeRequest(env, { tenantId: tenant.id, intent: body.intent, email: session.user.email, message: body.message })
     const publication = await readCurrentPublication(env, tenant.slug)
     const entitlement = await readEntitlement(env, tenant.slug)
     await sendPublisherUpgradeRequest(env, {

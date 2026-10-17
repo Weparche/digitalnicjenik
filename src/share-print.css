@@ -65,3 +65,6 @@ body:has(.admin-shell) { background: var(--nepar-canvas); }
 .admin-badge-active { background: #dcfce7; color: var(--nepar-success); }
 .admin-badge-trial { background: #dbeafe; color: var(--nepar-primary-hover); }
 .admin-badge-expired { background: #fee2e2; color: var(--nepar-error); }
+.admin-table td > .admin-badge { margin-top: 6px; }
+.admin-badge-pending { background: #fef3c7; color: #92400e; }
+.admin-badge-help { background: #e0e7ff; color: #3730a3; }

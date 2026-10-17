@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { adminState, daysLeft, projectedPeriodEnd, STATE_LABEL, type AdminTenant } from './adminView'
+import { adminState, daysLeft, isPaymentRequest, projectedPeriodEnd, REQUEST_LABEL, STATE_LABEL, type AdminTenant } from './adminView'
 import { formatZagreb } from './monitorView'
 
 const MONITOR_LABEL: Record<string, string> = { ok: '✓ U redu', warn: '⚠ Upozorenje', fail: '✕ Greška', skipped: 'Preskočeno' }
@@ -90,7 +90,7 @@ export function AdminPanel() {
               const days = daysLeft(tenant.periodEnd)
               return (
                 <tr key={tenant.slug}>
-                  <td><strong>{tenant.name}</strong><small>{tenant.slug}</small></td>
+                  <td><strong>{tenant.name}</strong><small>{tenant.slug}</small>{tenant.request && <span className={`admin-badge ${isPaymentRequest(tenant.request) ? 'admin-badge-pending' : 'admin-badge-help'}`}>{REQUEST_LABEL[tenant.request.intent] ?? tenant.request.intent}{tenant.request.createdAt ? ` · ${formatZagreb(tenant.request.createdAt, false)}` : ''}</span>}</td>
                   <td>{tenant.ownerEmail ?? '—'}</td>
                   <td><span className={`admin-badge admin-badge-${state}`}>{STATE_LABEL[state]}</span></td>
                   <td>{tenant.periodEnd ? formatZagreb(tenant.periodEnd, false) : '—'}{days !== null && state !== 'expired' && <small>{days} dana</small>}</td>

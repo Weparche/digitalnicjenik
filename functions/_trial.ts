@@ -111,10 +111,25 @@ export async function renewEntitlement(env: RuntimeEnv, tenantId: string) {
   if (!row) throw new Error('entitlement_missing')
   const stamp = nowIso()
   const periodEnd = nextPeriodEnd(row.period_end, new Date(stamp))
-  await env.DB.prepare(
-    `UPDATE entitlements SET status = 'active', period_end = ?, updated_at = ? WHERE id = ?`,
-  ).bind(periodEnd, stamp, row.id).run()
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE entitlements SET status = 'active', period_end = ?, updated_at = ? WHERE id = ?`).bind(periodEnd, stamp, row.id),
+    env.DB.prepare(`UPDATE upgrade_requests SET status = 'done', handled_at = ? WHERE tenant_id = ? AND status = 'open'`).bind(stamp, tenantId),
+  ])
   return { periodEnd }
+}
+
+/** Keeps at most one open request per tenant+intent; a repeated click refreshes it instead of duplicating. */
+export async function recordUpgradeRequest(
+  env: RuntimeEnv,
+  input: { tenantId: string; intent: 'self_service' | 'implementation' | 'consultation'; email: string; message?: string },
+) {
+  if (!env.DB) throw new Error('db_unavailable')
+  await env.DB.prepare(
+    `INSERT INTO upgrade_requests (id, tenant_id, intent, requester_email, message, status, created_at)
+     VALUES (?, ?, ?, ?, ?, 'open', ?)
+     ON CONFLICT(tenant_id, intent) WHERE status = 'open'
+     DO UPDATE SET requester_email = excluded.requester_email, message = excluded.message, created_at = excluded.created_at`,
+  ).bind(crypto.randomUUID(), input.tenantId, input.intent, input.email, input.message?.slice(0, 2000) ?? null, nowIso()).run()
 }
 
 async function consumeTrialClaimBudget(env: TrialEnv, request: Request, email: string) {
