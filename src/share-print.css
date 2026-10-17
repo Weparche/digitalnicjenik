@@ -44,3 +44,24 @@ body:has(.public-shell--embed) { background: transparent; }
   .print-table .print-category { break-after: avoid; }
   .public-shell--print .public-footer { padding: 10px 0 0; }
 }
+
+/* Operator admin (/admin) */
+body:has(.admin-shell) { background: var(--nepar-canvas); }
+.admin-shell { max-width: 1040px; margin: 0 auto; padding: 32px 16px 64px; color: var(--nepar-ink); }
+.admin-shell h1 { margin: 0 0 12px; font-size: 28px; letter-spacing: 0; line-height: 1.2; }
+.admin-hint { margin: 0 0 16px; color: var(--nepar-muted); font-size: 14px; }
+.admin-login { display: grid; gap: 12px; max-width: 360px; }
+.admin-login label { display: grid; gap: 6px; font-size: 13px; color: var(--nepar-body); }
+.admin-login input { min-height: 44px; padding: 0 12px; border: 1px solid var(--nepar-border); border-radius: 6px; background: #fff; color: var(--nepar-ink); font: 14px var(--mono); }
+.admin-login .app-button { min-height: 44px; }
+.admin-table-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--nepar-border); border-radius: 8px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--nepar-ink); }
+.admin-table th, .admin-table td { padding: 12px 14px; border-bottom: 1px solid var(--nepar-border); text-align: left; vertical-align: top; font-family: inherit; text-transform: none; letter-spacing: 0; font-size: 13px; }
+.admin-table thead th { color: var(--nepar-muted); font-size: 12px; font-weight: 600; }
+.admin-table td:last-child { text-align: right; color: inherit; font-family: inherit; }
+.admin-table small { display: block; margin-top: 2px; color: var(--nepar-muted); font-size: 12px; }
+.admin-table .app-button { min-height: 44px; white-space: nowrap; }
+.admin-badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #e2e8f0; color: var(--nepar-body); }
+.admin-badge-active { background: #dcfce7; color: var(--nepar-success); }
+.admin-badge-trial { background: #dbeafe; color: var(--nepar-primary-hover); }
+.admin-badge-expired { background: #fee2e2; color: var(--nepar-error); }

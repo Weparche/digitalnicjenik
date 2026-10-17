@@ -2,3 +2,4 @@
 /arhiva /app-shell 200
 /app /app-shell 200
 /app/* /app-shell 200
+/admin /app-shell 200

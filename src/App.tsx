@@ -1,3 +1,4 @@
+import { AdminPanel } from './AdminPanel'
 import { MonitorPanel } from './MonitorPanel'
 import { QrCode } from './QrCode'
 import { ShareAndPrintCard } from './ShareAndPrintCard'
@@ -1486,6 +1487,7 @@ function PublisherEntry() {
 
 export default function App() {
   const path = typeof window !== 'undefined' ? window.location.pathname : '/'
+  if (path === '/admin' || path === '/admin/') return <AdminPanel />
   if (path === '/app' || path.startsWith('/app/')) return <PublisherEntry />
   if (path === '/vijesti' || path === '/vijesti/') return <NewsIndex />
   const newsMatch = path.match(/^\/vijesti\/([^/]+)\/?$/)

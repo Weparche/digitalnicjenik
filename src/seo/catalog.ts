@@ -112,6 +112,7 @@ export function renderRobots() {
     'Disallow: /api/',
     'Disallow: /app$',
     'Disallow: /app/',
+    'Disallow: /admin',
     '',
     `Sitemap: ${SITE_URL}/sitemap.xml`,
     '',

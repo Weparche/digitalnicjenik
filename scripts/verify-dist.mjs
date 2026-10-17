@@ -75,6 +75,7 @@ if (!robots.includes('Sitemap: https://digitalnicjenik.nepar.hr/sitemap.xml')) f
 if (!robots.includes('Disallow: /api/')) failures.push('robots.txt: must keep /api/ out of the crawl')
 if (!robots.includes('Disallow: /app$')) failures.push('robots.txt: must block /app without blocking /apple-touch-icon.png')
 if (!robots.includes('Disallow: /app/')) failures.push('robots.txt: must block /app/ routes')
+if (!robots.includes('Disallow: /admin')) failures.push('robots.txt: must block the operator /admin page')
 if (robots.includes('Disallow: /vijesti') || robots.includes('Disallow: /c')) failures.push('robots.txt: must not block public news or cjenik URLs')
 
 // --- sitemap.xml ---
@@ -105,6 +106,7 @@ if (!redirects.includes('/c/* /app-shell 200')) failures.push('_redirects: missi
 if (!redirects.includes('/arhiva /app-shell 200')) failures.push('_redirects: missing the /arhiva route mapping to app-shell')
 if (!redirects.includes('/app /app-shell 200')) failures.push('_redirects: missing the /app route mapping to app-shell')
 if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: missing the /app/* route mapping to app-shell')
+if (!redirects.includes('/admin /app-shell 200')) failures.push('_redirects: missing the /admin route mapping to app-shell')
 
 const HOME_TITLE = 'NEPAR Publisher — cjenik na webu uz MIKROeRAČUN'
 const LATEST_SLUG = 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026'

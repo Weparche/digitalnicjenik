@@ -1,13 +1,11 @@
 import { renewEntitlement, type TrialEnv } from '../../_trial'
 import { resolveTenant } from '../../_repository'
-import { AccessDeniedError, accessErrorResponse } from '../../_write-auth'
+import { AccessDeniedError, accessErrorResponse, operatorAuthorized } from '../../_write-auth'
 
 /** Ops-only: extend entitlement by MAX(now, period_end) + 1 year. */
 export const onRequestPost = async ({ request, env }: { request: Request; env: TrialEnv }) => {
   try {
-    const key = env.OPERATOR_WRITE_KEY
-    const auth = request.headers.get('authorization') || ''
-    if (!key || auth !== `Bearer ${key}`) {
+    if (!operatorAuthorized(env, request)) {
       throw new AccessDeniedError(401, 'unauthorized', 'Operator key required.')
     }
     const body = await request.json() as { slug?: string }

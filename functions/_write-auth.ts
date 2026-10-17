@@ -94,7 +94,7 @@ async function consumeDemoWriteBudget(env: RuntimeEnv, request: Request) {
   }
 }
 
-function operatorAuthorized(env: RuntimeEnv, request: Request) {
+export function operatorAuthorized(env: RuntimeEnv, request: Request) {
   const key = env.OPERATOR_WRITE_KEY
   if (!key) return false
   const token = bearerToken(request)

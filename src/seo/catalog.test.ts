@@ -50,6 +50,7 @@ describe('public SEO catalog', () => {
     expect(robots).toContain('Disallow: /api/')
     expect(robots).toContain('Disallow: /app$')
     expect(robots).toContain('Disallow: /app/')
+    expect(robots).toContain('Disallow: /admin')
     expect(robots).not.toMatch(/Disallow: \/app\n/)
     expect(robots).not.toContain('Disallow: /c')
     expect(robots).not.toContain('Disallow: /vijesti')
