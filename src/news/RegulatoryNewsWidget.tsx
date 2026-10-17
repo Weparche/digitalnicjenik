@@ -1,4 +1,4 @@
-import { formatNewsDate, getLatestPost, getLatestPosts, newsArticlePath } from './posts'
+import { formatNewsDate, getLatestPost, getLatestPosts, newsArticlePath } from './posts-current'
 
 export function RegulatoryNewsWidget() {
   const post = getLatestPost()
@@ -10,43 +10,28 @@ export function RegulatoryNewsWidget() {
 
   return (
     <aside className="regulatory-news-widget" aria-labelledby="regulatory-news-widget-title">
-      <p className="regulatory-news-widget-eyebrow" id="regulatory-news-widget-title">
-        {eyebrow}
-      </p>
-      <h2 className="regulatory-news-widget-headline">
-        <a href={articleHref}>{headline}</a>
-      </h2>
+      <p className="regulatory-news-widget-eyebrow" id="regulatory-news-widget-title">{eyebrow}</p>
+      <h2 className="regulatory-news-widget-headline"><a href={articleHref}>{headline}</a></h2>
       <p className="regulatory-news-widget-sub">{sub}</p>
       <p className="regulatory-news-widget-meta">
         <time dateTime={post.publishedAt}>{formatNewsDate(post.publishedAt)}</time>
         <span> · {post.readingTimeMinutes} min čitanja</span>
       </p>
-      <a className="regulatory-news-widget-cta" href={articleHref}>
-        Pročitaj vodič →
-      </a>
+      <a className="regulatory-news-widget-cta" href={articleHref}>Pročitaj vodič →</a>
       <nav className="regulatory-news-widget-more" aria-label="Zadnje vijesti">
         <ul>
           {latestPosts.slice(1).map((item) => (
-            <li key={item.slug}>
-              <a href={newsArticlePath(item.slug)}>{item.widgetHeadline ?? item.title}</a>
-            </li>
+            <li key={item.slug}><a href={newsArticlePath(item.slug)}>{item.widgetHeadline ?? item.title}</a></li>
           ))}
         </ul>
-        <a className="regulatory-news-widget-cta" href="/vijesti/">
-          Sve vijesti →
-        </a>
+        <a className="regulatory-news-widget-cta" href="/vijesti/">Sve vijesti →</a>
       </nav>
       {post.sources.length > 0 && (
         <div className="regulatory-news-widget-sources">
           <p className="regulatory-news-widget-sources-label">Izvori</p>
           <ul>
             {post.sources.slice(0, 3).map((source) => (
-              <li key={source.url}>
-                <a href={source.url} target="_blank" rel="noopener noreferrer">
-                  {source.title}
-                  <span aria-hidden="true"> ↗</span>
-                </a>
-              </li>
+              <li key={source.url}><a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}<span aria-hidden="true"> ↗</span></a></li>
             ))}
           </ul>
         </div>
