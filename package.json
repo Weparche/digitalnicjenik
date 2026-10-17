@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "prebuild": "node scripts/prepare-public-fixture.mjs",
-    "postbuild": "node scripts/prerender.mjs && node scripts/verify-dist.mjs",
+    "postbuild": "node scripts/prerender.mjs && node scripts/prerender-current-news.mjs && node scripts/verify-dist.mjs",
     "typecheck:app": "tsc -b --pretty false",
     "typecheck:functions": "tsc -p functions --pretty false",
     "typecheck": "npm run typecheck:app && npm run typecheck:functions",
