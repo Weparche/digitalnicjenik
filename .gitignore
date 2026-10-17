@@ -10,3 +10,12 @@ playwright-report/
 blob-report/
 playwright/.cache/
 .tmp-review/
+
+# Local-only tooling, tokens and logs (never commit)
+.impeccable/
+wrangler.toml
+scripts/.*
+scripts/create-email-api-token.mjs
+scripts/probe-cf-permissions.mjs
+scripts/put-pages-secret.mjs
+scripts/set-pages-email-secret.mjs
