@@ -1,4 +1,4 @@
-import { formatNewsDate, NEWS_POSTS, newsArticlePath } from './posts'
+import { formatNewsDate, NEWS_POSTS, newsArticlePath } from './posts-current'
 import { NewsLayout } from './NewsLayout'
 
 export function NewsIndex() {
@@ -21,7 +21,7 @@ export function NewsIndex() {
         <h1>Vijesti o digitalnom cjeniku</h1>
         <p className="news-index-intro">
           Sažeci i vodiči usklađeni sa službenim izvorima — fokus na objavu CSV/XML cjenika i dodatnu
-          (sidrenu) cijenu od 1. listopada 2026.
+          (sidrenu) odnosno baznu cijenu.
         </p>
       </header>
       <ul className="news-index-list">
