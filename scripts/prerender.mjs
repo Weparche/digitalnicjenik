@@ -16,11 +16,11 @@ const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
 const INDEXABLE_ROBOTS = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
 const FEED_URL = `${SITE_URL}/feed.xml`
 
-export const HOME_TITLE = 'NEPAR Publisher — cjenik na webu uz MIKROeRAČUN'
+export const HOME_TITLE = 'Digitalni cjenik (CSV/XML) s nadzorom | NEPAR Publisher'
 const DESCRIPTION =
-  'MIKROeRAČUN je za eRačune. NEPAR Publisher objavljuje Excel/CSV cjenik na vašem webu — validacija, javni CSV/XML, probni rok 7 dana, akcija 39,90 €/god.'
+  'Objavite CSV/XML digitalni cjenik, pratite usklađenost s aktualnim pravilima i dobijte upozorenje čim nešto nije u redu. Sidrena cijena, arhiva 30 dana, probni rok 7 dana.'
 const TWITTER_DESCRIPTION =
-  'Publishing layer za javni cjenik: Excel/CSV → validacija → 7 dana probe → Publisher self-service.'
+  'Digitalni cjenik koji ne samo da objavi datoteku, nego provjerava da je ispravna: CSV/XML, nadzor i e-mail upozorenje.'
 
 function escapeHtml(value) {
   return String(value)
@@ -34,7 +34,7 @@ function safeJson(value) {
   return JSON.stringify(value).replaceAll('<', '\\u003c')
 }
 
-function buildHomeSchema(productFaq) {
+function buildHomeSchema(productFaq, pricing) {
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -79,7 +79,10 @@ function buildHomeSchema(productFaq) {
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
         inLanguage: 'hr',
-        offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+        offers: [
+          { '@type': 'Offer', name: 'Provjera, validator i probni rok 7 dana', price: '0', priceCurrency: 'EUR' },
+          { '@type': 'Offer', name: 'Publisher self-service (godišnje)', price: String(pricing.LAUNCH_SELF_SERVICE_EUR), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` },
+        ],
         provider: { '@id': ORGANIZATION_ID },
         isRelatedTo: { '@id': PRICE_ENGINE_ID },
       },
@@ -101,6 +104,94 @@ function buildHomeSchema(productFaq) {
       },
     ],
   }
+}
+
+
+function buildSitePageSchema(page, extras) {
+  const pageUrl = `${SITE_URL}${page.path}`
+  const crumbs = [{ name: 'Početna', url: `${SITE_URL}/` }]
+  if (page.parent) {
+    const parent = extras.pages.find((candidate) => candidate.path === page.parent)
+    if (parent) crumbs.push({ name: parent.label, url: `${SITE_URL}${parent.path}` })
+  }
+  crumbs.push({ name: page.label, url: pageUrl })
+  const graph = [
+    { '@type': 'Organization', '@id': ORGANIZATION_ID, name: 'Nepar Solutions', url: `${NEPAR_URL}/` },
+    { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'NEPAR Publisher', url: `${SITE_URL}/`, inLanguage: 'hr-HR', publisher: { '@id': ORGANIZATION_ID } },
+    {
+      '@type': page.kind === 'faq' ? 'FAQPage' : 'WebPage',
+      '@id': `${pageUrl}#page`,
+      name: page.title,
+      description: page.description,
+      url: pageUrl,
+      inLanguage: 'hr-HR',
+      datePublished: page.updatedAt,
+      dateModified: page.updatedAt,
+      isPartOf: { '@id': WEBSITE_ID },
+      publisher: { '@id': ORGANIZATION_ID },
+      ...(page.kind === 'faq'
+        ? {
+            mainEntity: extras.faqEntries.map((entry) => ({
+              '@type': 'Question',
+              name: entry.question,
+              acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+            })),
+          }
+        : {}),
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: crumbs.map((crumb, index) => ({ '@type': 'ListItem', position: index + 1, name: crumb.name, item: crumb.url })),
+    },
+  ]
+  if (page.kind === 'pricing') {
+    graph.push({
+      '@type': 'SoftwareApplication',
+      '@id': APP_ID,
+      name: 'NEPAR Publisher',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      inLanguage: 'hr',
+      url: `${SITE_URL}/`,
+      provider: { '@id': ORGANIZATION_ID },
+      offers: [
+        { '@type': 'Offer', name: 'Provjera, validator i probni rok 7 dana', price: '0', priceCurrency: 'EUR', url: pageUrl },
+        { '@type': 'Offer', name: 'Publisher self-service (godišnje, akcija za prvih 100 aktiviranih pretplata)', price: String(extras.pricing.LAUNCH_SELF_SERVICE_EUR), priceCurrency: 'EUR', url: pageUrl },
+        { '@type': 'Offer', name: 'Publisher self-service (godišnje, redovna cijena)', price: String(extras.pricing.REGULAR_SELF_SERVICE_EUR), priceCurrency: 'EUR', url: pageUrl },
+        { '@type': 'Offer', name: 'Publisher + postavljanje (prva godina)', price: String(extras.pricing.IMPLEMENTATION_FIRST_YEAR_EUR), priceCurrency: 'EUR', url: pageUrl },
+      ],
+    })
+  }
+  if (page.kind === 'spec') {
+    const files = [
+      ['NEPAR format — CSV za usluge', '/examples/nepar-format-primjer-usluge.csv', 'text/csv'],
+      ['NEPAR format — XML za usluge', '/examples/nepar-format-primjer-usluge.xml', 'application/xml'],
+      ['HOK stil — CSV za usluge', '/examples/primjer-digitalni-cjenik-usluge-2026.csv', 'text/csv'],
+      ['HOK stil — XML za usluge', '/examples/primjer-digitalni-cjenik-usluge-2026.xml', 'application/xml'],
+    ]
+    graph.push({
+      '@type': 'Dataset',
+      '@id': `${pageUrl}#dataset`,
+      name: 'Primjeri CSV i XML digitalnog cjenika usluga',
+      description: 'Primjeri strojno čitljivog digitalnog cjenika usluga (CSV i XML) s maloprodajnom i sidrenom cijenom, u NEPAR formatu i u stilu HOK predloška.',
+      url: pageUrl,
+      inLanguage: 'hr-HR',
+      isAccessibleForFree: true,
+      creator: { '@id': ORGANIZATION_ID },
+      dateModified: page.updatedAt,
+      distribution: files.map(([name, path, encodingFormat]) => ({ '@type': 'DataDownload', name, contentUrl: `${SITE_URL}${path}`, encodingFormat })),
+    })
+  }
+  if (page.howTo) {
+    graph.push({
+      '@type': 'HowTo',
+      '@id': `${pageUrl}#howto`,
+      name: page.howTo.name,
+      inLanguage: 'hr-HR',
+      step: page.howTo.steps.map((step, index) => ({ '@type': 'HowToStep', position: index + 1, name: step.name, text: step.text })),
+    })
+  }
+  return { '@context': 'https://schema.org', '@graph': graph }
 }
 
 function buildNewsArticleSchema(post, pageUrl, imageUrl) {
@@ -378,7 +469,7 @@ function applyHomeMeta(html) {
 
 async function main() {
   const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
-  const [{ Landing }, { productFaq }, { NEWS_POSTS }, { NewsIndex }, { NewsArticle }, seo] =
+  const [{ Landing }, { productFaq }, { NEWS_POSTS }, { NewsIndex }, { NewsArticle }, seo, registry, faq, sitePageModule, pricing] =
     await Promise.all([
       vite.ssrLoadModule('/src/App.tsx'),
       vite.ssrLoadModule('/src/productFaq.ts'),
@@ -386,9 +477,17 @@ async function main() {
       vite.ssrLoadModule('/src/news/NewsIndex.tsx'),
       vite.ssrLoadModule('/src/news/NewsArticle.tsx'),
       vite.ssrLoadModule('/src/seo/catalog.ts'),
+      vite.ssrLoadModule('/src/pages/registry.ts'),
+      vite.ssrLoadModule('/src/pages/faqData.ts'),
+      vite.ssrLoadModule('/src/pages/SitePage.tsx'),
+      vite.ssrLoadModule('/src/publisherPricing.ts'),
     ])
   const landingHtml = renderToString(React.createElement(Landing))
   const newsIndexHtml = renderToString(React.createElement(NewsIndex))
+  const sitePages = registry.SITE_PAGES.map((page) => ({
+    page,
+    html: renderToString(React.createElement(sitePageModule.SitePage, { page })),
+  }))
   await vite.close()
 
   const distIndex = resolve('dist/index.html')
@@ -401,11 +500,32 @@ async function main() {
   )
   homeHtml = applyHomeMeta(homeHtml)
   if (!homeHtml.includes('data-nepar-schema')) {
-    const schema = `    <script type="application/ld+json" data-nepar-schema>${safeJson(buildHomeSchema(productFaq))}</script>\n  `
+    const schema = `    <script type="application/ld+json" data-nepar-schema>${safeJson(buildHomeSchema(productFaq, pricing))}</script>\n  `
     homeHtml = homeHtml.replace('</head>', `${schema}</head>`)
   }
   writeFileSync(distIndex, homeHtml, 'utf8')
   console.log('Prerendered / (Landing) with product copy, meta, and JSON-LD.')
+
+  for (const { page, html } of sitePages) {
+    const url = `${SITE_URL}${page.path}`
+    writeHtmlPage(
+      resolve(`dist${page.path}index.html`),
+      pristineShell,
+      html,
+      {
+        title: page.seoTitle,
+        description: page.description,
+        canonical: url,
+        ogImage: OG_IMAGE,
+        ogTitle: page.seoTitle,
+        ogDescription: page.description,
+        imageAlt: page.title,
+        modifiedTime: page.updatedAt,
+      },
+      buildSitePageSchema(page, { pages: registry.SITE_PAGES, faqEntries: faq.allFaqEntries, pricing }),
+    )
+    console.log(`Prerendered ${page.path}`)
+  }
 
   const newsIndexUrl = `${SITE_URL}/vijesti/`
   writeHtmlPage(
