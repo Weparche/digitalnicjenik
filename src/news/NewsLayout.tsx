@@ -1,12 +1,15 @@
 import type { ReactNode } from 'react'
 import { Logo } from '../Logo'
+import { SiteNav } from '../pages/SiteNav'
 
 export function NewsLayout({
   children,
   breadcrumb,
+  navCurrent,
 }: {
   children: ReactNode
   breadcrumb: ReactNode
+  navCurrent?: string
 }) {
   return (
     <div className="validator-app-shell news-shell">
@@ -17,6 +20,7 @@ export function NewsLayout({
         </a>
       </header>
       <main className="validator-app news-main">
+        <SiteNav current={navCurrent} />
         <nav className="news-breadcrumb" aria-label="Navigacija">
           {breadcrumb}
         </nav>

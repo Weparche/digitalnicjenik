@@ -1,4 +1,6 @@
 import { AdminPanel } from './AdminPanel'
+import { findSitePage } from './pages/registry'
+import { SitePage } from './pages/SitePage'
 import { MonitorPanel } from './MonitorPanel'
 import { QrCode } from './QrCode'
 import { ShareAndPrintCard } from './ShareAndPrintCard'
@@ -1238,9 +1240,9 @@ function PremiumEntry() {
 
   return <div className="validator-app-shell premium-entry"><header className="app-header"><Logo /><button className="header-lead" type="button" onClick={() => focusLead('consultation')}>Trebate pomoć? <strong>Konzultacija →</strong></button></header><main className="validator-app premium-entry-main">
     <div className="premium-top">
-      <div className="premium-hero-copy"><p className="premium-hero-kicker">Koristite MIKROeRAČUN?</p><h1>MIKROeRAČUN je za eRačune. <em>NEPAR Publisher objavljuje vaš cjenik na webu.</em></h1><p>Publishing layer između Excela ili CSV-a i javne mrežne stranice: provjera podataka, propisani CSV/XML, aktualni link za dohvat i verzije koje ne prepisujete ručno.</p></div>
+      <div className="premium-hero-copy"><p className="premium-hero-kicker">Digitalni cjenik · CSV/XML · sidrena cijena</p><h1>Digitalni cjenik koji ne samo da objavi datoteku, <em>nego provjerava da je ispravna.</em></h1><p>Objavite CSV/XML cjenik, pratite usklađenost s aktualnim pravilima i dobijte upozorenje čim nešto nije u redu. Rok primjene je 17. studenoga 2026.</p><ul className="hero-pillars" aria-label="Što dobivate"><li><strong>Objava</strong> javni CSV/XML, arhiva 30 dana</li><li><strong>Nadzor</strong> svakodnevna provjera ispravnosti</li><li><strong>Alarm</strong> e-mail kad nešto pukne</li></ul><nav className="hero-links" aria-label="Saznajte više"><a href="/cijene/">Cijene</a><a href="/usporedba/">Usporedba</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/faq/">Česta pitanja</a><a href="/vodici/">Vodiči</a></nav></div>
       <RegulatoryNewsWidget />
-      <ol className="premium-funnel" aria-label="Kako Publisher radi"><li>MIKROeRAČUN + vlastiti web</li><li>Imate Excel/CSV s cijenama?</li><li>Učitajte besplatno</li><li>Validacija</li><li>7 dana javne objave</li><li>{selfServicePriceLabel()}</li></ol>
+      <ol className="premium-funnel" aria-label="Kako Publisher radi"><li>Vaš Excel/CSV cjenik</li><li>Učitajte besplatno</li><li>Validacija</li><li>7 dana javne objave</li><li>{selfServicePriceLabel()}</li></ol>
       <aside className="premium-qualification-block" aria-label="Provjera prije kupnje"><p><strong>Već imate Marketino, Minimax, Pantheon ili drugi poslovni program?</strong> Vaš pružatelj možda već omogućuje objavu cjenika. Provjerite prije kupnje Publishera.</p></aside>
       <div className="premium-checker-slot"><PremiumReadinessChecker onResult={(result, url) => { setCheckerResult(result); setCheckerUrl(url) }} onChooseCsv={focusValidator} onLead={focusLead} /></div>
       <aside className="hero-offer-strip" aria-label="Publisher ponuda">
@@ -1492,6 +1494,8 @@ export default function App() {
   if (path === '/vijesti' || path === '/vijesti/') return <NewsIndex />
   const newsMatch = path.match(/^\/vijesti\/([^/]+)\/?$/)
   if (newsMatch) return <NewsArticle slug={newsMatch[1]!} />
+  const sitePage = findSitePage(path)
+  if (sitePage) return <SitePage page={sitePage} />
   const slug = slugFromPath()
   if (slug) return <PublicPriceList slug={slug} />
   if (isCustomPublication()) return <PublicPriceList customHost />

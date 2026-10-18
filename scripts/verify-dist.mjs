@@ -29,7 +29,7 @@ const indexHtml = read('index.html')
 const h1Count = (indexHtml.match(/<h1\b/gi) || []).length
 if (h1Count !== 1) failures.push(`index.html: expected exactly one <h1>, found ${h1Count}`)
 expect('index.html', /<h1[^>]*>/, 'prerendered H1 is missing')
-expect('index.html', 'Koristite MIKROeRAČUN', 'prerendered hero copy is missing')
+expect('index.html', 'nego provjerava da je ispravna', 'prerendered hero copy is missing')
 expect('index.html', '<link rel="canonical" href="https://digitalnicjenik.nepar.hr/" />', 'self-canonical is missing')
 expect('index.html', /<title>[^<]{10,}<\/title>/, 'title is missing or too short')
 expect('index.html', /<meta name="description" content="[^"]{20,}" \/>/, 'meta description is missing or too short')
@@ -108,7 +108,8 @@ if (!redirects.includes('/app /app-shell 200')) failures.push('_redirects: missi
 if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: missing the /app/* route mapping to app-shell')
 if (!redirects.includes('/admin /app-shell 200')) failures.push('_redirects: missing the /admin route mapping to app-shell')
 
-const HOME_TITLE = 'NEPAR Publisher — cjenik na webu uz MIKROeRAČUN'
+const HOME_TITLE = 'Digitalni cjenik (CSV/XML) s nadzorom | NEPAR Publisher'
+const DRAFT_SLUG = 'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026'
 const LATEST_SLUG = 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026'
 const EXAMPLES_SLUG = 'primjeri-digitalnih-cjenika-hrvatska-2026'
 const MINISTRY_SLUG = 'ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026'
@@ -131,9 +132,9 @@ const HOK_REL = `vijesti/${HOK_SLUG}/index.html`
 const CSV_REL = `vijesti/${CSV_SLUG}/index.html`
 const REGULATORY_REL = `vijesti/${REGULATORY_SLUG}/index.html`
 
-expect('index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'landing widget must link to latest news article')
-expect('index.html', `href="/vijesti/${EXAMPLES_SLUG}/"`, 'landing must link to the second latest article')
-expect('index.html', `href="/vijesti/${MINISTRY_SLUG}/"`, 'landing must link to the third latest article')
+expect('index.html', `href="/vijesti/${DRAFT_SLUG}/"`, 'landing widget must link to latest news article')
+expect('index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'landing must link to the second latest article')
+expect('index.html', `href="/vijesti/${EXAMPLES_SLUG}/"`, 'landing must link to the third latest article')
 expect('index.html', 'href="/vijesti/"', 'landing must link to the news index')
 expect('index.html', 'Sve vijesti', 'landing must label the news index link')
 expect('index.html', 'index,follow,max-image-preview:large', 'homepage must be explicitly indexable')
@@ -276,7 +277,7 @@ verifyArticle(
 verifyArticle(
   HOK_REL,
   HOK_CANONICAL,
-  'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti do 1. listopada',
+  'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti prije roka',
   [
     ['hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika', 'HOK article HTML must link HOK source'],
     ['href="/#csv-validator"', 'HOK article must link the Excel/CSV validator'],
@@ -293,7 +294,7 @@ verifyArticle(CSV_REL, CSV_CANONICAL, 'Primjer CSV digitalnog cjenika za pružat
 verifyArticle(
   REGULATORY_REL,
   REGULATORY_CANONICAL,
-  'Digitalni cjenik od 1. listopada 2026.: što se mijenja za vlasnike web stranica',
+  'Digitalni cjenik i sidrena cijena 2026.: što se mijenja za vlasnike web stranica',
   [
     ['narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html', 'regulatory article HTML must link NN 1213'],
     ['hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika', 'regulatory article HTML must link HOK'],
@@ -312,6 +313,54 @@ expect('vijesti/index.html', '<link rel="canonical" href="https://digitalnicjeni
 if (!existsSync(resolve(distDir, 'og/vijesti-digitalni-cjenik-2026.png'))) {
   failures.push('Missing dist/og/vijesti-digitalni-cjenik-2026.png')
 }
+
+// --- Evergreen content pages: unique title/H1/canonical, structured data, interlinking, sitemap ---
+const SITE = 'https://digitalnicjenik.nepar.hr'
+const EVERGREEN = [
+  { path: 'cijene', must: ['"@type":"Offer"', '/usporedba/', '/faq/'] },
+  { path: 'faq', must: ['"@type":"FAQPage"', '"@type":"Question"', '/specifikacija-csv-xml/', '/cijene/'] },
+  { path: 'usporedba', must: ['Usporedna tablica', 'Alarm e-mailom', 'Kada vam NEPAR nije najbolji izbor', '/cijene/'] },
+  { path: 'specifikacija-csv-xml', must: ['"@type":"Dataset"', '"@type":"DataDownload"', '/examples/nepar-format-primjer-usluge.csv', 'id="pokrivenost"'] },
+  { path: 'vodici', must: ['/vodici/excel-csv-digitalni-cjenik/', '/vodici/woocommerce-wordpress-digitalni-cjenik/', '/vodici/mikroeracun-digitalni-cjenik/'] },
+  { path: 'vodici/excel-csv-digitalni-cjenik', must: ['"@type":"HowTo"', '"@type":"HowToStep"', '/specifikacija-csv-xml/'] },
+  { path: 'vodici/woocommerce-wordpress-digitalni-cjenik', must: ['Regular price', 'embed.js'] },
+  { path: 'vodici/mikroeracun-digitalni-cjenik', must: ['MIKROeRAČUN', '/faq/'] },
+]
+const seenTitles = new Set([HOME_TITLE])
+for (const page of EVERGREEN) {
+  const rel = `${page.path}/index.html`
+  if (!existsSync(resolve(distDir, rel))) { failures.push(`Missing dist/${rel}`); continue }
+  const html = read(rel)
+  const canonical = `${SITE}/${page.path}/`
+  expect(rel, `<link rel="canonical" href="${canonical}" />`, 'self-canonical is missing')
+  expect(rel, 'content="index,follow', 'page must be indexable')
+  expect(rel, 'data-nepar-prerendered="true"', 'page must be prerendered')
+  expect(rel, '"@type":"BreadcrumbList"', 'BreadcrumbList is missing')
+  const h1Count = (html.match(/<h1\b/gi) || []).length
+  if (h1Count !== 1) failures.push(`${rel}: expected exactly one <h1>, found ${h1Count}`)
+  const title = (/<title>([^<]*)<\/title>/.exec(html) || [])[1]
+  if (!title || title.length < 20 || title.length > 90) failures.push(`${rel}: title missing or badly sized (${title?.length})`)
+  else if (seenTitles.has(title)) failures.push(`${rel}: duplicate title "${title}"`)
+  else seenTitles.add(title)
+  const description = (/<meta name="description" content="([^"]*)"/.exec(html) || [])[1]
+  if (!description || description.length < 70 || description.length > 200) failures.push(`${rel}: meta description missing or badly sized (${description?.length})`)
+  if (html.includes('1.10.2026') || html.includes('1. listopada 2026')) failures.push(`${rel}: stale 1.10.2026 date`)
+  for (const needle of page.must) {
+    if (!html.includes(needle)) failures.push(`${rel}: expected content "${needle}" is missing`)
+  }
+  expect('sitemap.xml', `<loc>${canonical}</loc>`, `sitemap must list /${page.path}/`)
+  expect('llms.txt', canonical, `llms.txt must list /${page.path}/`)
+}
+expect('index.html', 'href="/cijene/"', 'landing must link to /cijene/')
+expect('index.html', 'href="/usporedba/"', 'landing must link to /usporedba/')
+expect('index.html', 'href="/specifikacija-csv-xml/"', 'landing must link to /specifikacija-csv-xml/')
+expect('index.html', 'href="/faq/"', 'landing must link to /faq/')
+for (const file of ['nepar-format-primjer-usluge.csv', 'nepar-format-primjer-usluge.xml']) {
+  if (!existsSync(resolve(distDir, 'examples', file))) failures.push(`Missing dist/examples/${file}`)
+}
+const homeHtml = read('index.html')
+if (/MIKROeRAČUN je za eRačune/.test(homeHtml.match(/<h1[^>]*>[\s\S]*?<\/h1>/)?.[0] ?? '')) failures.push('index.html: H1 must lead with the digital price list positioning, not MIKROeRAČUN')
+if (!/<title>[^<]*[Dd]igitalni cjenik[^<]*<\/title>/.test(homeHtml)) failures.push('index.html: title must target "digitalni cjenik"')
 
 if (failures.length) {
   console.error(failures.map((failure) => `- ${failure}`).join('\n'))

@@ -1,11 +1,14 @@
 import { NEWS_POSTS, type NewsPost } from '../news/posts'
 import { NEPAR_URL, SITE_URL, newsArticleUrl, newsIndexUrl } from '../news/site'
+import { SITE_PAGES, pageUrl } from '../pages/registry'
 
 export const DEMO_PUBLIC_SLUG = 'nepar'
 export const INDEXABLE_ROBOTS =
   'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
 export const EXAMPLE_CSV_PATH = '/examples/primjer-digitalni-cjenik-usluge-2026.csv'
 export const EXAMPLE_XML_PATH = '/examples/primjer-digitalni-cjenik-usluge-2026.xml'
+export const NEPAR_FORMAT_CSV_PATH = '/examples/nepar-format-primjer-usluge.csv'
+export const NEPAR_FORMAT_XML_PATH = '/examples/nepar-format-primjer-usluge.xml'
 export const FEED_PATH = '/feed.xml'
 
 export type SitemapImage = { loc: string; title: string }
@@ -64,6 +67,11 @@ export function staticSitemapUrls(posts: NewsPost[] = NEWS_POSTS): SitemapUrl[] 
   const articles = [...posts].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
   return [
     { loc: `${SITE_URL}/`, lastmod: newestDate, priority: '1.0' },
+    ...SITE_PAGES.map((page) => ({
+      loc: pageUrl(page),
+      lastmod: isoDate(page.updatedAt),
+      priority: page.kind === 'guide' || page.kind === 'hub' ? '0.8' : '0.9',
+    })),
     { loc: newsIndexUrl(), lastmod: newestDate, priority: '0.9' },
     ...articles.map((post) => ({
       loc: newsArticleUrl(post.slug),
@@ -77,6 +85,8 @@ export function staticSitemapUrls(posts: NewsPost[] = NEWS_POSTS): SitemapUrl[] 
     ...publicationSitemapUrls(DEMO_PUBLIC_SLUG, newestDate),
     { loc: `${SITE_URL}${EXAMPLE_CSV_PATH}`, priority: '0.4' },
     { loc: `${SITE_URL}${EXAMPLE_XML_PATH}`, priority: '0.4' },
+    { loc: `${SITE_URL}${NEPAR_FORMAT_CSV_PATH}`, priority: '0.4' },
+    { loc: `${SITE_URL}${NEPAR_FORMAT_XML_PATH}`, priority: '0.4' },
   ]
 }
 
@@ -124,18 +134,20 @@ export function renderLlms(posts: NewsPost[] = NEWS_POSTS) {
   const lines = [
     '# NEPAR Publisher — Digitalni cjenik',
     '',
-    '> Publishing sloj za javni CSV/XML cjenik na webu: provjera stranice, validacija Excela/CSV-a i objava aktualnog cjenika s arhivom.',
+    '> Digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna: objava, svakodnevni nadzor usklađenosti i e-mail upozorenje.',
     '',
     'NEPAR Publisher je alat kojim vlasnik web stranice provjerava ima li javno dostupan',
     'strojno čitljiv (CSV ili XML) digitalni cjenik, validira postojeću datoteku, pretvara',
-    'Excel cjenik u CSV/XML i po potrebi naruči potpunu tehničku implementaciju.',
+    'Excel cjenik u CSV/XML, objavljuje ga uz arhivu od 30 dana i svaki dan provjerava objavu.',
+    'Rok primjene Odluka NN 101/2026 je 17. studenoga 2026. (odgoda potvrđena 29.9.2026.).',
     '',
     `Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — ${NEPAR_URL}`,
     '',
     '## Stranice',
     '',
-    `- [Početna](${SITE_URL}/): provjera weba, validator Excel/CSV cjenika i ponuda Publishera.`,
-    `- [Vijesti](${newsIndexUrl()}): vodiči o digitalnom cjeniku, sidrenoj cijeni i CSV/XML objavi.`,
+    `- [Početna](${SITE_URL}/): digitalni cjenik s nadzorom usklađenosti — provjera weba, validator Excel/CSV cjenika i objava.`,
+    ...SITE_PAGES.map((page) => `- [${page.label}](${pageUrl(page)}): ${page.description}`),
+    `- [Vijesti](${newsIndexUrl()}): regulativa digitalnog cjenika, sidrena cijena i CSV/XML objava.`,
     `- [RSS](${SITE_URL}${FEED_PATH}): feed svih vijesti.`,
     `- [Sitemap](${SITE_URL}/sitemap.xml): sve indeksabilne podstranice, uključujući javne cjenike.`,
     '',
@@ -155,6 +167,8 @@ export function renderLlms(posts: NewsPost[] = NEWS_POSTS) {
     `- [Demo XML](${SITE_URL}/c/${DEMO_PUBLIC_SLUG}/cjenik.xml): stabilni XML za automatizirani dohvat.`,
     `- [Primjer CSV za usluge](${SITE_URL}${EXAMPLE_CSV_PATH}): preuzimanje primjera iz vodiča.`,
     `- [Primjer XML za usluge](${SITE_URL}${EXAMPLE_XML_PATH}): XML varijanta istog primjera.`,
+    `- [NEPAR format CSV](${SITE_URL}${NEPAR_FORMAT_CSV_PATH}): primjer izlaznog CSV-a za usluge.`,
+    `- [NEPAR format XML](${SITE_URL}${NEPAR_FORMAT_XML_PATH}): primjer izlaznog XML-a za usluge.`,
     '',
     'Aktivni javni cjenici kupaca na /c/slug, njihova arhiva i CSV/XML feedovi dodaju se u',
     'sitemap.xml. Probni cjenici nose noindex i nisu u sitemapu.',

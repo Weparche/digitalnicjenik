@@ -7,6 +7,13 @@
     <language>hr</language>
     <atom:link href="https://digitalnicjenik.nepar.hr/feed.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>Nacrti pravilnika za digitalne cjenike i bazne cijene na e-Savjetovanju</title>
+      <link>https://digitalnicjenik.nepar.hr/vijesti/nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026/</link>
+      <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026/</guid>
+      <pubDate>Thu, 15 Oct 2026 13:00:00 GMT</pubDate>
+      <description>Ministarstvo je objavilo nacrte pravilnika za bazne cijene i digitalne cjenike. Savjetovanje traje do 13.11.2026.; donosimo što se predlaže i što još nije konačno.</description>
+    </item>
+    <item>
       <title>Digitalni cjenici i sidrene cijene odgođeni do 17. studenoga 2026.</title>
       <link>https://digitalnicjenik.nepar.hr/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/</link>
       <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/</guid>
@@ -35,11 +42,11 @@
       <description>Ministar gospodarstva pojasnio je da oni bez web stranice ne moraju izrađivati web radi digitalnog cjenika te da se društvene mreže ne smatraju web stranicom.</description>
     </item>
     <item>
-      <title>HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti do 1. listopada</title>
+      <title>HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti prije roka</title>
       <link>https://digitalnicjenik.nepar.hr/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/</link>
       <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/</guid>
       <pubDate>Mon, 21 Sep 2026 15:00:00 GMT</pubDate>
-      <description>HOK je objavio Excel predloške cjenika proizvoda i usluga, upute i webinar za obveze od 1.10.2026. Pogledajte što još treba objaviti na webu.</description>
+      <description>HOK je objavio Excel predloške cjenika proizvoda i usluga, upute i webinar za nove obveze (primjena odgođena do 17.11.2026.). Pogledajte što još treba objaviti na webu.</description>
     </item>
     <item>
       <title>Primjer CSV digitalnog cjenika za pružatelje usluga</title>
@@ -49,11 +56,11 @@
       <description>Pogledajte praktičan primjer CSV digitalnog cjenika za usluge prema NN 101/2026-1213: obvezni podaci, sidrena cijena, CSV struktura i provjera datoteke.</description>
     </item>
     <item>
-      <title>Digitalni cjenik od 1. listopada 2026.: što se mijenja za vlasnike web stranica</title>
+      <title>Digitalni cjenik i sidrena cijena 2026.: što se mijenja za vlasnike web stranica</title>
       <link>https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-sidrena-cijena-2026/</link>
       <guid isPermaLink="true">https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-sidrena-cijena-2026/</guid>
       <pubDate>Mon, 21 Sep 2026 06:00:00 GMT</pubDate>
-      <description>Što od 1.10.2026. donose nova pravila: CSV/XML cjenik, dodatna odnosno sidrena cijena, 30-dnevna dostupnost i automatizirani dohvat podataka.</description>
+      <description>Što donose nova pravila (primjena odgođena do 17.11.2026.): CSV/XML cjenik, dodatna odnosno sidrena cijena, 30-dnevna dostupnost i automatizirani dohvat podataka.</description>
     </item>
   </channel>
 </rss>

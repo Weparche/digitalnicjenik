@@ -21,11 +21,11 @@ describe('news posts', () => {
   })
 
   it('resolves latest and paths', () => {
-    expect(getLatestPost().slug).toBe('odgoda-digitalnih-cjenika-sidrenih-cijena-2026')
+    expect(getLatestPost().slug).toBe('nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026')
     expect(getLatestPosts(3).map((post) => post.slug)).toEqual([
+      'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026',
       'odgoda-digitalnih-cjenika-sidrenih-cijena-2026',
       'primjeri-digitalnih-cjenika-hrvatska-2026',
-      'ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026',
     ])
     expect(getPostBySlug('odgoda-digitalnih-cjenika-sidrenih-cijena-2026')?.seoTitle).toContain('Odgoda')
     expect(getPostBySlug('primjeri-digitalnih-cjenika-hrvatska-2026')?.seoTitle).toContain('Primjeri')
@@ -33,7 +33,7 @@ describe('news posts', () => {
     expect(getPostBySlug('digitalni-cjenik-bez-web-stranice-drustvene-mreze')?.seoTitle).toContain('bez web stranice')
     expect(getPostBySlug('hok-excel-predlosci-digitalni-cjenik-2026')?.seoTitle).toContain('HOK')
     expect(getPostBySlug('primjer-csv-digitalnog-cjenika-usluge-2026')?.seoTitle).toContain('2026')
-    expect(getPostBySlug('digitalni-cjenik-sidrena-cijena-2026')?.seoTitle).toContain('1.10.2026')
+    expect(getPostBySlug('digitalni-cjenik-sidrena-cijena-2026')?.seoTitle).toContain('17.11.2026')
     expect(getAllNewsPaths().length).toBe(NEWS_POSTS.length)
     expect(newsArticleUrl('primjer-csv-digitalnog-cjenika-usluge-2026')).toBe(
       'https://digitalnicjenik.nepar.hr/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/',

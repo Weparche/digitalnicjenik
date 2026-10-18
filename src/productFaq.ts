@@ -1,7 +1,7 @@
 // Single source of truth for the homepage's short, factual product Q&A block.
 // Used both for the visible EducationSection content and for the FAQPage JSON-LD
 // generated at prerender time (scripts/prerender.mjs) — the two must always match.
-// Kept short and factual by design: detailed regulation lives on nepar.hr, not here.
+// Kept short and factual by design: the full question list lives on /faq/.
 
 import { launchOfferDetail, regularSelfServicePriceLabel } from './publisherPricing'
 
@@ -11,12 +11,12 @@ export const productFaq: ProductFaqEntry[] = [
   {
     question: 'Što je NEPAR Publisher?',
     answer:
-      'Publishing layer između vašeg Excel/CSV cjenika i javnog weba: provjera podataka, propisani CSV/XML, aktualni link za dohvat i verzioniranje objava. MIKROeRAČUN pokriva eRačune; Publisher pokriva cjenik na mrežnoj stranici.',
+      'Digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna: validacija Excela/CSV-a, javni cjenik s arhivom od 30 dana, svakodnevni nadzor usklađenosti i e-mail upozorenje čim nešto nije u redu.',
   },
   {
     question: 'Za koga je Publisher?',
     answer:
-      'Za malog poduzetnika izvan sustava PDV-a koji koristi ili planira MIKROeRAČUN, ima vlastitu web stranicu i nema komercijalni POS/ERP koji mu već objavljuje cjenik. Ako imate Marketino, Minimax ili Pantheon — provjerite kod providera prije kupnje.',
+      'Za pružatelje usluga i male trgovce s vlastitom web stranicom koji žele da netko provjerava njihovu objavu. Ako vaš ERP ili blagajna već objavljuje cjenik (primjerice Marketino, Minimax ili Pantheon), provjerite to kod pružatelja prije kupnje.',
   },
   {
     question: 'Što alat provjerava na webu?',

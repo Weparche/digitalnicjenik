@@ -2,13 +2,62 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://digitalnicjenik.nepar.hr/</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-10-18</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://digitalnicjenik.nepar.hr/vijesti/</loc>
-    <lastmod>2026-09-29</lastmod>
+    <loc>https://digitalnicjenik.nepar.hr/cijene/</loc>
+    <lastmod>2026-10-18</lastmod>
     <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/faq/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/usporedba/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/specifikacija-csv-xml/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/vodici/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/vodici/excel-csv-digitalni-cjenik/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/vodici/woocommerce-wordpress-digitalni-cjenik/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/vodici/mikroeracun-digitalni-cjenik/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/vijesti/</loc>
+    <lastmod>2026-10-18</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/vijesti/nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026/</loc>
+    <lastmod>2026-10-17</lastmod>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://digitalnicjenik.nepar.hr/og/vijesti-digitalni-cjenik-2026.png</image:loc>
+      <image:title>Nacrti pravilnika za digitalne cjenike i bazne cijene u listopadu 2026.</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://digitalnicjenik.nepar.hr/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/</loc>
@@ -52,7 +101,7 @@
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://digitalnicjenik.nepar.hr/og/vijesti-digitalni-cjenik-2026.png</image:loc>
-      <image:title>HOK Excel predlošci za digitalni cjenik i obveze od 1. listopada 2026.</image:title>
+      <image:title>HOK Excel predlošci za digitalni cjenik i nove obveze 2026.</image:title>
     </image:image>
   </url>
   <url>
@@ -66,31 +115,31 @@
   </url>
   <url>
     <loc>https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenik-sidrena-cijena-2026/</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-10-18</lastmod>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://digitalnicjenik.nepar.hr/og/vijesti-digitalni-cjenik-2026.png</image:loc>
-      <image:title>Digitalni cjenik od 1.10.2026. — CSV/XML, sidrena cijena, 30 dana arhive</image:title>
+      <image:title>Digitalni cjenik i sidrena cijena — CSV/XML, 30 dana arhive, rok 17.11.2026.</image:title>
     </image:image>
   </url>
   <url>
     <loc>https://digitalnicjenik.nepar.hr/c/nepar</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-10-18</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://digitalnicjenik.nepar.hr/c/nepar/arhiva</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-10-18</lastmod>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://digitalnicjenik.nepar.hr/c/nepar/cjenik.csv</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-10-18</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://digitalnicjenik.nepar.hr/c/nepar/cjenik.xml</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-10-18</lastmod>
     <priority>0.4</priority>
   </url>
   <url>
@@ -99,6 +148,14 @@
   </url>
   <url>
     <loc>https://digitalnicjenik.nepar.hr/examples/primjer-digitalni-cjenik-usluge-2026.xml</loc>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/examples/nepar-format-primjer-usluge.csv</loc>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/examples/nepar-format-primjer-usluge.xml</loc>
     <priority>0.4</priority>
   </url>
 </urlset>

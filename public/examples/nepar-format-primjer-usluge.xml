@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<priceList>
+  <business>
+    <name>Primjer frizerski salon</name>
+  </business>
+  <source>nepar</source>
+  <updatedAt>2026-11-17T05:30:00.000Z</updatedAt>
+  <items>
+    <item>
+      <category>Šišanje</category>
+      <name>Muško šišanje</name>
+      <type>Usluga</type>
+      <price currency="EUR">15.00</price>
+      <specialSaleApplied>false</specialSaleApplied>
+      <specialSaleName></specialSaleName>
+      <anchorPrice currency="EUR">15.00</anchorPrice>
+    </item>
+    <item>
+      <category>Šišanje</category>
+      <name>Žensko šišanje</name>
+      <type>Usluga</type>
+      <price currency="EUR">21.00</price>
+      <specialSaleApplied>false</specialSaleApplied>
+      <specialSaleName></specialSaleName>
+      <anchorPrice currency="EUR">18.00</anchorPrice>
+    </item>
+    <item>
+      <category>Bojanje</category>
+      <name>Bojanje kose</name>
+      <type>Usluga</type>
+      <price currency="EUR">40.00</price>
+      <specialSaleApplied>true</specialSaleApplied>
+      <specialSaleName>Jesenska akcija</specialSaleName>
+      <anchorPrice currency="EUR">45.00</anchorPrice>
+    </item>
+  </items>
+</priceList>

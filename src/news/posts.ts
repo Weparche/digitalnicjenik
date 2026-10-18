@@ -62,6 +62,15 @@ const GOVERNMENT_DECISIONS_2026 =
 
 const terminologyNote = `<p class="news-lead-note">U službenoj Odluci koristi se izraz „dodatna cijena”. U javnoj komunikaciji HOK-a i drugih institucija često se koristi naziv „sidrena cijena”. U ovom tekstu koristimo oba izraza radi lakšeg razumijevanja.</p>`
 
+const MINGO_DRAFT_RULES_2026 =
+  'https://mingo.gov.hr/vijesti/ministar-susnjar-kroz-dijalog-s-gospodarstvenicima-do-provedivih-pravila-i-vece-zastite-potrosaca/10461'
+const ESAVJETOVANJE_PRICE_LIST_2026 = 'https://esavjetovanja.gov.hr/Econ/10332'
+const ESAVJETOVANJE_BASE_PRICE_2026 = 'https://esavjetovanja.gov.hr/Econ/10333'
+const HOK_DRAFT_RULES_2026 =
+  'https://www.hok.hr/novosti-iz-hok/dio-prijedloga-hok-uvazen-u-nacrtima-pravilnika-nastavljaju-se-razgovori-o-ugostiteljstvu-i-objavi'
+const HOK_CONSULTATION_2026 =
+  'https://www.hok.hr/novosti-iz-hok/bazne-cijene-i-cjenici-poziv-obrtnicama-i-obrtnicima-na-e-savjetovanje'
+
 export const SERVICE_CSV_EXAMPLE = `Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje (DA/NE);Naziv posebnog oblika prodaje;Sidrena cijena 10.9.2026.
 Muško šišanje;15.00;NE;;15.00
 Žensko šišanje;21.00;NE;;18.00
@@ -93,6 +102,107 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 </cjenik_usluga>`
 
 export const NEWS_POSTS: NewsPost[] = [
+  {
+    slug: 'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026',
+    title: 'Nacrti pravilnika za digitalne cjenike i bazne cijene na e-Savjetovanju',
+    seoTitle: 'Nacrti pravilnika za digitalni cjenik 2026. | NEPAR',
+    description:
+      'Ministarstvo je objavilo nacrte pravilnika za bazne cijene i digitalne cjenike. Savjetovanje traje do 13.11.2026.; donosimo što se predlaže i što još nije konačno.',
+    excerpt:
+      'Dva pravilnika su od 14.10. na e-Savjetovanju. Nacrti mijenjaju ritam ažuriranja cjenika, predviđaju iznimke i zadržavaju strojno čitljive podatke, ali konačni tekst još nije donesen.',
+    readingTimeMinutes: 5,
+    publishedAt: '2026-10-15T15:00:00+02:00',
+    updatedAt: '2026-10-17T15:00:00+02:00',
+    author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
+    tags: ['digitalni cjenik', 'bazna cijena', 'sidrena cijena', 'pravilnik', 'e-Savjetovanje', '17. studenoga'],
+    kicker: 'Nacrti pravilnika · e-Savjetovanje',
+    widgetEyebrow: 'NOVO · E-SAVJETOVANJE',
+    widgetHeadline: 'Objavljeni nacrti pravilnika za cjenike i bazne cijene',
+    widgetSub: 'Savjetovanje traje do 13.11.; predložena pravila još nisu konačno donesena',
+    schemaSection: 'Regulativa',
+    image: {
+      src: '/og/vijesti-digitalni-cjenik-2026.png',
+      alt: 'Nacrti pravilnika za digitalne cjenike i bazne cijene u listopadu 2026.',
+      width: 1200,
+      height: 630,
+    },
+    cta: { label: 'Provjeri svoj web', href: '/' },
+    secondaryCta: {
+      label: 'Pogledaj prethodnu odgodu',
+      href: '/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/',
+    },
+    sources: [
+      {
+        title: 'e-Savjetovanje — Prijedlog pravilnika o sadržaju i načinu objave cjenika proizvoda',
+        url: ESAVJETOVANJE_PRICE_LIST_2026,
+        type: 'primary',
+      },
+      {
+        title: 'e-Savjetovanje — Prijedlog pravilnika o načinu isticanja bazne cijene proizvoda',
+        url: ESAVJETOVANJE_BASE_PRICE_2026,
+        type: 'primary',
+      },
+      {
+        title: 'Ministarstvo gospodarstva, 15.10.2026. — predstavljanje pravilnika i prijelaz na trajni sustav',
+        url: MINGO_DRAFT_RULES_2026,
+        type: 'primary',
+      },
+      {
+        title: 'HOK, 15.10.2026. — dio prijedloga uvažen, razgovori se nastavljaju',
+        url: HOK_DRAFT_RULES_2026,
+        type: 'secondary',
+      },
+      {
+        title: 'HOK, 14.10.2026. — poziv obrtnicima na e-Savjetovanje',
+        url: HOK_CONSULTATION_2026,
+        type: 'secondary',
+      },
+    ],
+    sections: [
+      {
+        heading: 'Što je službeno objavljeno 14. i 15. listopada',
+        level: 2,
+        html: `<p>Ministarstvo gospodarstva objavilo je <strong>dva prijedloga pravilnika</strong>: o načinu isticanja bazne cijene proizvoda te o sadržaju i načinu objave cjenika proizvoda. Oba su na e-Savjetovanju od <strong>14. listopada do 13. studenoga 2026. u ponoć</strong>.</p>
+  <p class="news-lead-note"><strong>Važno:</strong> riječ je o nacrtima u javnom savjetovanju, a ne o konačno donesenim pravilnicima. Pojedine odredbe mogu se promijeniti prije objave konačnog teksta.</p>`,
+      },
+      {
+        heading: 'Planirani početak je 17. studenoga, ali konačni tekst još čekamo',
+        level: 2,
+        html: `<p>Ministarstvo je 15. listopada objavilo da je planirano stupanje pravilnika na snagu <strong>17. studenoga 2026.</strong>. Prema istoj službenoj objavi, tada bi privremene odluke Vlade trebale prestati važiti, za što će se donijeti odgovarajuće odluke Vlade.</p>
+  <p>Referentni datumi koje Ministarstvo navodi ostaju <strong>2. svibnja 2025.</strong> za ranije obuhvaćene skupine proizvoda i <strong>10. rujna 2026.</strong> za ostale robe i usluge.</p>`,
+      },
+      {
+        heading: 'Digitalni cjenik: predloženo ažuriranje nakon stvarne promjene',
+        level: 2,
+        html: `<p>Prema objavljenom nacrtu i HOK-ovu sažetku, više se ne predlaže svakodnevno ponovno objavljivanje nepromijenjenog cjenika. Promjena cjenika evidentirala bi se <strong>sljedećeg radnog dana najkasnije do 11 sati</strong>.</p>
+  <p>Nacrt i dalje predviđa strojno čitljive podatke u <strong>CSV/XML</strong> formatu, mogućnost automatiziranog prikupljanja podataka te dostupnost prethodno objavljenih cjenika na mrežnim stranicama <strong>30 dana od zadnje objave</strong>. HOK se dijelu tih zahtjeva i dalje protivi, pa ih do konačnog pravilnika treba tretirati kao predložena, a ne konačna pravila.</p>`,
+      },
+      {
+        heading: 'Što se mijenja u podacima cjenika',
+        level: 2,
+        html: `<p>HOK navodi da je u nacrtu dio ranijih zahtjeva ublažen. Među ostalim, šifre, neto količina i barkod navode se gdje su primjenjivi, dok se obveze trebaju čitati prema samom tekstu nacrta i konačnog pravilnika kada bude donesen.</p>
+  <p>Za postojeće implementacije zato nije preporučljivo unaprijed brisati polja ili mijenjati format samo na temelju sažetaka. NEPAR će tehnički profil validatora uskladiti s konačno donesenim tekstom.</p>`,
+      },
+      {
+        heading: 'Bazna cijena: nacrt predviđa određene iznimke',
+        level: 2,
+        html: `<p>Ministarstvo navodi da pravilnici ne primjenjuju isto rješenje na sve djelatnosti. Predviđene su iznimke za robu i usluge čije je određivanje cijene uređeno posebnim propisima te za određene <strong>personalizirane i dinamičke cijene usluga</strong>, kao i cijene na posredničkim platformama i drugim posredničkim kanalima.</p>
+  <p>HOK kao primjere personaliziranih cijena navodi izradu kuhinje po mjeri ili buketa prema posebnim zahtjevima kupca, a kod dinamičkih cijena dio turističkih usluga. To ne treba širiti na druge situacije bez provjere konačnog teksta.</p>`,
+      },
+      {
+        heading: 'HOK-ovi zahtjevi nisu isto što i donesene iznimke',
+        level: 2,
+        html: `<p>HOK navodi da je dio njegovih prijedloga prihvaćen, ali nastavlja tražiti izmjene vezane uz ugostiteljstvo, prezentacijske mrežne stranice, strojno čitljive formate, automatizirano preuzimanje i 30-dnevnu dostupnost cjenika.</p>
+  <p>Ti zahtjevi predstavljaju <strong>institucionalno stajalište HOK-a u savjetovanju</strong>. Dok pravilnici ne budu konačno doneseni, ne treba ih predstavljati kao važeća izuzeća.</p>`,
+      },
+      {
+        heading: 'Što sada napraviti ako već imate CSV/XML',
+        level: 2,
+        html: `<p>Ako ste već pripremili digitalni cjenik, zasad ga nemojte rušiti niti izrađivati ispočetka. Sačuvajte izvorne podatke, CSV/XML i arhivu te pratite konačni tekst nakon završetka savjetovanja.</p>
+  <p>Za kontekst pogledajte <a href="/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/">odgodu primjene do 17. studenoga</a>, <a href="/vijesti/ministarstvo-pojasnjenja-digitalni-cjenik-sidrene-cijene-2026/">ranija pojašnjenja Ministarstva</a> i <a href="/vijesti/primjeri-digitalnih-cjenika-hrvatska-2026/">primjere postojećih digitalnih cjenika</a>.</p>`,
+      },
+    ],
+  },
   {
     slug: 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026',
     title: 'Digitalni cjenici i sidrene cijene odgođeni do 17. studenoga 2026.',
@@ -379,7 +489,7 @@ export const NEWS_POSTS: NewsPost[] = [
 <li>Za lanac ili mrežu objekata tehnička struktura datoteka mora biti <strong>jedinstvena</strong> za sve objekte.</li>
 <li>Ministarstvo navodi da se obveza omogućavanja automatiziranog dohvaćanja u praksi ispunjava već <strong>javnom objavom CSV/XML cjenika na mrežnoj stranici</strong>.</li>
 </ul>
-<p class="news-lead-note">Ovo je službeno pojašnjenje primjene postojećih Odluka. Ne mijenja datum početka primjene: i dalje je 1. listopada 2026.</p>`,
+<p class="news-lead-note">Ovo je službeno pojašnjenje primjene postojećih Odluka. Ne mijenja sadržaj obveze. <strong>Ažuriranje:</strong> Vlada je 29.9.2026. pomaknula početak primjene s 1. listopada na <strong>17. studenoga 2026.</strong> — vidi <a href="/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/">odgoda do 17.11.</a></p>`,
       },
       {
         heading: 'Informativni web također znači obvezu CSV/XML cjenika',
@@ -525,7 +635,7 @@ export const NEWS_POSTS: NewsPost[] = [
 <p>Za detaljan pregled pročitajte <a href="/vijesti/digitalni-cjenik-sidrena-cijena-2026/"><strong>glavni vodič za digitalni cjenik od 1. listopada 2026.</strong></a></p>`,
       },
       {
-        heading: 'Imate web? Provjerite ga prije 1. listopada',
+        heading: 'Imate web? Provjerite ga prije roka (17. studenoga)',
         level: 2,
         html: `<p>Ako imate vlastitu mrežnu stranicu, najbrže je prvo provjeriti postoji li na njoj javno dostupan CSV/XML cjenik. Automatska provjera na ovoj stranici provjerava tehničke signale, a zatim možete učitati Excel, CSV ili HOK predložak za detaljniju provjeru i objavu.</p>
 <p>Za praktičnu pripremu podataka pogledajte i <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/">HOK Excel predloške</a> te <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/">primjer CSV cjenika za usluge</a>.</p>`,
@@ -534,10 +644,10 @@ export const NEWS_POSTS: NewsPost[] = [
   },
   {
     slug: 'hok-excel-predlosci-digitalni-cjenik-2026',
-    title: 'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti do 1. listopada',
+    title: 'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti prije roka',
     seoTitle: 'HOK Excel predlošci za digitalni cjenik 2026. | NEPAR',
     description:
-      'HOK je objavio Excel predloške cjenika proizvoda i usluga, upute i webinar za obveze od 1.10.2026. Pogledajte što još treba objaviti na webu.',
+      'HOK je objavio Excel predloške cjenika proizvoda i usluga, upute i webinar za nove obveze (primjena odgođena do 17.11.2026.). Pogledajte što još treba objaviti na webu.',
     excerpt:
       'HOK je objavio Excel predloške, upute i webinar. Excel pomaže pripremiti podatke, ali web obveza i dalje traži CSV/XML i automatizirani dohvat.',
     readingTimeMinutes: 5,
@@ -552,7 +662,7 @@ export const NEWS_POSTS: NewsPost[] = [
     schemaSection: 'Aktualno',
     image: {
       src: '/og/vijesti-digitalni-cjenik-2026.png',
-      alt: 'HOK Excel predlošci za digitalni cjenik i obveze od 1. listopada 2026.',
+      alt: 'HOK Excel predlošci za digitalni cjenik i nove obveze 2026.',
       width: 1200,
       height: 630,
     },
@@ -608,7 +718,7 @@ export const NEWS_POSTS: NewsPost[] = [
         heading: 'HOK traži ukidanje odluka — znači li to da je rok odgođen?',
         level: 2,
         html: `<p>Ne treba to tako tumačiti. HOK na svojoj stranici navodi da <strong>traži ukidanje odluka</strong> o dodatnim cijenama i objavi cjenika na internetu. To je zahtjev Komore prema nadležnim tijelima, a ne samo po sebi promjena važećih pravila.</p>
-<p>Na istoj aktualnoj HOK objavi i dalje se kao početak primjene navodi <strong>1. listopada 2026.</strong> Ako Vlada ili drugo nadležno tijelo službeno promijeni datum ili sadržaj obveze, ovaj ćemo vodič ažurirati.</p>`,
+<p>U trenutku objave HOK je kao početak primjene navodio <strong>1. listopada 2026.</strong> <strong>Ažuriranje:</strong> Vlada je 29.9.2026. službeno pomaknula rok na <strong>17. studenoga 2026.</strong> — više u vijesti <a href="/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/">odgoda do 17.11.</a></p>`,
       },
       {
         heading: 'Što napraviti sada',
@@ -725,25 +835,25 @@ export const NEWS_POSTS: NewsPost[] = [
   },
   {
     slug: 'digitalni-cjenik-sidrena-cijena-2026',
-    title: 'Digitalni cjenik od 1. listopada 2026.: što se mijenja za vlasnike web stranica',
-    seoTitle: 'Digitalni cjenik od 1.10.2026.: CSV/XML i sidrena cijena | NEPAR',
+    title: 'Digitalni cjenik i sidrena cijena 2026.: što se mijenja za vlasnike web stranica',
+    seoTitle: 'Digitalni cjenik i sidrena cijena do 17.11.2026. | NEPAR',
     description:
-      'Što od 1.10.2026. donose nova pravila: CSV/XML cjenik, dodatna odnosno sidrena cijena, 30-dnevna dostupnost i automatizirani dohvat podataka.',
+      'Što donose nova pravila (primjena odgođena do 17.11.2026.): CSV/XML cjenik, dodatna odnosno sidrena cijena, 30-dnevna dostupnost i automatizirani dohvat podataka.',
     excerpt:
-      'Digitalni cjenik od 1. listopada 2026. — što vlasnici web stranica trebaju pripremiti: dodatna (sidrena) cijena, CSV/XML objava, arhiva i automatizirani dohvat.',
+      'Digitalni cjenik i sidrena cijena — što vlasnici web stranica trebaju pripremiti do 17. studenoga 2026.: dodatna cijena, CSV/XML objava, arhiva i automatizirani dohvat.',
     readingTimeMinutes: 6,
     publishedAt: '2026-09-21T08:00:00+02:00',
-    updatedAt: '2026-09-21T16:15:00+02:00',
+    updatedAt: '2026-10-18T09:00:00+02:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['regulativa', 'digitalni cjenik', 'sidrena cijena', 'CSV', 'XML'],
     kicker: 'Regulativa',
     widgetEyebrow: 'REGULATIVA',
-    widgetHeadline: 'Digitalni cjenik od 1. listopada 2026.',
+    widgetHeadline: 'Digitalni cjenik i sidrena cijena do 17.11.2026.',
     widgetSub: 'Što vlasnici web stranica trebaju pripremiti',
     schemaSection: 'Regulativa',
     image: {
       src: '/og/vijesti-digitalni-cjenik-2026.png',
-      alt: 'Digitalni cjenik od 1.10.2026. — CSV/XML, sidrena cijena, 30 dana arhive',
+      alt: 'Digitalni cjenik i sidrena cijena — CSV/XML, 30 dana arhive, rok 17.11.2026.',
       width: 1200,
       height: 630,
     },
@@ -760,9 +870,14 @@ export const NEWS_POSTS: NewsPost[] = [
         type: 'primary',
       },
       {
-        title: 'HOK, 18.9.2026. — Dodatna cijena i objava cjenika od 1. listopada 2026.',
+        title: 'HOK, 18.9.2026. — Dodatna cijena i objava cjenika od 1. listopada 2026. (rok je kasnije odgođen)',
         url: HOK_2026,
         type: 'secondary',
+      },
+      {
+        title: 'Vlada RH — produljenje roka za isticanje sidrenih cijena na 17. studenoga',
+        url: GOVERNMENT_DELAY_2026,
+        type: 'primary',
       },
     ],
     sections: [
@@ -771,7 +886,8 @@ export const NEWS_POSTS: NewsPost[] = [
         level: 2,
         html: `${terminologyNote}
 <ul class="news-bullets">
-<li>Nova pravila stupaju na snagu <strong>1. listopada 2026.</strong></li>
+<li>Primjena je <strong>odgođena na 17. studenoga 2026.</strong> (izvorno 1. listopada); Vlada je to potvrdila 29.9.2026. <a href="/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/">Detalji odgode</a>.</li>
+<li>Dva <strong>nacrta pravilnika</strong> su na e-Savjetovanju do 13.11.2026.; <a href="/vijesti/nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026/">što se predlaže</a>.</li>
 <li><strong>Dodatna (sidrena) cijena</strong> — zasebna obveza (NN 101/2026-1212).</li>
 <li><strong>Digitalni cjenik</strong> na webu u <strong>CSV ili XML</strong> formatu (NN 101/2026-1213).</li>
 <li>Prethodno objavljeni cjenici moraju ostati dostupni <strong>30 dana</strong>.</li>

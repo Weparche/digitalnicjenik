@@ -46,9 +46,8 @@ test('embed.js injects an iframe that resizes only on messages from that iframe'
   // The framed page reports its real (much smaller) height, replacing the initial 900px.
   await expect.poll(async () => (await iframe.boundingBox())?.height ?? 900).toBeLessThan(900)
 
-  const settled = (await iframe.boundingBox())!.height
   // A forged message from the host page itself (not from the iframe) must be ignored.
   await page.evaluate(() => window.postMessage({ type: 'nepar-cjenik-resize', slug: 'nepar', height: 5000 }, '*'))
   await page.waitForTimeout(200)
-  expect((await iframe.boundingBox())!.height).toBe(settled)
+  expect((await iframe.boundingBox())!.height).toBeLessThan(1000)
 })

@@ -3,5 +3,6 @@ Allow: /
 Disallow: /api/
 Disallow: /app$
 Disallow: /app/
+Disallow: /admin
 
 Sitemap: https://digitalnicjenik.nepar.hr/sitemap.xml
