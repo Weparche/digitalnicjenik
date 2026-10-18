@@ -106,3 +106,23 @@ describe('Excel conversion', () => {
   })
 })
 
+
+describe('product columns in Excel imports', () => {
+  it('suggests a mapping for Croatian product headers and WooCommerce exports, preferring SKU over ID', async () => {
+    const { suggestExcelMapping } = await import('./excel')
+    expect(suggestExcelMapping(['Naziv proizvoda', 'Šifra', 'Marka', 'Barkod', 'Jedinica mjere', 'Cijena za jedinicu mjere', 'Maloprodajna cijena', 'Sidrena cijena', 'Dostupnost'])).toMatchObject({
+      name: 'Naziv proizvoda', externalId: 'Šifra', brand: 'Marka', barcode: 'Barkod', unit: 'Jedinica mjere', unitPrice: 'Cijena za jedinicu mjere', price: 'Maloprodajna cijena', anchorPrice: 'Sidrena cijena', availability: 'Dostupnost',
+    })
+    expect(suggestExcelMapping(['ID', 'Type', 'SKU', 'GTIN, UPC, EAN, or ISBN', 'Name', 'In stock?', 'Regular price', 'Categories', 'Brands'])).toMatchObject({
+      externalId: 'SKU', barcode: 'GTIN, UPC, EAN, or ISBN', name: 'Name', availability: 'In stock?', price: 'Regular price', category: 'Categories', brand: 'Brands',
+    })
+  })
+
+  it('converts mapped rows into products, keeping barcode text and reading availability', async () => {
+    const { excelRowsToPriceList } = await import('./excel')
+    const sheet = { name: 'List1', rows: [['Naziv', 'Cijena', 'Šifra', 'Marka', 'Barkod', 'Dostupnost'], ['Mlijeko', 1.2, 'M-1', 'Dukat', 3850123456786, 'DA'], ['Kruh', '0,99', 'M-2', 'bez marke', '0385 0123', 'ne']] }
+    const { priceList } = excelRowsToPriceList(sheet, 0, { name: 'Naziv', price: 'Cijena', externalId: 'Šifra', brand: 'Marka', barcode: 'Barkod', availability: 'Dostupnost' })
+    expect(priceList.items[0]).toMatchObject({ brand: 'Dukat', barcode: '3850123456786', availability: 'dostupno' })
+    expect(priceList.items[1]).toMatchObject({ price: 0.99, barcode: '03850123', availability: 'nedostupno' })
+  })
+})

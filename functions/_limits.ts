@@ -59,6 +59,10 @@ function normalizeItem(raw: unknown, index: number): NormalizedPriceItem {
     anchorPrice: typeof item.anchorPrice === 'number' && Number.isFinite(item.anchorPrice) ? item.anchorPrice : item.anchorPrice === null ? null : undefined,
     salePrice: typeof item.salePrice === 'number' && Number.isFinite(item.salePrice) ? item.salePrice : item.salePrice === null ? null : undefined,
     specialSaleApplied: typeof item.specialSaleApplied === 'boolean' ? item.specialSaleApplied : item.specialSaleApplied === null ? null : undefined,
+    unitPrice: typeof item.unitPrice === 'number' && Number.isFinite(item.unitPrice) ? item.unitPrice : item.unitPrice === null ? null : undefined,
+    brand: clipString(item.brand, `items[${index}].brand`, 200) ?? null,
+    barcode: clipString(item.barcode, `items[${index}].barcode`, 64)?.replace(/\s+/g, '') || null,
+    availability: item.availability === 'dostupno' || item.availability === 'nedostupno' ? item.availability : null,
     isNewSinceReferenceDate: item.isNewSinceReferenceDate === true,
   }
 }

@@ -1,4 +1,4 @@
-import { normalizeNumber } from './price-engine/normalize'
+import { normalizeBarcode, normalizeNumber, parseAvailability } from './price-engine/normalize'
 import { importIssuesFromParseWarnings } from './price-engine/validate'
 import type { NormalizedPriceList, ParseWarning, ValidationIssue } from './price-engine/types'
 
@@ -17,6 +17,10 @@ export type ExcelField =
   | 'specialSaleApplied'
   | 'specialSaleName'
   | 'unit'
+  | 'unitPrice'
+  | 'brand'
+  | 'barcode'
+  | 'availability'
   | 'isNewSinceReferenceDate'
 
 export type ExcelMapping = Partial<Record<ExcelField, string>>
@@ -25,10 +29,10 @@ export type ExcelWorkbook = { sheets: ExcelSheet[] }
 
 const aliases: Record<ExcelField, string[]> = {
   name: ['naziv', 'naziv usluge', 'naziv proizvoda', 'naziv artikla', 'artikl', 'usluga', 'name'],
-  price: ['cijena', 'maloprodajna cijena', 'mp cijena', 'prodajna cijena', 'price'],
+  price: ['cijena', 'maloprodajna cijena', 'mp cijena', 'prodajna cijena', 'price', 'regular price'],
   type: ['vrsta', 'tip', 'vrsta stavke', 'type'],
-  category: ['grupa', 'kategorija', 'category'],
-  externalId: ['šifra', 'sifra', 'interna šifra', 'interna sifra', 'id', 'code'],
+  category: ['grupa', 'kategorija', 'category', 'categories'],
+  externalId: ['sku', 'šifra', 'sifra', 'interna šifra', 'interna sifra', 'šifra proizvoda', 'sifra proizvoda', 'id', 'code'],
   anchorPrice: [
     'sidrena cijena',
     'sidrena cijena 10.9.2026.',
@@ -49,6 +53,10 @@ const aliases: Record<ExcelField, string[]> = {
   ],
   specialSaleName: ['naziv posebnog oblika prodaje', 'naziv posebne prodaje', 'special sale name'],
   unit: ['jedinica', 'jedinica mjere', 'unit'],
+  unitPrice: ['cijena za jedinicu mjere', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price'],
+  brand: ['marka', 'brend', 'brand', 'brands'],
+  barcode: ['barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn'],
+  availability: ['dostupnost', 'dostupno', 'dostupno/nedostupno', 'availability', 'in stock?'],
   isNewSinceReferenceDate: ['nova usluga', 'novouvedena usluga', 'new service'],
 }
 
@@ -113,7 +121,9 @@ export function isHokServiceTemplate(headers: string[]): boolean {
 export function suggestExcelMapping(headers: string[]): ExcelMapping {
   const mapping: ExcelMapping = {}
   for (const field of Object.keys(aliases) as ExcelField[]) {
-    const index = headers.findIndex((header) => aliases[field].includes(normalizedHeader(header)))
+    // Alias order is priority order (e.g. SKU wins over a generic ID column).
+    const normalized = headers.map(normalizedHeader)
+    const index = aliases[field].map((alias) => normalized.indexOf(alias)).find((candidate) => candidate >= 0) ?? -1
     if (index >= 0) mapping[field] = headers[index]
   }
   return mapping
@@ -152,12 +162,13 @@ export function excelRowsToPriceList(
       return []
     }
     const rawType = clean(value('type'))
+    const isGoodsKind = /^(simple|variable|variation|grouped|external)$/i.test(rawType)
     const salePrice = normalizeNumber(value('salePrice'))
     const specialSaleApplied = booleanValue(value('specialSaleApplied'))
     return [{
       name,
       price,
-      type: rawType === '2' ? 'Usluga' : rawType || undefined,
+      type: rawType === '2' ? 'Usluga' : isGoodsKind ? 'Proizvod' : rawType || undefined,
       category: clean(value('category')) || undefined,
       externalId: clean(value('externalId')) || undefined,
       anchorPrice: normalizeNumber(value('anchorPrice')),
@@ -165,6 +176,10 @@ export function excelRowsToPriceList(
       specialSaleApplied: indexes.specialSaleApplied == null ? (salePrice == null ? false : null) : specialSaleApplied,
       specialSaleName: clean(value('specialSaleName')) || null,
       unit: clean(value('unit')) || null,
+      ...(indexes.unitPrice == null ? {} : { unitPrice: normalizeNumber(value('unitPrice')) }),
+      ...(indexes.brand == null ? {} : { brand: clean(value('brand')) || null }),
+      ...(indexes.barcode == null ? {} : { barcode: normalizeBarcode(value('barcode')) || null }),
+      ...(indexes.availability == null ? {} : { availability: parseAvailability(value('availability')) }),
       isNewSinceReferenceDate: booleanValue(value('isNewSinceReferenceDate')) === true,
     }]
   })

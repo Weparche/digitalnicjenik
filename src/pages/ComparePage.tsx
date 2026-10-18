@@ -16,8 +16,8 @@ export const COMPARE_ROWS: Row[] = [
   { feature: 'Radi bez WordPressa i WooCommercea', why: 'Cjenik ne ovisi o tome na čemu je web napravljen.', cells: [yes(), yes(), no(), yes()] },
   { feature: 'Automatska provjera objave', why: 'Netko provjerava da je datoteka stvarno dostupna i ispravna.', cells: [yes('Da, svaki dan'), partial('Djelomično'), partial('Ovisi o dodatku'), no('Ne, provjeravate sami')] },
   { feature: 'Alarm e-mailom kad nešto nije u redu', why: 'Saznajete za grešku prije inspekcije ili kupca.', cells: [yes(), partial('Ovisi o alatu'), partial('Ovisi o dodatku'), no()] },
-  { feature: 'Usporedba objavljene datoteke s izvornim podacima', why: 'Hvata slučaj kad je datoteka dostupna, ali s pogrešnim ili nepotpunim sadržajem.', cells: [yes(), no('Koliko nam je poznato, ne'), no('Koliko nam je poznato, ne'), no()] },
-  { feature: 'Verzionirana pravila (spremno za novi pravilnik)', why: 'Pravila se mijenjaju; provjera se prilagođava bez prepravljanja cijelog sustava.', cells: [yes(), no('Koliko nam je poznato, ne'), no('Koliko nam je poznato, ne'), no()] },
+  { feature: 'Usporedba objavljene datoteke s izvornim podacima', why: 'Hvata slučaj kad je datoteka dostupna, ali s pogrešnim ili nepotpunim sadržajem.', cells: [yes(), no('Nije javno dokumentirano'), no('Nije javno dokumentirano'), no()] },
+  { feature: 'Verzionirana pravila (spremno za novi pravilnik)', why: 'Pravila se mijenjaju; provjera se prilagođava bez prepravljanja cijelog sustava.', cells: [yes(), no('Nije javno dokumentirano'), no('Nije javno dokumentirano'), no()] },
   { feature: 'Arhiva prethodnih objava (30 dana)', why: 'Propis traži dostupnost prethodnih cjenika najmanje 30 dana.', cells: [yes(), partial('Ovisi o alatu'), partial('Ovisi o dodatku'), partial('Ručno')] },
   { feature: 'QR kod i ispis na A4', why: 'Isti podaci za ispis u poslovnici i na webu.', cells: [yes(), partial('Ovisi o alatu'), no(), partial('Ručno')] },
   { feature: 'Ugradnja cjenika u postojeći web (embed)', why: 'Cjenik se prikazuje na vašoj stranici bez prepisivanja.', cells: [yes(), partial('Ovisi o alatu'), partial('Ovisi o dodatku'), partial('Ručno')] },
@@ -40,7 +40,7 @@ export function ComparePage() {
   return (
     <SitePageLayout
       page={page}
-      lead="Većina alata i dodataka objavi CSV/XML. Razlika je u tome provjerava li itko da je objava ispravna svaki dan i javlja li vam kad nije. Ovdje je pošteno, bez naziva konkurenata, što pokriva koji način."
+      lead="Većina alata i dodataka objavi CSV/XML. NEPAR prati objavu i pravila nakon što je datoteka generirana, umjesto da služi samo za jednokratno stvaranje CSV/XML-a. Ovdje je, bez naziva konkurenata, što pokriva koji način."
       related={[
         { href: '/cijene/', label: 'Cijene' },
         { href: '/specifikacija-csv-xml/', label: 'Što točno provjeravamo (specifikacija)' },
@@ -72,7 +72,7 @@ export function ComparePage() {
           </table>
         </div>
         <p className="site-note">
-          ✓ da · ◐ djelomično ili ovisi o konkretnom alatu · — ne. „Besplatni publisher” i „dodatak” su kategorije, ne pojedinačni proizvodi: mogućnosti se razlikuju među alatima i mijenjaju se, pa prije odluke provjerite konkretan alat. Stupci o drugim načinima su naša procjena prema javno dostupnim opisima u listopadu 2026.
+          ✓ da · ◐ djelomično ili ovisi o konkretnom alatu · — ne. „Nije javno dokumentirano” znači da tu mogućnost ne nalazimo u javnim opisima, ne da je alat nema. „Besplatni publisher” i „dodatak” su kategorije, ne pojedinačni proizvodi: mogućnosti se razlikuju i mijenjaju, pa prije odluke provjerite konkretan alat. Stupci o drugim načinima temelje se na javno dostupnim opisima u listopadu 2026.
         </p>
       </section>
 
@@ -94,7 +94,7 @@ export function ComparePage() {
           <li><strong>Imate WooCommerce i dovoljan vam je besplatni dodatak.</strong> Ako je dodatak pouzdan i sami provjeravate izvoz, ne trebate nas.</li>
           <li><strong>Vaš ERP ili blagajna već objavljuje cjenik.</strong> Provjerite kod pružatelja prije kupnje; mi smo sloj za one kojima to nitko ne radi.</li>
           <li><strong>Imate lanac s mnogo poslovnica.</strong> Zasad održavamo jedan objekt po računu. Višelokacijski rad još nemamo; javite se ako vam je presudan.</li>
-          <li><strong>Trgovac s velikim asortimanom proizvoda.</strong> Naš format trenutačno ne nosi marku, barkod i dostupnost, pa je zasad najbolje prilagođen uslugama. Provjerite pokrivenost u <a href="/specifikacija-csv-xml/#pokrivenost">specifikaciji</a>.</li>
+          <li><strong>Imate izravnu vezu s ERP-om ili blagajnom.</strong> Zasad učitavate Excel, CSV ili XML (do 5 000 stavki po cjeniku); automatski uvoz iz sustava još nemamo. Podržana polja za usluge i proizvode opisana su u <a href="/specifikacija-csv-xml/#pokrivenost">specifikaciji</a>.</li>
         </ul>
       </section>
     </SitePageLayout>

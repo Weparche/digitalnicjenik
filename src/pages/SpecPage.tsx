@@ -1,6 +1,6 @@
 import { renderCsv } from '../price-engine/csv'
 import { renderXml } from '../price-engine/xml'
-import { NEPAR_FORMAT_EXAMPLE } from './formatExample'
+import { NEPAR_FORMAT_EXAMPLE, NEPAR_PRODUCT_FORMAT_EXAMPLE } from './formatExample'
 import { OFFICIAL_SOURCES, SitePageLayout, SourceList } from './PageLayout'
 import { getSitePage } from './registry'
 
@@ -17,6 +17,13 @@ export const CSV_COLUMNS = [
   { column: 'Jedinica', required: 'Ne', odluka: 'Jedinica mjere (proizvodi)', example: 'kom', note: 'Za proizvode gdje se primjenjuje.' },
 ]
 
+export const PRODUCT_CSV_COLUMNS = [
+  { column: 'Marka', required: 'Da (može „bez marke”)', odluka: 'Marka', example: 'Primjer mljekara', note: 'Upišite „bez marke” ako je proizvod nema.' },
+  { column: 'Barkod', required: 'Upozorenje ako nedostaje ili nije valjan', odluka: 'Barkod robe', example: '4006381333931', note: 'EAN-8, UPC-A, EAN-13 ili GTIN-14 s ispravnom kontrolnom znamenkom, bez razmaka.' },
+  { column: 'Cijena za jedinicu mjere', required: 'Upozorenje ako je jedinica navedena, a cijena nije', odluka: 'Cijena za jedinicu mjere (gdje je primjenjivo)', example: '1.98', note: 'Uz stupac Jedinica (primjerice kg ili l).' },
+  { column: 'Dostupnost', required: 'Da', odluka: 'Dostupno / nedostupno', example: 'dostupno', note: 'Vrijednosti: dostupno ili nedostupno.' },
+]
+
 export const XML_ELEMENTS = [
   { element: 'priceList / business / name', meaning: 'Naziv poslovnog subjekta', example: 'Primjer frizerski salon' },
   { element: 'priceList / source, updatedAt', meaning: 'Izvor podataka i vrijeme objave', example: 'nepar, 2026-11-17T05:30:00.000Z' },
@@ -28,6 +35,15 @@ export const XML_ELEMENTS = [
   { element: 'item / specialSaleApplied', meaning: 'Je li primijenjen poseban oblik prodaje', example: 'true' },
   { element: 'item / specialSaleName', meaning: 'Naziv posebnog oblika prodaje', example: 'Jesenska akcija' },
   { element: 'item / anchorPrice (currency="EUR")', meaning: 'Dodatna (sidrena) cijena', example: '15.00' },
+]
+
+export const PRODUCT_XML_ELEMENTS = [
+  { element: 'item / externalId', meaning: 'Šifra proizvoda', example: 'MLI-001' },
+  { element: 'item / brand', meaning: 'Marka', example: 'Primjer mljekara' },
+  { element: 'item / barcode', meaning: 'Barkod robe', example: '4006381333931' },
+  { element: 'item / unit', meaning: 'Jedinica mjere', example: 'l' },
+  { element: 'item / unitPrice (currency="EUR")', meaning: 'Cijena za jedinicu mjere', example: '1.19' },
+  { element: 'item / availability', meaning: 'Dostupno ili nedostupno', example: 'dostupno' },
 ]
 
 export const CHECKS = [
@@ -42,6 +58,7 @@ export const CHECKS = [
 
 const exampleCsv = renderCsv(NEPAR_FORMAT_EXAMPLE).replace(/^﻿/, '')
 const exampleXml = renderXml(NEPAR_FORMAT_EXAMPLE)
+const exampleProductCsv = renderCsv(NEPAR_PRODUCT_FORMAT_EXAMPLE).replace(/^\uFEFF/, '')
 
 export function SpecPage() {
   const page = getSitePage('/specifikacija-csv-xml/')
@@ -98,8 +115,32 @@ export function SpecPage() {
             </tbody>
           </table>
         </div>
-        <h3>Primjer CSV-a</h3>
+        <h3>Primjer CSV-a za usluge</h3>
         <pre className="news-code-sample"><code>{exampleCsv}</code></pre>
+        <h3>Dodatni stupci za cjenik proizvoda</h3>
+        <p>Čim cjenik sadrži barem jednu stavku koja nije usluga, CSV i XML dobivaju prošireni oblik s ovim stupcima. Cjenik koji sadrži samo usluge ostaje u kompaktnom obliku. Odluka traži jedinstvenu strukturu, pa se oblik odabire za cijeli cjenik.</p>
+        <div className="site-table-wrap" role="region" aria-label="Stupci za cjenik proizvoda" tabIndex={0}>
+          <table className="site-table">
+            <caption className="sr-only">Dodatni stupci NEPAR CSV formata za proizvode</caption>
+            <thead>
+              <tr><th scope="col">Stupac</th><th scope="col">Validator traži</th><th scope="col">Polje iz Odluke</th><th scope="col">Primjer</th><th scope="col">Napomena</th></tr>
+            </thead>
+            <tbody>
+              {PRODUCT_CSV_COLUMNS.map((row) => (
+                <tr key={row.column}>
+                  <th scope="row"><code>{row.column}</code></th>
+                  <td>{row.required}</td>
+                  <td>{row.odluka}</td>
+                  <td><code>{row.example}</code></td>
+                  <td>{row.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p>Za proizvode su uz to obavezni i šifra (<code>Interna šifra</code>) te sidrena cijena. Nedostajuća šifra, marka, dostupnost ili sidrena cijena zaustavljaju objavu dok se ne dopune.</p>
+        <h3>Primjer CSV-a za proizvode</h3>
+        <pre className="news-code-sample"><code>{exampleProductCsv}</code></pre>
       </section>
 
       <section className="site-section" aria-labelledby="xml-title">
@@ -121,8 +162,26 @@ export function SpecPage() {
             </tbody>
           </table>
         </div>
-        <p>XML trenutačno ne nosi šifru i jedinicu mjere; ta polja su u CSV-u.</p>
-        <h3>Primjer XML-a</h3>
+        <h3>Dodatni elementi za cjenik proizvoda</h3>
+        <div className="site-table-wrap" role="region" aria-label="Elementi XML-a za proizvode" tabIndex={0}>
+          <table className="site-table">
+            <caption className="sr-only">Dodatni elementi NEPAR XML formata za proizvode</caption>
+            <thead>
+              <tr><th scope="col">Element</th><th scope="col">Značenje</th><th scope="col">Primjer</th></tr>
+            </thead>
+            <tbody>
+              {PRODUCT_XML_ELEMENTS.map((row) => (
+                <tr key={row.element}>
+                  <th scope="row"><code>{row.element}</code></th>
+                  <td>{row.meaning}</td>
+                  <td><code>{row.example}</code></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p>Isto vrijedi i za XML: cjenik koji sadrži proizvode dobiva ove elemente, a čisti cjenik usluga ostaje kompaktan.</p>
+        <h3>Primjer XML-a za usluge</h3>
         <pre className="news-code-sample"><code>{exampleXml}</code></pre>
       </section>
 
@@ -134,27 +193,28 @@ export function SpecPage() {
       </section>
 
       <section id="pokrivenost" className="site-section" aria-labelledby="coverage-title">
-        <h2 id="coverage-title">Pokrivenost: usluge i proizvodi</h2>
-        <div className="site-table-wrap" role="region" aria-label="Pokrivenost po vrsti cjenika" tabIndex={0}>
+        <h2 id="coverage-title">Što NEPAR podržava: usluge i proizvodi</h2>
+        <div className="site-table-wrap" role="region" aria-label="Podrška po vrsti cjenika" tabIndex={0}>
           <table className="site-table">
-            <caption className="sr-only">Pokrivenost obveznih polja po vrsti cjenika</caption>
+            <caption className="sr-only">Podrška obveznim poljima po vrsti cjenika</caption>
             <thead>
-              <tr><th scope="col">Vrsta cjenika</th><th scope="col">Pokrivenost</th><th scope="col">Što nedostaje</th></tr>
+              <tr><th scope="col">Vrsta cjenika</th><th scope="col">Podrška</th><th scope="col">Detalji</th></tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row">Usluge</th>
-                <td><span aria-hidden="true">✓</span> Potpuna</td>
-                <td>Sva polja koja Odluka traži za usluge nalaze se u formatu.</td>
+                <th scope="row">Usluge (čl. IV)</th>
+                <td><span aria-hidden="true">✓</span> Puna podrška</td>
+                <td>Naziv usluge, maloprodajna cijena, poseban oblik prodaje (i naziv) i sidrena cijena, uz provjeru i dnevni nadzor.</td>
               </tr>
               <tr>
-                <th scope="row">Proizvodi</th>
-                <td><span aria-hidden="true">◐</span> Djelomična</td>
-                <td>Format još ne nosi marku, barkod i dostupnost. Naziv, šifra, cijena, sidrena cijena i posebni oblik prodaje su pokriveni. Za veći asortiman provjerite s nama prije aktivacije.</td>
+                <th scope="row">Proizvodi (čl. III)</th>
+                <td><span aria-hidden="true">✓</span> Podržana polja iz Odluke</td>
+                <td>Naziv, šifra, marka, jedinica mjere i cijena za jedinicu mjere (gdje je primjenjivo), maloprodajna cijena s posebnim oblikom prodaje, sidrena cijena, barkod i dostupnost. Uvoz iz Excela, CSV-a ili XML-a, do 5 000 stavki po cjeniku.</td>
               </tr>
             </tbody>
           </table>
         </div>
+        <p>Podatke učitavate iz Excela, CSV-a ili XML-a (prepoznajemo i izvoz iz WooCommercea). Automatski uvoz izravno iz ERP-a ili blagajne zasad nemamo.</p>
       </section>
 
       <section className="site-section" aria-labelledby="checks-title">
@@ -179,6 +239,8 @@ export function SpecPage() {
         <ul className="news-bullets">
           <li><a href="/examples/nepar-format-primjer-usluge.csv" download>NEPAR format — CSV za usluge</a></li>
           <li><a href="/examples/nepar-format-primjer-usluge.xml" download>NEPAR format — XML za usluge</a></li>
+          <li><a href="/examples/nepar-format-primjer-proizvodi.csv" download>NEPAR format — CSV za proizvode</a></li>
+          <li><a href="/examples/nepar-format-primjer-proizvodi.xml" download>NEPAR format — XML za proizvode</a></li>
           <li><a href="/examples/primjer-digitalni-cjenik-usluge-2026.csv" download>HOK stil — CSV za usluge (točka-zarez)</a></li>
           <li><a href="/examples/primjer-digitalni-cjenik-usluge-2026.xml" download>HOK stil — XML za usluge</a></li>
         </ul>

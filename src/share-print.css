@@ -127,3 +127,8 @@ body:has(.admin-shell) { background: var(--nepar-canvas); }
 .hero-links a, .site-toc a, .site-related a { color: var(--nepar-primary); }
 .site-nav a[aria-current='page'] { color: var(--nepar-primary); }
 .news-shell .news-breadcrumb { margin-left: 0; }
+
+/* Product fields in the validator table */
+.product-field-summary { margin: 6px 0 10px; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; }
+.product-field-summary li { display: flex; gap: 8px; align-items: baseline; }
+.product-field-summary b { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--nepar-warning); }

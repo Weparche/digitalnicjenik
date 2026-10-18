@@ -22,7 +22,11 @@ const fieldLabels: Array<{ field: ExcelField; label: string; required?: boolean 
   { field: 'salePrice', label: 'Akcijska cijena' },
   { field: 'specialSaleApplied', label: 'Poseban oblik prodaje' },
   { field: 'specialSaleName', label: 'Naziv posebne prodaje' },
-  { field: 'unit', label: 'Jedinica' },
+  { field: 'unit', label: 'Jedinica mjere' },
+  { field: 'unitPrice', label: 'Cijena za jedinicu mjere' },
+  { field: 'brand', label: 'Marka' },
+  { field: 'barcode', label: 'Barkod' },
+  { field: 'availability', label: 'Dostupnost (dostupno/nedostupno)' },
   { field: 'isNewSinceReferenceDate', label: 'Nova usluga' },
 ]
 

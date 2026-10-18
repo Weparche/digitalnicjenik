@@ -19,8 +19,8 @@ const payload = (count = 3): NormalizedPriceList => ({
   items: Array.from({ length: count }, (_, index) => ({ name: `Artikl ${index + 1}`, externalId: `S${index + 1}`, unit: 'kom', price: 1 + index, anchorPrice: 1 + index })),
 })
 
-async function seed(options: { profile?: 'products' | 'services'; entitlementEnd?: string; archive?: Array<{ stem: string; publishedAt: string; publicUntil: string | null }>; publishedAt?: string } = {}) {
-  const list = payload()
+async function seed(options: { list?: NormalizedPriceList; profile?: 'products' | 'services'; entitlementEnd?: string; archive?: Array<{ stem: string; publishedAt: string; publicUntil: string | null }>; publishedAt?: string } = {}) {
+  const list = options.list ?? payload()
   const iso = '2026-11-17T05:00:00Z'
   const statements = [
     env.DB.prepare("INSERT INTO tenants (id, slug, name, currency, created_at, updated_at) VALUES ('t-acme', 'acme', 'Acme', 'EUR', ?, ?)").bind(iso, iso),
@@ -81,6 +81,39 @@ describe('runTenantCheck', () => {
     expect((await readLatestRun(monitorEnv().DB, 't-acme'))?.id).toBe(result.run.id)
   })
 
+  it('a complete product list passes with every product field carried by CSV and XML', async () => {
+    const products: NormalizedPriceList = {
+      ...payload(),
+      items: [
+        { externalId: 'M-001', name: 'Mlijeko 1 l', type: 'Proizvod', brand: 'Dukat', barcode: '4006381333931', unit: 'l', unitPrice: 1.2, price: 1.2, anchorPrice: 1.1, specialSaleApplied: false, availability: 'dostupno' },
+        { externalId: 'M-002', name: 'Kruh', type: 'Proizvod', brand: 'bez marke', barcode: '96385074', price: 0.99, anchorPrice: 0.95, specialSaleApplied: false, availability: 'nedostupno' },
+      ],
+    }
+    await seed({ list: products, profile: 'products', publishedAt: '2026-11-17T04:30:00Z' })
+    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: NOW, fetcher: fakeFetch({}, products) })
+    if (result.status !== 'checked') throw new Error('expected checked')
+    expect(result.run).toMatchObject({ profile: 'products', overall: 'ok', csvRows: 2, xmlRows: 2, expectedRows: 2 })
+    expect(result.run.issues.filter((issue) => issue.severity !== 'info')).toEqual([])
+    expect(result.run.issues.some((issue) => issue.code === 'FIELD_NOT_IN_FEED' || issue.code === 'FIELD_NOT_IN_DATA_MODEL')).toBe(false)
+  })
+
+  it('names the product fields that are missing, with row counts', async () => {
+    const products: NormalizedPriceList = {
+      ...payload(),
+      items: [
+        { externalId: 'M-001', name: 'Mlijeko 1 l', type: 'Proizvod', brand: 'Dukat', barcode: '4006381333931', price: 1.2, anchorPrice: 1.1, specialSaleApplied: false, availability: 'dostupno' },
+        { externalId: 'M-002', name: 'Kruh', type: 'Proizvod', price: 0.99, anchorPrice: 0.95, specialSaleApplied: false },
+        { name: 'Sol', type: 'Proizvod', price: 0.5, specialSaleApplied: false },
+      ],
+    }
+    await seed({ list: products, profile: 'products', publishedAt: '2026-11-17T04:30:00Z' })
+    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: NOW, fetcher: fakeFetch({}, products) })
+    if (result.status !== 'checked') throw new Error('expected checked')
+    expect(result.run.overall).toBe('warn')
+    const byField = Object.fromEntries(result.run.issues.filter((issue) => issue.code === 'MISSING_REQUIRED_FIELD').map((issue) => [issue.field, issue.rows]))
+    expect(byField).toEqual({ externalId: 1, anchorPrice: 1, brand: 2, barcode: 2, availability: 2 })
+  })
+
   it('fails with a precise issue when XML returns 404 and alerts once', async () => {
     await seed({ profile: 'services' })
     const fetcher = fakeFetch({ [`https://${HOST}/cjenik.xml`]: new Response('nf', { status: 404 }) })
@@ -134,14 +167,14 @@ describe('runTenantCheck', () => {
     expect(await runTenantCheck(monitorEnv(), { slug: 'missing', trigger: 'cron', now: NOW })).toEqual({ status: 'skipped', reason: 'unknown_tenant' })
   })
 
-  it('products profile warns (not fails) on a stale publication and surfaces model gaps as info', async () => {
+  it('products profile warns (not fails) on a stale publication and on missing product fields', async () => {
     await seed({ profile: 'products', publishedAt: '2026-11-10T04:30:00Z' })
     const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: NOW, fetcher: fakeFetch() })
     if (result.status !== 'checked') throw new Error('expected checked')
     expect(result.run.freshnessStatus).toBe('warn')
     expect(result.run.overall).toBe('warn')
     expect(result.alert).toBeNull()
-    expect(result.run.issues.some((issue) => issue.code === 'FIELD_NOT_IN_DATA_MODEL' && issue.field === 'barcode' && issue.severity === 'info')).toBe(true)
+    expect(result.run.issues.some((issue) => issue.code === 'MISSING_REQUIRED_FIELD' && issue.field === 'barcode' && issue.severity === 'warn')).toBe(true)
   })
 
   it('archive: a gap in public_until fails; smoke-checks the latest and oldest archived files', async () => {

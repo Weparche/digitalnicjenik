@@ -1,10 +1,17 @@
-import { normalizeNumber } from './normalize'
+import { normalizeBarcode, normalizeNumber, parseAvailability } from './normalize'
+import { usesProductStructure } from './profile'
 import type { NormalizedPriceList } from './types'
 
 const xml = (value: unknown) => String(value ?? '').replace(/[<>&'\"]/g, (character) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[character] ?? character)
 
 export function renderXml(priceList: NormalizedPriceList): string {
-  const items = priceList.items.map((item) => `    <item>\n      <category>${xml(item.category)}</category>\n      <name>${xml(item.name)}</name>\n      <type>${xml(item.type)}</type>\n      <price currency="EUR">${item.price.toFixed(2)}</price>${item.salePrice == null ? '' : `\n      <salePrice currency="EUR">${item.salePrice.toFixed(2)}</salePrice>`}\n      <specialSaleApplied>${item.specialSaleApplied == null ? '' : item.specialSaleApplied}</specialSaleApplied>\n      <specialSaleName>${xml(item.specialSaleName)}</specialSaleName>\n      <anchorPrice currency="EUR">${item.anchorPrice == null ? '' : item.anchorPrice.toFixed(2)}</anchorPrice>\n    </item>`).join('\n')
+  const products = usesProductStructure(priceList)
+  const items = priceList.items.map((item) => {
+    const productFields = products
+      ? `\n      <externalId>${xml(item.externalId)}</externalId>\n      <brand>${xml(item.brand)}</brand>\n      <barcode>${xml(item.barcode)}</barcode>\n      <unit>${xml(item.unit)}</unit>${item.unitPrice == null ? '' : `\n      <unitPrice currency="EUR">${item.unitPrice.toFixed(2)}</unitPrice>`}\n      <availability>${xml(item.availability)}</availability>`
+      : ''
+    return `    <item>\n      <category>${xml(item.category)}</category>\n      <name>${xml(item.name)}</name>\n      <type>${xml(item.type)}</type>${productFields}\n      <price currency="EUR">${item.price.toFixed(2)}</price>${item.salePrice == null ? '' : `\n      <salePrice currency="EUR">${item.salePrice.toFixed(2)}</salePrice>`}\n      <specialSaleApplied>${item.specialSaleApplied == null ? '' : item.specialSaleApplied}</specialSaleApplied>\n      <specialSaleName>${xml(item.specialSaleName)}</specialSaleName>\n      <anchorPrice currency="EUR">${item.anchorPrice == null ? '' : item.anchorPrice.toFixed(2)}</anchorPrice>\n    </item>`
+  }).join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<priceList>\n  <business>\n    <name>${xml(priceList.tenant.name)}</name>\n  </business>\n  <source>${xml(priceList.source)}</source>\n  <updatedAt>${xml(priceList.updatedAt)}</updatedAt>\n  <items>\n${items}\n  </items>\n</priceList>\n`
 }
 
@@ -33,6 +40,10 @@ export function parseXmlPriceListBrowser(xmlText: string, tenant = { id: 'nepar'
       salePrice: sale ? normalizeNumber(sale) : null,
       anchorPrice: anchor ? normalizeNumber(anchor) : null,
       unit: textOf(node, 'unit') || null,
+      unitPrice: normalizeNumber(textOf(node, 'unitPrice')),
+      brand: textOf(node, 'brand') || null,
+      barcode: normalizeBarcode(textOf(node, 'barcode')) || null,
+      availability: parseAvailability(textOf(node, 'availability')),
       specialSaleApplied: applied === 'true' || applied === 'da' ? true : applied === 'false' || applied === 'ne' ? false : null,
       specialSaleName: textOf(node, 'specialSaleName') || null,
       isNewSinceReferenceDate: textOf(node, 'isNewSinceReferenceDate').toLocaleLowerCase('hr-HR') === 'true',
@@ -128,6 +139,10 @@ export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug:
       salePrice: sale ? normalizeNumber(sale) : null,
       anchorPrice: anchor ? normalizeNumber(anchor) : null,
       unit: xmlTextOf(node, 'unit') || null,
+      unitPrice: normalizeNumber(xmlTextOf(node, 'unitPrice')),
+      brand: xmlTextOf(node, 'brand') || null,
+      barcode: normalizeBarcode(xmlTextOf(node, 'barcode')) || null,
+      availability: parseAvailability(xmlTextOf(node, 'availability')),
       specialSaleApplied: applied === 'true' || applied === 'da' ? true : applied === 'false' || applied === 'ne' ? false : null,
       specialSaleName: xmlTextOf(node, 'specialSaleName') || null,
       isNewSinceReferenceDate: xmlTextOf(node, 'isNewSinceReferenceDate').toLocaleLowerCase('hr-HR') === 'true',

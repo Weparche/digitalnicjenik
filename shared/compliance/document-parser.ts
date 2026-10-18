@@ -1,14 +1,23 @@
 import { parseXmlItemRecords } from '../../src/price-engine/xml'
 
 /** Canonical field → value, as found in a published feed row. Empty string means "present but empty". */
-export type FeedRecord = Partial<Record<'category' | 'name' | 'type' | 'externalId' | 'price' | 'salePrice' | 'specialSaleApplied' | 'specialSaleName' | 'anchorPrice' | 'unit', string>>
+export type FeedRecord = Partial<Record<'category' | 'name' | 'type' | 'externalId' | 'price' | 'salePrice' | 'specialSaleApplied' | 'specialSaleName' | 'anchorPrice' | 'unit' | 'brand' | 'barcode' | 'unitPrice' | 'availability', string>>
 
 export type ParsedFeed = { records: FeedRecord[] }
 
 /** Fields each renderer actually carries (see src/price-engine/csv.ts and xml.ts). */
+export type FeedStructure = 'services' | 'products'
+
+/** Fields each renderer carries, per list structure (see src/price-engine/csv.ts, xml.ts and profile.ts). */
 export const FEED_FIELDS = {
-  csv: ['category', 'name', 'type', 'externalId', 'price', 'salePrice', 'specialSaleApplied', 'specialSaleName', 'anchorPrice', 'unit'],
-  xml: ['category', 'name', 'type', 'price', 'salePrice', 'specialSaleApplied', 'specialSaleName', 'anchorPrice'],
+  services: {
+    csv: ['category', 'name', 'type', 'externalId', 'price', 'salePrice', 'specialSaleApplied', 'specialSaleName', 'anchorPrice', 'unit'],
+    xml: ['category', 'name', 'type', 'price', 'salePrice', 'specialSaleApplied', 'specialSaleName', 'anchorPrice'],
+  },
+  products: {
+    csv: ['category', 'name', 'type', 'externalId', 'price', 'salePrice', 'specialSaleApplied', 'specialSaleName', 'anchorPrice', 'unit', 'brand', 'barcode', 'unitPrice', 'availability'],
+    xml: ['category', 'name', 'type', 'externalId', 'brand', 'barcode', 'unit', 'unitPrice', 'availability', 'price', 'salePrice', 'specialSaleApplied', 'specialSaleName', 'anchorPrice'],
+  },
 } as const
 
 const CSV_HEADERS: Record<string, keyof FeedRecord> = {
@@ -22,6 +31,10 @@ const CSV_HEADERS: Record<string, keyof FeedRecord> = {
   'naziv posebnog oblika prodaje': 'specialSaleName',
   'sidrena cijena': 'anchorPrice',
   jedinica: 'unit',
+  marka: 'brand',
+  barkod: 'barcode',
+  'cijena za jedinicu mjere': 'unitPrice',
+  dostupnost: 'availability',
 }
 
 /** RFC 4180 style parser (quoted fields, escaped quotes, CRLF/LF, BOM). Throws on an unterminated quote. */
@@ -81,7 +94,7 @@ export function parseCsvFeed(text: string): ParsedFeed {
 export function parseXmlFeed(text: string): ParsedFeed {
   const records = parseXmlItemRecords(text).map((raw) => {
     const record: FeedRecord = {}
-    for (const key of FEED_FIELDS.xml) record[key] = raw[key.toLowerCase()] ?? raw[key] ?? ''
+    for (const key of FEED_FIELDS.products.xml) record[key] = raw[key.toLowerCase()] ?? raw[key] ?? ''
     return record
   })
   return { records }

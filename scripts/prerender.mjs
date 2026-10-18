@@ -166,14 +166,16 @@ function buildSitePageSchema(page, extras) {
     const files = [
       ['NEPAR format — CSV za usluge', '/examples/nepar-format-primjer-usluge.csv', 'text/csv'],
       ['NEPAR format — XML za usluge', '/examples/nepar-format-primjer-usluge.xml', 'application/xml'],
+      ['NEPAR format — CSV za proizvode', '/examples/nepar-format-primjer-proizvodi.csv', 'text/csv'],
+      ['NEPAR format — XML za proizvode', '/examples/nepar-format-primjer-proizvodi.xml', 'application/xml'],
       ['HOK stil — CSV za usluge', '/examples/primjer-digitalni-cjenik-usluge-2026.csv', 'text/csv'],
       ['HOK stil — XML za usluge', '/examples/primjer-digitalni-cjenik-usluge-2026.xml', 'application/xml'],
     ]
     graph.push({
       '@type': 'Dataset',
       '@id': `${pageUrl}#dataset`,
-      name: 'Primjeri CSV i XML digitalnog cjenika usluga',
-      description: 'Primjeri strojno čitljivog digitalnog cjenika usluga (CSV i XML) s maloprodajnom i sidrenom cijenom, u NEPAR formatu i u stilu HOK predloška.',
+      name: 'Primjeri CSV i XML digitalnog cjenika usluga i proizvoda',
+      description: 'Primjeri strojno čitljivog digitalnog cjenika usluga i proizvoda (CSV i XML) s maloprodajnom i sidrenom cijenom te poljima šifra, marka, barkod, jedinica i dostupnost, u NEPAR formatu i u stilu HOK predloška.',
       url: pageUrl,
       inLanguage: 'hr-HR',
       isAccessibleForFree: true,

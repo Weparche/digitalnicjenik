@@ -116,12 +116,17 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Što točno nadzor provjerava?',
         answer:
-          'Svaki dan rano ujutro, uz ponovnu provjeru prije 8:00, provjeravamo jesu li CSV i XML dostupni, imaju li jednak broj stavki kao objavljeni cjenik i podudaraju li se nazivom i cijenom, odgovara li naziv datoteke objavi i propisanom obliku, jesu li obvezna polja popunjena te je li arhiva za zadnjih 30 dana dostupna. Pravila su verzionirana, pa se prilagode novom pravilniku.',
+          'Svaki dan rano ujutro, uz ponovnu provjeru prije 8:00, provjeravamo jesu li CSV i XML dostupni, imaju li jednak broj stavki kao objavljeni cjenik i podudaraju li se nazivom i cijenom, odgovara li naziv datoteke objavi i propisanom obliku, jesu li obvezna polja popunjena (za proizvode i marka, barkod i dostupnost) te je li arhiva za zadnjih 30 dana dostupna. Pravila su verzionirana, pa se prilagode novom pravilniku.',
       },
       {
         question: 'Kako i kada dobivam upozorenje?',
         answer:
           'E-mailom vlasniku računa kad provjera otkrije kritičan problem, primjerice da XML vraća grešku ili da broj stavki ne odgovara. Blaža upozorenja vidite u nadzornoj ploči, a kad se problem riješi, stiže obavijest o oporavku.',
+      },
+      {
+        question: 'Podržava li NEPAR cjenike proizvoda, a ne samo usluga?',
+        answer:
+          'Da. Za proizvode podržavamo polja iz čl. III Odluke: naziv, šifru, marku, jedinicu mjere i cijenu za jedinicu mjere (gdje je primjenjivo), maloprodajnu cijenu s posebnim oblikom prodaje, sidrenu cijenu, barkod i dostupnost. Podatke učitavate iz Excela, CSV-a ili XML-a (prepoznajemo i izvoz iz WooCommercea), do 5 000 stavki po cjeniku. Izravni uvoz iz ERP-a ili blagajne zasad nemamo.',
       },
       {
         question: 'Koliko košta NEPAR Publisher?',

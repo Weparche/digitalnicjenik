@@ -5,19 +5,31 @@ import { renderCsv } from '../price-engine/csv'
 import { renderXml } from '../price-engine/xml'
 import { allFaqEntries } from './faqData'
 import { COMPARE_COLUMNS, COMPARE_ROWS } from './ComparePage'
-import { CSV_COLUMNS } from './SpecPage'
+import { CSV_COLUMNS, PRODUCT_CSV_COLUMNS } from './SpecPage'
 import { SITE_PAGES } from './registry'
-import { NEPAR_FORMAT_EXAMPLE } from './formatExample'
+import productCsvExample from '../../public/examples/nepar-format-primjer-proizvodi.csv?raw'
+import productXmlExample from '../../public/examples/nepar-format-primjer-proizvodi.xml?raw'
+import { NEPAR_FORMAT_EXAMPLE, NEPAR_PRODUCT_FORMAT_EXAMPLE } from './formatExample'
+import { validatePriceList } from '../price-engine/validate'
 
 describe('downloadable format examples', () => {
   it('stay identical to what the renderers produce (regenerate public/examples if this fails)', () => {
     expect(csvExample).toBe(renderCsv(NEPAR_FORMAT_EXAMPLE))
     expect(xmlExample).toBe(renderXml(NEPAR_FORMAT_EXAMPLE))
+    expect(productCsvExample).toBe(renderCsv(NEPAR_PRODUCT_FORMAT_EXAMPLE))
+    expect(productXmlExample).toBe(renderXml(NEPAR_PRODUCT_FORMAT_EXAMPLE))
+  })
+
+  it('both examples pass the validator that the documentation describes', () => {
+    expect(validatePriceList(NEPAR_FORMAT_EXAMPLE).status).toBe('ready_to_publish')
+    expect(validatePriceList(NEPAR_PRODUCT_FORMAT_EXAMPLE).status).toBe('ready_to_publish')
   })
 
   it('documented CSV columns are exactly the columns the renderer writes', () => {
-    const header = renderCsv(NEPAR_FORMAT_EXAMPLE).replace(/^﻿/, '').split('\r\n')[0]!.split(',')
+    const header = renderCsv(NEPAR_FORMAT_EXAMPLE).replace(/^\uFEFF/, '').split('\r\n')[0]!.split(',')
     expect(CSV_COLUMNS.map((column) => column.column)).toEqual(header)
+    const productHeader = renderCsv(NEPAR_PRODUCT_FORMAT_EXAMPLE).replace(/^\uFEFF/, '').split('\r\n')[0]!.split(',')
+    expect([...CSV_COLUMNS, ...PRODUCT_CSV_COLUMNS].map((column) => column.column)).toEqual(productHeader)
   })
 })
 

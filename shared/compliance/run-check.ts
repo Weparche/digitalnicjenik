@@ -1,6 +1,7 @@
 import type { D1DatabaseLike } from '../db'
 import { entitlementIsLive } from '../entitlements'
 import { deterministicHash } from '../../src/price-engine/hash'
+import { usesProductStructure } from '../../src/price-engine/profile'
 import type { Entitlement, NormalizedPriceList } from '../../src/price-engine/types'
 import { advanceMonitorState } from './alert-state'
 import {
@@ -157,7 +158,7 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
         issues.push({ code: 'FILENAME_RULESET_MISMATCH', severity: 'warn', field: format, message: `Naziv ${format.toUpperCase()} datoteke ne odgovara propisanom obliku (${ruleset.label}).` })
       }
     }
-    issues.push(...evaluateFeedGaps(format, profile))
+    issues.push(...evaluateFeedGaps(format, profile, usesProductStructure(payload) ? 'products' : 'services'))
   }
 
   issues.push(...evaluateRequiredFields(payload.items, profile))

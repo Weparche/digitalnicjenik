@@ -1,7 +1,17 @@
 import type { NormalizedPriceItem, NormalizedPriceList, PriceChange, PriceSnapshot } from './types'
 
+// Optional product fields are only part of the canonical form when present, so hashes of existing publications stay stable.
+function productFields(item: NormalizedPriceItem) {
+  return {
+    ...(item.brand ? { brand: item.brand } : {}),
+    ...(item.barcode ? { barcode: item.barcode } : {}),
+    ...(item.unitPrice != null ? { unitPrice: item.unitPrice } : {}),
+    ...(item.availability ? { availability: item.availability } : {}),
+  }
+}
+
 function canonicalItem(item: NormalizedPriceItem) {
-  return { externalId: item.externalId ?? null, category: item.category ?? null, name: item.name, type: item.type ?? null, description: item.description ?? null, price: item.price, anchorPrice: item.anchorPrice ?? null, salePrice: item.salePrice ?? null, unit: item.unit ?? null, specialSaleApplied: item.specialSaleApplied ?? null, specialSaleName: item.specialSaleName ?? null, isNewSinceReferenceDate: item.isNewSinceReferenceDate ?? false }
+  return { externalId: item.externalId ?? null, category: item.category ?? null, name: item.name, type: item.type ?? null, description: item.description ?? null, price: item.price, anchorPrice: item.anchorPrice ?? null, salePrice: item.salePrice ?? null, unit: item.unit ?? null, ...productFields(item), specialSaleApplied: item.specialSaleApplied ?? null, specialSaleName: item.specialSaleName ?? null, isNewSinceReferenceDate: item.isNewSinceReferenceDate ?? false }
 }
 
 export function canonicalize(priceList: NormalizedPriceList): string {

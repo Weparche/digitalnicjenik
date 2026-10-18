@@ -6,7 +6,7 @@ import { QrCode } from './QrCode'
 import { ShareAndPrintCard } from './ShareAndPrintCard'
 import { PublisherLogin, usePublisherSession } from './PublisherAuth'
 import { Fragment, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
+import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type Availability, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 import { ExcelConverter } from './ExcelConverter'
 import { EducationSection } from './EducationSection'
 import { LeadForm, TurnstileField, type LeadContext, type LeadIntent } from './LeadForm'
@@ -56,10 +56,25 @@ function missingAnchorItems(list: NormalizedPriceList) {
     .filter(({ item }) => isServiceItem(item) && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0))
 }
 
+const PRODUCT_FIELD_GROUPS: Array<{ field: ValidationIssue['field']; label: string }> = [
+  { field: 'externalId', label: 'šifru' },
+  { field: 'brand', label: 'marku' },
+  { field: 'availability', label: 'oznaku dostupnosti' },
+  { field: 'barcode', label: 'valjan barkod' },
+  { field: 'unitPrice', label: 'cijenu za jedinicu mjere' },
+  { field: 'unit', label: 'jedinicu mjere uz cijenu po jedinici' },
+]
+
 function summarizeValidationIssues(issues: ValidationIssue[]) {
-  const missingAnchors = issues.filter((issue) => issue.field === 'anchorPrice' && issue.message.startsWith('Nedostaje sidrena cijena'))
-  const other = issues.filter((issue) => !(issue.field === 'anchorPrice' && issue.message.startsWith('Nedostaje sidrena cijena')))
-  return { missingAnchorCount: missingAnchors.length, otherIssues: other }
+  const isAnchor = (issue: ValidationIssue) => issue.field === 'anchorPrice' && issue.message.startsWith('Nedostaje sidrena cijena')
+  const grouped = new Set(PRODUCT_FIELD_GROUPS.map((group) => group.field))
+  const missingAnchors = issues.filter(isAnchor)
+  const productGroups = PRODUCT_FIELD_GROUPS.map((group) => {
+    const matching = issues.filter((issue) => issue.field === group.field)
+    return { ...group, count: matching.length, blocking: matching.some((issue) => issue.severity !== 'warning') }
+  }).filter((group) => group.count > 0)
+  const other = issues.filter((issue) => !isAnchor(issue) && !grouped.has(issue.field))
+  return { missingAnchorCount: missingAnchors.length, productGroups, otherIssues: other }
 }
 
 function copyText(value: string) {
@@ -201,6 +216,7 @@ function ValidationResultPanel({
   onUpdateItem,
   onConfirmAnchorsFromRetail,
   onConfirmNoSpecialSale,
+  onBulkAvailability,
   onSaveDraft,
   onPublish,
   onStartTrial,
@@ -218,6 +234,7 @@ function ValidationResultPanel({
   onUpdateItem: (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => void
   onConfirmAnchorsFromRetail: () => void
   onConfirmNoSpecialSale: () => void
+  onBulkAvailability: (value: Availability) => void
   onSaveDraft: () => void
   onPublish: () => void
   onStartTrial?: () => void
@@ -225,8 +242,11 @@ function ValidationResultPanel({
   mode?: 'sandbox' | 'publisher'
   publishBlocked?: boolean
 }) {
-  const { missingAnchorCount, otherIssues } = summarizeValidationIssues(validation.issues)
+  const { missingAnchorCount, productGroups, otherIssues } = summarizeValidationIssues(validation.issues)
   const needsAnchors = missingAnchorCount > 0
+  const serviceAnchorsPending = missingAnchorItems(list).length > 0
+  const hasProducts = list.items.some((item) => !isServiceItem(item))
+  const missingAvailability = list.items.filter((item) => !isServiceItem(item) && !item.availability).length
   const incomplete = validation.blockingCount > 0
   const hasValidationErrors = validation.issues.some((issue) => issue.severity === 'error')
   const tableRef = useRef<HTMLDivElement>(null)
@@ -274,8 +294,23 @@ function ValidationResultPanel({
         {needsAnchors && (
           <div className="validation-group-callout" role="status">
             <p><strong>{missingAnchorCount} {missingAnchorCount === 1 ? 'stavka nema' : 'stavki nema'} sidrenu cijenu</strong></p>
-            <p>Unesite cijenu koja je za pojedinu uslugu vrijedila 10. rujna 2026., bez posebnog oblika prodaje.</p>
+            <p>Unesite cijenu koja je za pojedinu stavku vrijedila na referentni datum (10. rujna 2026.; za ranije obuhvaćene skupine proizvoda 2. svibnja 2025.), bez posebnog oblika prodaje.</p>
             <button className="app-button app-button-light" type="button" onClick={focusAnchorTable}>Dopuni sidrene cijene</button>
+          </div>
+        )}
+
+        {productGroups.length > 0 && (
+          <div className="validation-group-callout" role="status">
+            <p><strong>Cjenik proizvoda: podaci koje Odluka traži</strong></p>
+            <ul className="product-field-summary">
+              {productGroups.map((group) => (
+                <li key={group.field}><b>{group.blocking ? 'RUČNI PREGLED' : 'UPOZORENJE'}</b>{group.count} {group.count === 1 ? 'stavka nema' : 'stavki nema'} {group.label}</li>
+              ))}
+            </ul>
+            {missingAvailability > 0 && (
+              <button className="app-link-button" type="button" onClick={() => onBulkAvailability('dostupno')}>Sve bez oznake: dostupno →</button>
+            )}
+            <button className="app-button app-button-light" type="button" onClick={focusAnchorTable}>Dopuni u tablici</button>
           </div>
         )}
 
@@ -295,7 +330,7 @@ function ValidationResultPanel({
         )}
       </div>
 
-      {needsAnchors && (
+      {serviceAnchorsPending && (
         <div className="anchor-bulk-panel" role="region" aria-label="Sidrene cijene">
           <p className="anchor-bulk-question"><strong>Jesu li ove cijene bile iste 10. rujna 2026.?</strong></p>
           <p className="anchor-bulk-warning">Potvrdite samo ako su navedene redovne cijene, bez akcija i popusta, vrijedile 10. rujna 2026.</p>
@@ -319,15 +354,16 @@ function ValidationResultPanel({
               <th>Maloprodajna</th>
               <th>Sidrena cijena</th>
               <th>Posebna prodaja</th>
+              {hasProducts && <><th>Šifra</th><th>Marka</th><th>Barkod</th><th>Jedinica i cijena po jedinici</th><th>Dostupnost</th></>}
             </tr>
           </thead>
           <tbody>
             {list.items.map((item, index) => {
               const service = isServiceItem(item)
-              const anchorMissing = service && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0)
+              const anchorMissing = item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0
               const specialApplied = item.specialSaleApplied === true
               return (
-                <tr key={item.externalId || item.name} className={anchorMissing ? 'row-needs-anchor' : undefined}>
+                <tr key={index} className={anchorMissing ? 'row-needs-anchor' : undefined}>
                   <td>
                     <strong>{item.name}</strong>
                     <small>{item.category || 'Bez kategorije'}</small>
@@ -344,7 +380,7 @@ function ValidationResultPanel({
                         type="number"
                         min="0.01"
                         step="0.01"
-                        placeholder={service ? 'obavezno' : '—'}
+                        placeholder="obavezno"
                         value={item.anchorPrice ?? ''}
                         onChange={(event) => onUpdateItem(index, { anchorPrice: event.target.value ? Number(event.target.value) : null })}
                       />
@@ -384,6 +420,24 @@ function ValidationResultPanel({
                       )}
                     </div>
                   </td>
+                  {hasProducts && (service ? <td colSpan={5}><small>Usluga: ova polja se ne traže.</small></td> : <>
+                    <td><input className="app-table-input" aria-label={'Šifra za ' + item.name} value={item.externalId ?? ''} placeholder="šifra" onChange={(event) => onUpdateItem(index, { externalId: event.target.value })} /></td>
+                    <td><input className="app-table-input" aria-label={'Marka za ' + item.name} value={item.brand ?? ''} placeholder="marka" onChange={(event) => onUpdateItem(index, { brand: event.target.value })} /></td>
+                    <td><input className="app-table-input" inputMode="numeric" aria-label={'Barkod za ' + item.name} value={item.barcode ?? ''} placeholder="EAN" onChange={(event) => onUpdateItem(index, { barcode: event.target.value.replace(/\s+/g, '') || null })} /></td>
+                    <td>
+                      <div className="app-sale-fields">
+                        <input className="app-table-input" aria-label={'Jedinica mjere za ' + item.name} value={item.unit ?? ''} placeholder="npr. kg" onChange={(event) => onUpdateItem(index, { unit: event.target.value || null })} />
+                        <input className="app-table-input" aria-label={'Cijena za jedinicu mjere za ' + item.name} type="number" min="0.01" step="0.01" value={item.unitPrice ?? ''} placeholder="€ / jedinica" onChange={(event) => onUpdateItem(index, { unitPrice: event.target.value ? Number(event.target.value) : null })} />
+                      </div>
+                    </td>
+                    <td>
+                      <select aria-label={'Dostupnost za ' + item.name} value={item.availability ?? ''} onChange={(event) => onUpdateItem(index, { availability: (event.target.value || null) as Availability | null })}>
+                        {!item.availability && <option value="">Odaberite</option>}
+                        <option value="dostupno">Dostupno</option>
+                        <option value="nedostupno">Nedostupno</option>
+                      </select>
+                    </td>
+                  </>)}
                 </tr>
               )
             })}
@@ -448,7 +502,7 @@ function PrintPriceTable({ groups }: { groups: Array<[string, NormalizedPriceLis
         <tr className="print-category"><th scope="colgroup" colSpan={3}>{category}</th></tr>
         {items.map((item) => <tr key={category + ':' + (item.externalId || item.name)}>
           <td>{item.name}</td>
-          <td>{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</td>
+          <td>{[item.brand ? 'Marka: ' + item.brand : '', item.barcode ? 'Barkod: ' + item.barcode : '', item.availability === 'nedostupno' ? 'Nedostupno' : ''].filter(Boolean).join(' · ')}{item.brand || item.barcode || item.availability === 'nedostupno' ? ' · ' : ''}{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</td>
           <td className="print-price-col">{item.salePrice != null && <del>{money(item.price)} </del>}<strong>{money(item.salePrice ?? item.price)}</strong></td>
         </tr>)}
       </Fragment>)}
@@ -526,7 +580,7 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
     )}
     {isArchive ? <section className="public-list public-archive" aria-label="Javna arhiva cjenika"><div className="public-list-title"><span>Arhiva objavljenih verzija</span><span className="item-count">{publications.length} verzija</span></div>{publications.map((publication) => <div className="public-archive-item" key={publication.id}><div><strong>{publication.isCurrent ? 'Aktualno · ' : ''}{dateTime(publication.publishedAt)}</strong><small>{publication.filenameStem}</small></div><div className="archive-links"><a href={'/' + publication.filenameStem + '.csv'}>CSV</a><a href={'/' + publication.filenameStem + '.xml'}>XML</a></div></div>)}<p className="public-archive-note">Prethodne objavljene verzije ostaju javno dostupne najmanje 30 dana od trenutka zamjene.</p></section> : <section className="public-list" aria-label="Aktualni digitalni cjenik">
       <div className="public-list-title"><span>Aktualni digitalni cjenik</span><span className="item-count">{list.items.length} stavki</span></div>
-      {mode === 'print' ? <PrintPriceTable groups={grouped} /> : grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.salePrice != null && <del>{money(item.price)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
+      {mode === 'print' ? <PrintPriceTable groups={grouped} /> : grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{[item.brand ? 'Marka: ' + item.brand : '', item.availability === 'nedostupno' ? 'Nedostupno' : ''].filter(Boolean).join(' · ')}{item.brand || item.availability === 'nedostupno' ? ' · ' : ''}{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.salePrice != null && <del>{money(item.price)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
     </section>}
     {showChrome && !isArchive && <section className="public-links"><div><strong>Aktualni digitalni cjenik</strong><span><a href={currentPublication ? '/' + currentPublication.filenameStem + '.csv' : '/cjenik.csv'}>{currentPublication ? currentPublication.filenameStem + '.csv' : 'Preuzmi CSV'}</a>{currentPublication && <a href={'/' + currentPublication.filenameStem + '.xml'}>{currentPublication.filenameStem + '.xml'}</a>}</span></div><div><strong>Stable URL za automatizirani dohvat</strong><span><a href="/cjenik.csv">cjenik.csv</a><a href="/cjenik.xml">cjenik.xml</a></span></div></section>}
     <footer className="public-footer"><span>Pokreće NEPAR Publisher</span>{!isArchive && <a href={(customHost ? '/arhiva/' : '/c/' + slug + '/arhiva')}>Arhiva</a>}<a href={customHost ? '/cjenik.csv' : '/c/' + slug + '/cjenik.csv'}>CSV</a><a href={customHost ? '/cjenik.xml' : '/c/' + slug + '/cjenik.xml'}>XML</a><a href="https://digitalnicjenik.nepar.hr/">Provjeri CSV/XML na webu</a></footer>
@@ -1036,6 +1090,12 @@ function ValidatorApp({
     setList({ ...list, items: list.items.map((item) => item.salePrice != null ? { ...item, specialSaleApplied: false, specialSaleName: null } : item) })
   }
 
+  function bulkAvailability(value: Availability) {
+    if (!list) return
+    setList({ ...list, items: list.items.map((item) => (!isServiceItem(item) && !item.availability ? { ...item, availability: value } : item)) })
+    setMessage(`Dostupnost je postavljena na „${value}” za stavke bez oznake. Pregledajte tablicu prije objave.`)
+  }
+
   function confirmAnchorsFromRetail() {
     if (!list) return
     const pending = missingAnchorItems(list)
@@ -1072,6 +1132,7 @@ function ValidatorApp({
         onUpdateItem={updateItem}
         onConfirmAnchorsFromRetail={confirmAnchorsFromRetail}
         onConfirmNoSpecialSale={confirmNoSpecialSale}
+        onBulkAvailability={bulkAvailability}
         onSaveDraft={() => void saveDraft()}
         onPublish={() => void publish()}
         onStartTrial={() => setClaimOpen(true)}

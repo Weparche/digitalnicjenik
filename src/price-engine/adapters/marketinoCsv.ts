@@ -1,4 +1,4 @@
-import { normalizeNumber, validateItems } from '../normalize'
+import { normalizeBarcode, normalizeNumber, parseAvailability, validateItems } from '../normalize'
 import type { NormalizedPriceList, ParseResult, PriceSourceAdapter } from '../types'
 
 function splitCsv(input: string, delimiter: string): string[][] {
@@ -16,7 +16,15 @@ function splitCsv(input: string, delimiter: string): string[][] {
 }
 
 const cleanHeader = (header: string) => header.replace(/^\uFEFF/, '').trim().toLocaleLowerCase('hr-HR')
-const findColumn = (headers: string[], ...names: string[]) => headers.findIndex((header) => names.includes(cleanHeader(header)))
+// Alias order is priority order (e.g. SKU wins over a generic ID column).
+const findColumn = (headers: string[], ...names: string[]) => {
+  const cleaned = headers.map(cleanHeader)
+  for (const name of names) {
+    const index = cleaned.indexOf(name)
+    if (index >= 0) return index
+  }
+  return -1
+}
 const booleanValue = (value: string | undefined): boolean | null => {
   const normalized = value?.trim().toLocaleLowerCase('hr-HR')
   if (!normalized) return null
@@ -31,15 +39,20 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const rows = splitCsv(csv.replace(/^\uFEFF/, ''), delimiter)
   if (!rows.length) throw new Error('CSV je prazan. Izvezite cjenik s barem jednim artiklom.')
   const headers = rows[0]
-  const groupIndex = findColumn(headers, 'grupa*', 'grupa', 'kategorija', 'category')
-  const nameIndex = findColumn(headers, 'naziv*', 'naziv', 'name', 'usluga')
+  const groupIndex = findColumn(headers, 'grupa*', 'grupa', 'kategorija', 'category', 'categories')
+  const nameIndex = findColumn(headers, 'naziv*', 'naziv', 'naziv proizvoda', 'naziv usluge', 'name', 'usluga')
   const typeIndex = findColumn(headers, 'vrsta*', 'vrsta', 'type')
-  const idIndex = findColumn(headers, 'interna šifra', 'interna sifra', 'šifra', 'sifra', 'id')
-  const priceIndex = findColumn(headers, 'cijena*', 'cijena', 'cena', 'price')
+  const idIndex = findColumn(headers, 'interna šifra', 'interna sifra', 'sku', 'šifra', 'šifra proizvoda', 'sifra', 'sifra proizvoda', 'id')
+  const priceIndex = findColumn(headers, 'cijena*', 'cijena', 'maloprodajna cijena', 'cena', 'price', 'regular price')
   const saleIndex = findColumn(headers, 'akcijska cijena', 'akcijska cijena*', 'akcija', 'sale price')
   const anchorIndex = findColumn(headers, 'sidrena cijena', 'sidrena cijena*', 'dodatna cijena', 'anchor price', 'reference price')
   const specialSaleAppliedIndex = findColumn(headers, 'poseban oblik prodaje', 'posebni oblik prodaje', 'special sale applied')
   const specialSaleNameIndex = findColumn(headers, 'naziv posebnog oblika prodaje', 'poseban oblik prodaje naziv', 'special sale name')
+  const unitIndex = findColumn(headers, 'jedinica', 'jedinica mjere', 'unit')
+  const unitPriceIndex = findColumn(headers, 'cijena za jedinicu mjere', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price')
+  const brandIndex = findColumn(headers, 'marka', 'brend', 'brand', 'brands')
+  const barcodeIndex = findColumn(headers, 'barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn')
+  const availabilityIndex = findColumn(headers, 'dostupnost', 'dostupno', 'availability', 'dostupno/nedostupno', 'in stock?')
   if (nameIndex < 0 || priceIndex < 0) throw new Error('Nisu pronađeni obavezni stupci “Naziv*” i “Cijena*”. Provjerite da je ovo CSV izvoz cjenika.')
   const warnings: ParseResult['warnings'] = []
   const items = rows.slice(1).flatMap((row, index) => {
@@ -55,8 +68,9 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
     }
     const salePrice = saleIndex >= 0 ? normalizeNumber(row[saleIndex]) : null
     const rawType = row[typeIndex]?.trim() || ''
-    const type = rawType === '2' ? 'Usluga' : rawType || undefined
-    return [{ externalId: row[idIndex]?.trim() || undefined, category: row[groupIndex]?.trim() || undefined, name, type, price, salePrice, anchorPrice: anchorIndex >= 0 ? normalizeNumber(row[anchorIndex]) : null, specialSaleApplied: specialSaleAppliedIndex >= 0 ? booleanValue(row[specialSaleAppliedIndex]) : salePrice == null ? false : null, specialSaleName: specialSaleNameIndex >= 0 ? row[specialSaleNameIndex]?.trim() || null : null }]
+    // WooCommerce exports use the product kind (simple, variable, ...) as "Type"; those are all goods.
+    const type = rawType === '2' ? 'Usluga' : /^(simple|variable|variation|grouped|external)$/i.test(rawType) ? 'Proizvod' : rawType || undefined
+    return [{ externalId: row[idIndex]?.trim() || undefined, category: row[groupIndex]?.trim() || undefined, name, type, price, salePrice, anchorPrice: anchorIndex >= 0 ? normalizeNumber(row[anchorIndex]) : null, specialSaleApplied: specialSaleAppliedIndex >= 0 ? booleanValue(row[specialSaleAppliedIndex]) : salePrice == null ? false : null, specialSaleName: specialSaleNameIndex >= 0 ? row[specialSaleNameIndex]?.trim() || null : null, ...(unitIndex >= 0 ? { unit: row[unitIndex]?.trim() || null } : {}), ...(unitPriceIndex >= 0 ? { unitPrice: normalizeNumber(row[unitPriceIndex]) } : {}), ...(brandIndex >= 0 ? { brand: row[brandIndex]?.trim() || null } : {}), ...(barcodeIndex >= 0 ? { barcode: normalizeBarcode(row[barcodeIndex]) || null } : {}), ...(availabilityIndex >= 0 ? { availability: parseAvailability(row[availabilityIndex]) } : {}) }]
   })
   const validItems = validateItems(items)
   if (!validItems.length) throw new Error('CSV nema nijedan valjan artikl s nazivom i cijenom.')

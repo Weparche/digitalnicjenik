@@ -320,7 +320,7 @@ const EVERGREEN = [
   { path: 'cijene', must: ['"@type":"Offer"', '/usporedba/', '/faq/'] },
   { path: 'faq', must: ['"@type":"FAQPage"', '"@type":"Question"', '/specifikacija-csv-xml/', '/cijene/'] },
   { path: 'usporedba', must: ['Usporedna tablica', 'Alarm e-mailom', 'Kada vam NEPAR nije najbolji izbor', '/cijene/'] },
-  { path: 'specifikacija-csv-xml', must: ['"@type":"Dataset"', '"@type":"DataDownload"', '/examples/nepar-format-primjer-usluge.csv', 'id="pokrivenost"'] },
+  { path: 'specifikacija-csv-xml', must: ['"@type":"Dataset"', '"@type":"DataDownload"', '/examples/nepar-format-primjer-usluge.csv', '/examples/nepar-format-primjer-proizvodi.csv', 'Cijena za jedinicu mjere', 'id="pokrivenost"'] },
   { path: 'vodici', must: ['/vodici/excel-csv-digitalni-cjenik/', '/vodici/woocommerce-wordpress-digitalni-cjenik/', '/vodici/mikroeracun-digitalni-cjenik/'] },
   { path: 'vodici/excel-csv-digitalni-cjenik', must: ['"@type":"HowTo"', '"@type":"HowToStep"', '/specifikacija-csv-xml/'] },
   { path: 'vodici/woocommerce-wordpress-digitalni-cjenik', must: ['Regular price', 'embed.js'] },
@@ -355,7 +355,7 @@ expect('index.html', 'href="/cijene/"', 'landing must link to /cijene/')
 expect('index.html', 'href="/usporedba/"', 'landing must link to /usporedba/')
 expect('index.html', 'href="/specifikacija-csv-xml/"', 'landing must link to /specifikacija-csv-xml/')
 expect('index.html', 'href="/faq/"', 'landing must link to /faq/')
-for (const file of ['nepar-format-primjer-usluge.csv', 'nepar-format-primjer-usluge.xml']) {
+for (const file of ['nepar-format-primjer-usluge.csv', 'nepar-format-primjer-usluge.xml', 'nepar-format-primjer-proizvodi.csv', 'nepar-format-primjer-proizvodi.xml']) {
   if (!existsSync(resolve(distDir, 'examples', file))) failures.push(`Missing dist/examples/${file}`)
 }
 const homeHtml = read('index.html')

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<priceList>
+  <business>
+    <name>Primjer trgovina</name>
+  </business>
+  <source>nepar</source>
+  <updatedAt>2026-11-17T05:30:00.000Z</updatedAt>
+  <items>
+    <item>
+      <category>Mliječni proizvodi</category>
+      <name>Mlijeko 2,8% mm, 1 l</name>
+      <type>Proizvod</type>
+      <externalId>MLI-001</externalId>
+      <brand>Primjer mljekara</brand>
+      <barcode>4006381333931</barcode>
+      <unit>l</unit>
+      <unitPrice currency="EUR">1.19</unitPrice>
+      <availability>dostupno</availability>
+      <price currency="EUR">1.19</price>
+      <specialSaleApplied>false</specialSaleApplied>
+      <specialSaleName></specialSaleName>
+      <anchorPrice currency="EUR">1.09</anchorPrice>
+    </item>
+    <item>
+      <category>Pekarski proizvodi</category>
+      <name>Kruh bijeli, 500 g</name>
+      <type>Proizvod</type>
+      <externalId>PEK-014</externalId>
+      <brand>bez marke</brand>
+      <barcode>96385074</barcode>
+      <unit>kg</unit>
+      <unitPrice currency="EUR">1.98</unitPrice>
+      <availability>nedostupno</availability>
+      <price currency="EUR">0.99</price>
+      <specialSaleApplied>false</specialSaleApplied>
+      <specialSaleName></specialSaleName>
+      <anchorPrice currency="EUR">0.95</anchorPrice>
+    </item>
+    <item>
+      <category>Pića</category>
+      <name>Sok od jabuke, 1 l</name>
+      <type>Proizvod</type>
+      <externalId>PIC-203</externalId>
+      <brand>Primjer sokovi</brand>
+      <barcode>4012345678901</barcode>
+      <unit>l</unit>
+      <unitPrice currency="EUR">1.79</unitPrice>
+      <availability>dostupno</availability>
+      <price currency="EUR">1.79</price>
+      <salePrice currency="EUR">1.49</salePrice>
+      <specialSaleApplied>true</specialSaleApplied>
+      <specialSaleName>Jesenska akcija</specialSaleName>
+      <anchorPrice currency="EUR">1.79</anchorPrice>
+    </item>
+  </items>
+</priceList>

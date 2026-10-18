@@ -35,6 +35,20 @@ describe('feed parsing round-trips the renderers', () => {
   })
 })
 
+describe('product feeds', () => {
+  const products: NormalizedPriceList = {
+    ...list,
+    items: [{ externalId: 'M-001', name: 'Mlijeko, 1 l', type: 'Proizvod', brand: 'Dukat', barcode: '4006381333931', unit: 'l', unitPrice: 1.2, price: 1.2, anchorPrice: 1.1, specialSaleApplied: false, availability: 'dostupno' }],
+  }
+  it('CSV and XML expose brand, barcode, unit price and availability to the monitor', () => {
+    const fromCsv = parseCsvFeed(renderCsv(products)).records[0]!
+    expect(fromCsv).toMatchObject({ externalId: 'M-001', brand: 'Dukat', barcode: '4006381333931', unit: 'l', unitPrice: '1.20', availability: 'dostupno' })
+    const fromXml = parseXmlFeed(renderXml(products)).records[0]!
+    expect(fromXml).toMatchObject({ externalId: 'M-001', brand: 'Dukat', barcode: '4006381333931', unit: 'l', unitPrice: '1.20', availability: 'dostupno' })
+    expect(compareFeedToPayload(products.items, parseCsvFeed(renderCsv(products)))).toEqual({ missing: 0, unexpected: 0 })
+  })
+})
+
 describe('parseCsvRows', () => {
   it('handles CRLF, LF and an unterminated quote', () => {
     expect(parseCsvRows('a,b\r\n1,2\n3,4')).toEqual([['a', 'b'], ['1', '2'], ['3', '4']])

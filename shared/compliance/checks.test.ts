@@ -9,11 +9,14 @@ const services = ruleset.profiles.services
 const item = (overrides: Partial<NormalizedPriceItem> = {}): NormalizedPriceItem => ({ name: 'Mlijeko', price: 1.2, externalId: 'A1', unit: 'kom', anchorPrice: 1.1, ...overrides })
 
 describe('required fields', () => {
-  it('counts rows per missing field and reports fields outside the data model as info', () => {
+  it('counts rows per missing field, including the product-only fields now in the data model', () => {
     const issues = evaluateRequiredFields([item(), item({ anchorPrice: null }), item({ anchorPrice: null, externalId: '' })], products)
     expect(issues.find((i) => i.field === 'anchorPrice')).toMatchObject({ code: 'MISSING_REQUIRED_FIELD', severity: 'warn', rows: 2 })
     expect(issues.find((i) => i.field === 'externalId')).toMatchObject({ rows: 1 })
-    expect(issues.find((i) => i.field === 'barcode')).toMatchObject({ code: 'FIELD_NOT_IN_DATA_MODEL', severity: 'info' })
+    expect(issues.find((i) => i.field === 'barcode')).toMatchObject({ code: 'MISSING_REQUIRED_FIELD', severity: 'warn', rows: 3 })
+    expect(issues.find((i) => i.field === 'brand')).toMatchObject({ rows: 3 })
+    expect(issues.find((i) => i.field === 'availability')).toMatchObject({ rows: 3 })
+    expect(issues.some((i) => i.code === 'FIELD_NOT_IN_DATA_MODEL')).toBe(false)
   })
 
   it('treats a missing name or price as fail', () => {
@@ -32,9 +35,13 @@ describe('required fields', () => {
 })
 
 describe('feed gaps', () => {
-  it('xml does not carry šifra or unit, csv does', () => {
-    expect(evaluateFeedGaps('xml', products).map((i) => i.field)).toEqual(expect.arrayContaining(['externalId', 'unit']))
-    expect(evaluateFeedGaps('csv', products)).toEqual([])
+  it('product structure carries every required product field in both formats', () => {
+    expect(evaluateFeedGaps('xml', products, 'products')).toEqual([])
+    expect(evaluateFeedGaps('csv', products, 'products')).toEqual([])
+  })
+  it('a product profile served with the compact service structure reports what the feed lacks', () => {
+    expect(evaluateFeedGaps('csv', products, 'services').map((i) => i.field).sort()).toEqual(['availability', 'barcode', 'brand'])
+    expect(evaluateFeedGaps('xml', products, 'services').map((i) => i.field).sort()).toEqual(['availability', 'barcode', 'brand', 'externalId'])
   })
 })
 

@@ -1,5 +1,5 @@
 import type { NormalizedPriceItem } from '../../src/price-engine/types'
-import { FEED_FIELDS } from './document-parser'
+import { FEED_FIELDS, type FeedStructure } from './document-parser'
 import type { ProfileRule, RuleField, Ruleset } from './rulesets'
 import type { FreshnessStatus, MonitorIssue, MonitorOverall } from './types'
 
@@ -7,7 +7,7 @@ const DAY_MS = 86_400_000
 
 /** Fields the NEPAR data model (NormalizedPriceItem) can carry at all. Others are reported as a data-model gap, not a per-row failure. */
 const MODEL_FIELDS: ReadonlySet<RuleField> = new Set<RuleField>([
-  'name', 'price', 'externalId', 'category', 'unit', 'anchorPrice', 'specialSaleApplied', 'specialSaleName',
+  'name', 'price', 'externalId', 'category', 'unit', 'anchorPrice', 'specialSaleApplied', 'specialSaleName', 'brand', 'barcode', 'availability',
 ])
 
 function isBlank(value: unknown) {
@@ -52,8 +52,8 @@ export function evaluateRequiredFields(items: NormalizedPriceItem[], profile: Pr
 }
 
 /** Fields the ruleset requires that a given feed format does not carry (e.g. XML has no šifra/jedinica). */
-export function evaluateFeedGaps(format: 'csv' | 'xml', profile: ProfileRule): MonitorIssue[] {
-  const carried = new Set<string>(FEED_FIELDS[format])
+export function evaluateFeedGaps(format: 'csv' | 'xml', profile: ProfileRule, structure: FeedStructure = 'services'): MonitorIssue[] {
+  const carried = new Set<string>(FEED_FIELDS[structure][format])
   return profile.requiredFields
     .filter((rule) => MODEL_FIELDS.has(rule.field) && !carried.has(rule.field))
     .map((rule) => ({

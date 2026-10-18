@@ -3,7 +3,8 @@ export type EntitlementPlan = 'validator' | 'publisher_self_service' | 'managed'
 export type EntitlementStatus = 'trial' | 'active' | 'expired' | 'suspended'
 export type DraftStatus = 'uploaded' | 'invalid' | 'manual_review' | 'ready_to_publish' | 'published'
 export type ValidationSeverity = 'error' | 'warning' | 'manual_review'
-export type ValidationField = 'name' | 'price' | 'type' | 'anchorPrice' | 'specialSaleApplied' | 'specialSaleName' | 'import'
+export type ValidationField = 'name' | 'price' | 'type' | 'anchorPrice' | 'specialSaleApplied' | 'specialSaleName' | 'externalId' | 'brand' | 'barcode' | 'availability' | 'unit' | 'unitPrice' | 'import'
+export type Availability = 'dostupno' | 'nedostupno'
 export type ValidationIssueCode = 'IMPORT_ROW_SKIPPED'
 export type ValidationIssueSource = 'csv' | 'xlsx' | 'xml'
 
@@ -17,6 +18,13 @@ export type NormalizedPriceItem = {
   anchorPrice?: number | null
   salePrice?: number | null
   unit?: string | null
+  /** Cijena za jedinicu mjere (Odluka NN 101/2026-1213, čl. III), gdje je primjenjivo. */
+  unitPrice?: number | null
+  /** Marka proizvoda (obavezno za cjenik proizvoda). */
+  brand?: string | null
+  /** Barkod robe (EAN/GTIN) kao tekst, da se ne izgube početne nule. */
+  barcode?: string | null
+  availability?: Availability | null
   specialSaleApplied?: boolean | null
   specialSaleName?: string | null
   isNewSinceReferenceDate?: boolean

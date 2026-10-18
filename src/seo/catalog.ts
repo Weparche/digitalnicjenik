@@ -9,6 +9,8 @@ export const EXAMPLE_CSV_PATH = '/examples/primjer-digitalni-cjenik-usluge-2026.
 export const EXAMPLE_XML_PATH = '/examples/primjer-digitalni-cjenik-usluge-2026.xml'
 export const NEPAR_FORMAT_CSV_PATH = '/examples/nepar-format-primjer-usluge.csv'
 export const NEPAR_FORMAT_XML_PATH = '/examples/nepar-format-primjer-usluge.xml'
+export const NEPAR_PRODUCT_CSV_PATH = '/examples/nepar-format-primjer-proizvodi.csv'
+export const NEPAR_PRODUCT_XML_PATH = '/examples/nepar-format-primjer-proizvodi.xml'
 export const FEED_PATH = '/feed.xml'
 
 export type SitemapImage = { loc: string; title: string }
@@ -87,6 +89,8 @@ export function staticSitemapUrls(posts: NewsPost[] = NEWS_POSTS): SitemapUrl[] 
     { loc: `${SITE_URL}${EXAMPLE_XML_PATH}`, priority: '0.4' },
     { loc: `${SITE_URL}${NEPAR_FORMAT_CSV_PATH}`, priority: '0.4' },
     { loc: `${SITE_URL}${NEPAR_FORMAT_XML_PATH}`, priority: '0.4' },
+    { loc: `${SITE_URL}${NEPAR_PRODUCT_CSV_PATH}`, priority: '0.4' },
+    { loc: `${SITE_URL}${NEPAR_PRODUCT_XML_PATH}`, priority: '0.4' },
   ]
 }
 
@@ -169,6 +173,8 @@ export function renderLlms(posts: NewsPost[] = NEWS_POSTS) {
     `- [Primjer XML za usluge](${SITE_URL}${EXAMPLE_XML_PATH}): XML varijanta istog primjera.`,
     `- [NEPAR format CSV](${SITE_URL}${NEPAR_FORMAT_CSV_PATH}): primjer izlaznog CSV-a za usluge.`,
     `- [NEPAR format XML](${SITE_URL}${NEPAR_FORMAT_XML_PATH}): primjer izlaznog XML-a za usluge.`,
+    `- [NEPAR format CSV za proizvode](${SITE_URL}${NEPAR_PRODUCT_CSV_PATH}): primjer cjenika proizvoda (šifra, marka, barkod, jedinica, dostupnost).`,
+    `- [NEPAR format XML za proizvode](${SITE_URL}${NEPAR_PRODUCT_XML_PATH}): XML varijanta cjenika proizvoda.`,
     '',
     'Aktivni javni cjenici kupaca na /c/slug, njihova arhiva i CSV/XML feedovi dodaju se u',
     'sitemap.xml. Probni cjenici nose noindex i nisu u sitemapu.',

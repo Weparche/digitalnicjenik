@@ -27,6 +27,8 @@ export function ExcelGuidePage() {
           </table>
         </div>
         <p>Sidrena cijena je referentna cijena iz propisanog datuma (10.9.2026.) i smije biti jednaka aktualnoj. Ako je ne znate, ne izmišljajte je: ostavite prazno pa ćete je dopuniti u validatoru.</p>
+        <h3>Za cjenik proizvoda</h3>
+        <p>Uz naziv, cijene i sidrenu cijenu dodajte stupce <code>Interna šifra</code>, <code>Marka</code> (ili „bez marke”), <code>Barkod</code>, <code>Jedinica</code> i <code>Cijena za jedinicu mjere</code> (gdje je primjenjivo) te <code>Dostupnost</code> (dostupno ili nedostupno). Barkod upišite kao tekst da se ne izgube početne nule. Cijeli popis stupaca je u <a href="/specifikacija-csv-xml/">specifikaciji</a>, a primjer možete preuzeti kao <a href="/examples/nepar-format-primjer-proizvodi.csv" download>CSV za proizvode</a>.</p>
       </section>
 
       <section className="site-section" aria-labelledby="step2">
@@ -81,12 +83,12 @@ export function WooGuidePage() {
               <tr>
                 <th scope="row">Izvoz proizvoda u CSV pa validator</th>
                 <td>Mali asortiman ili usluge, jednokratni ili povremeni unos, bez dodatka na stranici.</td>
-                <td>Izvoz iz WooCommercea ima druga imena stupaca; preimenujte ih prema tablici ispod.</td>
+                <td>Izvoz iz WooCommercea prepoznajemo bez preimenovanja stupaca; dopunite samo ono što WooCommerce nema (sidrena cijena, često marka).</td>
               </tr>
               <tr>
                 <th scope="row">NEPAR Publisher</th>
                 <td>Želite objavu neovisnu o WordPressu, svakodnevnu provjeru i e-mail kad nešto nije u redu.</td>
-                <td>Zasad održavamo jedan objekt po računu, a format još ne nosi marku, barkod i dostupnost proizvoda.</td>
+                <td>Zasad održavamo jedan objekt po računu i uvoz je iz datoteke (Excel, CSV ili XML do 5 000 stavki), ne izravno iz WooCommercea.</td>
               </tr>
             </tbody>
           </table>
@@ -95,22 +97,26 @@ export function WooGuidePage() {
 
       <section className="site-section" aria-labelledby="izvoz">
         <h2 id="izvoz">Izvoz iz WooCommercea u NEPAR validator</h2>
-        <p>U WooCommerceu otvorite <em>Proizvodi → Izvezi</em> i preuzmite CSV. Prije učitavanja preimenujte stupce:</p>
+        <p>U WooCommerceu otvorite <em>Proizvodi → Izvezi</em> i preuzmite CSV. Učitajte ga u <a href="/#csv-validator">validator</a>: standardna zaglavlja prepoznajemo sami.</p>
         <div className="site-table-wrap" role="region" aria-label="Mapiranje stupaca" tabIndex={0}>
           <table className="site-table">
-            <caption className="sr-only">Mapiranje stupaca iz WooCommercea</caption>
-            <thead><tr><th scope="col">WooCommerce stupac</th><th scope="col">NEPAR stupac</th></tr></thead>
+            <caption className="sr-only">Kako se stupci izvoza iz WooCommercea mapiraju u NEPAR</caption>
+            <thead><tr><th scope="col">WooCommerce stupac</th><th scope="col">NEPAR polje</th></tr></thead>
             <tbody>
-              <tr><td><code>Name</code></td><td><code>Naziv</code></td></tr>
-              <tr><td><code>Regular price</code></td><td><code>Cijena</code></td></tr>
-              <tr><td><code>Sale price</code></td><td><code>Akcijska cijena</code> (prepoznaje se i engleski naziv)</td></tr>
-              <tr><td><code>SKU</code></td><td><code>Interna šifra</code></td></tr>
-              <tr><td><code>Categories</code></td><td><code>Grupa</code></td></tr>
-              <tr><td>(nema)</td><td><code>Sidrena cijena</code>: dodajte stupac s cijenom iz propisanog datuma</td></tr>
+              <tr><td><code>Name</code></td><td>Naziv</td></tr>
+              <tr><td><code>Regular price</code></td><td>Maloprodajna cijena</td></tr>
+              <tr><td><code>Sale price</code></td><td>Akcijska cijena (potvrdite je li riječ o posebnom obliku prodaje)</td></tr>
+              <tr><td><code>SKU</code></td><td>Šifra</td></tr>
+              <tr><td><code>GTIN, UPC, EAN, or ISBN</code></td><td>Barkod (ako je polje popunjeno)</td></tr>
+              <tr><td><code>In stock?</code></td><td>Dostupnost (1 = dostupno, 0 = nedostupno)</td></tr>
+              <tr><td><code>Categories</code></td><td>Grupa</td></tr>
+              <tr><td><code>Brands</code></td><td>Marka (ako je u izvozu)</td></tr>
+              <tr><td><code>Type</code> (simple, variable…)</td><td>Vrsta: stavka se tretira kao proizvod</td></tr>
+              <tr><td>(WooCommerce nema)</td><td><strong>Sidrena cijena</strong>: dodajte stupac <code>Sidrena cijena</code> s cijenom iz propisanog datuma</td></tr>
             </tbody>
           </table>
         </div>
-        <p>WooCommerce nema polje za sidrenu cijenu: morate je dodati sami (iz povijesti cijena na referentni datum) jer se ne može izračunati iz trenutne cijene. Zatim učitajte datoteku u <a href="/#csv-validator">validator</a>.</p>
+        <p>WooCommerce nema polje za sidrenu cijenu i ne možete je izračunati iz trenutne cijene: upišite cijenu koja je vrijedila na referentni datum. Ako izvoz nema marku, validator će tražiti da je dopunite (ili upišete „bez marke”). Varijabilni proizvodi izvoze se kao zasebni redci po varijanti; provjerite da svaka ima cijenu.</p>
       </section>
 
       <section className="site-section" aria-labelledby="wp">

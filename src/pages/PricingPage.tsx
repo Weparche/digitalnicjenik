@@ -10,7 +10,7 @@ import { SitePageLayout } from './PageLayout'
 import { getSitePage } from './registry'
 
 export const PRICING_INCLUDED = [
-  'Validator Excel, CSV i XML cjenika s popisom što nedostaje',
+  'Validator Excel, CSV i XML cjenika usluga i proizvoda s popisom što nedostaje (za proizvode i šifra, marka, barkod, dostupnost)',
   'Javni cjenik na stabilnom URL-u, CSV i XML s propisanim nazivom datoteke',
   'Arhiva prethodnih objava (najmanje 30 dana od zamjene)',
   'Svakodnevni nadzor usklađenosti i e-mail upozorenje kad nešto nije u redu',

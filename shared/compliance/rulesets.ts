@@ -1,6 +1,6 @@
 import type { ComplianceProfile, IssueSeverity } from './types'
 
-/** Canonical item fields used by rules. `brand`, `barcode` and `availability` are required by the regulation for products but are not (yet) part of the NEPAR data model. */
+/** Canonical item fields used by rules. `brand`, `barcode` and `availability` are required by the regulation for products and are part of the NEPAR product structure. */
 export type RuleField =
   | 'name'
   | 'price'
@@ -56,7 +56,6 @@ const nn1012026: Ruleset = {
         { field: 'name', label: 'naziv', severity: 'fail' },
         { field: 'price', label: 'maloprodajna cijena', severity: 'fail' },
         { field: 'externalId', label: 'šifra', severity: 'warn' },
-        { field: 'unit', label: 'jedinica mjere', severity: 'warn' },
         { field: 'anchorPrice', label: 'sidrena cijena', severity: 'warn' },
         { field: 'brand', label: 'marka', severity: 'warn' },
         { field: 'barcode', label: 'barkod', severity: 'warn' },
