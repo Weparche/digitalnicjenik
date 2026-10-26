@@ -324,3 +324,22 @@
  .acq-scene::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #fff 0%, #fff 34%, rgba(255,255,255,0) 48%); pointer-events: none; }
  .acq-preview { z-index: 1; }
 }
+
+/* Persistent navigation stays within the same content grid as the page. */
+.acquisition { --acq-header-height: 81px; }
+.acq-skip { z-index: 40; }
+.acq-header-bar { position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid #e2e8f0; }
+.acq-header { width: min(1272px, calc(100% - 48px)); max-width: none; min-height: 80px; padding: 0 24px; }
+.acq-deadline { flex-shrink: 0; }
+.acq-form, .acq-result-anchor, .acq-help, .acq-how, .acq-solutions, .acquisition .premium-validator-anchor, .acquisition .lead-section { scroll-margin-top: calc(var(--acq-header-height) + 24px); }
+.acq-result-footer .acq-resolve-cta { min-height: 56px; padding: 15px 24px; color: #fff; font-size: 17px; font-weight: 750; text-decoration: none; }
+.acq-result-footer .acq-resolve-cta:hover { color: #fff; }
+@media (min-width: 1000px) {
+ .acq-top { min-height: calc(max(740px, 20px + min(1160px, 100vw - 64px) * 2 / 3) - var(--acq-header-height)); }
+ .acq-scene { top: calc(20px - var(--acq-header-height)); }
+}
+@media (max-width: 650px) {
+ .acquisition { --acq-header-height: 73px; }
+ .acq-header { width: calc(100% - 40px); min-height: 72px; padding: 10px 0; }
+ .acq-result-footer .acq-resolve-cta, .acq-result-footer .acq-secondary { width: 100%; }
+}

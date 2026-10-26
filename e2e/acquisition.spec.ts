@@ -26,6 +26,13 @@ for (const width of [1440, 768, 390]) {
       expect(dimensions.x).toBeGreaterThan(0)
       expect(dimensions.right).toBeLessThan(width)
     }
+    const content = await page.locator('.acq-content').boundingBox()
+    const deadline = await page.locator('.acq-deadline').boundingBox()
+    expect(deadline!.x).toBeGreaterThanOrEqual(content!.x)
+    expect(deadline!.x + deadline!.width).toBeLessThanOrEqual(content!.x + content!.width)
+    await page.evaluate(() => window.scrollTo(0, 1600))
+    await expect.poll(async () => (await page.locator('.acq-header-bar').boundingBox())!.y).toBe(0)
+    await expect(page.locator('.acq-deadline')).toBeInViewport()
   })
 }
 
@@ -68,6 +75,14 @@ test('6/9 shows uncertain content, three annual plans, and context reaches Link 
   await expect(page.locator('.acq-plans')).toContainText('19,90 €')
   await expect(page.locator('.acq-plans')).toContainText('49,90 €')
   await expect(page.locator('.acq-plans')).toContainText('79,90 €')
+  const resolve = page.getByRole('link', { name: 'Riješite digitalni cjenik' })
+  await expect(resolve).toHaveCSS('background-color', 'rgb(6, 96, 255)')
+  expect((await resolve.boundingBox())!.height).toBeGreaterThanOrEqual(56)
+  await resolve.click()
+  await expect(page).toHaveURL(/#rjesenja$/)
+  const header = await page.locator('.acq-header-bar').boundingBox()
+  const solutions = await page.getByRole('heading', { name: 'Trebate riješiti digitalni cjenik?' }).boundingBox()
+  expect(solutions!.y).toBeGreaterThanOrEqual(header!.y + header!.height)
   await page.getByRole('button', { name: 'Odaberi Link', exact: true }).click()
   await expect(page.locator('.lead-section')).toBeFocused()
   await expect(page.locator('.lead-section')).toHaveCSS('outline-style', 'none')
