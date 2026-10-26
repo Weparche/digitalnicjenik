@@ -22,6 +22,7 @@ export function PricingPage() {
         </>
       }
       related={[
+        { href: '/objava-digitalnog-cjenika/', label: 'Kako objaviti i ugraditi cjenik' },
         { href: '/usporedba/', label: 'Usporedba s besplatnim alatima i dodacima' },
         { href: '/faq/', label: 'Česta pitanja' },
         { href: '/specifikacija-csv-xml/', label: 'Specifikacija CSV/XML' },
@@ -32,6 +33,12 @@ export function PricingPage() {
         <PlanCards />
       </section>
 
+      <section className="site-section" aria-labelledby="link-scope-title">
+        <h2 id="link-scope-title">Što pokriva paket Link?</h2>
+        <p>Link je za pripremljeni CSV koji sami ažurirate. Uključuje javni prikaz, CSV/XML izlaz za podržani format i arhivu zamijenjenih verzija uz aktivnu pretplatu. Poveznicu postavljate na svoju web stranicu; pomoć s ugradnjom dogovara se zasebno.</p>
+        <p>To nije automatska sinkronizacija s blagajnom niti dnevna ponovna objava nepromijenjenog cjenika proizvoda. Točnost podataka, pravodobne izmjene i način povezivanja s vašim webom treba provjeriti za vaše poslovanje. <a href="/objava-digitalnog-cjenika/#odgovornosti">Pogledajte što treba pripremiti prije objave.</a></p>
+      </section>
+
       <section className="site-section" aria-labelledby="included-title">
         <h2 id="included-title">Što uključuje Publisher</h2>
         <ul className="news-bullets">
@@ -40,7 +47,7 @@ export function PricingPage() {
           ))}
         </ul>
         <p>
-          Besplatni alati i dodaci objavljuju datoteku; Publisher je namijenjen onima koji žele i provjeru da je objava ispravna.
+          Publisher uz objavu nudi i svakodnevni nadzor. Besplatni alati razlikuju se: neki nude samo izradu datoteke, a neki i hosting i arhivu.
           Razliku detaljno razlažemo na stranici <a href="/usporedba/">usporedba</a>.
         </p>
       </section>
