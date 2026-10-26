@@ -19,7 +19,7 @@ export type SitePageMeta = {
 }
 
 const UPDATED = '2026-10-18T10:00:00+02:00'
-const OFFER_UPDATED = '2026-10-26T21:00:00+01:00'
+const OFFER_UPDATED = '2026-10-26T23:20:00+01:00'
 
 export const SITE_PAGES: SitePageMeta[] = [
   {
@@ -58,17 +58,17 @@ export const SITE_PAGES: SitePageMeta[] = [
     seoTitle: 'Digitalni cjenik i sidrena cijena: česta pitanja | NEPAR',
     description:
       'Odgovori na najčešća pitanja o digitalnom cjeniku: tko mora objaviti CSV/XML, rok 17.11.2026., sidrena cijena, arhiva 30 dana, naziv datoteke, više poslovnica i web shop.',
-    updatedAt: UPDATED,
+    updatedAt: OFFER_UPDATED,
   },
   {
     path: '/usporedba/',
     kind: 'compare',
     label: 'Usporedba',
-    title: 'Usporedba: kako objaviti digitalni cjenik (alat, dodatak ili ručno)',
-    seoTitle: 'Usporedba načina objave digitalnog cjenika | NEPAR',
+    title: 'Usporedba digitalnih cjenika 2026: NEPAR, eCjenik i digitalnicjenik.hr',
+    seoTitle: 'Digitalni cjenik: usporedba NEPAR, eCjenik i digitalnicjenik.hr',
     description:
-      'Usporedba NEPAR Publishera, besplatnih publishera, WooCommerce dodataka i ručne objave: provjera, alarm, usporedba datoteke s izvorom, verzije pravila, arhiva i QR.',
-    updatedAt: UPDATED,
+      'Javno provjerene cijene i mogućnosti NEPAR-a, eCjenika i digitalnicjenik.hr na 26.10.2026., uz iskrenu preporuku prema veličini cjenika, nadzoru, lokacijama i API potrebama.',
+    updatedAt: OFFER_UPDATED,
   },
   {
     path: '/specifikacija-csv-xml/',
