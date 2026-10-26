@@ -17,7 +17,8 @@ for (const width of [1440, 768, 390]) {
     const trust = await page.locator('.acq-trust').boundingBox()
     expect(trust!.y + trust!.height).toBeLessThan(900)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
-    await expect(page.locator('.acq-plans')).toHaveCount(0)
+    await expect(page.locator('.acq-plans')).toHaveCount(1)
+    await expect(page.locator('.acq-plans')).toContainText('19,90 €')
     await expect(page.locator('.education-cta')).toHaveCount(0)
     expect(await page.locator('main').count()).toBe(1)
     if (width === 1440) {

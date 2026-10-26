@@ -1,7 +1,7 @@
 import { PLANS, formatEur } from '../publisherPricing'
 import { SITE_URL } from '../news/site'
 
-export type SitePageKind = 'hub' | 'pricing' | 'faq' | 'compare' | 'spec' | 'guide'
+export type SitePageKind = 'hub' | 'pricing' | 'faq' | 'compare' | 'spec' | 'guide' | 'service' | 'reference'
 
 export type SitePageMeta = {
   path: string
@@ -19,8 +19,27 @@ export type SitePageMeta = {
 }
 
 const UPDATED = '2026-10-18T10:00:00+02:00'
+const OFFER_UPDATED = '2026-10-26T21:00:00+01:00'
 
 export const SITE_PAGES: SitePageMeta[] = [
+  {
+    path: '/objava-digitalnog-cjenika/',
+    kind: 'service',
+    label: 'Objava i ugradnja',
+    title: 'Objava i ugradnja digitalnog cjenika na web',
+    seoTitle: 'Objava digitalnog cjenika na web: CSV/XML i ugradnja | NEPAR',
+    description: `Objavite pripremljeni CSV od ${formatEur(PLANS[0].price, true)}. Usporedite pakete, povežite cjenik s postojećim webom i pogledajte stvarnu NEPAR implementaciju.`,
+    updatedAt: OFFER_UPDATED,
+  },
+  {
+    path: '/reference/auto-gubic/',
+    kind: 'reference',
+    label: 'Auto Gubić',
+    title: 'Auto Gubić: digitalni cjenik na web stranici autoservisa',
+    seoTitle: 'Auto Gubić: primjer digitalnog CSV/XML cjenika | NEPAR',
+    description: 'NEPAR referentna implementacija za Auto Gubić: javni prikaz usluge, aktualna i sidrena cijena, CSV/XML poveznice te podaci o objavi. Pogledajte primjer.',
+    updatedAt: OFFER_UPDATED,
+  },
   {
     path: '/cijene/',
     kind: 'pricing',
@@ -29,7 +48,7 @@ export const SITE_PAGES: SitePageMeta[] = [
     seoTitle: 'Cijene digitalnog cjenika (CSV/XML) | NEPAR Publisher',
     description:
       `Besplatna provjera weba i validator. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Objavite digitalni cjenik na svojoj web stranici.`,
-    updatedAt: UPDATED,
+    updatedAt: OFFER_UPDATED,
   },
   {
     path: '/faq/',
@@ -132,6 +151,7 @@ export function getSitePage(path: string): SitePageMeta {
 }
 
 export const NAV_LINKS: Array<{ href: string; label: string }> = [
+  { href: '/objava-digitalnog-cjenika/', label: 'Objava i ugradnja' },
   { href: '/cijene/', label: 'Cijene' },
   { href: '/usporedba/', label: 'Usporedba' },
   { href: '/specifikacija-csv-xml/', label: 'Specifikacija' },

@@ -4,9 +4,12 @@ import { FaqPage } from './FaqPage'
 import { ExcelGuidePage, GuidesHubPage, MikroGuidePage, WooGuidePage } from './GuidePages'
 import { PricingPage } from './PricingPage'
 import { SpecPage } from './SpecPage'
+import { InstallationPage, AutoGubicReferencePage } from './InstallationPage'
 import type { SitePageMeta } from './registry'
 
 const COMPONENTS: Record<string, () => ReactElement> = {
+  '/objava-digitalnog-cjenika/': InstallationPage,
+  '/reference/auto-gubic/': AutoGubicReferencePage,
   '/cijene/': PricingPage,
   '/faq/': FaqPage,
   '/usporedba/': ComparePage,

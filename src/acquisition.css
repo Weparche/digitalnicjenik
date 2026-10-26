@@ -343,3 +343,6 @@
  .acq-header { width: calc(100% - 40px); min-height: 72px; padding: 10px 0; }
  .acq-result-footer .acq-resolve-cta, .acq-result-footer .acq-secondary { width: 100%; }
 }
+
+.acq-reference > a { flex-shrink: 0; }
+.acq-reference .acq-preview-label { display: block; margin-bottom: 8px; }

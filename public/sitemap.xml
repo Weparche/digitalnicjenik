@@ -6,8 +6,18 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://digitalnicjenik.nepar.hr/objava-digitalnog-cjenika/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://digitalnicjenik.nepar.hr/reference/auto-gubic/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://digitalnicjenik.nepar.hr/cijene/</loc>
-    <lastmod>2026-10-18</lastmod>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
