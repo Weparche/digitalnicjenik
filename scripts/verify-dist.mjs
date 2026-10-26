@@ -317,6 +317,8 @@ if (!existsSync(resolve(distDir, 'og/vijesti-digitalni-cjenik-2026.png'))) {
 // --- Evergreen content pages: unique title/H1/canonical, structured data, interlinking, sitemap ---
 const SITE = 'https://digitalnicjenik.nepar.hr'
 const EVERGREEN = [
+  { path: 'objava-digitalnog-cjenika', must: ['19,90', '/reference/auto-gubic/', 'id="odgovornosti"', 'NN 110/2026-1310'] },
+  { path: 'reference/auto-gubic', must: ['https://autogubic.hr/cjenik', 'aktualni.csv', 'aktualni.xml', '/objava-digitalnog-cjenika/'] },
   { path: 'cijene', must: ['"@type":"Offer"', '/usporedba/', '/faq/'] },
   { path: 'faq', must: ['"@type":"FAQPage"', '"@type":"Question"', '/specifikacija-csv-xml/', '/cijene/'] },
   { path: 'usporedba', must: ['Usporedna tablica', 'Alarm e-mailom', 'Kada vam NEPAR nije najbolji izbor', '/cijene/'] },
@@ -351,6 +353,10 @@ for (const page of EVERGREEN) {
   expect('sitemap.xml', `<loc>${canonical}</loc>`, `sitemap must list /${page.path}/`)
   expect('llms.txt', canonical, `llms.txt must list /${page.path}/`)
 }
+expect('index.html', 'id="rjesenja"', 'offer must be visible in initial HTML without a checker result')
+expect('index.html', '19,90', 'entry plan price must be visible without running the checker')
+expect('index.html', 'href="/objava-digitalnog-cjenika/"', 'home must link to installation page')
+expect('index.html', 'href="/reference/auto-gubic/"', 'home must link to a real reference')
 expect('index.html', 'href="/cijene/"', 'landing must link to /cijene/')
 expect('index.html', 'href="/usporedba/"', 'landing must link to /usporedba/')
 expect('index.html', 'href="/specifikacija-csv-xml/"', 'landing must link to /specifikacija-csv-xml/')
