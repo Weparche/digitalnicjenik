@@ -108,7 +108,7 @@ if (!redirects.includes('/app /app-shell 200')) failures.push('_redirects: missi
 if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: missing the /app/* route mapping to app-shell')
 if (!redirects.includes('/admin /app-shell 200')) failures.push('_redirects: missing the /admin route mapping to app-shell')
 
-const HOME_TITLE = 'Digitalni cjenik (CSV/XML) s nadzorom | NEPAR Publisher'
+const HOME_TITLE = 'Digitalni cjenik: besplatna provjera CSV/XML | NEPAR'
 const DRAFT_SLUG = 'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026'
 const LATEST_SLUG = 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026'
 const EXAMPLES_SLUG = 'primjeri-digitalnih-cjenika-hrvatska-2026'

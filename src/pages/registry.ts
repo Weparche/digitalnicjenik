@@ -1,3 +1,4 @@
+import { PLANS, formatEur } from '../publisherPricing'
 import { SITE_URL } from '../news/site'
 
 export type SitePageKind = 'hub' | 'pricing' | 'faq' | 'compare' | 'spec' | 'guide'
@@ -24,10 +25,10 @@ export const SITE_PAGES: SitePageMeta[] = [
     path: '/cijene/',
     kind: 'pricing',
     label: 'Cijene',
-    title: 'Cijene: digitalni cjenik s nadzorom za 39,90 € godišnje',
+    title: 'Cijene i godišnji paketi za digitalni cjenik',
     seoTitle: 'Cijene digitalnog cjenika (CSV/XML) | NEPAR Publisher',
     description:
-      'NEPAR Publisher: besplatna provjera i 7-dnevni probni rok, zatim 39,90 €/god. (akcija) odnosno 49,90 €/god. Uključuje CSV/XML, arhivu, nadzor usklađenosti, QR i ispis.',
+      `Besplatna provjera weba i validator. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Objavite digitalni cjenik na svojoj web stranici.`,
     updatedAt: UPDATED,
   },
   {

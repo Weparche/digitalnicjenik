@@ -12,7 +12,7 @@ delegated: React + TypeScript + Vite, kept intentionally small for a Cloudflare-
 
 ## Users
 
-Primary user: a small business operator **outside the VAT system** who **uses or plans to use MIKROeRAČUN**, has their **own website**, and does **not** rely on a commercial POS/ERP that already publishes a public machine-readable price list for them.
+Primary acquisition user: a business owner arriving from Facebook, Instagram or organic search who has a website and wants to check whether a public digital price list can be found. The free checker requires no registration. MIKROeRAČUN users remain an important audience, but that context belongs below the primary checker and in the existing guides.
 
 Qualification (not the main funnel): operators on Marketino, Minimax, Pantheon, or similar should check with their provider before buying Publisher.
 
@@ -26,9 +26,9 @@ Success means a non-technical owner can preview data, start a 7-day trial on the
 
 **Category:** MIKROeRAČUN covers e-invoices (under Porezna’s conditions); Publisher covers **public price list publication on the web** (separate regulatory track).
 
-**Acquisition funnel:** MIKROeRAČUN + own website → Excel/CSV upload (free validation) → 7-day public trial → paid Publisher self-service.
+**Acquisition funnel:** AD / organic visitor → free website check → result → detailed file validation or solution → Link / Publisher / Web + Publisher → implementation help when needed. Upload is also directly available as the secondary path. The existing 7-day public trial remains available after validation.
 
-**Hero message:** “Koristite MIKROeRAČUN?” / “MIKROeRAČUN je za eRačune. NEPAR Publisher objavljuje vaš cjenik na webu.”
+**Hero message:** “Imate web stranicu? Provjerite digitalni cjenik besplatno.” The anonymous checker and supporting trust statements appear in the first viewport at 390px, 768px and 1440px. Pricing cards follow the result.
 
 **Factual note (Sept 2026):** MIKROeRAČUN primarily enables **receiving** e-invoices today; **issuing** is planned from 1 Jan 2027; upgraded version testing in Oct 2026. Do not overclaim in marketing copy.
 
@@ -64,10 +64,20 @@ The fixture at `./marketino-artikli` remains available for the demo tenant only.
 
 ## Commercial offer
 
-- Publisher self-service: **39,90 €/god** launch — **first 100 activated subscriptions** (copy-only cap; ops applies manually), then **49,90 €/god** (same URL; customer embeds link/iframe).
-- Publisher + install: **89,90 € first year**, then **49,90 €/god**.
+- **Link — 19,90 €/god:** upload/replace supported CSV, persistent public URL, basic web view and supported CSV/XML output. Customer adds the link to their website.
+- **Publisher — 49,90 €/god:** Link plus Excel/CSV/XML validation, dashboard, stable feeds, versioning, archive of superseded versions for at least 30 days, monitoring, email alerts, QR, browser PDF printing and embed.
+- **Web + Publisher — 79,90 €/god:** Publisher plus a simple NEPAR web/landing, hosting, SSL, basic editing and technical setup. Complex custom development requires a separate offer.
+- **Existing-web help:** separate inquiry to install a link, button or price-list view. It does not require buying Web + Publisher.
 
-Toggle launch off in `src/publisherPricing.ts` and `functions/_pricing.ts` (`LAUNCH_ACTIVE = false`) when the promotion ends.
+`shared/pricing.ts` is the single commercial source for frontend, pricing page, FAQs, prerendered offers and lead email labels. The old launch offer is inactive. All marketed package amounts are annual. Existing entitlement infrastructure and manual offer → payment → ops activation remain; this work does not add checkout, automated billing or tier-based access controls.
+
+## Anonymous technical check
+
+Nine checks cover homepage availability, HTTPS, price-list discovery, CSV, XML, a public HTML link, supported data structure, archive discovery and supported content validation. The shared score counts only `pass` checks; warnings, missing signals and unknown checks earn no points. Unknown is not failure. Legacy API colors remain for existing consumers, while the new UI derives its tone from the nine checks.
+
+Reuse the existing safe fetcher and content verification, the price engine's CSV/XML parsers and validator, and the compliance XML feed parser to detect skipped records. A request has a 25-second fetch/DNS budget, bounded candidates and bounded response bodies; CSV/XML probes run concurrently and DNS results are reused within the request. Supported small feeds receive extra analysis without a second download. Oversized, unrecognized, blocked or partially unavailable content remains explicitly unconfirmed. Discovery is not an exhaustive crawl.
+
+Archive discovery does not prove 30 days of history. Content validation cannot prove the historical applicability of an anchor price, the business's complete inventory or legal compliance. The existing file validator is the next step for detail. The checker does not register an account or store uploaded personal information. Lead submission still requires existing consent and anti-bot protection; file attachment remains opt-in.
 
 ## Accessibility & Inclusion
 

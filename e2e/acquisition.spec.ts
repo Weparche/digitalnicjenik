@@ -1,0 +1,137 @@
+import { expect, test, type Page } from '@playwright/test'
+import type { WebsiteCheckDetails, WebsiteCheckResult } from '../shared/website-check'
+
+const complete: WebsiteCheckDetails = { reachable: true, homepageReadable: true, https: true, csvFound: true, xmlFound: true, pricePageFound: true, csvUrl: 'https://salon.hr/cjenik.csv', xmlUrl: 'https://salon.hr/cjenik.xml', publicLinkUrl: 'https://salon.hr/cjenik.csv', archiveFound: true, structureStatus: 'pass', contentStatus: 'pass' }
+async function stub(page: Page, result: WebsiteCheckResult) {
+  await page.route('**/api/public-config', (r) => r.fulfill({ json: { turnstileSiteKey: '' } }))
+  await page.route('**/api/digitalni-cjenik/check', (r) => r.fulfill({ json: result }))
+}
+
+for (const width of [1440, 768, 390]) {
+  test(`checker and trust fit first viewport at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/')
+    const button = page.getByRole('button', { name: 'Provjeri besplatno' })
+    await expect(button).toBeVisible()
+    expect((await button.boundingBox())!.y + (await button.boundingBox())!.height).toBeLessThan(900)
+    const trust = await page.locator('.acq-trust').boundingBox()
+    expect(trust!.y + trust!.height).toBeLessThan(900)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+    await expect(page.locator('.acq-plans')).toHaveCount(0)
+    await expect(page.locator('.education-cta')).toHaveCount(0)
+    expect(await page.locator('main').count()).toBe(1)
+    if (width === 1440) {
+      const dimensions = await page.locator('.acq-photo img').evaluate((el) => { const img = el as HTMLImageElement; const r = img.getBoundingClientRect(); return { ratio: r.width / r.height, naturalRatio: img.naturalWidth / img.naturalHeight, x: r.x, right: r.right } })
+      expect(dimensions.ratio).toBeCloseTo(dimensions.naturalRatio, 2)
+      expect(dimensions.x).toBeGreaterThan(0)
+      expect(dimensions.right).toBeLessThan(width)
+    }
+  })
+}
+
+test('invalid input focuses field; bare domain normalizes; result has nine evidence disclosures', async ({ page }) => {
+  await stub(page, { status: 'green', message: 'Pronađena je javna datoteka.', details: complete })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
+  await expect(page.getByRole('alert')).toContainText('Unesite ispravnu adresu')
+  await expect(page.getByLabel('Adresa web stranice', { exact: true })).toBeFocused()
+  await page.getByLabel('Adresa web stranice', { exact: true }).fill('salon.hr')
+  const request = page.waitForRequest('**/api/digitalni-cjenik/check')
+  await page.getByLabel('Adresa web stranice', { exact: true }).press('Enter')
+  expect((await request).postDataJSON()).toEqual({ url: 'https://salon.hr/' })
+  await expect(page.locator('.acq-result-summary')).toHaveText('9/9 tehničkih provjera prolazi')
+  await expect(page.locator('.acq-tone-green')).toBeVisible()
+  await expect(page.locator('.acq-result-anchor')).toBeFocused()
+  await expect(page.locator('.acq-status-list summary')).toHaveCount(9)
+  await page.locator('.acq-status-list summary').nth(3).click()
+  await expect(page.locator('.acq-status-list > li').nth(3).getByRole('link')).toHaveAttribute('href', 'https://salon.hr/cjenik.csv')
+  await expect(page.locator('.acq-status-list > li').nth(3).getByRole('link')).toBeVisible()
+})
+
+test('6/9 shows uncertain content, three annual plans, and context reaches Link inquiry', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await stub(page, { status: 'green', message: 'Pronađena je CSV datoteka.', details: { ...complete, xmlFound: false, xmlUrl: null, archiveFound: false, contentStatus: 'unknown' } })
+  await page.goto('/')
+  await page.getByLabel('Adresa web stranice', { exact: true }).fill('salon.hr')
+  await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
+  await expect(page.locator('.acq-result-summary')).toContainText('6/9')
+  await expect(page.locator('.acq-result-anchor')).toBeFocused()
+  await expect(page.locator('.acq-tone-yellow')).toBeVisible()
+  await expect(page.locator('.acq-status-unknown')).toHaveCount(1)
+  await expect(page.locator('.acq-plans')).toContainText('19,90 €')
+  await expect(page.locator('.acq-plans')).toContainText('49,90 €')
+  await expect(page.locator('.acq-plans')).toContainText('79,90 €')
+  await page.getByRole('button', { name: 'Odaberi Link', exact: true }).click()
+  await expect(page.locator('.lead-section')).toBeFocused()
+  await expect(page.getByRole('heading', { name: 'Zatražite paket Link' })).toBeVisible()
+  await expect(page.locator('.lead-price')).toContainText('19,90 €/god')
+  await expect(page.locator('.lead-form input[name="website"]')).toHaveValue('https://salon.hr/')
+  await expect(page.locator('.lead-context')).toContainText('6/9')
+  await expect(page.locator('.lead-context')).toContainText('https://salon.hr/cjenik.csv')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+})
+
+test('blocked and unavailable results keep uncertainty explicit and offer retry', async ({ page }) => {
+  await stub(page, { status: 'yellow', message: 'Zaštita weba ograničava dohvat.', details: { reachable: true, https: true, fetchBlocked: true, homepageReadable: false } })
+  await page.goto('/')
+  await page.getByLabel('Adresa web stranice', { exact: true }).fill('salon.hr')
+  await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
+  await expect(page.locator('.acq-status-unknown')).toHaveCount(8)
+  await expect(page.locator('.acq-status-missing')).toHaveCount(0)
+  await page.route('**/api/digitalni-cjenik/check', (r) => r.fulfill({ json: { status: 'unavailable', message: 'Dohvat nije dovršen.' } }))
+  await page.getByRole('button', { name: 'Pokušaj ponovno' }).click()
+  await expect(page.getByRole('heading', { name: 'Provjeru nije moguće dovršiti' })).toBeVisible()
+  await expect(page.locator('.acq-status-unknown')).toHaveCount(9)
+  await expect(page.locator('.acq-result progress')).toHaveCount(0)
+  await expect(page.locator('.acq-result-summary')).toContainText('0 potvrđenih')
+})
+
+test('verified missing signals render red and file CTA focuses existing validator', async ({ page }) => {
+  await stub(page, { status: 'red', message: 'Strojni cjenik nije pronađen.', details: { reachable: true, homepageReadable: true, https: false } })
+  await page.goto('/')
+  await page.getByLabel('Adresa web stranice', { exact: true }).fill('http://salon.hr')
+  await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
+  await expect(page.locator('.acq-tone-red')).toBeVisible()
+  await page.getByRole('button', { name: 'Učitajte cjenik za detaljnu provjeru' }).click()
+  await expect(page.locator('#csv-validator')).toBeFocused()
+  await expect(page.locator('#csv-validator input[accept*=".csv"]')).toHaveCount(1)
+})
+
+test('loading can be cancelled, and the menu closes with Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.route('**/api/digitalni-cjenik/check', async (r) => { await new Promise((resolve) => setTimeout(resolve, 1500)); await r.fulfill({ json: { status: 'unavailable', message: 'Nedostupno' } }).catch(() => {}) })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Otvori navigaciju' }).click()
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: 'Otvori navigaciju' })).toHaveAttribute('aria-expanded', 'false')
+  await page.getByLabel('Adresa web stranice', { exact: true }).fill('salon.hr')
+  await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
+  await expect(page.locator('.acq-form button')).toBeDisabled()
+  await expect(page.locator('.acq-loading')).toContainText('Otvaramo vašu web stranicu')
+  await page.getByRole('button', { name: 'Odustani od provjere' }).click()
+  await expect(page.locator('.acq-form button')).toBeEnabled()
+  await expect(page.locator('.acq-loading')).toContainText('Provjera je zaustavljena')
+  await expect(page.locator('.acq-result')).toHaveCount(0)
+})
+
+test('pricing page shares plans and query handoff opens the selected annual offer', async ({ page }) => {
+  await page.goto('/cijene/')
+  await expect(page.locator('.acq-plans')).toContainText('19,90 €')
+  await page.getByRole('link', { name: 'Zatraži Web + Publisher' }).click()
+  await expect(page.getByRole('heading', { name: 'Zatražite paket Web + Publisher' })).toBeVisible()
+  await expect(page.locator('.lead-price')).toContainText('79,90 €/god')
+})
+
+test('mobile FAQ disclosures and resource navigation remain usable below the validator', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await expect(page.locator('.education-faq')).not.toContainText('19,90')
+  const row = page.locator('.education-faq-row').first()
+  await row.locator('summary').click()
+  await expect(row.locator('p')).toBeVisible()
+  await expect(page.locator('nav.education-guides')).toBeVisible()
+  await expect(page.locator('nav.education-guides').getByRole('link', { name: 'Cijene', exact: true })).toBeVisible()
+  expect(await page.locator('nav.education-guides').evaluate((el) => el.getBoundingClientRect().x)).toBe(20)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+})

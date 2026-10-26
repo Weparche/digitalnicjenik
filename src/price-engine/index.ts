@@ -1,4 +1,4 @@
-import marketinoFixture from '../../marketino-artikli?raw'
+import { marketinoFixture } from '../../functions/_fixture'
 import { MarketinoCsvAdapter } from './adapters/marketinoCsv'
 import { MarketinoMockApiAdapter } from './adapters/marketinoMockApi'
 import { NeparAdapter } from './adapters/nepar'

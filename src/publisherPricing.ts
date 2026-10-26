@@ -1,46 +1,17 @@
-/** Copy-only launch pricing for NEPAR Publisher self-service (no D1 counter). */
-
-export const LAUNCH_ACTIVE = true
-export const LAUNCH_SELF_SERVICE_EUR = 39.9
-export const REGULAR_SELF_SERVICE_EUR = 49.9
-export const IMPLEMENTATION_FIRST_YEAR_EUR = 89.9
+﻿import { PLANS, formatEur } from '../shared/pricing'
+export { PLANS, formatEur } from '../shared/pricing'
+export type { PlanId } from '../shared/pricing'
+// Compatibility exports for existing Publisher and educational surfaces.
+export const LAUNCH_ACTIVE = false
+export const REGULAR_SELF_SERVICE_EUR = PLANS[1].price
+export const LAUNCH_SELF_SERVICE_EUR = REGULAR_SELF_SERVICE_EUR
+export const IMPLEMENTATION_FIRST_YEAR_EUR = PLANS[2].price
 export const LAUNCH_ACTIVATED_SUBSCRIPTIONS_CAP = 100
-
-export function formatEur(amount: number, perYear = false): string {
-  const formatted = amount.toLocaleString('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  return perYear ? `${formatted} €/god` : `${formatted} €`
-}
-
-export function selfServicePriceEur(): number {
-  return LAUNCH_ACTIVE ? LAUNCH_SELF_SERVICE_EUR : REGULAR_SELF_SERVICE_EUR
-}
-
-export function selfServicePriceLabel(): string {
-  return formatEur(selfServicePriceEur(), true)
-}
-
-export function regularSelfServicePriceLabel(): string {
-  return formatEur(REGULAR_SELF_SERVICE_EUR, true)
-}
-
-export function implementationFirstYearLabel(): string {
-  return formatEur(IMPLEMENTATION_FIRST_YEAR_EUR, false)
-}
-
-export function launchOfferShort(): string {
-  if (!LAUNCH_ACTIVE) return selfServicePriceLabel()
-  return `${formatEur(LAUNCH_SELF_SERVICE_EUR, true)} — akcija: prvih ${LAUNCH_ACTIVATED_SUBSCRIPTIONS_CAP} aktiviranih pretplata`
-}
-
-export function launchOfferDetail(): string {
-  if (!LAUNCH_ACTIVE) return `Publisher self-service ${selfServicePriceLabel()}.`
-  return `Publisher self-service ${formatEur(LAUNCH_SELF_SERVICE_EUR, true)} (akcija: prvih ${LAUNCH_ACTIVATED_SUBSCRIPTIONS_CAP} aktiviranih pretplata), zatim ${regularSelfServicePriceLabel()}.`
-}
-
-export function launchAfterCapLine(): string | null {
-  if (!LAUNCH_ACTIVE) return null
-  return `Nakon ${LAUNCH_ACTIVATED_SUBSCRIPTIONS_CAP} aktiviranih pretplata cijena je ${regularSelfServicePriceLabel()}.`
-}
-
-export const COMMERCIAL_INTERMEDIARY_LINE =
-  'Bez komercijalnog informacijskog posrednika — godišnja cijena umjesto mjesečnog SaaS-a.'
+export const selfServicePriceEur = () => REGULAR_SELF_SERVICE_EUR
+export const selfServicePriceLabel = () => formatEur(REGULAR_SELF_SERVICE_EUR, true)
+export const regularSelfServicePriceLabel = selfServicePriceLabel
+export const implementationFirstYearLabel = () => formatEur(IMPLEMENTATION_FIRST_YEAR_EUR, true)
+export const launchOfferShort = selfServicePriceLabel
+export const launchOfferDetail = () => `Publisher ${selfServicePriceLabel()}.`
+export const launchAfterCapLine = () => null
+export const COMMERCIAL_INTERMEDIARY_LINE = 'Godišnja cijena, bez automatske naplate. Vaša postojeća web stranica i domena ostaju vaše.'

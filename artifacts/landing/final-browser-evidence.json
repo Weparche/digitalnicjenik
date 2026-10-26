@@ -1,0 +1,717 @@
+{
+  "reports": [
+    {
+      "width": 390,
+      "docWidth": 390,
+      "mainCount": 1,
+      "mainContainsChecker": true,
+      "fontStatus": "loaded",
+      "fontFaces": [
+        "DM Mono",
+        "DM Mono",
+        "DM Mono",
+        "DM Mono",
+        "Inter Variable",
+        "Inter Variable"
+      ],
+      "validatorMounted": true,
+      "contrast": [
+        {
+          "sel": ".upload-note",
+          "text": "Maksimalno 2 MB · CSV ili XML · dobit ćete oba izl",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 38.375
+        },
+        {
+          "sel": ".checks-card > p",
+          "text": "Provjera je tehnički i podatkovni pregled. Ne zamj",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 38.375
+        },
+        {
+          "sel": ".validator-footnote",
+          "text": "Želite prvo vidjeti primjer? Otvori demo podatke →",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 63.1875
+        },
+        {
+          "sel": ".validator-footnote a",
+          "text": "Otvori demo podatke →",
+          "color": "rgb(37, 99, 235)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 4.94,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Cijene",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Usporedba načina objave",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Specifikacija CSV/XML",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Česta pitanja",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Vodič: Excel u CSV/XML",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "WooCommerce i WordPress",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "MIKROeRAČUN i cjenik",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Pregled obveze",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Sidrena cijena",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "XML/CSV format",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Automatizacija",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources a",
+          "text": "Odluka NN 101/2026 — digitalni cjenik",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources a",
+          "text": "Odluka NN 101/2026 — dodatna cijena",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources > span",
+          "text": "NEPAR pruža tehničku i podatkovnu provjeru, ne ind",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 38.375
+        },
+        {
+          "sel": ".regulatory-news-widget-eyebrow",
+          "text": "NOVO · E-SAVJETOVANJE",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 19.1875
+        },
+        {
+          "sel": ".regulatory-news-widget-sources-label",
+          "text": "Izvori",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 19.1875
+        }
+      ],
+      "scene": {
+        "visible": false,
+        "width": 0,
+        "height": 0,
+        "imageW": 0,
+        "imageH": 0,
+        "naturalW": 1536,
+        "naturalH": 1024,
+        "ratio": 0,
+        "objectFit": "contain"
+      },
+      "invalidFocus": "acq-url",
+      "menuExpanded": "false",
+      "menuFocus": "acq-menu",
+      "leadContext": "Kontekst koji možete poslati uz upit\nhttps://primjer.hr/\nProvjera weba: Potrebna dodatna provjera · 5/9 potvrđenih tehničkih provjera\nhttps://primjer.hr/cjenik.csv",
+      "resultWidth": 390
+    },
+    {
+      "width": 768,
+      "docWidth": 768,
+      "mainCount": 1,
+      "mainContainsChecker": true,
+      "fontStatus": "loaded",
+      "fontFaces": [
+        "DM Mono",
+        "DM Mono",
+        "DM Mono",
+        "DM Mono",
+        "Inter Variable",
+        "Inter Variable"
+      ],
+      "validatorMounted": true,
+      "contrast": [
+        {
+          "sel": ".upload-note",
+          "text": "Maksimalno 2 MB · CSV ili XML · dobit ćete oba izl",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 38.375
+        },
+        {
+          "sel": ".checks-card > p",
+          "text": "Provjera je tehnički i podatkovni pregled. Ne zamj",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 38.375
+        },
+        {
+          "sel": ".validator-footnote",
+          "text": "Želite prvo vidjeti primjer? Otvori demo podatke →",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 44
+        },
+        {
+          "sel": ".validator-footnote a",
+          "text": "Otvori demo podatke →",
+          "color": "rgb(37, 99, 235)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 4.94,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Cijene",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Usporedba načina objave",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Specifikacija CSV/XML",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Česta pitanja",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Vodič: Excel u CSV/XML",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "WooCommerce i WordPress",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "MIKROeRAČUN i cjenik",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 0
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Pregled obveze",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Sidrena cijena",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "XML/CSV format",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Automatizacija",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources a",
+          "text": "Odluka NN 101/2026 — digitalni cjenik",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources a",
+          "text": "Odluka NN 101/2026 — dodatna cijena",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources > span",
+          "text": "NEPAR pruža tehničku i podatkovnu provjeru, ne ind",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 19.1875
+        },
+        {
+          "sel": ".regulatory-news-widget-eyebrow",
+          "text": "NOVO · E-SAVJETOVANJE",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 19.1875
+        },
+        {
+          "sel": ".regulatory-news-widget-sources-label",
+          "text": "Izvori",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 19.1875
+        }
+      ],
+      "scene": {
+        "visible": false,
+        "width": 0,
+        "height": 0,
+        "imageW": 0,
+        "imageH": 0,
+        "naturalW": 1536,
+        "naturalH": 1024,
+        "ratio": 0,
+        "objectFit": "contain"
+      },
+      "invalidFocus": "acq-url",
+      "leadContext": "Kontekst koji možete poslati uz upit\nhttps://primjer.hr/\nProvjera weba: Potrebna dodatna provjera · 5/9 potvrđenih tehničkih provjera\nhttps://primjer.hr/cjenik.csv",
+      "resultWidth": 768
+    },
+    {
+      "width": 1440,
+      "docWidth": 1440,
+      "mainCount": 1,
+      "mainContainsChecker": true,
+      "fontStatus": "loaded",
+      "fontFaces": [
+        "DM Mono",
+        "DM Mono",
+        "DM Mono",
+        "DM Mono",
+        "Inter Variable",
+        "Inter Variable"
+      ],
+      "validatorMounted": true,
+      "contrast": [
+        {
+          "sel": ".upload-note",
+          "text": "Maksimalno 2 MB · CSV ili XML · dobit ćete oba izl",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 19.1875
+        },
+        {
+          "sel": ".checks-card > p",
+          "text": "Provjera je tehnički i podatkovni pregled. Ne zamj",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 38.375
+        },
+        {
+          "sel": ".validator-footnote",
+          "text": "Želite prvo vidjeti primjer? Otvori demo podatke →",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 44
+        },
+        {
+          "sel": ".validator-footnote a",
+          "text": "Otvori demo podatke →",
+          "color": "rgb(37, 99, 235)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"DM Mono\", monospace",
+          "size": "12px",
+          "contrast": 4.94,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Cijene",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Usporedba načina objave",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Specifikacija CSV/XML",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Česta pitanja",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Vodič: Excel u CSV/XML",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "WooCommerce i WordPress",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "MIKROeRAČUN i cjenik",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "11px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Pregled obveze",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Sidrena cijena",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "XML/CSV format",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-guides-links a",
+          "text": "Automatizacija",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "16px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources a",
+          "text": "Odluka NN 101/2026 — digitalni cjenik",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources a",
+          "text": "Odluka NN 101/2026 — dodatna cijena",
+          "color": "rgb(29, 78, 216)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 6.41,
+          "height": 44
+        },
+        {
+          "sel": ".education-sources > span",
+          "text": "NEPAR pruža tehničku i podatkovnu provjeru, ne ind",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(248, 250, 252)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.24,
+          "height": 19.1875
+        },
+        {
+          "sel": ".regulatory-news-widget-eyebrow",
+          "text": "NOVO · E-SAVJETOVANJE",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 19.1875
+        },
+        {
+          "sel": ".regulatory-news-widget-sources-label",
+          "text": "Izvori",
+          "color": "rgb(71, 85, 105)",
+          "bg": "rgb(255, 255, 255)",
+          "font": "\"Inter Variable\", sans-serif",
+          "size": "12px",
+          "contrast": 7.58,
+          "height": 19.1875
+        }
+      ],
+      "scene": {
+        "visible": true,
+        "width": 1272,
+        "height": 848,
+        "imageW": 1272,
+        "imageH": 848,
+        "naturalW": 1536,
+        "naturalH": 1024,
+        "ratio": 1.5,
+        "objectFit": "contain"
+      },
+      "invalidFocus": "acq-url",
+      "leadContext": "Kontekst koji možete poslati uz upit\nhttps://primjer.hr/\nProvjera weba: Potrebna dodatna provjera · 5/9 potvrđenih tehničkih provjera\nhttps://primjer.hr/cjenik.csv",
+      "resultWidth": 1440
+    }
+  ],
+  "pageErrors": [],
+  "failed": [
+    {
+      "url": "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "url": "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "url": "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit",
+      "error": "net::ERR_FAILED"
+    }
+  ]
+}

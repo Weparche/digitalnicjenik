@@ -1,3 +1,4 @@
+import { PLANS, formatEur } from '../publisherPricing'
 // Single source for the /faq page and its FAQPage JSON-LD (rendered in scripts/prerender.mjs).
 // Answers are plain text so the visible copy and the structured data can never drift apart.
 // Regulatory statements follow NN 101/2026 (Odluke 1212 i 1213), the Government's 29.9.2026 amendment
@@ -131,7 +132,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Koliko košta NEPAR Publisher?',
         answer:
-          'Provjera weba, validator i pretvorba Excela besplatni su, uz 7-dnevni probni rok. Publisher self-service je 39,90 € godišnje za prvih 100 aktiviranih pretplata, zatim 49,90 € godišnje. Postavljanje na vaš web: 89,90 € za prvu godinu uključujući Publisher.',
+          `Provjera weba, validator i pretvorba Excela besplatni su, uz 7-dnevni probni rok. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom na postojeći web dogovara se zasebno.`,
       },
       {
         question: 'Što se događa nakon probnog roka ako ne aktiviram Publisher?',

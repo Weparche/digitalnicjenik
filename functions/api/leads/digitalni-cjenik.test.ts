@@ -69,9 +69,9 @@ describe('digitalni cjenik lead delivery', () => {
     const response = await handleLeadRequest(request({ intent: 'plugin', message: 'Trebam WordPress plugin' }), leadEnv(), fetcher)
     expect(response.status).toBe(200)
     const emailBody = JSON.parse(String(((fetcher as unknown as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit).body)) as { subject: string; html: string }
-    expect(emailBody.subject).toContain('39,90')
-    expect(emailBody.subject).toContain('Self-service')
-    expect(emailBody.html).toContain('100 aktiviranih pretplata')
+    expect(emailBody.subject).toContain('49,90')
+    expect(emailBody.subject).toContain('Publisher')
+    expect(emailBody.html).not.toContain('100 aktiviranih pretplata')
   })
 
   it('reports Email API errors without claiming success', async () => {
@@ -81,6 +81,18 @@ describe('digitalni cjenik lead delivery', () => {
     const response = await handleLeadRequest(request(), leadEnv(), fetcher)
     expect(response.status).toBe(502)
     expect(await response.json()).toMatchObject({ code: 'send_failed' })
+  })
+
+  it('hands off the chosen Link plan, checked site, score and discovered file', async () => {
+    const fetcher = successfulFetch()
+    const response = await handleLeadRequest(request({ intent: 'plugin', context: JSON.stringify({ website: 'https://salon.hr/', selectedPlan: 'link', checkerScore: 6, checkerStatus: 'yellow', discoveredUrls: ['https://salon.hr/cjenik.csv'] }) }), leadEnv(), fetcher)
+    expect(response.status).toBe(200)
+    const body = JSON.parse(String(((fetcher as unknown as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit).body)) as { subject: string; html: string }
+    expect(body.subject).toContain('Link — 19,90 €/god')
+    expect(body.html).toContain('https://salon.hr/')
+    expect(body.html).toContain('https://salon.hr/cjenik.csv')
+    expect(body.html).toContain('6/9')
+    expect(body.html).not.toContain('49,90')
   })
 })
 

@@ -1,3 +1,9 @@
+import { parseMarketinoCsv } from '../../../src/price-engine/adapters/marketinoCsv';
+import { parseXmlPriceList } from '../../../src/price-engine/xml';
+import { validatePriceList } from '../../../src/price-engine/validate';
+import { parseXmlFeed } from '../../../shared/compliance/document-parser';
+import { technicalReport, type WebsiteCheckDetails } from '../../../shared/website-check';
+
 type Resolver = {
   resolve4: (hostname: string) => Promise<string[]>;
   resolve6: (hostname: string) => Promise<string[]>;
@@ -8,9 +14,10 @@ type CheckerEnv = {
   DB?: import('../../_repository').D1DatabaseLike;
   CHECKER_RATE_LIMIT_SECRET?: string;
   LEAD_RATE_LIMIT_SECRET?: string;
+  requestState?: { signal: AbortSignal; dns: Map<string, Promise<string[]>> };
 };
 
-type CheckDetails = {
+type CheckDetails = WebsiteCheckDetails & {
   reachable: boolean;
   https: boolean;
   csvFound: boolean;
@@ -114,12 +121,13 @@ function resolverFor(env: CheckerEnv): Resolver | null {
   return env.DIGITAL_PRICE_LIST_DNS_RESOLVER ?? null;
 }
 
-async function resolveWithDoh(hostname: string): Promise<string[]> {
+async function resolveWithDoh(hostname: string, signal?: AbortSignal): Promise<string[]> {
   const addresses: string[] = [];
   for (const type of ["A", "AAAA"]) {
     const response = await fetch(`${DOH_ENDPOINT}?name=${encodeURIComponent(hostname)}&type=${type}`, {
       headers: { accept: "application/dns-json" },
       cache: "no-store",
+      signal,
     });
     if (!response.ok) throw new Error("dns_unavailable");
     const payload = await response.json() as { Status?: number; Answer?: Array<{ type?: number; data?: string }> };
@@ -135,11 +143,11 @@ async function resolveWithDoh(hostname: string): Promise<string[]> {
   return addresses;
 }
 
-export async function resolvePublicHostname(hostname: string, configured?: Resolver | null): Promise<string[]> {
+export async function resolvePublicHostname(hostname: string, configured?: Resolver | null, signal?: AbortSignal): Promise<string[]> {
   const host = normalizedHostname(hostname);
   if (isForbiddenHostname(host)) throw new Error("blocked_destination");
   if (!configured) {
-    const addresses = await resolveWithDoh(host);
+    const addresses = await resolveWithDoh(host, signal);
     if (addresses.some((address) => isForbiddenIp(address))) throw new Error("blocked_destination");
     return addresses;
   }
@@ -154,7 +162,12 @@ export async function resolvePublicHostname(hostname: string, configured?: Resol
 
 async function assertPublicUrl(url: URL, env: CheckerEnv): Promise<void> {
   if (!/^https?:$/.test(url.protocol) || url.username || url.password || isForbiddenHostname(url.hostname)) throw new Error("blocked_destination");
-  await resolvePublicHostname(url.hostname, resolverFor(env));
+  if (env.requestState?.signal.aborted) throw new Error('check_timeout');
+  const cached = env.requestState?.dns.get(url.hostname);
+  if (cached) { await cached; return; }
+  const resolved = resolvePublicHostname(url.hostname, resolverFor(env), env.requestState?.signal);
+  env.requestState?.dns.set(url.hostname, resolved);
+  await resolved;
 }
 
 function isRedirect(response: Response) {
@@ -178,7 +191,7 @@ export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv
         method: "GET",
         redirect: "manual",
         cache: "no-store",
-        signal: timeout.signal,
+        signal: env.requestState ? AbortSignal.any([timeout.signal, env.requestState.signal]) : timeout.signal,
         headers: { accept: "text/html,application/xml,text/xml,text/csv,*/*;q=0.1" },
       });
     } finally {
@@ -211,7 +224,7 @@ async function readLimited(response: Response, maxBytes: number): Promise<string
       total += chunk.byteLength;
       if (part.value.byteLength > room) {
         await reader.cancel();
-        break;
+        throw new Error('response_too_large');
       }
     }
   } finally {
@@ -371,6 +384,7 @@ async function findDocument(
   candidates: URL[],
   env: CheckerEnv,
   network: { failed: boolean; blocked: boolean; checked: boolean },
+  analyses: Array<{ structure: 'pass' | 'warning' | 'unknown'; content: 'pass' | 'warning' | 'unknown'; evidence: string }>,
 ) {
   for (const candidate of candidates) {
     try {
@@ -381,18 +395,36 @@ async function findDocument(
       }
       let body = "";
       try { body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES); } catch { network.failed = true; continue; }
-      if (isBotChallenge(fetched.response, body)) {
+      if (isBotChallenge(fetched.response, body) || [401, 403, 429].includes(fetched.response.status)) {
         network.blocked = true;
         continue;
       }
       network.checked = true;
       if (!fetched.response.ok) continue;
-      if (documentLooksValid(kind, fetched.response, body)) return fetched.url.href;
+      if (documentLooksValid(kind, fetched.response, body)) {
+        analyses.push(analyzeDocument(kind, body));
+        return fetched.url.href;
+      }
     } catch {
       network.failed = true;
     }
   }
   return null;
+}
+
+/** Reuses the upload engine. Unrecognized formats never earn a content pass. */
+export function analyzeDocument(kind: 'csv' | 'xml', body: string) {
+  try {
+    const parsed = kind === 'csv' ? parseMarketinoCsv(body) : { priceList: parseXmlPriceList(body), warnings: [] };
+    const rawCount = kind === 'xml' ? parseXmlFeed(body).records.length : parsed.priceList.items.length + parsed.warnings.length;
+    if (rawCount > 2000) return { structure: 'unknown' as const, content: 'unknown' as const, evidence: 'Za veće cjenike učitajte datoteku u detaljni validator.' };
+    const skipped = rawCount !== parsed.priceList.items.length || parsed.warnings.length > 0;
+    const validation = validatePriceList(parsed.priceList);
+    const issues = validation.issues.length + (skipped ? 1 : 0);
+    return { structure: skipped ? 'warning' as const : 'pass' as const, content: issues ? 'warning' as const : 'pass' as const, evidence: `Analizirano ${rawCount} redaka postojećim validatorom. ${issues ? `${issues} nalaza zahtijeva detaljnu provjeru.` : 'Nema nalaza u podržanim poljima.'} Ne potvrđuje stvarnu primjenjivost cijena ni pravnu usklađenost.` };
+  } catch {
+    return { structure: 'unknown' as const, content: 'unknown' as const, evidence: 'Datoteka je dostupna, ali format nije prepoznat za detaljnu analizu. Učitajte je u validator.' };
+  }
 }
 
 function parseBody(request: Request): Promise<{ url?: unknown } | null> {
@@ -408,9 +440,17 @@ function parseBody(request: Request): Promise<{ url?: unknown } | null> {
 }
 
 export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv = {}): Promise<CheckResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25_000);
+  try { return await checkWebsite(input, { ...env, requestState: { signal: controller.signal, dns: new Map() } }); }
+  finally { clearTimeout(timeout); controller.abort(); }
+}
+
+async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResult> {
   let initialUrl: URL;
   try { initialUrl = normalizeDigitalPriceListUrl(input); } catch { return result("red", "Unesite ispravnu adresu web stranice."); }
   const network = { failed: false, blocked: false, checked: false };
+  const analyses: Parameters<typeof findDocument>[4] = [];
   let homepage: { response: Response; url: URL };
   try {
     homepage = await safeDigitalPriceListFetch(initialUrl, env);
@@ -424,7 +464,7 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
   try { html = await readLimited(homepage.response, MAX_HTML_BYTES); } catch {
     if (homepage.response.ok) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.");
   }
-  const homepageChallenge = isBotChallenge(homepage.response, html);
+  const homepageChallenge = isBotChallenge(homepage.response, html) || [401, 403, 429].includes(homepage.response.status);
   if (homepageChallenge) network.blocked = true;
   if (homepage.response.status >= 500) network.failed = true;
   const homepageReadable = homepage.response.ok && !homepageChallenge;
@@ -434,13 +474,19 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
     reachable: true,
     https: homepage.url.protocol === "https:",
     fetchBlocked: homepageChallenge,
+    homepageReadable,
   };
+  if (homepageReadable && pageLooksLikePriceList(homepage.response, html)) {
+    details.pricePageFound = true;
+    details.pricePageUrl = homepage.url.href;
+  }
   const links = homepageReadable ? extractLinks(html, homepage.url) : [];
   const secondary: URL[] = [];
   const csv: URL[] = [];
   const xml: URL[] = [];
   const archive: URL[] = [];
   for (const candidate of links) {
+    if (candidate.kind === 'price' || candidate.kind === 'csv' || candidate.kind === 'xml') details.publicLinkUrl ||= candidate.url.href;
     if (candidate.kind === "price") appendUnique(secondary, candidate.url, MAX_SECONDARY_PAGES);
     if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
     if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
@@ -458,7 +504,7 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
       const fetched = await safeDigitalPriceListFetch(page, env);
       if (fetched.response.status >= 500) { network.failed = true; continue; }
       const secondaryHtml = await readLimited(fetched.response, MAX_HTML_BYTES);
-      if (isBotChallenge(fetched.response, secondaryHtml)) { network.blocked = true; continue; }
+      if (isBotChallenge(fetched.response, secondaryHtml) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; continue; }
       if (!fetched.response.ok) { network.checked = true; continue; }
       network.checked = true;
       if (pageLooksLikePriceList(fetched.response, secondaryHtml)) {
@@ -466,14 +512,17 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
         details.pricePageUrl ||= fetched.url.href;
       }
       for (const candidate of extractLinks(secondaryHtml, fetched.url)) {
+        if (candidate.kind === 'csv' || candidate.kind === 'xml') details.publicLinkUrl ||= candidate.url.href;
         if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
         if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
         if (candidate.kind === "archive") { details.archiveLinkDiscovered = true; appendUnique(archive, candidate.url, MAX_SECONDARY_PAGES); }
       }
     } catch { network.failed = true; }
   }
-  details.csvUrl = await findDocument("csv", csv, env, network);
-  details.xmlUrl = await findDocument("xml", xml, env, network);
+  [details.csvUrl, details.xmlUrl] = await Promise.all([
+    findDocument("csv", csv, env, network, analyses),
+    findDocument("xml", xml, env, network, analyses),
+  ]);
   details.csvFound = Boolean(details.csvUrl);
   details.xmlFound = Boolean(details.xmlUrl);
   details.fetchBlocked = network.blocked;
@@ -482,7 +531,7 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
       const fetched = await safeDigitalPriceListFetch(candidate, env);
       if (fetched.response.status >= 500) { network.failed = true; continue; }
       const archiveHtml = await readLimited(fetched.response, MAX_HTML_BYTES);
-      if (isBotChallenge(fetched.response, archiveHtml)) { network.blocked = true; details.fetchBlocked = true; continue; }
+      if (isBotChallenge(fetched.response, archiveHtml) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; details.fetchBlocked = true; continue; }
       if (!fetched.response.ok) { network.checked = true; continue; }
       network.checked = true;
       if (pageLooksLikeArchive(fetched.response, archiveHtml)) {
@@ -492,6 +541,11 @@ export async function runDigitalPriceListCheck(input: unknown, env: CheckerEnv =
       }
     } catch { network.failed = true; }
   }
+  details.networkIncomplete = network.failed;
+  const aggregate = (field: 'structure' | 'content') => analyses.some((a) => a[field] === 'warning') ? 'warning' : analyses.length && analyses.every((a) => a[field] === 'pass') ? 'pass' : 'unknown';
+  details.structureStatus = aggregate('structure');
+  details.contentStatus = aggregate('content');
+  details.contentEvidence = analyses.map((a) => a.evidence).sort().join(' ');
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
   if (details.pricePageFound) return result("yellow", "Pronađena je stranica ili cjenik, ali nije potvrđen valjan javni CSV/XML dokument.", details);
   if (network.blocked && !network.checked) {
@@ -516,7 +570,7 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: C
   const body = await parseBody(request);
   if (!body || body.url === undefined) return Response.json(result("red", "Unesite ispravnu adresu web stranice."), { status: 400 });
   const checked = await runDigitalPriceListCheck(body.url, env);
-  return Response.json(checked);
+  return Response.json({ ...checked, report: technicalReport(checked) }, { headers: { 'cache-control': 'no-store' } });
 };
 
 const CHECKER_LIMIT_PER_HOUR = 30;

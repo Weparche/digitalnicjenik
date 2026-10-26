@@ -1,11 +1,4 @@
-import {
-  formatEur,
-  IMPLEMENTATION_FIRST_YEAR_EUR,
-  LAUNCH_ACTIVATED_SUBSCRIPTIONS_CAP,
-  LAUNCH_ACTIVE,
-  LAUNCH_SELF_SERVICE_EUR,
-  REGULAR_SELF_SERVICE_EUR,
-} from '../publisherPricing'
+import { PlanCards } from '../PlanCards'
 import { SitePageLayout } from './PageLayout'
 import { getSitePage } from './registry'
 
@@ -20,15 +13,12 @@ export const PRICING_INCLUDED = [
 
 export function PricingPage() {
   const page = getSitePage('/cijene/')
-  const launch = formatEur(LAUNCH_SELF_SERVICE_EUR, true)
-  const regular = formatEur(REGULAR_SELF_SERVICE_EUR, true)
-  const setup = formatEur(IMPLEMENTATION_FIRST_YEAR_EUR)
   return (
     <SitePageLayout
       page={page}
       lead={
         <>
-          Provjera i validacija su besplatne. Javni cjenik s nadzorom košta {LAUNCH_ACTIVE ? <><strong>{launch}</strong> (akcija za prvih {LAUNCH_ACTIVATED_SUBSCRIPTIONS_CAP} aktiviranih pretplata), zatim {regular}</> : <strong>{regular}</strong>}. Bez mjesečne pretplate.
+          Provjera i validacija su besplatne. Odaberite godišnji paket za objavu cjenika. Plaćanje po ponudi, bez automatske naplate.
         </>
       }
       related={[
@@ -39,46 +29,7 @@ export function PricingPage() {
     >
       <section className="site-section" aria-labelledby="plans-title">
         <h2 id="plans-title">Paketi</h2>
-        <div className="site-table-wrap">
-          <table className="site-table">
-            <caption className="sr-only">Paketi i cijene NEPAR Publishera</caption>
-            <thead>
-              <tr>
-                <th scope="col">Paket</th>
-                <th scope="col">Cijena</th>
-                <th scope="col">Što dobivate</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row">Provjera i validator</th>
-                <td><strong>0 €</strong></td>
-                <td>Provjera postoji li CSV/XML na vašem webu, validacija Excela, CSV-a i XML-a, pretvorba Excela u CSV/XML. Ništa se ne objavljuje javno.</td>
-              </tr>
-              <tr>
-                <th scope="row">Probni rok 7 dana</th>
-                <td><strong>0 €</strong></td>
-                <td>Stvarni javni cjenik na vašem URL-u (<code>/c/vaš-slug</code>) s CSV/XML-om i nadzornom pločom. Nakon 7 dana URL se gasi ako ne aktivirate Publisher; podaci ostaju.</td>
-              </tr>
-              <tr>
-                <th scope="row">Publisher self-service</th>
-                <td>
-                  <strong>{LAUNCH_ACTIVE ? launch : regular}</strong>
-                  {LAUNCH_ACTIVE && <small>akcija za prvih {LAUNCH_ACTIVATED_SUBSCRIPTIONS_CAP} aktiviranih pretplata, zatim {regular}</small>}
-                </td>
-                <td>Sve iz popisa ispod. Cjenik održavate sami: učitate novu verziju kad se cijene promijene.</td>
-              </tr>
-              <tr>
-                <th scope="row">Publisher + postavljanje</th>
-                <td>
-                  <strong>{setup}</strong>
-                  <small>prva godina, zatim {regular}</small>
-                </td>
-                <td>NEPAR ugrađuje cjenik na vašu web stranicu i povezuje ga s izvorom podataka. Prva godina Publishera uključena.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <PlanCards />
       </section>
 
       <section className="site-section" aria-labelledby="included-title">

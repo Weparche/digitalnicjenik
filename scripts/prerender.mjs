@@ -16,9 +16,9 @@ const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
 const INDEXABLE_ROBOTS = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
 const FEED_URL = `${SITE_URL}/feed.xml`
 
-export const HOME_TITLE = 'Digitalni cjenik (CSV/XML) s nadzorom | NEPAR Publisher'
+export const HOME_TITLE = 'Digitalni cjenik: besplatna provjera CSV/XML | NEPAR'
 const DESCRIPTION =
-  'Objavite CSV/XML digitalni cjenik, pratite usklađenost s aktualnim pravilima i dobijte upozorenje čim nešto nije u redu. Sidrena cijena, arhiva 30 dana, probni rok 7 dana.'
+  'Imate web stranicu? Besplatno provjerite digitalni cjenik, CSV/XML i javne linkove. Tehnička provjera i objava cjenika na webu. Rok primjene: 17.11.2026.'
 const TWITTER_DESCRIPTION =
   'Digitalni cjenik koji ne samo da objavi datoteku, nego provjerava da je ispravna: CSV/XML, nadzor i e-mail upozorenje.'
 
@@ -81,7 +81,7 @@ function buildHomeSchema(productFaq, pricing) {
         inLanguage: 'hr',
         offers: [
           { '@type': 'Offer', name: 'Provjera, validator i probni rok 7 dana', price: '0', priceCurrency: 'EUR' },
-          { '@type': 'Offer', name: 'Publisher self-service (godišnje)', price: String(pricing.LAUNCH_SELF_SERVICE_EUR), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` },
+          ...pricing.PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
         ],
         provider: { '@id': ORGANIZATION_ID },
         isRelatedTo: { '@id': PRICE_ENGINE_ID },
@@ -156,9 +156,7 @@ function buildSitePageSchema(page, extras) {
       provider: { '@id': ORGANIZATION_ID },
       offers: [
         { '@type': 'Offer', name: 'Provjera, validator i probni rok 7 dana', price: '0', priceCurrency: 'EUR', url: pageUrl },
-        { '@type': 'Offer', name: 'Publisher self-service (godišnje, akcija za prvih 100 aktiviranih pretplata)', price: String(extras.pricing.LAUNCH_SELF_SERVICE_EUR), priceCurrency: 'EUR', url: pageUrl },
-        { '@type': 'Offer', name: 'Publisher self-service (godišnje, redovna cijena)', price: String(extras.pricing.REGULAR_SELF_SERVICE_EUR), priceCurrency: 'EUR', url: pageUrl },
-        { '@type': 'Offer', name: 'Publisher + postavljanje (prva godina)', price: String(extras.pricing.IMPLEMENTATION_FIRST_YEAR_EUR), priceCurrency: 'EUR', url: pageUrl },
+        ...extras.pricing.PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: pageUrl })),
       ],
     })
   }

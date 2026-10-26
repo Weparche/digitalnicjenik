@@ -3,7 +3,6 @@
 // generated at prerender time (scripts/prerender.mjs) — the two must always match.
 // Kept short and factual by design: the full question list lives on /faq/.
 
-import { launchOfferDetail, regularSelfServicePriceLabel } from './publisherPricing'
 
 export type ProductFaqEntry = { question: string; answer: string }
 
@@ -34,7 +33,7 @@ export const productFaq: ProductFaqEntry[] = [
   },
   {
     question: 'Koliko košta nakon probe?',
-    answer: `${launchOfferDetail()} Postavljanje na web: prva godina uključuje Publisher, zatim ${regularSelfServicePriceLabel()}.`,
+    answer: 'Provjera weba i validator su besplatni. Nakon probne objave možete odabrati godišnji paket Link, Publisher ili Web + Publisher. Pakete prikazujemo nakon rezultata provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web dogovara se zasebno.',
   },
   {
     question: 'Kako započeti?',

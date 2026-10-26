@@ -1,8 +1,9 @@
 import type { LeadIntent } from './LeadForm'
 import { productFaq } from './productFaq'
 import { implementationFirstYearLabel, selfServicePriceLabel } from './publisherPricing'
+import { IconChevronDown } from '@tabler/icons-react'
 
-export function EducationSection({ onLead }: { onLead: (intent: LeadIntent) => void }) {
+export function EducationSection({ onLead, showOffer = true }: { onLead: (intent: LeadIntent) => void; showOffer?: boolean }) {
   return <section className="education-section" aria-labelledby="education-title">
     <div className="education-heading">
       <h2 id="education-title">Objavljen cjenik nije isto što i ispravan cjenik</h2>
@@ -30,7 +31,8 @@ export function EducationSection({ onLead }: { onLead: (intent: LeadIntent) => v
         </ul>
       </article>
     </div>
-    <nav className="education-guides" aria-label="Više o digitalnom cjeniku"><h3>Saznajte više</h3><div className="education-guides-links"><a href="/cijene/">Cijene</a><a href="/usporedba/">Usporedba načina objave</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/faq/">Česta pitanja</a><a href="/vodici/excel-csv-digitalni-cjenik/">Vodič: Excel u CSV/XML</a><a href="/vodici/woocommerce-wordpress-digitalni-cjenik/">WooCommerce i WordPress</a><a href="/vodici/mikroeracun-digitalni-cjenik/">MIKROeRAČUN i cjenik</a></div></nav>
+    <section className="education-faq" aria-labelledby="education-faq-title"><h3 id="education-faq-title">Česta pitanja</h3><div>{productFaq.map((entry) => <details className="education-faq-row" key={entry.question}><summary>{entry.question}<IconChevronDown size={19} aria-hidden="true"/></summary><p>{entry.answer}</p></details>)}</div></section>
+    <nav className="education-guides" aria-label="Više o digitalnom cjeniku"><h3>Saznajte više</h3><div className="education-guides-links"><a href="/cijene/">Cijene</a><a href="/usporedba/">Usporedba načina objave</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/faq/">Sva česta pitanja</a><a href="/vodici/excel-csv-digitalni-cjenik/">Vodič: Excel u CSV/XML</a><a href="/vodici/woocommerce-wordpress-digitalni-cjenik/">WooCommerce i WordPress</a><a href="/vodici/mikroeracun-digitalni-cjenik/">MIKROeRAČUN i cjenik</a></div></nav>
     <details className="education-more">
       <summary>Regulativni kontekst (ukratko)</summary>
       <div className="education-proof">
@@ -38,9 +40,8 @@ export function EducationSection({ onLead }: { onLead: (intent: LeadIntent) => v
         <p>Rok primjene je 17. studenoga 2026. (Vlada, 29.9.2026.). MIKROeRAČUN rješava eRačune, a ne cjenik na webu — <a href="/vodici/mikroeracun-digitalni-cjenik/">razlika</a>.</p>
       </div>
     </details>
-    <div className="education-faq" aria-labelledby="education-faq-title"><h3 id="education-faq-title">Ukratko</h3><dl>{productFaq.map((entry) => <div className="education-faq-item" key={entry.question}><dt>{entry.question}</dt><dd>{entry.answer}</dd></div>)}</dl></div>
     <div className="education-guides"><h3>Dokumentacija na nepar.hr</h3><div className="education-guides-links"><a href="https://nepar.hr/digitalni-cjenik">Pregled obveze</a><a href="https://nepar.hr/digitalni-cjenik/sidrena-cijena">Sidrena cijena</a><a href="https://nepar.hr/digitalni-cjenik/xml-csv">XML/CSV format</a><a href="https://nepar.hr/digitalni-cjenik/automatizacija">Automatizacija</a></div></div>
     <div className="education-sources"><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html" target="_blank" rel="noreferrer">Odluka NN 101/2026 — digitalni cjenik</a><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1212.html" target="_blank" rel="noreferrer">Odluka NN 101/2026 — dodatna cijena</a><span>NEPAR pruža tehničku i podatkovnu provjeru, ne individualni pravni savjet.</span></div>
-    <div className="education-cta"><div><strong>Želite aktivirati Publisher?</strong><span>Učitajte cjenik za probu ili pošaljite upit — self-service {selfServicePriceLabel()}.</span></div><div><button className="app-button app-button-primary" type="button" onClick={() => onLead('implementation')}>Postavljanje {implementationFirstYearLabel()} prva godina</button><button className="app-button app-button-light" type="button" onClick={() => onLead('plugin')}>Self-service {selfServicePriceLabel()}</button></div></div>
+    {showOffer && <div className="education-cta"><div><strong>Želite aktivirati Publisher?</strong><span>Učitajte cjenik za probu ili pošaljite upit — self-service {selfServicePriceLabel()}.</span></div><div><button className="app-button app-button-primary" type="button" onClick={() => onLead('implementation')}>Web + Publisher {implementationFirstYearLabel()}</button><button className="app-button app-button-light" type="button" onClick={() => onLead('plugin')}>Self-service {selfServicePriceLabel()}</button></div></div>}
   </section>
 }

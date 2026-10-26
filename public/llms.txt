@@ -12,7 +12,7 @@ Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https:/
 ## Stranice
 
 - [Početna](https://digitalnicjenik.nepar.hr/): digitalni cjenik s nadzorom usklađenosti — provjera weba, validator Excel/CSV cjenika i objava.
-- [Cijene](https://digitalnicjenik.nepar.hr/cijene/): NEPAR Publisher: besplatna provjera i 7-dnevni probni rok, zatim 39,90 €/god. (akcija) odnosno 49,90 €/god. Uključuje CSV/XML, arhivu, nadzor usklađenosti, QR i ispis.
+- [Cijene](https://digitalnicjenik.nepar.hr/cijene/): Besplatna provjera weba i validator. Godišnji paketi: Link 19,90 €/god, Publisher 49,90 €/god, Web + Publisher 79,90 €/god. Objavite digitalni cjenik na svojoj web stranici.
 - [Česta pitanja](https://digitalnicjenik.nepar.hr/faq/): Odgovori na najčešća pitanja o digitalnom cjeniku: tko mora objaviti CSV/XML, rok 17.11.2026., sidrena cijena, arhiva 30 dana, naziv datoteke, više poslovnica i web shop.
 - [Usporedba](https://digitalnicjenik.nepar.hr/usporedba/): Usporedba NEPAR Publishera, besplatnih publishera, WooCommerce dodataka i ručne objave: provjera, alarm, usporedba datoteke s izvorom, verzije pravila, arhiva i QR.
 - [Specifikacija CSV/XML](https://digitalnicjenik.nepar.hr/specifikacija-csv-xml/): Polje po polje: što Odluka NN 101/2026 traži, kako izgleda NEPAR CSV i XML, kakav je naziv datoteke, što provjeravamo i primjeri za preuzimanje.

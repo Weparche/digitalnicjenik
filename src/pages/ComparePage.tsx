@@ -1,3 +1,4 @@
+import { selfServicePriceLabel } from '../publisherPricing'
 import { SitePageLayout } from './PageLayout'
 import { getSitePage } from './registry'
 
@@ -22,7 +23,7 @@ export const COMPARE_ROWS: Row[] = [
   { feature: 'QR kod i ispis na A4', why: 'Isti podaci za ispis u poslovnici i na webu.', cells: [yes(), partial('Ovisi o alatu'), no(), partial('Ručno')] },
   { feature: 'Ugradnja cjenika u postojeći web (embed)', why: 'Cjenik se prikazuje na vašoj stranici bez prepisivanja.', cells: [yes(), partial('Ovisi o alatu'), partial('Ovisi o dodatku'), partial('Ručno')] },
   { feature: 'Uvoz iz Excela ili CSV-a', why: 'Ne morate cijene unositi dvaput.', cells: [yes(), partial('Ovisi o alatu'), partial('Izvoz iz WooCommercea'), no('Ručni unos')] },
-  { feature: 'Cijena', why: 'Ukupni trošak, bez vašeg vremena.', cells: [yes('39,90–49,90 €/god.'), partial('Najčešće 0 €'), partial('Od 0 € do plaćenih licenci'), partial('0 € + vaše vrijeme')] },
+  { feature: 'Cijena', why: 'Ukupni trošak, bez vašeg vremena.', cells: [yes(selfServicePriceLabel()), partial('Najčešće 0 €'), partial('Od 0 € do plaćenih licenci'), partial('0 € + vaše vrijeme')] },
 ]
 
 const MARK = { yes: '✓', partial: '◐', no: '—' } as const

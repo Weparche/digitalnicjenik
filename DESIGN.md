@@ -1,14 +1,22 @@
 # NEPAR Digitalni Cjenik — visual direction
 
-> Active direction (2026-09): the root route is a premium light utility and sales app in the NEPAR visual system. Historical dark control-room styling is not used on the acquisition surface.
+> Active direction (2026-10-26): the acquisition route follows the supplied NEPAR checker reference. Historical public-list styling remains scoped to its existing routes.
 
 ## Active root surface
 
-The `/` route combines Operate and Persuade. Its first viewport lets a non-technical website owner run the checker without scrolling while a distinct sales card offers plugin from 49,90 € or plugin + implementation at 89,90 €. The product proves value before asking for contact details, but help is always reachable.
+The `/` route is a Persuade surface with a working utility at its center. The first viewport contains “Imate web stranicu? Provjerite digitalni cjenik besplatno.”, a URL field and “Provjeri besplatno”, followed by three trust statements. Pricing cards appear after a checker result. A quiet file-upload card opens the existing validator. The deadline badge reads 17.11.2026.; educational and regulatory content follows the primary journey.
 
-Use NEPAR slate neutrals on `#f8fafc`, white utility panels, and `#2563eb` primary actions. Cyan and violet are restrained brand accents. Green is reserved for success, amber for warning/manual review, and red for errors. Preserve visible focus states, 44px touch targets, safe URL/filename wrapping, and reduced-motion behavior at 390px.
+Use a near-white `#f8fafc` canvas, white surfaces, black Inter Variable display type, slate body text and saturated NEPAR blue actions (`#0660ff`, hover `#1d4ed8`). The supplied reference's three-bar NEPAR wordmark anchors the acquisition surface; existing product logos stay on other routes. Green marks confirmed checks, amber uncertainty or review, and red missing signals. Preserve visible focus, 44px targets and safe wrapping at 390px.
+
+The decorative office photograph is `public/assets/checker-office.webp` (1536 × 1024, approximately 36 KB). Keep its intrinsic 3:2 ratio with automatic height and a 1160px maximum scene width inside the content margins. Never stretch it to fill the viewport. A restrained white contrast layer blends its left edge into the copy's reading surface; it is not a decorative gradient. The example result on the laptop is real DOM, explicitly labeled as an example. The photo and example are hidden below 1000px. The mobile headline uses four lines at 390px; its input, 52px action and trust statements fit the first viewport. All essential UI works without the photo.
 
 The checker result persists through validator and lead handoffs. A confirmed URL is shown as evidence, never imported automatically. “Imam CSV” scrolls to and focuses the validator container, not its hidden file input. CSV, XML, and mapped Excel rows share one normalized validation path. A source file is attached to an inquiry only after explicit checkbox confirmation.
+
+`shared/website-check.ts` owns the deterministic nine-check presentation. Each check has an explicit status and expandable evidence. A score counts confirmed passes, not legal conditions. Completely unavailable checks show a neutral dash and “0 potvrđenih”, with immediate retry, rather than a prominent failure score. Loading copy rotates without claiming completed stages; cancellation and reduced motion are supported. Motion is limited to control feedback and the result progress reveal.
+
+After results: three annual plans from `shared/pricing.ts` — Link, Publisher (recommended), Web + Publisher — plus a distinct existing-web installation help path. `PlanCards` is shared with `/cijene/`. Form context includes checked URL, legacy checker status, confirmed score, discovered feeds and selected plan. Existing validator, public cjenik, archive, dashboard, trial and SEO routes retain their behavior.
+
+The rest of the landing follows the same hierarchy: nine checks → how it works → file validator → installation help → Publisher explanation/comparison → FAQ/resources → current news. Lower section headings stay 30–34px desktop / 26–28px mobile, card headings 20–23px, supporting body text 14–16px. Major intervals are 64px desktop / 44px mobile. The validator aligns with the page grid; use Inter for controls and prose. FAQs are native disclosure rows with large targets, not a wall of unstyled definition text. Resource navigation remains visible on mobile, explicitly overriding historical global navigation styles. The initial short pricing FAQ explains the next step without listing paid prices; it remains identical to prerendered FAQ structured data.
 
 ## Active palette
 
@@ -16,12 +24,10 @@ The checker result persists through validator and lead handoffs. A confirmed URL
 - ink `#0f172a`
 - body `#334155`
 - muted `#64748b`
-- primary `#2563eb`, hover `#1d4ed8`
-- cyan `#0891b2`
-- violet `#6d28d9`
+- acquisition primary `#0660ff`, focus `#2563eb`, hover `#1d4ed8`
 - border `#e2e8f0`
 
-The local NEPAR Solutions logo is the brand anchor. Surfaces use precise borders and one soft, offset shadow tier; avoid gradients, glass, decorative dashboards, and generic SaaS icon-card grids.
+Acquisition surfaces use restrained 9–16px radii, fine borders, one soft shadow tier and Tabler line icons. The nine-item grid is a compact explanation of the checker, not a grid of product pitches. Avoid gradients, glass and additional animation. The remaining sections below document the established public-list world and do not override this route.
 
 ## Historical public-list world
 

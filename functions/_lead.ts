@@ -1,6 +1,7 @@
 import type { D1DatabaseLike } from './_repository'
 import { emailConfigured, sendTransactionalEmail, type EmailEnv } from './_email'
 import { implementationIntentLabel, selfServiceIntentLabel } from './_pricing'
+import { PLANS, formatEur } from '../shared/pricing'
 
 export const MAX_ATTACHMENT_BYTES = 4_000_000
 export const MAX_REQUEST_BYTES = 4_600_000
@@ -133,6 +134,8 @@ function normalizeContext(raw: string) {
     return {
       website: String(value.website ?? '').slice(0, 500),
       checkerStatus: String(value.checkerStatus ?? '').slice(0, 40),
+      selectedPlan: PLANS.find((p) => p.id === value.selectedPlan)?.id,
+      checkerScore: Number.isInteger(value.checkerScore) && Number(value.checkerScore) >= 0 && Number(value.checkerScore) <= 9 ? Number(value.checkerScore) : undefined,
       discoveredUrls: Array.isArray(value.discoveredUrls) ? value.discoveredUrls.slice(0, 2).map((item) => String(item).slice(0, 500)) : [],
       sourceFilename: String(value.sourceFilename ?? '').slice(0, 160),
       itemCount: Number(value.itemCount) || 0,
@@ -165,7 +168,7 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   const privacy = form.get('privacy')
   const token = stringField(form, 'cf-turnstile-response', 2048)
   if (!['implementation', 'consultation', 'plugin'].includes(intent) || !name || !validEmail(email) || privacy !== 'on') return jsonResponse(400, { ok: false, code: 'invalid_input' })
-  const intentLabel =
+  let intentLabel =
     intent === 'implementation'
       ? implementationIntentLabel()
       : intent === 'plugin'
@@ -196,8 +199,12 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
     }
   }
   const context = normalizeContext(stringField(form, 'context', 4000))
+  const selectedPlan = PLANS.find((p) => p.id === context?.selectedPlan)
+  if (selectedPlan) intentLabel = `${selectedPlan.name} — ${formatEur(selectedPlan.price, true)}`
   const rows = [
     ['Namjera', intentLabel],
+    ['Odabrani paket', selectedPlan ? `${selectedPlan.name} · ${formatEur(selectedPlan.price, true)}` : 'Pomoć / konzultacija'],
+    ['Tehnički score', context?.checkerScore != null ? `${context.checkerScore}/9 (korisnički kontekst, nije neovisna potvrda)` : '—'],
     ['Ime / tvrtka', name], ['E-mail', email], ['Telefon', phone || '—'], ['Web', website || '—'],
     ['Platforma', platform || '—'], ['Materijali', materials || '—'], ['Poruka', message || '—'],
     ['Checker', context?.checkerStatus || '—'], ['Pronađeni URL-ovi', context?.discoveredUrls.join('\n') || '—'],
