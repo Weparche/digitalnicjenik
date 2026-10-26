@@ -162,7 +162,7 @@ export async function requestMagicLink(
   const memberships = user ? await loadMemberships(env.DB, user.id) : []
   // Always return success to the client; only send mail when a membership exists.
   if (!user || memberships.length === 0) {
-    return { sent: false as const }
+    return { sent: false as const, userId: user?.id }
   }
 
   const rawToken = randomToken()
@@ -190,7 +190,7 @@ export async function requestMagicLink(
     throw new AccessDeniedError(502, 'send_failed', 'Prijavni link trenutačno nije moguće poslati.')
   }
 
-  return { sent: true as const }
+  return { sent: true as const, userId: user.id }
 }
 
 export async function consumeMagicLink(env: AuthEnv, rawToken: string) {

@@ -13,6 +13,8 @@ import { createDraft, publishDraft, readEntitlement, resolveTenant, type D1Datab
 import { slugifyBusinessName, suggestSlugAlternatives, validSlug } from './_slug'
 import { implementationIntentLabel, selfServiceIntentLabel } from './_pricing'
 import { AccessDeniedError } from './_write-auth'
+import { sanitizeAttribution } from '../shared/acquisition'
+import { recordAttribution } from './_acquisition'
 import type { NormalizedPriceList, ValidationIssue } from '../src/price-engine/types'
 import { mergeValidationIssues, validatePriceList } from '../src/price-engine/validate'
 
@@ -233,7 +235,7 @@ export function previewSlugFromBusinessName(businessName: string) {
 export async function startTrialClaim(
   request: Request,
   env: TrialEnv,
-  input: { draftId: string; email: string; businessName: string; slug: string; turnstileToken?: string },
+  input: { draftId: string; email: string; businessName: string; slug: string; turnstileToken?: string; attribution?: unknown },
   fetcher: typeof fetch = fetch,
 ) {
   const db = requireDb(env)
@@ -278,9 +280,9 @@ export async function startTrialClaim(
   await db.batch([
     db.prepare(
       `INSERT INTO pending_trial_claims
-        (id, draft_id, email, business_name, requested_slug, token_hash, expires_at, verified_at, status, tenant_id, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'pending', NULL, ?)`,
-    ).bind(claimId, input.draftId, email, businessName, slug, tokenHash, expiresAt, stamp),
+        (id, draft_id, email, business_name, requested_slug, token_hash, expires_at, verified_at, status, tenant_id, created_at, attribution_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 'pending', NULL, ?, ?)`,
+    ).bind(claimId, input.draftId, email, businessName, slug, tokenHash, expiresAt, stamp, JSON.stringify(sanitizeAttribution(input.attribution))),
     db.prepare(
       `INSERT INTO slug_reservations (slug, claim_id, expires_at, created_at) VALUES (?, ?, ?, ?)`,
     ).bind(slug, claimId, expiresAt, stamp),
@@ -303,6 +305,17 @@ export async function startTrialClaim(
   }
 
   return { claimId, slug, email, expiresAt }
+}
+
+async function recordTrialAttribution(env: TrialEnv, claimId: string, tenantId: string, userId: string) {
+  if (!env.DB) return
+  const row = await env.DB.prepare('SELECT attribution_json FROM pending_trial_claims WHERE id = ?').bind(claimId).first<{ attribution_json: string | null }>()
+  let parsed: unknown = null
+  if (row?.attribution_json) {
+    try { parsed = JSON.parse(row.attribution_json) } catch { parsed = null }
+  }
+  await recordAttribution(env.DB, 'trial', tenantId, parsed)
+  await recordAttribution(env.DB, 'signup', userId, parsed)
 }
 
 async function waitForCompletedClaim(db: D1DatabaseLike, claimId: string, attempts = 8) {
@@ -367,6 +380,7 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
 
   if (claim.status === 'completed' && claim.tenant_id) {
     const owner = await ensureTenantOwner(env, claim.tenant_id, claim.email)
+    await recordTrialAttribution(env, claim.id, claim.tenant_id, owner.userId)
     const session = await createSessionForUser(env, owner.userId)
     const tenant = await resolveTenant(env, claim.requested_slug)
     return {
@@ -387,6 +401,7 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
     const finished = await waitForCompletedClaim(db, claim.id)
     if (finished?.status === 'completed' && finished.tenant_id) {
       const owner = await ensureTenantOwner(env, finished.tenant_id, finished.email)
+      await recordTrialAttribution(env, finished.id, finished.tenant_id, owner.userId)
       const session = await createSessionForUser(env, owner.userId)
       return {
         alreadyCompleted: true as const,
@@ -407,6 +422,7 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
     const finished = await waitForCompletedClaim(db, claim.id)
     if (finished?.status === 'completed' && finished.tenant_id) {
       const owner = await ensureTenantOwner(env, finished.tenant_id, finished.email)
+      await recordTrialAttribution(env, finished.id, finished.tenant_id, owner.userId)
       const session = await createSessionForUser(env, owner.userId)
       return {
         alreadyCompleted: true as const,
@@ -477,6 +493,7 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
     ])
 
     const owner = await ensureTenantOwner(env, tenantId, claim.email)
+    await recordTrialAttribution(env, claim.id, tenantId, owner.userId)
     const session = await createSessionForUser(env, owner.userId)
     return {
       alreadyCompleted: false as const,

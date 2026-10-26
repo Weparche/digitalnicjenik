@@ -22,6 +22,7 @@ import {
 } from './publisherPricing'
 import { useTurnstileSiteKey } from './turnstileConfig'
 import { Logo } from './Logo'
+import { readAcquisitionTouch } from './acquisition'
 import { NewsArticle } from './news/NewsArticle'
 import { NewsIndex } from './news/NewsIndex'
 
@@ -873,6 +874,7 @@ function TrialClaimForm({
           businessName: businessName.trim(),
           slug: slug.trim().toLocaleLowerCase('en-US'),
           turnstileToken,
+          attribution: readAcquisitionTouch(),
         }),
       })
       const claimPayload = await claimResponse.json() as { ok?: boolean; error?: string; code?: string }
@@ -1216,7 +1218,7 @@ function PublisherUpgradeBanner({
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ intent }),
+        body: JSON.stringify({ intent, attribution: readAcquisitionTouch() }),
       })
       if (!response.ok) throw new Error('Upit nije moguće poslati.')
       onSent()

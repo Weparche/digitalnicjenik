@@ -2,6 +2,8 @@ import type { D1DatabaseLike } from './_repository'
 import { emailConfigured, sendTransactionalEmail, type EmailEnv } from './_email'
 import { implementationIntentLabel, selfServiceIntentLabel } from './_pricing'
 import { PLANS, formatEur } from '../shared/pricing'
+import { sanitizeAttribution } from '../shared/acquisition'
+import { recordAttribution } from './_acquisition'
 
 export const MAX_ATTACHMENT_BYTES = 4_000_000
 export const MAX_REQUEST_BYTES = 4_600_000
@@ -199,6 +201,12 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
     }
   }
   const context = normalizeContext(stringField(form, 'context', 4000))
+  const attributionRaw = form.get('attribution')
+  let attribution: unknown = null
+  if (typeof attributionRaw === 'string' && attributionRaw.length <= 4000) {
+    try { attribution = JSON.parse(attributionRaw) } catch { attribution = null }
+  }
+  const touch = sanitizeAttribution(attribution)
   const selectedPlan = PLANS.find((p) => p.id === context?.selectedPlan)
   if (selectedPlan) intentLabel = `${selectedPlan.name} — ${formatEur(selectedPlan.price, true)}`
   const rows = [
@@ -210,6 +218,9 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
     ['Checker', context?.checkerStatus || '—'], ['Pronađeni URL-ovi', context?.discoveredUrls.join('\n') || '—'],
     ['Učitana datoteka', context?.sourceFilename || '—'], ['Stavke / blokade', context ? `${context.itemCount} / ${context.blockerCount} (${context.manualReviewCount} ručni pregled)` : '—'],
     ['Privitak', attachment?.filename || '—'], ['Lead ID', attemptId],
+    ['Izvor', touch?.utm_source || '—'],
+    ['Kampanja', touch?.utm_campaign || '—'],
+    ['Sadržaj', touch?.utm_content || '—'],
   ]
   const text = rows.map(([label, value]) => `${label}: ${value}`).join('\n\n')
   const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><h1>Novi upit za digitalni cjenik</h1><table role="presentation" style="border-collapse:collapse;width:100%">${rows.map(([label, value]) => `<tr><th style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top">${escapeHtml(label)}</th><td style="padding:8px;border-bottom:1px solid #e2e8f0;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`).join('')}</table></body></html>`
@@ -228,5 +239,6 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
     sent = true
   } catch { sent = false }
   await updateAttempt(env, attemptId, sent ? 'sent' : 'send_failed')
+  if (sent) await recordAttribution(env.DB, 'lead', attemptId, attribution)
   return sent ? jsonResponse(200, { ok: true, leadId: attemptId }) : jsonResponse(502, { ok: false, code: 'send_failed' })
 }

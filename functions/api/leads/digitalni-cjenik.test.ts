@@ -26,7 +26,10 @@ function successfulFetch() {
 }
 
 describe('digitalni cjenik lead delivery', () => {
-  beforeEach(async () => { await env.DB.prepare('DELETE FROM lead_delivery_attempts').run() })
+  beforeEach(async () => {
+    await env.DB.prepare('DELETE FROM lead_delivery_attempts').run()
+    await env.DB.prepare('DELETE FROM acquisition_attributions').run()
+  })
 
   it('validates Turnstile, sends escaped content through Email REST and stores no PII in D1', async () => {
     const fetcher = successfulFetch()
@@ -93,6 +96,32 @@ describe('digitalni cjenik lead delivery', () => {
     expect(body.html).toContain('https://salon.hr/cjenik.csv')
     expect(body.html).toContain('6/9')
     expect(body.html).not.toContain('49,90')
+  })
+
+  it('keeps delivering the lead when attribution is invalid and stores a valid source', async () => {
+    const fetcher = successfulFetch()
+    const touch = {
+      attribution_id: '11111111-1111-4111-8111-111111111111',
+      utm_source: 'kpdinfo.com',
+      utm_medium: 'owned_context',
+      utm_campaign: 'nepar_digitalni_cjenik',
+      utm_content: 'after-result',
+      referrer_host: 'kpdinfo.com',
+      landing_path: '/objava-digitalnog-cjenika/',
+      first_seen: '2026-10-26T12:00:00.000Z',
+    }
+    const sent = await handleLeadRequest(request({ attribution: JSON.stringify(touch) }), leadEnv(), fetcher)
+    expect(sent.status).toBe(200)
+    const emailBody = JSON.parse(String(((fetcher as unknown as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit).body)) as { html: string }
+    expect(emailBody.html).toContain('kpdinfo.com')
+    expect(emailBody.html).not.toContain('39,90')
+    const stored = await env.DB.prepare('SELECT utm_source FROM acquisition_attributions').all<{ utm_source: string }>()
+    expect(stored.results).toEqual([{ utm_source: 'kpdinfo.com' }])
+
+    const bad = await handleLeadRequest(request({ email: 'drugi@example.hr', attribution: JSON.stringify({ ...touch, attribution_id: 'not-a-uuid' }) }), leadEnv(), successfulFetch())
+    expect(bad.status).toBe(200)
+    const count = await env.DB.prepare('SELECT COUNT(*) AS count FROM acquisition_attributions').first<{ count: number }>()
+    expect(count?.count).toBe(1)
   })
 })
 

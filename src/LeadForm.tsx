@@ -6,6 +6,7 @@ import {
   selfServicePriceLabel,
 } from './publisherPricing'
 import { useTurnstileSiteKey } from './turnstileConfig'
+import { readAcquisitionTouch } from './acquisition'
 
 export type LeadIntent = 'implementation' | 'consultation' | 'plugin'
 export type LeadContext = {
@@ -107,6 +108,8 @@ export function LeadForm({ intent, context, onIntentChange, onPlanChange }: { in
     const form = new FormData(event.currentTarget)
     form.set('intent', intent)
     form.set('cf-turnstile-response', turnstileToken)
+    const attribution = readAcquisitionTouch()
+    if (attribution) form.set('attribution', JSON.stringify(attribution))
     form.set('context', JSON.stringify({
       website: context.website,
       checkerStatus: context.checkerStatus,

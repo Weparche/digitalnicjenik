@@ -1,7 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import App from './App'
+import { captureFirstTouch } from './acquisition'
 import './styles.css'
+
+captureFirstTouch()
 import './share-print.css'
 
 const container = document.getElementById('root')!

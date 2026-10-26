@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { readAcquisitionTouch } from './acquisition'
 
 export type PublisherTenant = { id: string; slug: string; name: string; role: 'owner' }
 export type PublisherSession = {
@@ -31,7 +32,7 @@ export function PublisherLogin({ initialError }: { initialError?: string }) {
       const response = await fetch('/api/auth/magic-link', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, attribution: readAcquisitionTouch() }),
       })
       const payload = await response.json().catch(() => ({})) as { ok?: boolean; code?: string; error?: string }
       if (!response.ok) {

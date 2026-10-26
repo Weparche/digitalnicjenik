@@ -10,6 +10,7 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: T
       slug?: string
       turnstileToken?: string
       'cf-turnstile-response'?: string
+      attribution?: unknown
     }
     if (!body.draftId || !body.email || !body.businessName) {
       return Response.json({ ok: false, error: 'invalid_input' }, { status: 400 })
@@ -21,6 +22,7 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: T
       businessName: body.businessName,
       slug,
       turnstileToken: body.turnstileToken || body['cf-turnstile-response'] || '',
+      attribution: body.attribution,
     })
     return Response.json({ ok: true, ...result })
   } catch (error) {

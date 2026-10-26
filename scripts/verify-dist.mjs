@@ -40,6 +40,22 @@ expect('index.html', 'nepar.hr/digitalni-cjenik/sidrena-cijena', 'inlink to the 
 expect('index.html', 'nepar.hr/digitalni-cjenik/xml-csv', 'inlink to the xml-csv guide is missing')
 expect('index.html', 'nepar.hr/digitalni-cjenik/automatizacija', 'inlink to the automatizacija guide is missing')
 expect('index.html', '<meta property="og:url" content="https://digitalnicjenik.nepar.hr/" />', 'og:url is missing')
+function assertCleanCampaignCanonical(rel, expected) {
+  const html = read(rel)
+  const canonicals = [...html.matchAll(/<link\s+rel="canonical"\s+href="([^"]*)"\s*\/>/gi)]
+  if (canonicals.length !== 1) failures.push(`${rel}: expected exactly one canonical, found ${canonicals.length}`)
+  else if (canonicals[0][1] !== expected || canonicals[0][1].includes('?') || canonicals[0][1].toLowerCase().includes('utm_')) {
+    failures.push(`${rel}: canonical must be the clean URL ${expected}`)
+  }
+  const ogUrls = [...html.matchAll(/<meta\s+property="og:url"\s+content="([^"]*)"\s*\/>/gi)]
+  if (ogUrls.length !== 1) failures.push(`${rel}: expected exactly one og:url, found ${ogUrls.length}`)
+  else if (ogUrls[0][1] !== expected || ogUrls[0][1].includes('?') || ogUrls[0][1].toLowerCase().includes('utm_')) {
+    failures.push(`${rel}: og:url must be the clean URL ${expected}`)
+  }
+}
+assertCleanCampaignCanonical('index.html', 'https://digitalnicjenik.nepar.hr/')
+assertCleanCampaignCanonical('cijene/index.html', 'https://digitalnicjenik.nepar.hr/cijene/')
+assertCleanCampaignCanonical('objava-digitalnog-cjenika/index.html', 'https://digitalnicjenik.nepar.hr/objava-digitalnog-cjenika/')
 expect('index.html', '<meta property="og:locale" content="hr_HR" />', 'og:locale is missing')
 expect('index.html', '<meta property="og:image" content="https://digitalnicjenik.nepar.hr/og/digitalni-cjenik-og.png" />', 'absolute og:image is missing')
 expect('index.html', '<meta property="og:image:width" content="1200" />', 'og:image:width must be 1200')
