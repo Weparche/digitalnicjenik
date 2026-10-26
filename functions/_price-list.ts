@@ -1,4 +1,5 @@
 import { parseMarketinoCsv } from '../src/price-engine/adapters/marketinoCsv'
+import { retentionIsLive } from '../shared/publication-retention'
 import { bootstrapFromFixture, readCurrentPublication, readPublicationByStem, readPublicationForHost, type RuntimeEnv } from './_repository'
 import { applyPublicAccessHeaders, getPublicTenantAccess, publicGoneResponse, type PublicTenantAccess } from './_public-access'
 
@@ -36,11 +37,13 @@ export async function getPublicList(request: Request, slug: string, env: Runtime
   return { ...parsed.priceList, source: 'nepar' as const }
 }
 
-export async function publicationByStem(request: Request, stem: string, env: RuntimeEnv) {
-  const publication = await readPublicationByStem(env, stem, true)
+export async function publicationByStem(request: Request, stem: string, env: RuntimeEnv, slug?: string) {
+  const publication = await readPublicationByStem(env, stem, true, slug)
   if (!publication) return null
   const access = await getPublicTenantAccess(env, publication.payload.tenant.slug)
-  if (!access.accessible) return null
+  const retainedArchive = retentionIsLive(publication) && access.entitlement?.status !== 'suspended'
+  if (!access.accessible && !retainedArchive) return null
+  if (slug) return publication.payload.tenant.slug === slug ? publication : null
   const hostname = new URL(request.url).hostname
   return (await readPublicationForHost(env, hostname))?.tenantId === publication.tenantId ? publication : null
 }

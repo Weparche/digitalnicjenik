@@ -37,9 +37,10 @@ export const TECHNICAL_CHECKS = [
   { id: 'archive', label: 'Arhiva prethodnih objava', icon: 'clock' },
   { id: 'content', label: 'Sadržaj cjenika', icon: 'list' },
 ] as const
-export type TechnicalStatus = 'pass' | 'missing' | 'warning' | 'unknown'
+export type TechnicalStatus = 'pass' | 'missing' | 'warning' | 'unknown' | 'not_applicable'
 export const STATUS_LABELS: Record<TechnicalStatus, string> = {
   pass: 'Prolazi', missing: 'Nije pronađeno', warning: 'Upozorenje', unknown: 'Nije moguće automatski potvrditi',
+  not_applicable: 'Nije potrebno — drugi format je dostupan',
 }
 export function technicalReport(result: WebsiteCheckResult) {
   const d = result.details ?? {}
@@ -59,7 +60,14 @@ export function technicalReport(result: WebsiteCheckResult) {
     { status: d.contentStatus ?? 'unknown', evidence: d.contentEvidence || 'Potrebna detaljna provjera. Učitajte cjenik u validator.' },
   ]
   const checks = TECHNICAL_CHECKS.map((check, i) => ({ ...check, ...states[i] }))
-  const score = checks.filter((c) => c.status === 'pass').length
+  // CSV and XML are legal alternatives; lack of the second is not a fault.
+  for (const check of checks) {
+    if (check.status === 'missing' && ((check.id === 'csv' && !d.csvFound && d.xmlFound) || (check.id === 'xml' && !d.xmlFound && d.csvFound))) {
+      check.status = 'not_applicable'
+      check.evidence = 'Zahtjev formata ispunjava CSV ili XML. Drugi format nije obvezan.'
+    }
+  }
+  const score = checks.filter((c) => c.status === 'pass' || c.status === 'not_applicable').length
   const unknown = checks.filter((c) => c.status === 'unknown').length
   const attention = checks.filter((c) => c.status === 'missing' || c.status === 'warning').length
   const tone = attention ? (score <= 2 ? 'red' : 'yellow') : unknown ? 'yellow' : 'green'

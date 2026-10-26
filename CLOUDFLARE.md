@@ -74,14 +74,14 @@ and entitlement status recreate (`trial` | `active` | `expired` | `suspended`).
 ### Trial-first customer journey
 
 1. Anonymous upload → `POST /api/drafts` (private draft, ~24h, no `/c/nepar` publish).
-2. Claim → `POST /api/trials/start` (business name + e-mail + slug) sends magic mail; **no tenant yet**.
+2. Resolve every blocking validation issue. Save real object type, full address, code and the product working calendar in `POST /api/drafts` (`publicationDetails`). Claim → `POST /api/trials/start` (business name + e-mail + slug) sends magic mail; **no tenant yet**.
 3. `GET /api/trials/callback?token=` idempotently provisions tenant, trial entitlement (7d), claims draft, publishes, sets session, redirects `/app?welcome=1`.
 4. Dashboard upgrade CTAs → `POST /api/publisher/upgrade` e-mails NEPAR with full tenant context.
-5. After payment, ops renew: `POST /api/ops/renew` with `Authorization: Bearer <OPERATOR_WRITE_KEY>` and `{ "slug": "..." }`  
+5. After payment, ops renew: `POST /api/ops/renew` with `Authorization: Bearer <OPERATOR_WRITE_KEY>` and `{ "slug": "..." }`
    (`period_end = MAX(now, period_end) + 1 year`, `status = active`).
 
-Public HTML/CSV/XML/archive for expired/suspended tenants return **410** + `Cache-Control: no-store`.  
-Trial public responses include `X-Robots-Tag: noindex, nofollow`.  
+Expired current HTML/aliases return **410** + `Cache-Control: no-store`. The archive page and immutable files remain available for required retention, including the latest version until 30 days from publication. Superseded files are retained until `public_until` (30 days from replacement). Suspension blocks public access.
+Trial public responses include `X-Robots-Tag: noindex, nofollow`.
 Public `/c/*` allows iframe embed via `Content-Security-Policy: frame-ancestors *`.
 
 `/c/nepar` remains the demo fixture only.
@@ -143,9 +143,9 @@ Buduća automatska sinkronizacija s providerom zahtijevat će zasebne vjerodajni
 
 A separate Worker (`digitalnicjenik-monitor`) runs the daily checks; Pages Functions only read results and delegate the manual "Provjeri sada" run to it, so cron, retry and manual runs share one implementation (`shared/compliance/run-check.ts`).
 
-- **Schedule (UTC):** `30 4 * * *` first pass and `30 5 * * *` retry (only tenants whose latest run is warn/fail or that have no recent run). That is 05:30/06:30 CET and 06:30/07:30 CEST, so the retry always finishes before the 08:00 product-price deadline.
+- **Schedule (UTC):** `30 4 * * *` first pass, `30 5 * * *` retry (warn/fail/unchecked), and `5 7 * * *` full pass after 08:00 in both CET and CEST. Product freshness uses the owner’s working days and closed dates; services require publication on change. The monitor does not automatically publish prices.
 - **Rules** live in `shared/compliance/rulesets.ts` (`ACTIVE_RULESET`, currently `nn-101-2026`). The new Pravilnik is a new entry plus switching `ACTIVE_RULESET`; every `monitor_runs` row stores the ruleset id it was checked against.
-- **Profiles:** `publication_metadata.compliance_profile` is `products` (default) or `services`. Migration 0008 classifies the demo tenant `nepar` and `patrisa-sisa` as services; classify every other service provider **before the first monitor run**:
+- **Profiles:** derived from the actual published item types (`products` if any non-service item exists); `publication_metadata.compliance_profile` remains for older consumers. Migration 0008 classifies the demo tenant `nepar` and `patrisa-sisa` as services; legacy metadata may be aligned for older consumers:
   `UPDATE publication_metadata SET compliance_profile = 'services' WHERE tenant_id IN (SELECT id FROM tenants WHERE slug IN ('<slug>', ...));`
 - `warn` never pages; only `fail` e-mails the tenant owner(s) and `EMAIL_TO`. Recovery mail is sent only after a real `fail` returns to `ok`.
 

@@ -1,4 +1,4 @@
-﻿Grupa,Naziv,Vrsta,Interna šifra,Cijena,Akcijska cijena,Poseban oblik prodaje,Naziv posebnog oblika prodaje,Sidrena cijena,Jedinica
-Šišanje,Muško šišanje,Usluga,FR-001,15.00,,NE,,15.00,
-Šišanje,Žensko šišanje,Usluga,FR-002,21.00,,NE,,18.00,
-Bojanje,Bojanje kose,Usluga,FR-010,40.00,,DA,Jesenska akcija,45.00,
+﻿Grupa,Naziv,Vrsta,Interna šifra,Cijena,Akcijska cijena,Poseban oblik prodaje,Naziv posebnog oblika prodaje,Sidrena cijena,Jedinica,Datum referentne cijene,Najniža cijena u 30 dana,Nova stavka,Razlog izuzeća cijene po jedinici
+Šišanje,Muško šišanje,Usluga,FR-001,15.00,,NE,,15.00,,,,,
+Šišanje,Žensko šišanje,Usluga,FR-002,21.00,,NE,,18.00,,,,,
+Bojanje,Bojanje kose,Usluga,FR-010,40.00,,DA,Jesenska akcija,45.00,,,45.00,,

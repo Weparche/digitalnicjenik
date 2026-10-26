@@ -8,7 +8,7 @@ import { buildAlertMessage, sendAlert } from './alert'
 import { runTenantCheck } from '../../../shared/compliance/run-check'
 import { readLatestRun } from '../../../shared/compliance/store'
 
-const HOST = 'acme.digitalnicjenik.nepar.hr'
+const HOST = 'cjenik.acme.hr'
 const STEM = 'trgovina_vukovarska-1_p-01_3_20261117-053000'
 const NOW = new Date('2026-11-17T05:30:00Z')
 
@@ -28,7 +28,7 @@ function makeEnv(sent: Sent[], overrides: Partial<Env> = {}): Env {
 
 const list: NormalizedPriceList = {
   tenant: { id: 't-acme', slug: 'acme', name: 'Acme' }, source: 'nepar', currency: 'EUR', updatedAt: '2026-11-17T05:00:00Z',
-  items: [{ name: 'Usluga A', externalId: 'S1', price: 10, anchorPrice: 10 }, { name: 'Usluga B', externalId: 'S2', price: 20, anchorPrice: 20 }],
+  items: [{ name: 'Usluga A', type: 'Usluga', specialSaleApplied: false, externalId: 'S1', price: 10, anchorPrice: 10 }, { name: 'Usluga B', type: 'Usluga', specialSaleApplied: false, externalId: 'S2', price: 20, anchorPrice: 20 }],
 }
 
 function feeds(xmlStatus = 200): typeof fetch {
@@ -97,6 +97,19 @@ describe('monitor worker', () => {
     if (result.status !== 'checked' || !result.alert) throw new Error('expected an alert')
     const outcome = await sendAlert(env, result.alert, result.run, result.tenant)
     expect(outcome).toEqual({ sent: ['ops@nepar.hr'], failed: ['vlasnik@acme.hr'] })
+  })
+
+  it('retries a failed owner delivery without waiting 24 hours', async () => {
+    const sent: Sent[] = []
+    let rejectOwner = true
+    const deliveryEnv = makeEnv(sent, { EMAIL: { send: async message => {
+      if (rejectOwner && String(message.to).startsWith('vlasnik')) throw new Error('temporary failure')
+      sent.push({ to: String(message.to), subject: message.subject, text: message.text ?? '' }); return {}
+    } } })
+    await checkAndAlert(deliveryEnv, 'acme', 'cron', NOW, feeds(500))
+    rejectOwner = false
+    await checkAndAlert(deliveryEnv, 'acme', 'retry', new Date(NOW.getTime() + 3600_000), feeds(500))
+    expect(sent.some(mail => mail.to === 'vlasnik@acme.hr')).toBe(true)
   })
 
   it('scheduled retry only re-checks tenants that are warn/fail or unchecked', async () => {

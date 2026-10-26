@@ -11,7 +11,7 @@ import type { NormalizedPriceItem, NormalizedPriceList } from './types'
 const tenant = { id: 't', slug: 't', name: 'Trgovina d.o.o.' }
 const product = (overrides: Partial<NormalizedPriceItem> = {}): NormalizedPriceItem => ({
   externalId: 'M-001', category: 'Mliječni', name: 'Mlijeko 1 l', type: 'Proizvod', brand: 'Dukat', barcode: '4006381333931', unit: 'l', unitPrice: 1.2,
-  price: 1.2, anchorPrice: 1.1, specialSaleApplied: false, availability: 'dostupno', ...overrides,
+  price: 1.2, anchorPrice: 1.1, anchorReferenceDate: '2025-05-02', specialSaleApplied: false, availability: 'dostupno', ...overrides,
 })
 const list = (items: NormalizedPriceItem[]): NormalizedPriceList => ({ tenant, source: 'nepar', currency: 'EUR', updatedAt: '2026-11-17T05:00:00Z', items })
 
@@ -49,7 +49,7 @@ describe('product file structure', () => {
 
     const products = list([product()])
     expect(usesProductStructure(products)).toBe(true)
-    expect(renderCsv(products).split('\r\n')[0]).toMatch(/,Jedinica,Marka,Barkod,Cijena za jedinicu mjere,Dostupnost$/)
+    expect(renderCsv(products).split('\r\n')[0]).toMatch(/,Jedinica,Marka,Barkod,Cijena za jedinicu mjere,Dostupnost,Datum referentne cijene/)
   })
 
   it('CSV round-trips brand, barcode, unit price and availability', () => {
@@ -93,16 +93,17 @@ describe('product validation (NN 101/2026-1213, čl. III)', () => {
     expect(result.issues.map((issue) => `${issue.field}:${issue.severity}`).sort()).toEqual(['anchorPrice:manual_review', 'availability:manual_review', 'brand:manual_review', 'externalId:manual_review'])
   })
 
-  it('barcode problems are warnings, not blockers (Odluka: gdje je primjenjivo)', () => {
-    expect(fields(product({ barcode: null }))).toEqual(['barcode:warning'])
+  it('requires a barcode; checksum problems remain visible warnings', () => {
+    expect(fields(product({ barcode: null }))).toEqual(['barcode:manual_review'])
     expect(fields(product({ barcode: '3850123456780' }))).toEqual(['barcode:warning'])
-    expect(issuesFor(product({ barcode: null })).status).toBe('ready_to_publish')
+    expect(issuesFor(product({ barcode: null })).status).toBe('manual_review')
   })
 
   it('unit and unit price must come together', () => {
-    expect(fields(product({ unitPrice: null }))).toEqual(['unitPrice:warning'])
-    expect(fields(product({ unit: null }))).toEqual(['unit:warning'])
-    expect(fields(product({ unit: null, unitPrice: null }))).toEqual([])
+    expect(fields(product({ unitPrice: null }))).toEqual(['unitPrice:manual_review'])
+    expect(fields(product({ unit: null }))).toEqual(['unit:manual_review'])
+    expect(fields(product({ unit: null, unitPrice: null }))).toEqual(['unit:manual_review', 'unitPrice:manual_review'])
+    expect(fields(product({ unit: null, unitPrice: null, unitPricingExemption: 'Cijena po jedinici nije primjenjiva: obrazloženo izuzeće.' }))).toEqual([])
   })
 
   it('services are not asked for product fields', () => {

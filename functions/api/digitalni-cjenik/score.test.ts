@@ -6,7 +6,7 @@ const resolver = { resolve4: async () => ['93.184.216.34'], resolve6: async () =
 afterEach(() => vi.unstubAllGlobals())
 describe('document score evidence', () => {
   it('reuses the existing validator for supported complete rows', () => {
-    expect(analyzeDocument('csv', 'Naziv;Vrsta;Cijena;Sidrena cijena\nŠišanje;Usluga;20;20')).toMatchObject({ structure: 'pass', content: 'pass' })
+    expect(analyzeDocument('csv', 'Naziv;Vrsta;Cijena;Sidrena cijena;Poseban oblik prodaje\nŠišanje;Usluga;20;20;NE')).toMatchObject({ structure: 'pass', content: 'pass' })
   })
   it('does not turn a skipped CSV row into a content pass', () => {
     expect(analyzeDocument('csv', 'Naziv;Vrsta;Cijena;Sidrena cijena\nŠišanje;Usluga;20;20\nNedostaje cijena;Usluga;;20')).toMatchObject({ structure: 'warning', content: 'warning' })
@@ -22,7 +22,7 @@ describe('document score evidence', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const path = new URL(String(input)).pathname
       if (path === '/') return new Response('<html><h1>Cjenik usluga</h1><table><tr><th>Naziv usluge</th><th>Cijena</th></tr><tr><td>Šišanje</td><td>20 EUR</td></tr></table></html>', { headers: { 'content-type': 'text/html' } })
-      if (path === '/cjenik.csv') return new Response('Naziv;Vrsta;Cijena;Sidrena cijena\nŠišanje;Usluga;20;20')
+      if (path === '/cjenik.csv') return new Response('Naziv;Vrsta;Cijena;Sidrena cijena;Poseban oblik prodaje\nŠišanje;Usluga;20;20;NE')
       return new Response('Not found', { status: 404 })
     }))
     const result = await runDigitalPriceListCheck('example.hr', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })

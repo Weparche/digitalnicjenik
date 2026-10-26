@@ -346,3 +346,7 @@
 
 .acq-reference > a { flex-shrink: 0; }
 .acq-reference .acq-preview-label { display: block; margin-bottom: 8px; }
+.acq-status-not_applicable .acq-status-icon { color: #17633d; }
+.trial-claim-form fieldset { min-width: 0; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; }
+.trial-claim-form fieldset label { display: flex; flex-direction: row; gap: 10px; align-items: center; margin: 6px 0; }
+.trial-claim-form fieldset input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; flex: 0 0 20px; }

@@ -11,16 +11,16 @@ export const CSV_COLUMNS = [
   { column: 'Interna šifra', required: 'Ne (preporučeno)', odluka: 'Šifra (proizvodi)', example: 'FR-001', note: 'Vaša šifra stavke.' },
   { column: 'Cijena', required: 'Da', odluka: 'Maloprodajna cijena', example: '15.00', note: 'Dvije decimale, točka kao decimalni separator, EUR.' },
   { column: 'Akcijska cijena', required: 'Ne', odluka: 'Cijena u posebnom obliku prodaje', example: '12.00', note: 'Prazno ako nema akcije.' },
-  { column: 'Poseban oblik prodaje', required: 'Kad ima akcijsku cijenu', odluka: 'Podatak o posebnom obliku prodaje', example: 'NE', note: 'DA ili NE.' },
+  { column: 'Poseban oblik prodaje', required: 'Da', odluka: 'Podatak o posebnom obliku prodaje', example: 'NE', note: 'Izričito potvrđeno DA ili NE; prazno ostaje nepotvrđeno.' },
   { column: 'Naziv posebnog oblika prodaje', required: 'Ako je DA', odluka: 'Naziv posebnog oblika prodaje', example: 'Jesenska akcija', note: 'Obavezno kad je oblik prodaje DA.' },
-  { column: 'Sidrena cijena', required: 'Da za usluge', odluka: 'Dodatna (sidrena) cijena', example: '15.00', note: 'Referentna cijena iz propisanog datuma; može biti jednaka aktualnoj.' },
+  { column: 'Sidrena cijena', required: 'Da', odluka: 'Dodatna (sidrena) cijena', example: '15.00', note: 'Referentna cijena iz propisanog datuma; može biti jednaka aktualnoj.' },
   { column: 'Jedinica', required: 'Ne', odluka: 'Jedinica mjere (proizvodi)', example: 'kom', note: 'Za proizvode gdje se primjenjuje.' },
 ]
 
 export const PRODUCT_CSV_COLUMNS = [
   { column: 'Marka', required: 'Da (može „bez marke”)', odluka: 'Marka', example: 'Primjer mljekara', note: 'Upišite „bez marke” ako je proizvod nema.' },
-  { column: 'Barkod', required: 'Upozorenje ako nedostaje ili nije valjan', odluka: 'Barkod robe', example: '4006381333931', note: 'EAN-8, UPC-A, EAN-13 ili GTIN-14 s ispravnom kontrolnom znamenkom, bez razmaka.' },
-  { column: 'Cijena za jedinicu mjere', required: 'Upozorenje ako je jedinica navedena, a cijena nije', odluka: 'Cijena za jedinicu mjere (gdje je primjenjivo)', example: '1.98', note: 'Uz stupac Jedinica (primjerice kg ili l).' },
+  { column: 'Barkod', required: 'Da; neispravna kontrolna znamenka daje upozorenje', odluka: 'Barkod robe', example: '4006381333931', note: 'Nedostajući barkod traži dopunu. Provjeravamo i kontrolnu znamenku uobičajenih GTIN oznaka.' },
+  { column: 'Cijena za jedinicu mjere', required: 'Da gdje je primjenjivo; inače izričito obrazloženje', odluka: 'Cijena za jedinicu mjere (gdje je primjenjivo)', example: '1.98', note: 'Uz stupac Jedinica (primjerice kg ili l); dvije prazne vrijednosti ne potvrđuju izuzeće.' },
   { column: 'Dostupnost', required: 'Da', odluka: 'Dostupno / nedostupno', example: 'dostupno', note: 'Vrijednosti: dostupno ili nedostupno.' },
 ]
 
@@ -49,10 +49,10 @@ export const PRODUCT_XML_ELEMENTS = [
 export const CHECKS = [
   { check: 'Dostupnost', detail: 'CSV i XML vraćaju HTTP 200 na stabilnom URL-u.' },
   { check: 'Broj stavki', detail: 'Broj redaka u CSV-u i XML-u jednak je broju stavki u objavljenom cjeniku.' },
-  { check: 'Sadržaj', detail: 'Naziv i cijena u datotekama podudaraju se s objavljenim cjenikom.' },
+  { check: 'Sadržaj', detail: 'Sva polja koja odgovarajući format prenosi podudaraju se s objavljenom verzijom, uključujući sidrene cijene i podatke proizvoda.' },
   { check: 'Naziv datoteke', detail: 'Odgovara trenutnoj objavi i propisanom obliku (dva zasebna signala).' },
   { check: 'Obvezna polja', detail: 'Po profilu (proizvodi ili usluge), s brojem stavki kojima polje nedostaje.' },
-  { check: 'Arhiva', detail: 'Sve objave iz zadnjih 30 dana su dostupne; provjerava se najnovija i najstarija arhivirana datoteka.' },
+  { check: 'Arhiva', detail: 'Provjeravaju se CSV i XML svake verzije kojoj još traje 30-dnevni rok od zamjene, uključujući verzije izvorno objavljene ranije.' },
   { check: 'Aktualnost', detail: 'Za proizvode: postoji li objava za zadnji radni dan (upozorenje, ne greška). Za usluge se ne očekuje dnevna objava.' },
 ]
 
@@ -139,6 +139,10 @@ export function SpecPage() {
           </table>
         </div>
         <p>Za proizvode su uz to obavezni i šifra (<code>Interna šifra</code>) te sidrena cijena. Nedostajuća šifra, marka, dostupnost ili sidrena cijena zaustavljaju objavu dok se ne dopune.</p>
+        <h3>Referentni datum i povijest cijena</h3>
+        <p>NEPAR dodaje stupce <code>Datum referentne cijene</code>, <code>Najniža cijena u 30 dana</code>, <code>Nova stavka</code> i <code>Razlog izuzeća cijene po jedinici</code> kada je unesen barem jedan od tih podataka. U XML-u su to <code>anchorReferenceDate</code>, <code>lowest30DayPrice</code>, <code>isNewSinceReferenceDate</code> i <code>unitPricingExemption</code>. To su proširenja NEPAR formata za čuvanje korisnikove evidencije; Odluka ne određuje ova imena stupaca.</p>
+        <p>Za proizvode korisnik bira primjenjivi referentni datum: 2. svibnja 2025. za ranije obuhvaćene proizvode ili 10. rujna 2026. Za novu stavku izričito označite DA i unesite datum i cijenu prvog uvrštenja. Za usluge bez posebne oznake primjenjuje se 10. rujna 2026. Sustav ne može potvrditi točnost povijesne evidencije. Datum unesite kao GGGG-MM-DD.</p>
+        <p>Javni prikaz akcije traži zasebnu prethodnu najnižu cijenu iz evidencije; sidrena cijena nije zamjena. Posebni zakonski režimi i izuzeća zahtijevaju dodatnu provjeru.</p>
         <h3>Primjer CSV-a za proizvode</h3>
         <pre className="news-code-sample"><code>{exampleProductCsv}</code></pre>
       </section>

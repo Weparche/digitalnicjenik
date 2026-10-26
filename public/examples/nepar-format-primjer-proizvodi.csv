@@ -1,4 +1,4 @@
-﻿Grupa,Naziv,Vrsta,Interna šifra,Cijena,Akcijska cijena,Poseban oblik prodaje,Naziv posebnog oblika prodaje,Sidrena cijena,Jedinica,Marka,Barkod,Cijena za jedinicu mjere,Dostupnost
-Mliječni proizvodi,"Mlijeko 2,8% mm, 1 l",Proizvod,MLI-001,1.19,,NE,,1.09,l,Primjer mljekara,4006381333931,1.19,dostupno
-Pekarski proizvodi,"Kruh bijeli, 500 g",Proizvod,PEK-014,0.99,,NE,,0.95,kg,bez marke,96385074,1.98,nedostupno
-Pića,"Sok od jabuke, 1 l",Proizvod,PIC-203,1.79,1.49,DA,Jesenska akcija,1.79,l,Primjer sokovi,4012345678901,1.79,dostupno
+﻿Grupa,Naziv,Vrsta,Interna šifra,Cijena,Akcijska cijena,Poseban oblik prodaje,Naziv posebnog oblika prodaje,Sidrena cijena,Jedinica,Marka,Barkod,Cijena za jedinicu mjere,Dostupnost,Datum referentne cijene,Najniža cijena u 30 dana,Nova stavka,Razlog izuzeća cijene po jedinici
+Mliječni proizvodi,"Mlijeko 2,8% mm, 1 l",Proizvod,MLI-001,1.19,,NE,,1.09,l,Primjer mljekara,4006381333931,1.19,dostupno,2025-05-02,,,
+Pekarski proizvodi,"Kruh bijeli, 500 g",Proizvod,PEK-014,0.99,,NE,,0.95,kg,bez marke,96385074,1.98,nedostupno,2025-05-02,,,
+Pića,"Sok od jabuke, 1 l",Proizvod,PIC-203,1.79,1.49,DA,Jesenska akcija,1.79,l,Primjer sokovi,4012345678901,1.79,dostupno,2025-05-02,1.79,,

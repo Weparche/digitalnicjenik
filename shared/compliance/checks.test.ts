@@ -82,6 +82,11 @@ describe('freshness', () => {
   it('services never go stale', () => {
     expect(evaluateFreshness(services, '2025-01-01T00:00:00Z', new Date('2026-11-18T09:00:00Z'), 'Europe/Zagreb')).toBe('n/a')
   })
+  it('uses the object calendar for a Saturday opening and a closed date', () => {
+    const saturday = new Date('2026-10-24T10:00:00Z')
+    expect(evaluateFreshness(products, '2026-10-23T05:00:00Z', saturday, 'Europe/Zagreb', { workingDays: [1,2,3,4,5,6] })).toBe('warn')
+    expect(evaluateFreshness(products, '2026-10-23T05:00:00Z', saturday, 'Europe/Zagreb', { workingDays: [1,2,3,4,5,6], closedDates: ['2026-10-24'] })).toBe('ok')
+  })
 })
 
 describe('archive integrity', () => {

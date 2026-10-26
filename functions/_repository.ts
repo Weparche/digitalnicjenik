@@ -1,4 +1,7 @@
-import { deterministicHash, diffPriceLists } from "../src/price-engine/hash"
+import { deterministicPublicationHash, diffPriceLists } from "../src/price-engine/hash"
+import { usesProductStructure } from '../src/price-engine/profile'
+import { getRuleset } from '../shared/compliance/rulesets'
+import { parsePublicationDetails } from '../shared/publication-details'
 import { createFilenameStemPrefix, filenameTimestamp } from "../src/price-engine/filename"
 import { parseMarketinoCsv } from "../src/price-engine/adapters/marketinoCsv"
 import { mergeValidationIssues, validatePriceList } from "../src/price-engine/validate"
@@ -23,7 +26,7 @@ export type RuntimeEnv = {
 
 type PublicationRow = { id: string; tenant_id: string; tenant_slug: string; tenant_name: string; price_list_id: string; sequence: number; filename_stem: string; published_at: string; superseded_at: string | null; public_until: string | null; hash: string; payload_json: string; is_current: number }
 type UploadRow = { id: string; tenant_id: string; source_filename: string; source_type: string; normalized_payload_json: string; validation_issues_json: string; status: DraftStatus; created_at: string; updated_at: string }
-type MetadataRow = { tenant_id: string; object_type: string; object_address: string; object_code: string; next_publication_sequence: number; timezone: string; created_at: string; updated_at: string }
+type MetadataRow = { tenant_id: string; object_type: string; object_address: string; object_code: string; next_publication_sequence: number; timezone: string; working_days_json: string; closed_dates_json: string; created_at: string; updated_at: string }
 
 const now = () => new Date().toISOString()
 const id = () => crypto.randomUUID()
@@ -33,7 +36,7 @@ const toList = (value: string) => JSON.parse(value) as NormalizedPriceList
 const toIssues = (value: string) => JSON.parse(value) as ValidationIssue[]
 
 function mapMetadata(row: MetadataRow): PublicationMetadata {
-  return { objectType: row.object_type, objectAddress: row.object_address, objectCode: row.object_code, nextPublicationSequence: row.next_publication_sequence, timezone: row.timezone }
+  return { objectType: row.object_type, objectAddress: row.object_address, objectCode: row.object_code, nextPublicationSequence: row.next_publication_sequence, timezone: row.timezone, workingDays: JSON.parse(row.working_days_json), closedDates: JSON.parse(row.closed_dates_json) }
 }
 
 function mapPublication(row: PublicationRow): PricePublication {
@@ -45,7 +48,7 @@ function mapUpload(row: UploadRow): PriceUpload {
 }
 
 async function metadataFor(env: RuntimeEnv, tenantId: string) {
-  const row = await env.DB!.prepare("SELECT tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at FROM publication_metadata WHERE tenant_id = ?").bind(tenantId).first<MetadataRow>()
+  const row = await env.DB!.prepare("SELECT tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, working_days_json, closed_dates_json, created_at, updated_at FROM publication_metadata WHERE tenant_id = ?").bind(tenantId).first<MetadataRow>()
   if (!row) throw new Error("Nedostaju publication metadata podaci za tenant.")
   return mapMetadata(row)
 }
@@ -79,8 +82,9 @@ async function ensureTenant(env: RuntimeEnv, list: NormalizedPriceList) {
   const timestamp = now()
   const statements = [
     env.DB!.prepare("INSERT INTO tenants (id, slug, name, currency, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(slug) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at").bind(list.tenant.id, list.tenant.slug, list.tenant.name, list.currency, timestamp, timestamp),
-    env.DB!.prepare("INSERT INTO publication_metadata (tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?, ?) ON CONFLICT(tenant_id) DO NOTHING").bind(list.tenant.id, "usluzni-objekt", "demo", list.tenant.slug, env.DEFAULT_PUBLICATION_TIMEZONE || "Europe/Zagreb", timestamp, timestamp),
-    env.DB!.prepare("INSERT INTO publication_targets (id, tenant_id, hostname, status, created_at, updated_at) VALUES (?, ?, ?, 'active', ?, ?) ON CONFLICT(id) DO UPDATE SET hostname = excluded.hostname, status = 'active', updated_at = excluded.updated_at").bind("target-" + list.tenant.id, list.tenant.id, list.tenant.slug === (env.DEMO_WRITE_TENANT || "nepar") ? (env.DEMO_PUBLIC_HOSTNAME || list.tenant.slug + ".digitalnicjenik.nepar.hr") : list.tenant.slug + ".digitalnicjenik.nepar.hr", timestamp, timestamp),
+    env.DB!.prepare("INSERT INTO publication_metadata (tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?, ?) ON CONFLICT(tenant_id) DO NOTHING").bind(list.tenant.id, list.tenant.slug === (env.DEMO_WRITE_TENANT || 'nepar') ? 'usluzni-objekt' : '', list.tenant.slug === (env.DEMO_WRITE_TENANT || 'nepar') ? 'demo' : '', list.tenant.slug === (env.DEMO_WRITE_TENANT || 'nepar') ? list.tenant.slug : '', env.DEFAULT_PUBLICATION_TIMEZONE || "Europe/Zagreb", timestamp, timestamp),
+    // Uploading a draft must preserve an existing target, including manual hostnames and its activation state.
+    env.DB!.prepare("INSERT INTO publication_targets (id, tenant_id, hostname, status, created_at, updated_at) VALUES (?, ?, ?, 'active', ?, ?) ON CONFLICT DO NOTHING").bind("target-" + list.tenant.id, list.tenant.id, list.tenant.slug === (env.DEMO_WRITE_TENANT || "nepar") ? (env.DEMO_PUBLIC_HOSTNAME || list.tenant.slug + ".digitalnicjenik.nepar.hr") : list.tenant.slug + ".digitalnicjenik.nepar.hr", timestamp, timestamp),
   ]
   if (list.tenant.slug === (env.DEMO_WRITE_TENANT || "nepar")) {
     statements.push(env.DB!.prepare("INSERT INTO entitlements (id, tenant_id, plan, status, period_start, period_end, created_at, updated_at) VALUES (?, ?, 'publisher_self_service', 'active', ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING").bind("entitlement-" + list.tenant.slug, list.tenant.id, timestamp, addDays(timestamp, 365), timestamp, timestamp))
@@ -123,10 +127,11 @@ export async function readPublications(env: RuntimeEnv, slug: string, publicOnly
   return rows.results.map(mapPublication)
 }
 
-export async function readPublicationByStem(env: RuntimeEnv, stem: string, publicOnly = true): Promise<PricePublication | null> {
+export async function readPublicationByStem(env: RuntimeEnv, stem: string, publicOnly = true, slug?: string): Promise<PricePublication | null> {
   if (!env.DB) return null
-  const query = publicationSelect + " WHERE p.filename_stem = ?" + (publicOnly ? " AND (p.is_current = 1 OR p.public_until >= ?)" : "") + " LIMIT 1"
-  const row = publicOnly ? await env.DB.prepare(query).bind(stem, now()).first<PublicationRow>() : await env.DB.prepare(query).bind(stem).first<PublicationRow>()
+  const query = publicationSelect + " WHERE p.filename_stem = ?" + (slug ? " AND t.slug = ?" : "") + (publicOnly ? " AND (p.is_current = 1 OR p.public_until >= ?)" : "") + " LIMIT 1"
+  const values = [stem, ...(slug ? [slug] : []), ...(publicOnly ? [now()] : [])]
+  const row = await env.DB.prepare(query).bind(...values).first<PublicationRow>()
   return row ? mapPublication(row) : null
 }
 
@@ -191,6 +196,8 @@ export async function updateDraft(env: RuntimeEnv, slug: string, draftId: string
 
 export async function publishDraft(env: RuntimeEnv, slug: string, draftId: string, internalDemo = false) {
   if (!env.DB) throw new Error("D1 binding DB nije konfiguriran.")
+  // Internal fixture shortcuts may never bypass validation/entitlements for a customer.
+  internalDemo = internalDemo && slug === (env.DEMO_WRITE_TENANT || 'nepar')
   const tenant = await requireTenant(env, slug)
   const draft = await readDraft(env, slug, draftId)
   if (!draft || draft.tenantId !== tenant.id) throw new Error("Draft nije pronađen.")
@@ -207,14 +214,17 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
     && new Date(entitlement.periodEnd).getTime() >= Date.now()
   if (!internalDemo && !live) throw new Error("Aktivan Publisher entitlement nije pronađen.")
   const current = await readCurrentPublication(env, slug)
-  const hash = await deterministicHash(payload)
+  const metadata = await metadataFor(env, tenant.id)
+  if (slug !== (env.DEMO_WRITE_TENANT || 'nepar')) parsePublicationDetails(metadata)
+  const profile = getRuleset().profiles[usesProductStructure(payload) ? 'products' : 'services']
+  const dailyStamp = profile.freshness.kind === 'working_day' ? new Intl.DateTimeFormat('en-CA', { timeZone: metadata.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) : undefined
+  const hash = await deterministicPublicationHash(payload, metadata, dailyStamp)
   if (current?.hash === hash) {
     await env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ?").bind(now(), draftId, tenant.id).run()
     return { changed: false, message: "Nema promjena za objavu.", publication: current, current: current.payload, changedItems: [] }
   }
   const timestamp = now()
   const tenantId = tenant.id
-  const metadata = await metadataFor(env, tenantId)
   const publicationId = id()
   const priceListId = id()
   const filenamePrefix = createFilenameStemPrefix(metadata)

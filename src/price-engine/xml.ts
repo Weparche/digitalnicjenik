@@ -1,4 +1,4 @@
-import { normalizeBarcode, normalizeNumber, parseAvailability } from './normalize'
+import { normalizeBarcode, normalizeNumber, normalizeReferenceDate, parseAvailability } from './normalize'
 import { usesProductStructure } from './profile'
 import type { NormalizedPriceList } from './types'
 
@@ -7,50 +7,23 @@ const xml = (value: unknown) => String(value ?? '').replace(/[<>&'\"]/g, (charac
 export function renderXml(priceList: NormalizedPriceList): string {
   const products = usesProductStructure(priceList)
   const items = priceList.items.map((item) => {
+    const historyFields = [
+      ['anchorReferenceDate', item.anchorReferenceDate ?? ''],
+      ['lowest30DayPrice', item.lowest30DayPrice == null ? '' : item.lowest30DayPrice.toFixed(2)],
+      ['isNewSinceReferenceDate', item.isNewSinceReferenceDate ? 'true' : ''],
+      ['unitPricingExemption', item.unitPricingExemption ?? ''],
+    ].filter(([, value]) => value !== '').map(([field, value]) => '\n      <' + field + '>' + xml(value) + '</' + field + '>').join('')
     const productFields = products
       ? `\n      <externalId>${xml(item.externalId)}</externalId>\n      <brand>${xml(item.brand)}</brand>\n      <barcode>${xml(item.barcode)}</barcode>\n      <unit>${xml(item.unit)}</unit>${item.unitPrice == null ? '' : `\n      <unitPrice currency="EUR">${item.unitPrice.toFixed(2)}</unitPrice>`}\n      <availability>${xml(item.availability)}</availability>`
       : ''
-    return `    <item>\n      <category>${xml(item.category)}</category>\n      <name>${xml(item.name)}</name>\n      <type>${xml(item.type)}</type>${productFields}\n      <price currency="EUR">${item.price.toFixed(2)}</price>${item.salePrice == null ? '' : `\n      <salePrice currency="EUR">${item.salePrice.toFixed(2)}</salePrice>`}\n      <specialSaleApplied>${item.specialSaleApplied == null ? '' : item.specialSaleApplied}</specialSaleApplied>\n      <specialSaleName>${xml(item.specialSaleName)}</specialSaleName>\n      <anchorPrice currency="EUR">${item.anchorPrice == null ? '' : item.anchorPrice.toFixed(2)}</anchorPrice>\n    </item>`
+    return `    <item>\n      <category>${xml(item.category)}</category>\n      <name>${xml(item.name)}</name>\n      <type>${xml(item.type)}</type>${productFields}\n      <price currency="EUR">${item.price.toFixed(2)}</price>${item.salePrice == null ? '' : `\n      <salePrice currency="EUR">${item.salePrice.toFixed(2)}</salePrice>`}\n      <specialSaleApplied>${item.specialSaleApplied == null ? '' : item.specialSaleApplied}</specialSaleApplied>\n      <specialSaleName>${xml(item.specialSaleName)}</specialSaleName>\n      <anchorPrice currency="EUR">${item.anchorPrice == null ? '' : item.anchorPrice.toFixed(2)}</anchorPrice>${historyFields}\n    </item>`
   }).join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>\n<priceList>\n  <business>\n    <name>${xml(priceList.tenant.name)}</name>\n  </business>\n  <source>${xml(priceList.source)}</source>\n  <updatedAt>${xml(priceList.updatedAt)}</updatedAt>\n  <items>\n${items}\n  </items>\n</priceList>\n`
 }
 
-const textOf = (parent: Element, name: string) => parent.querySelector(name)?.textContent?.trim() ?? ''
-
+/** Both runtimes use identical row validation and supported schemas. */
 export function parseXmlPriceListBrowser(xmlText: string, tenant = { id: 'nepar', slug: 'nepar', name: 'NEPAR' }): NormalizedPriceList {
-  if (!xmlText.trim() || typeof DOMParser === 'undefined') throw new Error('XML se ne može provjeriti u ovom pregledniku.')
-  const document = new DOMParser().parseFromString(xmlText, 'application/xml')
-  if (!document.documentElement || document.getElementsByTagName('parsererror').length > 0) throw new Error('XML nije ispravan. Provjerite datoteku i pokušajte ponovno.')
-  const nodes = Array.from(document.querySelectorAll('item'))
-  if (!nodes.length) throw new Error('XML ne sadrži prepoznate stavke cjenika.')
-  const items = nodes.flatMap((node) => {
-    const name = textOf(node, 'name')
-    const price = normalizeNumber(textOf(node, 'price'))
-    if (!name || price == null) return []
-    const sale = textOf(node, 'salePrice')
-    const anchor = textOf(node, 'anchorPrice')
-    const applied = textOf(node, 'specialSaleApplied').toLocaleLowerCase('hr-HR')
-    return [{
-      externalId: textOf(node, 'externalId') || undefined,
-      category: textOf(node, 'category') || undefined,
-      name,
-      type: textOf(node, 'type') || undefined,
-      description: textOf(node, 'description') || undefined,
-      price,
-      salePrice: sale ? normalizeNumber(sale) : null,
-      anchorPrice: anchor ? normalizeNumber(anchor) : null,
-      unit: textOf(node, 'unit') || null,
-      unitPrice: normalizeNumber(textOf(node, 'unitPrice')),
-      brand: textOf(node, 'brand') || null,
-      barcode: normalizeBarcode(textOf(node, 'barcode')) || null,
-      availability: parseAvailability(textOf(node, 'availability')),
-      specialSaleApplied: applied === 'true' || applied === 'da' ? true : applied === 'false' || applied === 'ne' ? false : null,
-      specialSaleName: textOf(node, 'specialSaleName') || null,
-      isNewSinceReferenceDate: textOf(node, 'isNewSinceReferenceDate').toLocaleLowerCase('hr-HR') === 'true',
-    }]
-  })
-  if (!items.length) throw new Error('XML nema nijednu valjanu stavku s nazivom i cijenom.')
-  return { tenant, source: 'nepar', currency: 'EUR', updatedAt: new Date().toISOString(), items }
+  return parseXmlPriceList(xmlText, tenant)
 }
 
 type XmlTree = { name: string; text: string; children: XmlTree[] }
@@ -112,41 +85,55 @@ function findXmlNode(parent: XmlTree, name: string): XmlTree | undefined {
 
 const xmlTextOf = (parent: XmlTree, name: string) => findXmlNode(parent, name)?.text.trim() ?? ''
 
-/** Shared parser for browser and Pages Functions runtimes. It intentionally accepts the simple NEPAR XML shape only. */
+/** Shared parser for NEPAR and the published HOK-style service examples. Invalid rows fail the whole import. */
 export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug: 'nepar', name: 'NEPAR' }): NormalizedPriceList {
   const root = parseXmlTree(xmlText)
   const nodes: XmlTree[] = []
   const collectItems = (node: XmlTree) => {
-    if (localXmlName(node.name) === 'item') nodes.push(node)
+    if (['item', 'usluga'].includes(localXmlName(node.name))) { nodes.push(node); return }
     node.children.forEach(collectItems)
   }
   collectItems(root)
   if (!nodes.length) throw new Error('XML ne sadrži prepoznate stavke cjenika.')
-  const items = nodes.flatMap((node) => {
-    const name = xmlTextOf(node, 'name')
-    const price = normalizeNumber(xmlTextOf(node, 'price'))
-    if (!name || price == null) return []
+  const items = nodes.map((node, index) => {
+    const service = localXmlName(node.name) === 'usluga'
+    const field = (nepar: string, hok?: string) => xmlTextOf(node, nepar) || (hok ? xmlTextOf(node, hok) : '')
+    const name = field('name', 'naziv_usluge')
+    const price = normalizeNumber(field('price', 'maloprodajna_cijena'))
+    if (!name || price == null) throw new Error(`XML stavka ${index + 1}: ${!name ? 'nedostaje naziv' : 'cijena nije broj'}. Nijedna stavka nije uvezena.`)
     const sale = xmlTextOf(node, 'salePrice')
-    const anchor = xmlTextOf(node, 'anchorPrice')
-    const applied = xmlTextOf(node, 'specialSaleApplied').toLocaleLowerCase('hr-HR')
-    return [{
+    const anchor = field('anchorPrice', 'sidrena_cijena')
+    const applied = field('specialSaleApplied', 'posebni_oblik_prodaje').toLocaleLowerCase('hr-HR')
+    const dateRaw = field('anchorReferenceDate', 'datum_referentne_cijene')
+    const referenceDate = normalizeReferenceDate(dateRaw)
+    if (dateRaw && !referenceDate) throw new Error('XML stavka ' + (index + 1) + ': referentni datum nije valjan.')
+    const lowestRaw = field('lowest30DayPrice', 'najniza_cijena_30_dana')
+    const lowest = normalizeNumber(lowestRaw)
+    if (lowestRaw && lowest == null) throw new Error('XML stavka ' + (index + 1) + ': najniža cijena nije broj.')
+    for (const [label, value] of [['akcijska cijena', sale], ['sidrena cijena', anchor]] as const) {
+      if (value && normalizeNumber(value) == null) throw new Error(`XML stavka ${index + 1}: ${label} nije broj.`)
+    }
+    return {
       externalId: xmlTextOf(node, 'externalId') || undefined,
       category: xmlTextOf(node, 'category') || undefined,
       name,
-      type: xmlTextOf(node, 'type') || undefined,
+      type: xmlTextOf(node, 'type') || (service ? 'Usluga' : undefined),
       description: xmlTextOf(node, 'description') || undefined,
       price,
       salePrice: sale ? normalizeNumber(sale) : null,
       anchorPrice: anchor ? normalizeNumber(anchor) : null,
+      ...(referenceDate ? { anchorReferenceDate: referenceDate } : {}),
+      ...(lowest != null ? { lowest30DayPrice: lowest } : {}),
+      ...(xmlTextOf(node, 'unitPricingExemption') ? { unitPricingExemption: xmlTextOf(node, 'unitPricingExemption') } : {}),
       unit: xmlTextOf(node, 'unit') || null,
       unitPrice: normalizeNumber(xmlTextOf(node, 'unitPrice')),
       brand: xmlTextOf(node, 'brand') || null,
       barcode: normalizeBarcode(xmlTextOf(node, 'barcode')) || null,
       availability: parseAvailability(xmlTextOf(node, 'availability')),
       specialSaleApplied: applied === 'true' || applied === 'da' ? true : applied === 'false' || applied === 'ne' ? false : null,
-      specialSaleName: xmlTextOf(node, 'specialSaleName') || null,
+      specialSaleName: field('specialSaleName', 'naziv_posebnog_oblika') || null,
       isNewSinceReferenceDate: xmlTextOf(node, 'isNewSinceReferenceDate').toLocaleLowerCase('hr-HR') === 'true',
-    }]
+    }
   })
   if (!items.length) throw new Error('XML nema nijednu valjanu stavku s nazivom i cijenom.')
   return { tenant, source: 'nepar', currency: 'EUR', updatedAt: new Date().toISOString(), items }
@@ -157,7 +144,7 @@ export function parseXmlItemRecords(xmlText: string): Array<Record<string, strin
   const root = parseXmlTree(xmlText)
   const records: Array<Record<string, string>> = []
   const collect = (node: XmlTree) => {
-    if (localXmlName(node.name) === 'item') {
+    if (['item', 'usluga'].includes(localXmlName(node.name))) {
       records.push(Object.fromEntries(node.children.map((child) => [localXmlName(child.name), child.text.trim()])))
       return
     }

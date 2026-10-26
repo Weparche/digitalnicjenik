@@ -6,7 +6,7 @@ import type { NormalizedPriceList } from '../../src/price-engine/types'
 import { runTenantCheck, type MonitorEnv } from './run-check'
 import { claimManualRun, listMonitorTargets, readLatestRun, readState, selectRetryTargets } from './store'
 
-const HOST = 'acme.digitalnicjenik.nepar.hr'
+const HOST = 'cjenik.acme.hr'
 const STEM = 'trgovina_vukovarska-1_p-01_3_20261117-053000'
 const NOW = new Date('2026-11-17T05:30:00Z') // 06:30 Zagreb, Tuesday
 const monitorEnv = (): MonitorEnv => ({ DB: env.DB as unknown as MonitorEnv['DB'], DEMO_WRITE_TENANT: 'nepar' })
@@ -16,7 +16,7 @@ const payload = (count = 3): NormalizedPriceList => ({
   source: 'nepar',
   currency: 'EUR',
   updatedAt: '2026-11-17T05:00:00Z',
-  items: Array.from({ length: count }, (_, index) => ({ name: `Artikl ${index + 1}`, externalId: `S${index + 1}`, unit: 'kom', price: 1 + index, anchorPrice: 1 + index })),
+  items: Array.from({ length: count }, (_, index) => ({ name: `Usluga ${index + 1}`, type: 'Usluga', specialSaleApplied: false, externalId: `S${index + 1}`, unit: 'kom', price: 1 + index, anchorPrice: 1 + index })),
 })
 
 async function seed(options: { list?: NormalizedPriceList; profile?: 'products' | 'services'; entitlementEnd?: string; archive?: Array<{ stem: string; publishedAt: string; publicUntil: string | null }>; publishedAt?: string } = {}) {
@@ -27,7 +27,7 @@ async function seed(options: { list?: NormalizedPriceList; profile?: 'products' 
     env.DB.prepare("INSERT INTO publication_metadata (tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at, compliance_profile) VALUES ('t-acme', 'Trgovina', 'Vukovarska 1', 'P-01', 4, 'Europe/Zagreb', ?, ?, ?)").bind(iso, iso, options.profile ?? 'products'),
     env.DB.prepare("INSERT INTO publication_targets (id, tenant_id, hostname, status, created_at, updated_at) VALUES ('tg1', 't-acme', ?, 'active', ?, ?)").bind(HOST, iso, iso),
     env.DB.prepare("INSERT INTO price_list_versions (id, tenant_id, hash, payload_json, created_at) VALUES ('v1', 't-acme', 'h', ?, ?)").bind(JSON.stringify(list), iso),
-    env.DB.prepare("INSERT INTO price_publications (id, tenant_id, price_list_id, sequence, filename_stem, published_at, hash, payload_json, is_current) VALUES ('p3', 't-acme', 'v1', 3, ?, ?, 'h', ?, 1)").bind(STEM, options.publishedAt ?? '2026-11-17T04:30:00Z', JSON.stringify(list)),
+    env.DB.prepare("INSERT INTO price_publications (id, tenant_id, price_list_id, sequence, filename_stem, published_at, hash, payload_json, is_current) VALUES ('p3', 't-acme', 'v1', ?, ?, ?, 'h', ?, 1)").bind(Math.max(3, (options.archive?.length ?? 0) + 1), STEM, options.publishedAt ?? '2026-11-17T04:30:00Z', JSON.stringify(list)),
     env.DB.prepare("INSERT INTO entitlements (id, tenant_id, plan, status, period_start, period_end, created_at, updated_at) VALUES ('e1', 't-acme', 'publisher_self_service', 'active', ?, ?, ?, ?)").bind(iso, options.entitlementEnd ?? '2027-11-17T00:00:00Z', iso, iso),
     ...(options.archive ?? []).map((row, index) => env.DB.prepare("INSERT INTO price_publications (id, tenant_id, price_list_id, sequence, filename_stem, published_at, superseded_at, public_until, hash, payload_json, is_current) VALUES (?, 't-acme', 'v1', ?, ?, ?, ?, ?, 'h', ?, 0)").bind(`pa${index}`, index + 1, row.stem, row.publishedAt, row.publishedAt, row.publicUntil, JSON.stringify(list))),
   ]
@@ -80,13 +80,26 @@ describe('runTenantCheck', () => {
     expect(result.alert).toBeNull()
     expect((await readLatestRun(monitorEnv().DB, 't-acme'))?.id).toBe(result.run.id)
   })
+  it('monitors platform trial feeds at /c/slug rather than an unprovisioned subdomain', async () => {
+    await seed({ profile: 'services' })
+    await env.DB.prepare("UPDATE publication_targets SET hostname = 'acme.digitalnicjenik.nepar.hr' WHERE tenant_id = 't-acme'").run()
+    const requested: string[] = []
+    const fetcher: typeof fetch = async (input, init) => {
+      requested.push(String(input))
+      return fakeFetch()(String(input).replace('https://digitalnicjenik.nepar.hr/c/acme', `https://${HOST}`), init)
+    }
+    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: NOW, fetcher })
+    expect(result.status === 'checked' && result.run.overall).toBe('ok')
+    expect(requested).toContain('https://digitalnicjenik.nepar.hr/c/acme/cjenik.csv')
+    expect(requested.some(url => url.includes('acme.digitalnicjenik'))).toBe(false)
+  })
 
   it('a complete product list passes with every product field carried by CSV and XML', async () => {
     const products: NormalizedPriceList = {
       ...payload(),
       items: [
-        { externalId: 'M-001', name: 'Mlijeko 1 l', type: 'Proizvod', brand: 'Dukat', barcode: '4006381333931', unit: 'l', unitPrice: 1.2, price: 1.2, anchorPrice: 1.1, specialSaleApplied: false, availability: 'dostupno' },
-        { externalId: 'M-002', name: 'Kruh', type: 'Proizvod', brand: 'bez marke', barcode: '96385074', price: 0.99, anchorPrice: 0.95, specialSaleApplied: false, availability: 'nedostupno' },
+        { externalId: 'M-001', name: 'Mlijeko 1 l', type: 'Proizvod', anchorReferenceDate: '2025-05-02', brand: 'Dukat', barcode: '4006381333931', unit: 'l', unitPrice: 1.2, price: 1.2, anchorPrice: 1.1, specialSaleApplied: false, availability: 'dostupno' },
+        { externalId: 'M-002', name: 'Kruh', type: 'Proizvod', anchorReferenceDate: '2025-05-02', brand: 'bez marke', barcode: '96385074', unit: 'kg', unitPrice: 1.98, price: 0.99, anchorPrice: 0.95, specialSaleApplied: false, availability: 'nedostupno' },
       ],
     }
     await seed({ list: products, profile: 'products', publishedAt: '2026-11-17T04:30:00Z' })
@@ -101,15 +114,15 @@ describe('runTenantCheck', () => {
     const products: NormalizedPriceList = {
       ...payload(),
       items: [
-        { externalId: 'M-001', name: 'Mlijeko 1 l', type: 'Proizvod', brand: 'Dukat', barcode: '4006381333931', price: 1.2, anchorPrice: 1.1, specialSaleApplied: false, availability: 'dostupno' },
-        { externalId: 'M-002', name: 'Kruh', type: 'Proizvod', price: 0.99, anchorPrice: 0.95, specialSaleApplied: false },
-        { name: 'Sol', type: 'Proizvod', price: 0.5, specialSaleApplied: false },
+        { externalId: 'M-001', name: 'Mlijeko 1 l', type: 'Proizvod', anchorReferenceDate: '2025-05-02', brand: 'Dukat', barcode: '4006381333931', price: 1.2, anchorPrice: 1.1, specialSaleApplied: false, availability: 'dostupno' },
+        { externalId: 'M-002', name: 'Kruh', type: 'Proizvod', anchorReferenceDate: '2025-05-02', price: 0.99, anchorPrice: 0.95, specialSaleApplied: false },
+        { name: 'Sol', type: 'Proizvod', anchorReferenceDate: '2025-05-02', price: 0.5, specialSaleApplied: false },
       ],
     }
     await seed({ list: products, profile: 'products', publishedAt: '2026-11-17T04:30:00Z' })
     const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: NOW, fetcher: fakeFetch({}, products) })
     if (result.status !== 'checked') throw new Error('expected checked')
-    expect(result.run.overall).toBe('warn')
+    expect(result.run.overall).toBe('fail')
     const byField = Object.fromEntries(result.run.issues.filter((issue) => issue.code === 'MISSING_REQUIRED_FIELD').map((issue) => [issue.field, issue.rows]))
     expect(byField).toEqual({ externalId: 1, anchorPrice: 1, brand: 2, barcode: 2, availability: 2 })
   })
@@ -167,13 +180,14 @@ describe('runTenantCheck', () => {
     expect(await runTenantCheck(monitorEnv(), { slug: 'missing', trigger: 'cron', now: NOW })).toEqual({ status: 'skipped', reason: 'unknown_tenant' })
   })
 
-  it('products profile warns (not fails) on a stale publication and on missing product fields', async () => {
-    await seed({ profile: 'products', publishedAt: '2026-11-10T04:30:00Z' })
-    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: NOW, fetcher: fakeFetch() })
+  it('fails when a stale product publication is also missing required fields', async () => {
+    const goods = { ...payload(), items: payload().items.map(item => ({ ...item, type: 'Proizvod' })) }
+    await seed({ list: goods, profile: 'products', publishedAt: '2026-11-10T04:30:00Z' })
+    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: NOW, fetcher: fakeFetch({}, goods) })
     if (result.status !== 'checked') throw new Error('expected checked')
     expect(result.run.freshnessStatus).toBe('warn')
-    expect(result.run.overall).toBe('warn')
-    expect(result.alert).toBeNull()
+    expect(result.run.overall).toBe('fail')
+    expect(result.alert).toBe('fail')
     expect(result.run.issues.some((issue) => issue.code === 'MISSING_REQUIRED_FIELD' && issue.field === 'barcode' && issue.severity === 'warn')).toBe(true)
   })
 
@@ -226,6 +240,34 @@ describe('runTenantCheck', () => {
     expect(await selectRetryTargets(db, targets, since)).toHaveLength(0) // healthy
     await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: new Date(NOW.getTime() + 1000), fetcher: fakeFetch({ [`https://${HOST}/cjenik.xml`]: new Response('x', { status: 500 }) }) })
     expect(await selectRetryTargets(db, targets, since)).toHaveLength(1) // failing
+  })
+
+  it('detects a changed anchor even when names, prices and row counts match', async () => {
+    await seed({ profile: 'services' })
+    const changed = payload()
+    changed.items[0].anchorPrice = 9999
+    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'manual', now: NOW, fetcher: fakeFetch({}, changed) })
+    if (result.status !== 'checked') throw new Error('expected checked')
+    expect(result.run.overall).toBe('fail')
+    expect(result.run.issues.filter(issue => issue.code === 'FEED_CONTENT_MISMATCH').map(issue => issue.field).sort()).toEqual(['csv', 'xml'])
+  })
+
+  it('checks the middle archived version and XML as well as CSV', async () => {
+    await seed({ profile: 'services', archive: [1, 2, 3].map(index => ({ stem: `archive-${index}`, publishedAt: `2026-11-${10 + index}T05:00:00Z`, publicUntil: '2026-12-15T05:00:00Z' })) })
+    const fetcher = fakeFetch({ [`https://${HOST}/archive-2.xml`]: new Response('gone', { status: 404 }) })
+    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'manual', now: NOW, fetcher })
+    if (result.status !== 'checked') throw new Error('expected checked')
+    expect(result.run.overall).toBe('fail')
+    expect(result.run.issues.find(issue => issue.code === 'ARCHIVE_UNREACHABLE')?.message).toContain('archive-2')
+  })
+
+  it('includes an old publication superseded today in the retained archive window', async () => {
+    await seed({ profile: 'services', archive: [{ stem: 'old-required', publishedAt: '2026-01-01T05:00:00Z', publicUntil: '2026-12-15T05:00:00Z' }] })
+    await env.DB.prepare("UPDATE price_publications SET superseded_at = ? WHERE filename_stem = 'old-required'").bind(NOW.toISOString()).run()
+    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'manual', now: NOW, fetcher: fakeFetch({ [`https://${HOST}/old-required.csv`]: new Response('gone', { status: 404 }) }) })
+    if (result.status !== 'checked') throw new Error('expected checked')
+    expect(result.run.archiveExpected).toBe(1)
+    expect(result.run.overall).toBe('fail')
   })
 
   it('manual runs are rate limited atomically', async () => {

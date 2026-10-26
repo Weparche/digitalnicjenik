@@ -117,7 +117,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Što točno nadzor provjerava?',
         answer:
-          'Svaki dan rano ujutro, uz ponovnu provjeru prije 8:00, provjeravamo jesu li CSV i XML dostupni, imaju li jednak broj stavki kao objavljeni cjenik i podudaraju li se nazivom i cijenom, odgovara li naziv datoteke objavi i propisanom obliku, jesu li obvezna polja popunjena (za proizvode i marka, barkod i dostupnost) te je li arhiva za zadnjih 30 dana dostupna. Pravila su verzionirana, pa se prilagode novom pravilniku.',
+          'Svaki dan provjeravamo dostupnost, broj zapisa i sva polja koja CSV/XML prenosi iz objavljene verzije. Provjeravamo i naziv datoteke, obvezne podatke te obje datoteke svake verzije unutar roka arhiviranja od zamjene. Uz jutarnju provjeru i ponovni pokušaj postoji provjera nakon roka; za aktualnost koristimo kalendar objekta. Pravila se ažuriraju nakon provjere konačnog teksta novog propisa.',
       },
       {
         question: 'Kako i kada dobivam upozorenje?',
@@ -137,7 +137,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Što se događa nakon probnog roka ako ne aktiviram Publisher?',
         answer:
-          'Javni URL cjenika se gasi (vraća HTTP 410), a vaši podaci ostaju spremljeni. Nakon aktivacije isti URL ponovno radi.',
+          'Aktualni javni URL se gasi (HTTP 410). Ranije zamijenjene verzije ostaju u javnoj arhivi do isteka svojeg roka dostupnosti, osim u slučaju suspenzije. Podaci za obnovu ostaju spremljeni; nakon aktivacije isti aktualni URL ponovno radi.',
       },
       {
         question: 'Kako se plaća?',

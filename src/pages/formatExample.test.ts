@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import csvExample from '../../public/examples/nepar-format-primjer-usluge.csv?raw'
 import xmlExample from '../../public/examples/nepar-format-primjer-usluge.xml?raw'
-import { renderCsv } from '../price-engine/csv'
+import { CSV_HISTORY_HEADER, renderCsv } from '../price-engine/csv'
 import { renderXml } from '../price-engine/xml'
 import { allFaqEntries } from './faqData'
 import { COMPARE_COLUMNS, COMPARE_ROWS } from './ComparePage'
@@ -27,9 +27,9 @@ describe('downloadable format examples', () => {
 
   it('documented CSV columns are exactly the columns the renderer writes', () => {
     const header = renderCsv(NEPAR_FORMAT_EXAMPLE).replace(/^\uFEFF/, '').split('\r\n')[0]!.split(',')
-    expect(CSV_COLUMNS.map((column) => column.column)).toEqual(header)
+    expect([...CSV_COLUMNS.map((column) => column.column), ...CSV_HISTORY_HEADER]).toEqual(header)
     const productHeader = renderCsv(NEPAR_PRODUCT_FORMAT_EXAMPLE).replace(/^\uFEFF/, '').split('\r\n')[0]!.split(',')
-    expect([...CSV_COLUMNS, ...PRODUCT_CSV_COLUMNS].map((column) => column.column)).toEqual(productHeader)
+    expect([...[...CSV_COLUMNS, ...PRODUCT_CSV_COLUMNS].map((column) => column.column), ...CSV_HISTORY_HEADER]).toEqual(productHeader)
   })
 })
 

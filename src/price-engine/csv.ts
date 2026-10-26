@@ -10,18 +10,21 @@ const escapeCsv = (value: unknown, protectFormula = true) => {
 
 export const CSV_BASE_HEADER = ['Grupa', 'Naziv', 'Vrsta', 'Interna šifra', 'Cijena', 'Akcijska cijena', 'Poseban oblik prodaje', 'Naziv posebnog oblika prodaje', 'Sidrena cijena', 'Jedinica']
 export const CSV_PRODUCT_HEADER = ['Marka', 'Barkod', 'Cijena za jedinicu mjere', 'Dostupnost']
+export const CSV_HISTORY_HEADER = ['Datum referentne cijene', 'Najniža cijena u 30 dana', 'Nova stavka', 'Razlog izuzeća cijene po jedinici']
 
 export function renderCsv(priceList: NormalizedPriceList): string {
   const products = usesProductStructure(priceList)
-  const header = products ? [...CSV_BASE_HEADER, ...CSV_PRODUCT_HEADER] : CSV_BASE_HEADER
+  const history = priceList.items.some(item => item.anchorReferenceDate || item.lowest30DayPrice != null || item.isNewSinceReferenceDate || item.unitPricingExemption)
+  const header = [...CSV_BASE_HEADER, ...(products ? CSV_PRODUCT_HEADER : []), ...(history ? CSV_HISTORY_HEADER : [])]
   const rows = priceList.items.map((item) => {
     const base = [
       item.category ?? '', item.name, item.type ?? '', item.externalId ?? '',
       item.price.toFixed(2), item.salePrice == null ? '' : item.salePrice.toFixed(2), item.specialSaleApplied === true ? 'DA' : item.specialSaleApplied === false ? 'NE' : '', item.specialSaleName ?? '', item.anchorPrice == null ? '' : item.anchorPrice.toFixed(2), item.unit ?? '',
     ]
-    return products
+    const row = products
       ? [...base, item.brand ?? '', item.barcode ?? '', item.unitPrice == null ? '' : item.unitPrice.toFixed(2), item.availability ?? '']
       : base
+    return history ? [...row, item.anchorReferenceDate ?? '', item.lowest30DayPrice == null ? '' : item.lowest30DayPrice.toFixed(2), item.isNewSinceReferenceDate ? 'DA' : '', item.unitPricingExemption ?? ''] : row
   })
   // Price columns are not formula-protected (they are numbers); the barcode is text but digits only, so no guard needed either.
   const numeric = new Set([4, 5, 8, 12])

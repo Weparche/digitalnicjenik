@@ -46,7 +46,7 @@ export function buildMonitorView(run: MonitorRunRecord, ruleLabel: string, profi
       : `KRITIČNO — ${run.issues.find((issue) => issue.severity === 'fail')?.message ?? 'cjenik nije ispravno objavljen'}`
 
   const delta = run.prevRows !== null && run.expectedRows !== null ? run.expectedRows - run.prevRows : null
-  const missing = run.issues.filter((issue) => issue.code === 'MISSING_REQUIRED_FIELD' || issue.code === 'INVALID_SPECIAL_SALE')
+  const missing = run.issues.filter((issue) => issue.code === 'MISSING_REQUIRED_FIELD' || issue.code === 'INVALID_SPECIAL_SALE' || issue.code === 'PUBLISHED_VALIDATION_ISSUE')
   const archiveTone: Tone = run.archiveExpected === null || run.archiveAvailable === null
     ? 'warn'
     : run.archiveAvailable < run.archiveExpected || (run.archiveLatestStatus !== null && run.archiveLatestStatus !== 200) || (run.archiveOldestStatus !== null && run.archiveOldestStatus !== 200)

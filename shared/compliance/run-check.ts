@@ -2,6 +2,8 @@ import type { D1DatabaseLike } from '../db'
 import { entitlementIsLive } from '../entitlements'
 import { deterministicHash } from '../../src/price-engine/hash'
 import { usesProductStructure } from '../../src/price-engine/profile'
+import { validatePriceList } from '../../src/price-engine/validate'
+import { parsePublicationCalendar } from '../publication-details'
 import type { Entitlement, NormalizedPriceList } from '../../src/price-engine/types'
 import { advanceMonitorState } from './alert-state'
 import {
@@ -16,6 +18,7 @@ export type MonitorEnv = {
   DB: D1DatabaseLike
   DEMO_WRITE_TENANT?: string
   DEFAULT_PUBLICATION_TIMEZONE?: string
+  PUBLIC_APP_URL?: string
 }
 
 export type RunTenantCheckOptions = {
@@ -34,7 +37,7 @@ const FETCH_TIMEOUT_MS = 15_000
 
 type PublicationRow = {
   id: string; sequence: number; filename_stem: string; published_at: string; payload_json: string
-  compliance_profile: string | null; timezone: string | null; hostname: string | null
+  compliance_profile: string | null; timezone: string | null; hostname: string | null; working_days_json: string; closed_dates_json: string
 }
 
 type FeedProbe = {
@@ -116,22 +119,26 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
   }
 
   const publication = await db.prepare(
-    `SELECT p.id, p.sequence, p.filename_stem, p.published_at, p.payload_json, m.compliance_profile, m.timezone,
+    `SELECT p.id, p.sequence, p.filename_stem, p.published_at, p.payload_json, m.compliance_profile, m.timezone, m.working_days_json, m.closed_dates_json,
        (SELECT hostname FROM publication_targets WHERE tenant_id = p.tenant_id AND status = 'active' ORDER BY created_at LIMIT 1) AS hostname
      FROM price_publications p LEFT JOIN publication_metadata m ON m.tenant_id = p.tenant_id
      WHERE p.tenant_id = ? AND p.is_current = 1 LIMIT 1`,
   ).bind(tenant.id).first<PublicationRow>()
   if (!publication || !publication.hostname) return { status: 'skipped', reason: 'no_publication' }
 
-  const profileKey: ComplianceProfile = isComplianceProfile(publication.compliance_profile) ? publication.compliance_profile : 'products'
+  const payload = JSON.parse(publication.payload_json) as NormalizedPriceList
+  const profileKey: ComplianceProfile = usesProductStructure(payload) ? 'products' : 'services'
   const profile = ruleset.profiles[profileKey]
   const timeZone = publication.timezone || env.DEFAULT_PUBLICATION_TIMEZONE || 'Europe/Zagreb'
-  const payload = JSON.parse(publication.payload_json) as NormalizedPriceList
   const expectedRows = payload.items.length
   const payloadSha256 = await deterministicHash(payload)
   const previousRun = await readLatestRun(db, tenant.id)
   const issues: MonitorIssue[] = []
-  const base = `https://${publication.hostname}`
+  // Trial targets use a virtual hostname, while the actual public URL is /c/{slug}.
+  // A separately configured custom hostname continues to use its root feeds.
+  const base = publication.hostname === `${tenant.slug}.digitalnicjenik.nepar.hr`
+    ? `${new URL(env.PUBLIC_APP_URL || 'https://digitalnicjenik.nepar.hr').origin}/c/${encodeURIComponent(tenant.slug)}`
+    : `https://${publication.hostname}`
 
   const [csv, xml] = await Promise.all([
     probe(fetcher, `${base}/cjenik.csv`, 'csv', publication.filename_stem, ruleset),
@@ -146,7 +153,7 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
       } else {
         const fidelity = compareFeedToPayload(payload.items, feed.parsed)
         if (fidelity.missing > 0 || fidelity.unexpected > 0) {
-          issues.push({ code: 'FEED_CONTENT_MISMATCH', severity: 'fail', field: format, rows: fidelity.missing + fidelity.unexpected, message: `${format.toUpperCase()} se sadržajem (naziv/cijena) ne podudara s objavljenim cjenikom.` })
+          issues.push({ code: 'FEED_CONTENT_MISMATCH', severity: 'fail', field: format, rows: fidelity.missing + fidelity.unexpected, message: `${format.toUpperCase()} se ne podudara s objavljenim cjenikom u svim podržanim poljima.` })
         }
       }
     }
@@ -162,17 +169,21 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
   }
 
   issues.push(...evaluateRequiredFields(payload.items, profile))
+  for (const issue of validatePriceList(payload).issues) {
+    issues.push({ code: 'PUBLISHED_VALIDATION_ISSUE', severity: issue.severity === 'warning' ? 'warn' : 'fail', field: issue.field, rows: 1, message: `Stavka ${issue.row - 1}: ${issue.message}` })
+  }
 
-  const freshness = evaluateFreshness(profile, publication.published_at, now, timeZone)
+  const calendar = parsePublicationCalendar({ workingDays: JSON.parse(publication.working_days_json || '[1,2,3,4,5]'), closedDates: JSON.parse(publication.closed_dates_json || '[]') })
+  const freshness = evaluateFreshness(profile, publication.published_at, now, timeZone, calendar)
   if (freshness === 'warn') {
-    issues.push({ code: 'STALE_PUBLICATION', severity: 'warn', message: 'Nema objave za posljednji radni dan. Ako se cijene nisu mijenjale, objava je i dalje važeća.' })
+    issues.push({ code: 'STALE_PUBLICATION', severity: 'warn', message: 'Nema objave za posljednji očekivani radni dan prema profilu odluke. Provjerite kalendar objekta i obvezu ažuriranja; nepromijenjena cijena sama ne potvrđuje izuzeće.' })
   }
 
   const archiveRows = await db.prepare(
-    'SELECT filename_stem, published_at, public_until FROM price_publications WHERE tenant_id = ? AND is_current = 0 AND published_at >= ? ORDER BY published_at DESC',
+    'SELECT filename_stem, published_at, superseded_at, public_until FROM price_publications WHERE tenant_id = ? AND is_current = 0 AND COALESCE(superseded_at, published_at) >= ? ORDER BY published_at DESC',
   ).bind(tenant.id, new Date(now.getTime() - ruleset.archiveDays * 86_400_000).toISOString())
-    .all<{ filename_stem: string; published_at: string; public_until: string | null }>()
-  const archive = evaluateArchiveIntegrity(archiveRows.results.map((row) => ({ publishedAt: row.published_at, publicUntil: row.public_until })), now, ruleset.archiveDays)
+    .all<{ filename_stem: string; published_at: string; superseded_at: string | null; public_until: string | null }>()
+  const archive = evaluateArchiveIntegrity(archiveRows.results.map((row) => ({ publishedAt: row.published_at, supersededAt: row.superseded_at, publicUntil: row.public_until })), now, ruleset.archiveDays)
   if (archive.available < archive.expected) {
     issues.push({ code: 'ARCHIVE_INCOMPLETE', severity: 'fail', rows: archive.expected - archive.available, message: `Arhiva: dostupno ${archive.available} od ${archive.expected} objava u posljednjih ${ruleset.archiveDays} dana.` })
   }
@@ -182,10 +193,16 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
   if (live.length > 0) {
     const latest = live[0]!
     const oldest = live[live.length - 1]!
-    archiveLatestStatus = await statusOf(fetcher, `${base}/${latest.filename_stem}.csv`)
-    archiveOldestStatus = oldest === latest ? archiveLatestStatus : await statusOf(fetcher, `${base}/${oldest.filename_stem}.csv`)
-    if (archiveLatestStatus !== 200 || archiveOldestStatus !== 200) {
-      issues.push({ code: 'ARCHIVE_UNREACHABLE', severity: 'fail', message: `Arhivirani cjenik nije dostupan (najnoviji: HTTP ${archiveLatestStatus ?? 'greška'}, najstariji: HTTP ${archiveOldestStatus ?? 'greška'}).` })
+    for (const row of live) {
+      const [csvStatus, xmlStatus] = await Promise.all(['csv', 'xml'].map(format => statusOf(fetcher, `${base}/${row.filename_stem}.${format}`)))
+      if (row === latest) archiveLatestStatus = csvStatus
+      if (row === oldest) archiveOldestStatus = csvStatus
+      if (csvStatus !== 200 || xmlStatus !== 200) {
+        const declaredUntil = new Date(row.public_until!).getTime()
+        const requiredUntil = new Date(row.superseded_at ?? row.published_at).getTime() + ruleset.archiveDays * 86_400_000
+        if (declaredUntil >= requiredUntil) archive.available = Math.max(0, archive.available - 1)
+        issues.push({ code: 'ARCHIVE_UNREACHABLE', severity: 'fail', message: `Arhiva ${row.filename_stem}: CSV HTTP ${csvStatus ?? 'greška'}, XML HTTP ${xmlStatus ?? 'greška'}.` })
+      }
     }
   }
   const archivePage = await statusOf(fetcher, `${base}/arhiva`)

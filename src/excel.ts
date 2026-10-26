@@ -1,4 +1,4 @@
-import { normalizeBarcode, normalizeNumber, parseAvailability } from './price-engine/normalize'
+import { normalizeBarcode, normalizeNumber, normalizeReferenceDate, parseAvailability } from './price-engine/normalize'
 import { importIssuesFromParseWarnings } from './price-engine/validate'
 import type { NormalizedPriceList, ParseWarning, ValidationIssue } from './price-engine/types'
 
@@ -22,6 +22,9 @@ export type ExcelField =
   | 'barcode'
   | 'availability'
   | 'isNewSinceReferenceDate'
+  | 'anchorReferenceDate'
+  | 'lowest30DayPrice'
+  | 'unitPricingExemption'
 
 export type ExcelMapping = Partial<Record<ExcelField, string>>
 export type ExcelSheet = { name: string; rows: unknown[][] }
@@ -57,7 +60,10 @@ const aliases: Record<ExcelField, string[]> = {
   brand: ['marka', 'brend', 'brand', 'brands'],
   barcode: ['barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn'],
   availability: ['dostupnost', 'dostupno', 'dostupno/nedostupno', 'availability', 'in stock?'],
-  isNewSinceReferenceDate: ['nova usluga', 'novouvedena usluga', 'new service'],
+  isNewSinceReferenceDate: ['nova stavka', 'nova usluga', 'novouvedena usluga', 'new service'],
+  anchorReferenceDate: ['datum referentne cijene', 'anchor reference date'],
+  lowest30DayPrice: ['najniža cijena u 30 dana', 'najniza cijena u 30 dana', 'lowest 30 day price'],
+  unitPricingExemption: ['razlog izuzeća cijene po jedinici', 'unit pricing exemption'],
 }
 
 const clean = (value: unknown) => String(value ?? '').replace(/^\uFEFF/, '').trim()
@@ -165,6 +171,12 @@ export function excelRowsToPriceList(
     const isGoodsKind = /^(simple|variable|variation|grouped|external)$/i.test(rawType)
     const salePrice = normalizeNumber(value('salePrice'))
     const specialSaleApplied = booleanValue(value('specialSaleApplied'))
+    const dateRaw = clean(value('anchorReferenceDate'))
+    const referenceDate = normalizeReferenceDate(dateRaw)
+    if (dateRaw && !referenceDate) warnings.push({ row: absoluteRow, field: 'anchorPrice', message: 'referentni datum nije valjan (koristite GGGG-MM-DD ili DD.MM.GGGG.).' })
+    for (const field of ['salePrice', 'anchorPrice', 'unitPrice', 'lowest30DayPrice'] as const) {
+      if (clean(value(field)) && normalizeNumber(value(field)) == null) warnings.push({ row: absoluteRow, field: field === 'salePrice' || field === 'lowest30DayPrice' ? 'price' : field, message: 'vrijednost nije valjan broj.' })
+    }
     return [{
       name,
       price,
@@ -173,7 +185,7 @@ export function excelRowsToPriceList(
       externalId: clean(value('externalId')) || undefined,
       anchorPrice: normalizeNumber(value('anchorPrice')),
       salePrice,
-      specialSaleApplied: indexes.specialSaleApplied == null ? (salePrice == null ? false : null) : specialSaleApplied,
+      specialSaleApplied: specialSaleApplied,
       specialSaleName: clean(value('specialSaleName')) || null,
       unit: clean(value('unit')) || null,
       ...(indexes.unitPrice == null ? {} : { unitPrice: normalizeNumber(value('unitPrice')) }),
@@ -181,6 +193,9 @@ export function excelRowsToPriceList(
       ...(indexes.barcode == null ? {} : { barcode: normalizeBarcode(value('barcode')) || null }),
       ...(indexes.availability == null ? {} : { availability: parseAvailability(value('availability')) }),
       isNewSinceReferenceDate: booleanValue(value('isNewSinceReferenceDate')) === true,
+      ...(referenceDate ? { anchorReferenceDate: referenceDate } : {}),
+      ...(indexes.lowest30DayPrice == null ? {} : { lowest30DayPrice: normalizeNumber(value('lowest30DayPrice')) }),
+      ...(indexes.unitPricingExemption == null ? {} : { unitPricingExemption: clean(value('unitPricingExemption')) || null }),
     }]
   })
   if (!items.length) throw new Error('Nakon mapiranja nije pronađena nijedna stavka s nazivom i cijenom.')

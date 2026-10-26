@@ -14,9 +14,11 @@
     }
   ],
   "send_email": [{ "name": "EMAIL" }],
+  "r2_buckets": [{ "binding": "DRAFTS", "bucket_name": "digitalnicjenik-drafts" }],
   // Cron runs in UTC. 04:30 → 05:30 CET / 06:30 CEST first pass; 05:30 → 06:30 CET / 07:30 CEST retry
   // (only warn/fail/unchecked tenants). Both land before the 08:00 deadline all year.
-  "triggers": { "crons": ["30 4 * * *", "30 5 * * *"] },
+  // 07:05 UTC also checks all tenants after the 08:00 local deadline in winter and summer.
+  "triggers": { "crons": ["30 4 * * *", "30 5 * * *", "5 7 * * *"] },
   "vars": {
     "DEMO_WRITE_TENANT": "nepar",
     "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",

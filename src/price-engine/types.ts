@@ -16,10 +16,14 @@ export type NormalizedPriceItem = {
   description?: string
   price: number
   anchorPrice?: number | null
+  anchorReferenceDate?: string | null
+  lowest30DayPrice?: number | null
   salePrice?: number | null
   unit?: string | null
   /** Cijena za jedinicu mjere (Odluka NN 101/2026-1213, čl. III), gdje je primjenjivo. */
   unitPrice?: number | null
+  /** Explicit owner assessment when unit pricing is not applicable. */
+  unitPricingExemption?: string | null
   /** Marka proizvoda (obavezno za cjenik proizvoda). */
   brand?: string | null
   /** Barkod robe (EAN/GTIN) kao tekst, da se ne izgube početne nule. */
@@ -64,6 +68,8 @@ export type PublicationMetadata = {
   objectCode: string
   nextPublicationSequence: number
   timezone: string
+  workingDays?: number[]
+  closedDates?: string[]
 }
 
 export type PricePublication = {

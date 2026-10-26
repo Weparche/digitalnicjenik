@@ -84,7 +84,12 @@ describe('D1 publication atomicity', () => {
     const otherList = { ...validList(), tenant: { id: 'other-tenant', slug: 'other-tenant', name: 'Other tenant' } }
     const other = await createDraft(env, 'other-tenant', otherList, 'other.csv', 'test')
     if (!other.draft) throw new Error('Drugi testni draft nije kreiran.')
-    const otherPublication = await publishDraft(env, 'other-tenant', other.draft.id, true)
+    const stamp = new Date().toISOString()
+    await env.DB.batch([
+      env.DB.prepare("UPDATE publication_metadata SET object_type = 'usluzni-objekt', object_address = 'Ilica 10, Zagreb', object_code = 'P1' WHERE tenant_id = 'other-tenant'"),
+      env.DB.prepare("INSERT INTO entitlements (id,tenant_id,plan,status,period_start,period_end,created_at,updated_at) VALUES ('e-other','other-tenant','publisher_self_service','active',?,'2099-01-01T00:00:00Z',?,?)").bind(stamp, stamp, stamp),
+    ])
+    const otherPublication = await publishDraft(env, 'other-tenant', other.draft.id)
 
     await expect(env.DB.prepare('UPDATE publication_targets SET current_publication_id = ? WHERE tenant_id = ?').bind(otherPublication.publication.id, 'nepar').run()).rejects.toThrow('publication target tenant mismatch')
     expect((await readPublicationForHost(env, 'digitalnicjenik.nepar.hr'))?.id).toBe(firstPublication.publication.id)

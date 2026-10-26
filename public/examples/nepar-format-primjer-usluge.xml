@@ -32,6 +32,7 @@
       <specialSaleApplied>true</specialSaleApplied>
       <specialSaleName>Jesenska akcija</specialSaleName>
       <anchorPrice currency="EUR">45.00</anchorPrice>
+      <lowest30DayPrice>45.00</lowest30DayPrice>
     </item>
   </items>
 </priceList>

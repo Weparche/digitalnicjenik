@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 const productCsv = [
-  'Grupa,Naziv,Vrsta,Interna šifra,Cijena,Sidrena cijena,Marka,Barkod,Jedinica,Cijena za jedinicu mjere,Dostupnost',
-  'Mliječni,Mlijeko 1 l,Proizvod,M-001,1.20,1.10,Dukat,4006381333931,l,1.20,dostupno',
-  'Pekarski,Kruh,Proizvod,,0.99,0.95,,,,,',
+  'Grupa,Naziv,Vrsta,Interna šifra,Cijena,Sidrena cijena,Marka,Barkod,Jedinica,Cijena za jedinicu mjere,Dostupnost,Poseban oblik prodaje,Datum referentne cijene',
+  'Mliječni,Mlijeko 1 l,Proizvod,M-001,1.20,1.10,Dukat,4006381333931,l,1.20,dostupno,NE,2025-05-02',
+  'Pekarski,Kruh,Proizvod,,0.99,0.95,,,,,,NE,2025-05-02',
 ].join('\n')
 
 test('product list: Odluka fields are grouped, editable, and clear the blocker count', async ({ page }) => {
@@ -18,7 +18,7 @@ test('product list: Odluka fields are grouped, editable, and clear the blocker c
   await expect(panel.getByText(/1 stavka nema oznaku dostupnosti/)).toBeVisible()
   await expect(panel.getByText(/1 stavka nema valjan barkod/)).toBeVisible()
   const counter = panel.locator('.validation-app-count')
-  await expect(counter).toContainText('3')
+  await expect(counter).toContainText('6')
   await expect(counter).toContainText('za dopunu')
 
   // The complete row keeps its parsed values in editable product columns.
@@ -30,7 +30,9 @@ test('product list: Odluka fields are grouped, editable, and clear the blocker c
   await panel.getByLabel('Šifra za Kruh').fill('M-002')
   await panel.getByLabel('Marka za Kruh').fill('bez marke')
 
-  // Barcode stays as a warning (Odluka: gdje je primjenjiv), so it does not block: only review items were counted.
+  await panel.getByLabel('Barkod za Kruh').fill('96385074')
+  await panel.getByLabel('Jedinica mjere za Kruh', { exact: true }).fill('kg')
+  await panel.getByLabel('Cijena za jedinicu mjere za Kruh').fill('1.98')
   await expect(counter).toContainText('bez blokera')
-  await expect(panel.getByText(/1 stavka nema valjan barkod/)).toBeVisible()
+  await expect(panel.getByText(/1 stavka nema valjan barkod/)).toHaveCount(0)
 })

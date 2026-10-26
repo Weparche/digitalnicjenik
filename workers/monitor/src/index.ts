@@ -1,9 +1,10 @@
 import { runTenantCheck, type MonitorEnv } from '../../../shared/compliance/run-check'
-import { listMonitorTargets, selectRetryTargets, type MonitorTarget } from '../../../shared/compliance/store'
+import { listMonitorTargets, selectRetryTargets, readState, writeState, type MonitorTarget } from '../../../shared/compliance/store'
 import type { MonitorTrigger } from '../../../shared/compliance/types'
 import { sendAlert, type AlertEnv } from './alert'
+import { cleanupExpiredDrafts, type DraftCleanupEnv } from '../../../shared/draft-cleanup'
 
-export type Env = MonitorEnv & AlertEnv & { MONITOR_SECRET?: string }
+export type Env = MonitorEnv & AlertEnv & DraftCleanupEnv & { MONITOR_SECRET?: string }
 
 /** Must match `triggers.crons` in wrangler.jsonc: the second pass retries warn/fail/unchecked tenants only. */
 export const RETRY_CRON = '30 5 * * *'
@@ -23,9 +24,20 @@ function timingSafeEqual(left: string, right: string) {
 
 /** One check + alert delivery. The same function serves cron, retry and manual runs. */
 export async function checkAndAlert(env: Env, slug: string, trigger: MonitorTrigger, now = new Date(), fetcher?: typeof fetch) {
+  const target = await env.DB.prepare('SELECT id FROM tenants WHERE slug = ?').bind(slug).first<{ id: string }>()
+  const previous = target ? await readState(env.DB, target.id) : null
   const result = await runTenantCheck(env, { slug, trigger, now, fetcher })
   if (result.status === 'checked' && result.alert) {
-    await sendAlert(env, result.alert, result.run, result.tenant)
+    let delivered = false
+    try {
+      const delivery = await sendAlert(env, result.alert, result.run, result.tenant)
+      delivered = delivery.failed.length === 0 && delivery.sent.length > 0
+    } finally {
+      if (previous && !delivered) {
+        // A partially delivered batch may repeat; an owner alert must not be lost for 24 hours.
+        await writeState(env.DB, { ...result.state, lastAlertAt: previous.lastAlertAt, lastAlertKind: previous.lastAlertKind, alertOpen: previous.alertOpen })
+      }
+    }
   }
   return result
 }
@@ -59,7 +71,7 @@ export async function runScheduled(env: Env, cron: string, now = new Date(), fet
 
 export default {
   async scheduled(event: ScheduledEventLike, env: Env, ctx: ExecutionContextLike) {
-    ctx.waitUntil(runScheduled(env, event.cron))
+    ctx.waitUntil(Promise.all([runScheduled(env, event.cron), cleanupExpiredDrafts(env)]))
   },
 
   /** `POST /run {"slug": "..."}` with `Authorization: Bearer MONITOR_SECRET` — called by the Pages API for "Provjeri sada". */

@@ -2,15 +2,27 @@ import type { Availability, NormalizedPriceItem } from './types'
 
 export function normalizeNumber(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null
-  const raw = String(value ?? '').trim().replace(/[^0-9,.-]/g, '')
+  // Accept a currency suffix and locale grouping, never discard arbitrary text.
+  const raw = String(value ?? '').trim().replace(/\s*(?:EUR|€)\s*$/i, '').trim().replace(/[\u00a0\u202f]/g, ' ')
   if (!raw) return null
-  const normalized = raw.includes(',') && raw.includes('.') ? raw.lastIndexOf(',') > raw.lastIndexOf('.') ? raw.replaceAll('.', '').replace(',', '.') : raw.replaceAll(',', '') : raw.replace(',', '.')
+  if (!/^[+-]?(?:\d+(?:[.,]\d+)?|\d{1,3}(?:[., ]\d{3})+(?:[.,]\d{1,2})?)$/.test(raw)) return null
+  const compact = raw.replaceAll(' ', '')
+  const normalized = compact.includes(',') && compact.includes('.') ? compact.lastIndexOf(',') > compact.lastIndexOf('.') ? compact.replaceAll('.', '').replace(',', '.') : compact.replaceAll(',', '') : compact.replace(',', '.')
   const parsed = Number(normalized)
   return Number.isFinite(parsed) ? parsed : null
 }
 
 export function validateItems(items: NormalizedPriceItem[]) {
   return items.filter((item) => item.name.trim() && Number.isFinite(item.price))
+}
+
+export function normalizeReferenceDate(value: unknown): string | null {
+  const raw = String(value ?? '').trim()
+  if (!raw) return null
+  const localized = /^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\.?$/.exec(raw)
+  const iso = localized ? `${localized[3]}-${localized[2].padStart(2, '0')}-${localized[1].padStart(2, '0')}` : raw
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !Number.isFinite(Date.parse(iso))) return null
+  return new Date(iso).toISOString().slice(0, 10) === iso ? iso : null
 }
 
 const AVAILABLE = new Set(['dostupno', 'dostupan', 'dostupna', 'da', 'yes', 'true', '1', 'na zalihi', 'available', 'in stock'])

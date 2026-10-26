@@ -26,7 +26,7 @@ describe('NEPAR regulatory validator', () => {
 
   it('requires explicit special-sale confirmation and name', () => {
     const pending = parseMarketinoCsv('Naziv*;Vrsta*;Cijena*;Akcijska cijena;Sidrena cijena\nUsluga;2;50;40;45')
-    const confirmed = parseMarketinoCsv('Naziv*;Vrsta*;Cijena*;Akcijska cijena;Sidrena cijena;Poseban oblik prodaje;Naziv posebnog oblika prodaje\nUsluga;2;50;40;45;da;Rasprodaja')
+    const confirmed = parseMarketinoCsv('Naziv*;Vrsta*;Cijena*;Akcijska cijena;Sidrena cijena;Poseban oblik prodaje;Naziv posebnog oblika prodaje;Najniža cijena u 30 dana\nUsluga;2;50;40;45;da;Rasprodaja;45')
 
     expect(validatePriceList(pending.priceList).issues.some((issue) => issue.field === 'specialSaleApplied')).toBe(true)
     expect(validatePriceList(confirmed.priceList).status).toBe('ready_to_publish')

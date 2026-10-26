@@ -1,8 +1,11 @@
-import type { NormalizedPriceItem, NormalizedPriceList, PriceChange, PriceSnapshot } from './types'
+import type { NormalizedPriceItem, NormalizedPriceList, PriceChange, PriceSnapshot, PublicationMetadata } from './types'
 
 // Optional product fields are only part of the canonical form when present, so hashes of existing publications stay stable.
 function productFields(item: NormalizedPriceItem) {
   return {
+    ...(item.unitPricingExemption ? { unitPricingExemption: item.unitPricingExemption } : {}),
+    ...(item.anchorReferenceDate ? { anchorReferenceDate: item.anchorReferenceDate } : {}),
+    ...(item.lowest30DayPrice != null ? { lowest30DayPrice: item.lowest30DayPrice } : {}),
     ...(item.brand ? { brand: item.brand } : {}),
     ...(item.barcode ? { barcode: item.barcode } : {}),
     ...(item.unitPrice != null ? { unitPrice: item.unitPrice } : {}),
@@ -23,6 +26,13 @@ export async function deterministicHash(priceList: NormalizedPriceList): Promise
   const bytes = new TextEncoder().encode(canonicalize(priceList))
   const digest = await crypto.subtle.digest('SHA-256', bytes)
   return [...new Uint8Array(digest)].map((part) => part.toString(16).padStart(2, '0')).join('')
+}
+
+/** Metadata changes also need a new immutable publication, even when prices are unchanged. */
+export async function deterministicPublicationHash(priceList: NormalizedPriceList, metadata: PublicationMetadata, publicationDay?: string): Promise<string> {
+  const text = JSON.stringify({ content: canonicalize(priceList), objectType: metadata.objectType, objectAddress: metadata.objectAddress, objectCode: metadata.objectCode, timezone: metadata.timezone, ...(publicationDay ? { publicationDay } : {}) })
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return [...new Uint8Array(digest)].map(part => part.toString(16).padStart(2, '0')).join('')
 }
 
 export function diffPriceLists(previous: NormalizedPriceList | undefined, current: NormalizedPriceList): PriceChange[] {

@@ -20,6 +20,7 @@
       <specialSaleApplied>false</specialSaleApplied>
       <specialSaleName></specialSaleName>
       <anchorPrice currency="EUR">1.09</anchorPrice>
+      <anchorReferenceDate>2025-05-02</anchorReferenceDate>
     </item>
     <item>
       <category>Pekarski proizvodi</category>
@@ -35,6 +36,7 @@
       <specialSaleApplied>false</specialSaleApplied>
       <specialSaleName></specialSaleName>
       <anchorPrice currency="EUR">0.95</anchorPrice>
+      <anchorReferenceDate>2025-05-02</anchorReferenceDate>
     </item>
     <item>
       <category>Pića</category>
@@ -51,6 +53,8 @@
       <specialSaleApplied>true</specialSaleApplied>
       <specialSaleName>Jesenska akcija</specialSaleName>
       <anchorPrice currency="EUR">1.79</anchorPrice>
+      <anchorReferenceDate>2025-05-02</anchorReferenceDate>
+      <lowest30DayPrice>1.79</lowest30DayPrice>
     </item>
   </items>
 </priceList>

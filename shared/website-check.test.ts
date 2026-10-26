@@ -11,7 +11,7 @@ describe('technical evidence score', () => {
   })
   it('does not inherit legacy green as a guarantee of nine passes', () => {
     const report = technicalReport({ status: 'green', message: '', details: { ...complete, xmlFound: false, archiveFound: false, contentStatus: 'unknown' } })
-    expect(report).toMatchObject({ score: 6, attention: 2, unknown: 1, tone: 'yellow' })
+    expect(report).toMatchObject({ score: 7, attention: 1, unknown: 1, tone: 'yellow' })
     expect(report.checks.find((c) => c.id === 'archive')?.evidence).toContain('ne potvrđuje')
   })
   it('keeps blocked checks unknown instead of declaring missing files', () => {

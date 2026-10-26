@@ -8,9 +8,9 @@ import { parseCsvFeed, parseXmlFeed } from '../../shared/compliance/document-par
 import type { NormalizedPriceList, PricePublication } from './types'
 
 const PRODUCT_CSV = [
-  'Grupa,Naziv,Vrsta,Interna šifra,Cijena,Akcijska cijena,Poseban oblik prodaje,Naziv posebnog oblika prodaje,Sidrena cijena,Jedinica,Marka,Barkod,Cijena za jedinicu mjere,Dostupnost',
-  'Mliječni,Mlijeko 1 l,Proizvod,M-001,1.20,,NE,,1.10,l,Dukat,4006381333931,1.20,dostupno',
-  'Pekarski,Kruh 500 g,Proizvod,M-002,0.99,,NE,,0.95,kg,bez marke,96385074,1.98,nedostupno',
+  'Grupa,Naziv,Vrsta,Interna šifra,Cijena,Akcijska cijena,Poseban oblik prodaje,Naziv posebnog oblika prodaje,Sidrena cijena,Jedinica,Marka,Barkod,Cijena za jedinicu mjere,Dostupnost,Datum referentne cijene',
+  'Mliječni,Mlijeko 1 l,Proizvod,M-001,1.20,,NE,,1.10,l,Dukat,4006381333931,1.20,dostupno,2025-05-02',
+  'Pekarski,Kruh 500 g,Proizvod,M-002,0.99,,NE,,0.95,kg,bez marke,96385074,1.98,nedostupno,2025-05-02',
 ].join('\r\n')
 
 describe('product price list through the Publisher API', () => {
@@ -54,7 +54,7 @@ describe('product price list through the Publisher API', () => {
 
     const publicEnv = runtime()
     const csv = await (await getRootCsv({ request: new Request('https://digitalnicjenik.nepar.hr/cjenik.csv'), params: {}, env: publicEnv })).text()
-    expect(csv.split('\r\n')[0]).toMatch(/,Jedinica,Marka,Barkod,Cijena za jedinicu mjere,Dostupnost$/)
+    expect(csv.split('\r\n')[0]).toMatch(/,Jedinica,Marka,Barkod,Cijena za jedinicu mjere,Dostupnost,Datum referentne cijene/)
     const csvFeed = parseCsvFeed(csv)
     expect(csvFeed.records[0]).toMatchObject({ brand: 'Dukat', barcode: '4006381333931', unitPrice: '1.20', availability: 'dostupno' })
     expect(csvFeed.records[1]).toMatchObject({ barcode: '96385074', availability: 'nedostupno' })

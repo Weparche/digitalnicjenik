@@ -17,6 +17,8 @@ import { sanitizeAttribution } from '../shared/acquisition'
 import { recordAttribution } from './_acquisition'
 import type { NormalizedPriceList, ValidationIssue } from '../src/price-engine/types'
 import { mergeValidationIssues, validatePriceList } from '../src/price-engine/validate'
+import { parsePublicationDetails, type PublicationDetails } from '../shared/publication-details'
+import { usesProductStructure } from '../src/price-engine/profile'
 
 export const DRAFT_TTL_MS = 24 * 60 * 60_000
 export const TRIAL_CLAIM_TTL_MS = 30 * 60_000
@@ -67,6 +69,7 @@ type DraftPayload = {
   list: NormalizedPriceList
   validationIssues: ValidationIssue[]
   sourceType: string
+  publicationDetails?: PublicationDetails
 }
 
 function nowIso() {
@@ -165,6 +168,7 @@ export async function createPrivateDraft(
   sourceFilename: string,
   sourceType: string,
   extraIssues: ValidationIssue[] = [],
+  publicationDetails?: PublicationDetails,
 ) {
   const db = requireDb(env)
   const drafts = requireDrafts(env)
@@ -177,6 +181,7 @@ export async function createPrivateDraft(
     list,
     validationIssues: validation.issues,
     sourceType,
+    ...(publicationDetails ? { publicationDetails: parsePublicationDetails(publicationDetails) } : {}),
   }
   await drafts.put(location, JSON.stringify(payload), { httpMetadata: { contentType: 'application/json' } })
   await db.prepare(
@@ -269,6 +274,12 @@ export async function startTrialClaim(
     throw new AccessDeniedError(400, 'draft_expired', 'Privremeni draft je istekao. Učitajte datoteku ponovno.')
   }
 
+  if (mergeValidationIssues(validatePriceList(draft.payload.list), draft.payload.validationIssues).blockingCount) {
+    throw new AccessDeniedError(422, 'draft_not_ready', 'Dopunite označene podatke prije javne probne objave.')
+  }
+  try { parsePublicationDetails(draft.payload.publicationDetails) }
+  catch (error) { throw new AccessDeniedError(400, 'publication_details_required', (error as Error).message) }
+
   await consumeTrialClaimBudget(env, request, email)
 
   const claimId = crypto.randomUUID()
@@ -335,7 +346,7 @@ async function waitForCompletedClaim(db: D1DatabaseLike, claimId: string, attemp
   ).bind(claimId).first<ClaimRow>()
 }
 
-async function insertTenantWithSlug(env: TrialEnv, preferredSlug: string, businessName: string) {
+async function insertTenantWithSlug(env: TrialEnv, preferredSlug: string, businessName: string, details: PublicationDetails, products: boolean) {
   const db = requireDb(env)
   const stamp = nowIso()
   let slug = preferredSlug
@@ -350,9 +361,9 @@ async function insertTenantWithSlug(env: TrialEnv, preferredSlug: string, busine
         ).bind(tenantId, slug, businessName, stamp, stamp),
         db.prepare(
           `INSERT INTO publication_metadata
-            (tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at)
-           VALUES (?, 'usluzni-objekt', ?, ?, 1, ?, ?, ?)`,
-        ).bind(tenantId, businessName.slice(0, 80), slug, env.DEFAULT_PUBLICATION_TIMEZONE || 'Europe/Zagreb', stamp, stamp),
+            (tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at, compliance_profile, working_days_json, closed_dates_json)
+           VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
+        ).bind(tenantId, details.objectType, details.objectAddress, details.objectCode, env.DEFAULT_PUBLICATION_TIMEZONE || 'Europe/Zagreb', stamp, stamp, products ? 'products' : 'services', JSON.stringify(details.workingDays ?? [1,2,3,4,5]), JSON.stringify(details.closedDates ?? [])),
         db.prepare(
           `INSERT INTO publication_targets (id, tenant_id, hostname, status, created_at, updated_at)
            VALUES (?, ?, ?, 'active', ?, ?)`,
@@ -441,7 +452,10 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
       throw new AccessDeniedError(400, 'draft_expired', 'Privremeni draft je istekao.')
     }
 
-    const { tenantId, slug } = await insertTenantWithSlug(env, claim.requested_slug, claim.business_name)
+    const details = parsePublicationDetails(draft.payload.publicationDetails)
+    const validation = mergeValidationIssues(validatePriceList(draft.payload.list), draft.payload.validationIssues)
+    if (validation.blockingCount) throw new AccessDeniedError(422, 'draft_not_ready', 'Cjenik nije spreman za javnu objavu.')
+    const { tenantId, slug } = await insertTenantWithSlug(env, claim.requested_slug, claim.business_name, details, usesProductStructure(draft.payload.list))
     const stamp = nowIso()
     const periodEnd = addDays(stamp, TRIAL_DAYS)
 
@@ -468,16 +482,8 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
     )
     if (!created.draft) throw new Error('Draft nije spremljen.')
 
-    // First trial publish may still be manual_review — allow internal path only when ready.
-    let publicationId: string | null = null
-    if (created.draft.status === 'ready_to_publish' || created.validation.status === 'ready_to_publish') {
-      const published = await publishDraft(env, slug, created.draft.id, false)
-      publicationId = published.publication?.id ?? null
-    } else {
-      // Force publish for trial so public URL exists; regulatory gaps stay visible in dashboard.
-      const published = await publishDraft(env, slug, created.draft.id, true)
-      publicationId = published.publication?.id ?? null
-    }
+    const published = await publishDraft(env, slug, created.draft.id, false)
+    const publicationId = published.publication?.id ?? null
 
     await db.batch([
       db.prepare(

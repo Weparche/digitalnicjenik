@@ -38,7 +38,7 @@ Success means a non-technical owner can preview data, start a 7-day trial on the
 
 ## Operating Context
 
-Anonymous users upload into a private draft (≈24 h, R2 + D1 metadata). Publishing a trial requires business name, e-mail, and slug; the tenant is created only after magic-link verification. Owners use `/app` to edit, re-upload, and publish while entitlement is live. Expired tenants keep the dashboard (edit/upload) but public HTML/CSV/XML/archive return 410 until renewed.
+Anonymous users upload into a private draft (≈24 h, R2 + D1 metadata). Publishing a trial requires all blocking validation issues resolved plus business name, e-mail, slug, actual object type/address/code and working calendar; the tenant is created only after magic-link verification. Owners use `/app` to edit, re-upload, and publish while entitlement is live. Expired tenants keep the dashboard (edit/upload). Current public HTML and stable CSV/XML aliases return 410 until renewed. The archive and immutable retained files survive ordinary expiry: the last version for 30 days from publication and previous versions until 30 days from replacement. Suspension blocks public access.
 
 ## Capabilities and Constraints
 

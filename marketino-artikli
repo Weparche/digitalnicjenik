@@ -1,30 +1,30 @@
-Grupa*,Naziv*,Vrsta*,"Interna šifra",Cijena*,"Akcijska cijena","Sidrena cijena",PDV(%),Barkod,PN(€),PNP(%)
-Usluge,"Administracija sadržaja",2,,40,,40,,,,
-AI,"AI chatbot integracija",2,,500,,500,,,,
-AI,"AI funkcionalnosti po mjeri",2,,500,,500,,,,
-AI,"AI razvoj i integracije",2,,110,,110,,,,
-Hosting,"Cloudflare konfiguracija",2,,100,,100,,,,
-Digitalni cjenik,"Plugin + implementacija digitalnog cjenika",2,,89.90,,89.90,,,,
-Digitalni cjenik,"Plugin za digitalni cjenik",2,,49.90,,49.90,,,,
-Digitalni cjenik,"Implementacija digitalnog cjenika",2,,49.90,,49.90,,,,
-SEO,"Google Analytics postavljanje",2,,80,,80,,,,
-SEO,"Google Business profil",2,,100,,100,,,,
-SEO,"Google Search Console postavljanje",2,,80,,80,,,,
-Hosting,"Hosting web-stranice (godišnje)",2,,120,,120,,,,
-Web,"Izrada dodatne podstranice",2,,80,,80,,,,
-Usluge,Konzultacije,2,,60,,60,,,,
-Hosting,"Migracija web-stranice",2,,150,,150,,,,
-SEO,"Napredna tehnička i on-page SEO optimizacija",2,,250,,250,,,,
-Održavanje,"Održavanje Basic (godišnje)",2,,200,,200,,,,
-Održavanje,"Održavanje Business (godišnje)",2,,400,,400,,,,
-Održavanje,"Održavanje Pro (godišnje)",2,,600,,600,,,,
-Usluge,Programiranje,2,,80,,80,,,,
-Web,"Redizajn postojeće web-stranice (od)",2,,400,,400,,,,
-Web,"Redizajn Web Business",2,,500,,500,,,,
-Web,"Redizajn Web Pro",2,,700,,700,,,,
-SEO,"SEO landing stranica",2,,100,,100,,,,
-Usluge,"Tehnička podrška",2,,40,,40,,,,
-Web,"Web Basic",2,,300,,300,,,,
-Web,"Web Basic – izrada web-stranice",2,,300,,300,,,,
-Web,"Web Business – izrada web-stranice",2,,500,,500,,,,
-Web,"Web Pro – izrada web-stranice",2,,700,,700,,,,
+Grupa*,Naziv*,Vrsta*,"Interna šifra",Cijena*,"Akcijska cijena","Sidrena cijena",PDV(%),Barkod,PN(€),PNP(%),Poseban oblik prodaje
+Usluge,"Administracija sadržaja",2,,40,,40,,,,,NE
+AI,"AI chatbot integracija",2,,500,,500,,,,,NE
+AI,"AI funkcionalnosti po mjeri",2,,500,,500,,,,,NE
+AI,"AI razvoj i integracije",2,,110,,110,,,,,NE
+Hosting,"Cloudflare konfiguracija",2,,100,,100,,,,,NE
+Digitalni cjenik,"Plugin + implementacija digitalnog cjenika",2,,89.90,,89.90,,,,,NE
+Digitalni cjenik,"Plugin za digitalni cjenik",2,,49.90,,49.90,,,,,NE
+Digitalni cjenik,"Implementacija digitalnog cjenika",2,,49.90,,49.90,,,,,NE
+SEO,"Google Analytics postavljanje",2,,80,,80,,,,,NE
+SEO,"Google Business profil",2,,100,,100,,,,,NE
+SEO,"Google Search Console postavljanje",2,,80,,80,,,,,NE
+Hosting,"Hosting web-stranice (godišnje)",2,,120,,120,,,,,NE
+Web,"Izrada dodatne podstranice",2,,80,,80,,,,,NE
+Usluge,Konzultacije,2,,60,,60,,,,,NE
+Hosting,"Migracija web-stranice",2,,150,,150,,,,,NE
+SEO,"Napredna tehnička i on-page SEO optimizacija",2,,250,,250,,,,,NE
+Održavanje,"Održavanje Basic (godišnje)",2,,200,,200,,,,,NE
+Održavanje,"Održavanje Business (godišnje)",2,,400,,400,,,,,NE
+Održavanje,"Održavanje Pro (godišnje)",2,,600,,600,,,,,NE
+Usluge,Programiranje,2,,80,,80,,,,,NE
+Web,"Redizajn postojeće web-stranice (od)",2,,400,,400,,,,,NE
+Web,"Redizajn Web Business",2,,500,,500,,,,,NE
+Web,"Redizajn Web Pro",2,,700,,700,,,,,NE
+SEO,"SEO landing stranica",2,,100,,100,,,,,NE
+Usluge,"Tehnička podrška",2,,40,,40,,,,,NE
+Web,"Web Basic",2,,300,,300,,,,,NE
+Web,"Web Basic – izrada web-stranice",2,,300,,300,,,,,NE
+Web,"Web Business – izrada web-stranice",2,,500,,500,,,,,NE
+Web,"Web Pro – izrada web-stranice",2,,700,,700,,,,,NE

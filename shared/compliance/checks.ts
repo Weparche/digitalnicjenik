@@ -1,4 +1,5 @@
 import type { NormalizedPriceItem } from '../../src/price-engine/types'
+import { isServiceItem } from '../../src/price-engine/profile'
 import { FEED_FIELDS, type FeedStructure } from './document-parser'
 import type { ProfileRule, RuleField, Ruleset } from './rulesets'
 import type { FreshnessStatus, MonitorIssue, MonitorOverall } from './types'
@@ -33,7 +34,8 @@ export function evaluateRequiredFields(items: NormalizedPriceItem[], profile: Pr
       })
       continue
     }
-    const rows = items.filter((item) => fieldMissing(item, rule.field)).length
+    const productOnly = new Set(['externalId', 'brand', 'barcode', 'availability'])
+    const rows = items.filter((item) => !(productOnly.has(rule.field) && isServiceItem(item)) && fieldMissing(item, rule.field)).length
     if (rows > 0) {
       issues.push({
         code: 'MISSING_REQUIRED_FIELD',
@@ -102,10 +104,11 @@ function localParts(date: Date, timeZone: string) {
 const dayNumber = (year: number, month: number, day: number) => Math.floor(Date.UTC(year, month - 1, day) / DAY_MS)
 
 /** Most recent working day (Mon–Fri) on or before `dayNum` (days since epoch). No holiday calendar yet. */
-function lastWorkingDayOnOrBefore(dayNum: number) {
+function lastWorkingDayOnOrBefore(dayNum: number, workingDays = [1, 2, 3, 4, 5], closedDates: string[] = []) {
   let day = dayNum
   // 1970-01-01 was a Thursday → (day + 4) % 7: 0=Sun … 6=Sat
-  while (((day + 4) % 7 + 7) % 7 === 0 || ((day + 4) % 7 + 7) % 7 === 6) day -= 1
+  if (!workingDays.length) throw new Error('publication_calendar_missing')
+  while (!workingDays.includes(((day + 4) % 7 + 7) % 7) || closedDates.includes(new Date(day * DAY_MS).toISOString().slice(0, 10))) day -= 1
   return day
 }
 
@@ -113,16 +116,16 @@ function lastWorkingDayOnOrBefore(dayNum: number) {
  * Products: a publication is expected for the latest working day whose deadline has passed.
  * Never returns a hard failure; services: `n/a` (only publish on change).
  */
-export function evaluateFreshness(profile: ProfileRule, publishedAt: string, now: Date, timeZone: string): FreshnessStatus {
+export function evaluateFreshness(profile: ProfileRule, publishedAt: string, now: Date, timeZone: string, calendar?: { workingDays?: number[]; closedDates?: string[] }): FreshnessStatus {
   if (profile.freshness.kind === 'on_change') return 'n/a'
   const local = localParts(now, timeZone)
   const today = dayNumber(local.year, local.month, local.day)
-  const expectedDay = lastWorkingDayOnOrBefore(local.hour >= profile.freshness.deadlineHour ? today : today - 1)
+  const expectedDay = lastWorkingDayOnOrBefore(local.hour >= profile.freshness.deadlineHour ? today : today - 1, calendar?.workingDays, calendar?.closedDates)
   const published = localParts(new Date(publishedAt), timeZone)
   return dayNumber(published.year, published.month, published.day) >= expectedDay ? 'ok' : 'warn'
 }
 
-export type ArchivePublication = { publishedAt: string; publicUntil: string | null }
+export type ArchivePublication = { publishedAt: string; supersededAt?: string | null; publicUntil: string | null }
 
 /**
  * DB-level archive integrity: every non-current publication published within the archive window
@@ -130,8 +133,8 @@ export type ArchivePublication = { publishedAt: string; publicUntil: string | nu
  */
 export function evaluateArchiveIntegrity(publications: ArchivePublication[], now: Date, archiveDays: number) {
   const windowStart = now.getTime() - archiveDays * DAY_MS
-  const inWindow = publications.filter((publication) => new Date(publication.publishedAt).getTime() >= windowStart)
-  const available = inWindow.filter((publication) => publication.publicUntil !== null && new Date(publication.publicUntil).getTime() >= now.getTime())
+  const inWindow = publications.filter((publication) => new Date(publication.supersededAt ?? publication.publishedAt).getTime() >= windowStart)
+  const available = inWindow.filter((publication) => publication.publicUntil !== null && new Date(publication.publicUntil).getTime() >= Math.max(now.getTime(), new Date(publication.supersededAt ?? publication.publishedAt).getTime() + archiveDays * DAY_MS))
   return { expected: inWindow.length, available: available.length }
 }
 

@@ -1,4 +1,5 @@
 import { PlanCards } from './PlanCards'
+import { PublicationSettings } from './PublicationSettings'
 import { AcquisitionLanding } from './AcquisitionLanding'
 import { AdminPanel } from './AdminPanel'
 import { findSitePage } from './pages/registry'
@@ -10,6 +11,7 @@ import { PublisherLogin, usePublisherSession } from './PublisherAuth'
 import { Fragment, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type Availability, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 import { ExcelConverter } from './ExcelConverter'
+import { usesProductStructure } from './price-engine/profile'
 import { EducationSection } from './EducationSection'
 import { TurnstileField, type LeadContext, type LeadIntent } from './LeadForm'
 import {
@@ -27,6 +29,15 @@ import { NewsArticle } from './news/NewsArticle'
 import { NewsIndex } from './news/NewsIndex'
 
 const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(value)
+const anchorLabel = (item: NormalizedPriceList['items'][number]) => {
+  const date = item.anchorReferenceDate || (isServiceItem(item) ? '2026-09-10' : '')
+  return date && Number.isFinite(Date.parse(date)) ? 'Cijena na ' + new Intl.DateTimeFormat('hr-HR', { timeZone: 'Europe/Zagreb' }).format(new Date(date + 'T12:00:00Z')) : 'Sidrena cijena'
+}
+const productDisplayDetails = (item: NormalizedPriceList['items'][number]) => isServiceItem(item) ? '' : [
+  item.externalId ? 'Šifra: ' + item.externalId : '', item.brand ? 'Marka: ' + item.brand : '',
+  item.barcode ? 'Barkod: ' + item.barcode : '', item.unit && item.unitPrice != null ? money(item.unitPrice) + ' / ' + item.unit : '',
+  item.availability === 'nedostupno' ? 'Nedostupno' : '',
+].filter(Boolean).join(' · ')
 const dateTime = (value: string) => new Intl.DateTimeFormat('hr-HR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
 const slugFromPath = () => window.location.pathname.match(/^\/c\/([^/]+)/)?.[1]
 const platformHost = () => ['localhost', '127.0.0.1'].includes(window.location.hostname) || window.location.hostname.endsWith('.pages.dev')
@@ -82,22 +93,13 @@ function copyText(value: string) {
   void navigator.clipboard?.writeText(value)
 }
 
-function publishedPublicUrls(slug: string, mode: 'sandbox' | 'publisher' = 'sandbox') {
+function publishedPublicUrls(slug: string) {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
-  if (mode === 'publisher') {
-    const feedOrigin = `https://${slug}.digitalnicjenik.nepar.hr`
-    return {
-      html: `${origin}/c/${slug}`,
-      archive: `${origin}/c/${slug}/arhiva`,
-      stableCsv: `${feedOrigin}/cjenik.csv`,
-      stableXml: `${feedOrigin}/cjenik.xml`,
-    }
-  }
   return {
     html: `${origin}/c/${slug}`,
     archive: `${origin}/c/${slug}/arhiva`,
-    stableCsv: `${origin}/cjenik.csv`,
-    stableXml: `${origin}/cjenik.xml`,
+    stableCsv: `${origin}/c/${slug}/cjenik.csv`,
+    stableXml: `${origin}/c/${slug}/cjenik.xml`,
   }
 }
 
@@ -114,11 +116,10 @@ function PublishedSuccessPanel({
   onLead?: (intent: LeadIntent) => void
   mode?: 'sandbox' | 'publisher'
 }) {
-  const urls = publishedPublicUrls(slug, mode)
+  const urls = publishedPublicUrls(slug)
   const versionLabel = publication ? `verzija ${publication.sequence}` : null
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
-  const versionCsv = publication ? `${origin}/${publication.filenameStem}.csv` : null
-  const versionXml = publication ? `${origin}/${publication.filenameStem}.xml` : null
+  const versionCsv = publication ? `${urls.html}/${publication.filenameStem}.csv` : null
+  const versionXml = publication ? `${urls.html}/${publication.filenameStem}.xml` : null
 
   if (mode === 'publisher') {
     return (
@@ -249,7 +250,6 @@ function ValidationResultPanel({
   const hasProducts = list.items.some((item) => !isServiceItem(item))
   const missingAvailability = list.items.filter((item) => !isServiceItem(item) && !item.availability).length
   const incomplete = validation.blockingCount > 0
-  const hasValidationErrors = validation.issues.some((issue) => issue.severity === 'error')
   const tableRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -387,6 +387,9 @@ function ValidationResultPanel({
                       />
                       <span aria-hidden="true">€</span>
                     </label>
+                    <label className="special-sale-toggle"><span>Datum referentne cijene</span><input className="app-table-input" type="date" aria-label={'Datum referentne cijene za ' + item.name} value={item.anchorReferenceDate ?? (service && !item.isNewSinceReferenceDate ? '2026-09-10' : '')} onChange={event => onUpdateItem(index, { anchorReferenceDate: event.target.value || null })} /></label>
+                    <label><input type="checkbox" aria-label={'Nova stavka nakon referentnog datuma za ' + item.name} checked={item.isNewSinceReferenceDate === true} onChange={event => onUpdateItem(index, { isNewSinceReferenceDate: event.target.checked })} /> Nova stavka: datum prvog uvrštenja</label>
+                    {!service && <small>2. 5. 2025. za ranije obuhvaćene proizvode; inače 10. 9. 2026. Provjerite primjenjivi režim.</small>}
                   </td>
                   <td>
                     <div className="app-sale-fields">
@@ -419,6 +422,7 @@ function ValidationResultPanel({
                       {item.salePrice != null && (
                         <small className="sale-price-note">Akcijska: {money(item.salePrice)}</small>
                       )}
+                      {specialApplied && <label className="special-sale-toggle"><span>Prethodna najniža cijena (30 dana)</span><input className="app-table-input" aria-label={'Najniža cijena u 30 dana za ' + item.name} type="number" min="0.01" step="0.01" value={item.lowest30DayPrice ?? ''} onChange={event => onUpdateItem(index, { lowest30DayPrice: event.target.value ? Number(event.target.value) : null })} /><small>Unesite iz svoje evidencije. Sidrena cijena nije zamjena.</small></label>}
                     </div>
                   </td>
                   {hasProducts && (service ? <td colSpan={5}><small>Usluga: ova polja se ne traže.</small></td> : <>
@@ -429,6 +433,7 @@ function ValidationResultPanel({
                       <div className="app-sale-fields">
                         <input className="app-table-input" aria-label={'Jedinica mjere za ' + item.name} value={item.unit ?? ''} placeholder="npr. kg" onChange={(event) => onUpdateItem(index, { unit: event.target.value || null })} />
                         <input className="app-table-input" aria-label={'Cijena za jedinicu mjere za ' + item.name} type="number" min="0.01" step="0.01" value={item.unitPrice ?? ''} placeholder="€ / jedinica" onChange={(event) => onUpdateItem(index, { unitPrice: event.target.value ? Number(event.target.value) : null })} />
+                        {!item.unit && <input className="app-table-input" aria-label={'Razlog iznimke cijene po jedinici za ' + item.name} value={item.unitPricingExemption ?? ''} placeholder="Ako nije primjenjivo: navedite razlog" onChange={event => onUpdateItem(index, { unitPricingExemption: event.target.value || null })} />}
                       </div>
                     </td>
                     <td>
@@ -453,7 +458,7 @@ function ValidationResultPanel({
             <button className="app-button app-button-primary" type="button" onClick={onPublish} disabled={incomplete || busy || published || publishBlocked}>{publishBlocked ? 'Objava zaključana' : 'Objavi novi cjenik'}</button>
           </>
         ) : (
-          <button className="app-button app-button-primary" type="button" onClick={onStartTrial} disabled={busy || !list || hasValidationErrors}>
+          <button className="app-button app-button-primary" type="button" onClick={onStartTrial} disabled={busy || !list || incomplete}>
             Objavi probno 7 dana →
           </button>
         )}
@@ -469,7 +474,7 @@ function ValidationResultPanel({
       {publishBlocked && <p className="app-error" role="status">Aktivirajte Publisher i isti URL ponovno će biti dostupan. Uređivanje i upload su i dalje mogući.</p>}
       {message && <p className="app-success" role="status">{message}</p>}
       {mode === 'sandbox' && incomplete && (
-        <p className="validator-trial-note">Možete objaviti i s nedostajućim poljima — dopunit ćete ih u dashboardu tijekom probnog roka.</p>
+        <p className="validator-trial-note">Dopunite označene podatke prije javne objave. Radni CSV/XML možete preuzeti za pripremu.</p>
       )}
       {incomplete && mode === 'publisher' && (
         <div className="consultation-card">
@@ -503,8 +508,8 @@ function PrintPriceTable({ groups }: { groups: Array<[string, NormalizedPriceLis
         <tr className="print-category"><th scope="colgroup" colSpan={3}>{category}</th></tr>
         {items.map((item) => <tr key={category + ':' + (item.externalId || item.name)}>
           <td>{item.name}</td>
-          <td>{[item.brand ? 'Marka: ' + item.brand : '', item.barcode ? 'Barkod: ' + item.barcode : '', item.availability === 'nedostupno' ? 'Nedostupno' : ''].filter(Boolean).join(' · ')}{item.brand || item.barcode || item.availability === 'nedostupno' ? ' · ' : ''}{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</td>
-          <td className="print-price-col">{item.salePrice != null && <del>{money(item.price)} </del>}<strong>{money(item.salePrice ?? item.price)}</strong></td>
+          <td>{productDisplayDetails(item)}{productDisplayDetails(item) ? ' · ' : ''}{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + anchorLabel(item) + ': ' + money(item.anchorPrice) : ''}</td>
+          <td className="print-price-col">{item.specialSaleApplied === true && item.lowest30DayPrice != null && <del title="Prethodna najniža cijena u 30 dana">{money(item.lowest30DayPrice)} </del>}<strong>{money(item.salePrice ?? item.price)}</strong></td>
         </tr>)}
       </Fragment>)}
     </tbody>
@@ -521,7 +526,7 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
     let cancelled = false
     ;(async () => {
       try {
-        const endpoint = customHost ? '/api/publication/current' : '/api/tenants/' + slug
+        const endpoint = isArchive ? (customHost ? '/api/publication/archive' : '/api/publication/retained?slug=' + encodeURIComponent(slug || '')) : customHost ? '/api/publication/current' : '/api/tenants/' + slug
         const response = await fetch(endpoint)
         if (response.status === 410) {
           if (!cancelled) setGone(true)
@@ -557,7 +562,7 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
     observer.observe(document.body)
     return () => observer.disconnect()
   }, [mode, embedSlug, list])
-  if (gone) return <main className="public-shell"><div className="public-top"><Logo /><span className="public-badge">NEDOSTUPNO</span></div><div className="public-not-found"><p className="eyebrow">NEPAR PUBLISHER</p><h1>Ovaj cjenik trenutačno nije dostupan.</h1></div></main>
+  if (gone) return <main className="public-shell"><div className="public-top"><Logo /><span className="public-badge">NEDOSTUPNO</span></div><div className="public-not-found"><p className="eyebrow">NEPAR PUBLISHER</p><h1>Ovaj cjenik trenutačno nije dostupan.</h1><p><a href={customHost ? '/arhiva' : '/c/' + slug + '/arhiva'}>Arhiva zadržanih objava</a></p></div></main>
   if (error) return <main className="public-shell"><div className="public-top"><Logo /><span className="public-badge">PUBLICATION ERROR</span></div><div className="public-not-found"><p className="eyebrow">NEPAR PUBLISHER</p><h1>Cjenik trenutno nije dostupan.</h1><p>{error}</p></div></main>
   if (!list) return <main className="public-shell"><div className="loading-state">Učitavam objavljeni cjenik…</div></main>
   const grouped = Object.entries(list.items.reduce<Record<string, NormalizedPriceList['items']>>((groups, item) => { const key = item.category || 'Usluge'; (groups[key] ||= []).push(item); return groups }, {}))
@@ -579,9 +584,9 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
         <a className="app-button app-button-primary" href="https://digitalnicjenik.nepar.hr/">Provjeri svoju stranicu →</a>
       </aside>
     )}
-    {isArchive ? <section className="public-list public-archive" aria-label="Javna arhiva cjenika"><div className="public-list-title"><span>Arhiva objavljenih verzija</span><span className="item-count">{publications.length} verzija</span></div>{publications.map((publication) => <div className="public-archive-item" key={publication.id}><div><strong>{publication.isCurrent ? 'Aktualno · ' : ''}{dateTime(publication.publishedAt)}</strong><small>{publication.filenameStem}</small></div><div className="archive-links"><a href={'/' + publication.filenameStem + '.csv'}>CSV</a><a href={'/' + publication.filenameStem + '.xml'}>XML</a></div></div>)}<p className="public-archive-note">Prethodne objavljene verzije ostaju javno dostupne najmanje 30 dana od trenutka zamjene.</p></section> : <section className="public-list" aria-label="Aktualni digitalni cjenik">
+    {isArchive ? <section className="public-list public-archive" aria-label="Javna arhiva cjenika"><div className="public-list-title"><span>Arhiva objavljenih verzija</span><span className="item-count">{publications.length} verzija</span></div>{publications.map((publication) => <div className="public-archive-item" key={publication.id}><div><strong>{publication.isCurrent ? 'Aktualno · ' : ''}{dateTime(publication.publishedAt)}</strong><small>{publication.filenameStem}</small></div><div className="archive-links"><a href={(customHost ? '/' : '/c/' + slug + '/') + publication.filenameStem + '.csv'}>CSV</a><a href={(customHost ? '/' : '/c/' + slug + '/') + publication.filenameStem + '.xml'}>XML</a></div></div>)}<p className="public-archive-note">Prethodne objavljene verzije ostaju javno dostupne najmanje 30 dana od trenutka zamjene.</p></section> : <section className="public-list" aria-label="Aktualni digitalni cjenik">
       <div className="public-list-title"><span>Aktualni digitalni cjenik</span><span className="item-count">{list.items.length} stavki</span></div>
-      {mode === 'print' ? <PrintPriceTable groups={grouped} /> : grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{[item.brand ? 'Marka: ' + item.brand : '', item.availability === 'nedostupno' ? 'Nedostupno' : ''].filter(Boolean).join(' · ')}{item.brand || item.availability === 'nedostupno' ? ' · ' : ''}{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + 'Sidrena cijena: ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.salePrice != null && <del>{money(item.price)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
+      {mode === 'print' ? <PrintPriceTable groups={grouped} /> : grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{productDisplayDetails(item)}{productDisplayDetails(item) ? ' · ' : ''}{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + anchorLabel(item) + ': ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.specialSaleApplied === true && item.lowest30DayPrice != null && <del title="Prethodna najniža cijena u 30 dana">{money(item.lowest30DayPrice)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
     </section>}
     {showChrome && !isArchive && <section className="public-links"><div><strong>Aktualni digitalni cjenik</strong><span><a href={currentPublication ? '/' + currentPublication.filenameStem + '.csv' : '/cjenik.csv'}>{currentPublication ? currentPublication.filenameStem + '.csv' : 'Preuzmi CSV'}</a>{currentPublication && <a href={'/' + currentPublication.filenameStem + '.xml'}>{currentPublication.filenameStem + '.xml'}</a>}</span></div><div><strong>Stable URL za automatizirani dohvat</strong><span><a href="/cjenik.csv">cjenik.csv</a><a href="/cjenik.xml">cjenik.xml</a></span></div></section>}
     <footer className="public-footer"><span>Pokreće NEPAR Publisher</span>{!isArchive && <a href={(customHost ? '/arhiva/' : '/c/' + slug + '/arhiva')}>Arhiva</a>}<a href={customHost ? '/cjenik.csv' : '/c/' + slug + '/cjenik.csv'}>CSV</a><a href={customHost ? '/cjenik.xml' : '/c/' + slug + '/cjenik.xml'}>XML</a><a href="https://digitalnicjenik.nepar.hr/">Provjeri CSV/XML na webu</a></footer>
@@ -684,7 +689,7 @@ function PublisherWorkspace() {
   useEffect(() => {
     const confirmGroup = () => {
       if (!window.confirm('Potvrdite da nijedna akcijska cijena nije primijenjena tijekom posebnog oblika prodaje.')) return
-      setList((current) => current ? { ...current, items: current.items.map((item) => item.salePrice != null ? { ...item, specialSaleApplied: false, specialSaleName: null } : item) } : current)
+      setList((current) => current ? { ...current, items: current.items.map((item) => item.specialSaleApplied == null && item.salePrice == null ? { ...item, specialSaleApplied: false, specialSaleName: null } : item) } : current)
     }
     window.addEventListener('nepar:confirm-no-special-sale', confirmGroup)
     return () => window.removeEventListener('nepar:confirm-no-special-sale', confirmGroup)
@@ -808,6 +813,10 @@ function TrialClaimForm({
   const [email, setEmail] = useState('')
   const [slug, setSlug] = useState('')
   const [slugHint, setSlugHint] = useState('')
+  const [objectAddress, setObjectAddress] = useState('')
+  const [objectCode, setObjectCode] = useState('1')
+  const [objectType, setObjectType] = useState(list.items.every(isServiceItem) ? 'usluzni-objekt' : 'prodavaonica')
+  const [workingDays, setWorkingDays] = useState([1, 2, 3, 4, 5])
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
@@ -860,6 +869,7 @@ function TrialClaimForm({
         body: JSON.stringify({
           list: { ...list, tenant: { ...list.tenant, name: businessName.trim() || list.tenant.name } },
           filename: sourceFilename || 'cjenik.csv',
+          publicationDetails: { objectType, objectAddress, objectCode, workingDays },
         }),
       })
       const draftPayload = await draftResponse.json() as { draftId?: string; error?: string }
@@ -913,7 +923,12 @@ function TrialClaimForm({
       <form className="trial-claim-form" onSubmit={(event) => void submit(event)}>
         <label>Naziv poslovanja<input value={businessName} onChange={(event) => setBusinessName(event.target.value)} required maxLength={120} placeholder="Auto Gubić" /></label>
         <label>E-mail<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} placeholder="info@primjer.hr" autoComplete="email" /></label>
-        <label>Slug (URL)<input value={slug} onChange={(event) => setSlug(event.target.value.toLocaleLowerCase('en-US').replace(/[^a-z0-9-]/g, ''))} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={48} /></label>
+        <label>Adresa vašeg cjenika<input value={slug} onChange={(event) => setSlug(event.target.value.toLocaleLowerCase('en-US').replace(/[^a-z0-9-]/g, ''))} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={48} /></label>
+        <label>Vrsta objekta<select value={objectType} onChange={event => setObjectType(event.target.value)}><option value="usluzni-objekt">Uslužni objekt</option><option value="prodavaonica">Prodavaonica</option><option value="internetska-trgovina">Internetska trgovina</option></select></label>
+        <label>Puna adresa objekta<input value={objectAddress} onChange={event => setObjectAddress(event.target.value)} required minLength={5} maxLength={240} placeholder="Ulica i broj, poštanski broj i mjesto" autoComplete="street-address" /></label>
+        <label>Oznaka objekta<input value={objectCode} onChange={event => setObjectCode(event.target.value)} required maxLength={80} /></label>
+        {!list.items.every(isServiceItem) && <fieldset><legend>Radni dani objekta za provjeru ažuriranja</legend>{['Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota'].map((label, day) => <label key={day}><input type="checkbox" checked={workingDays.includes(day)} onChange={event => setWorkingDays(event.target.checked ? [...workingDays, day] : workingDays.filter(value => value !== day))} />{label}</label>)}</fieldset>}
+        <p>Podatke koristimo za račun, potvrdu e-maila i javnu objavu cjenika. Provjerite točnost adrese i cijena. <a href="/privatnost.html" target="_blank" rel="noreferrer">Obrada podataka</a> · <a href="/uvjeti.html" target="_blank" rel="noreferrer">Uvjeti objave</a></p>
         <p className="trial-slug-preview">Vaš cjenik bit će dostupan na <strong>{typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'}/c/{slug || '…'}</strong></p>
         {slugHint && <p className="premium-inline-error">{slugHint}</p>}
         <TurnstileField onToken={setTurnstileToken} />
@@ -988,14 +1003,17 @@ function ValidatorApp({
       const payload = await response.json() as { priceList?: NormalizedPriceList; publication?: PricePublication }
       if (!payload.priceList) return
       setList(payload.priceList)
-      setPublished(true)
+      setPublished(!usesProductStructure(payload.priceList))
       setSourceFilename('trenutna-objava')
       if (payload.publication) setPublication(payload.publication)
     }).catch(() => undefined)
     return () => { cancelled = true }
   }, [apiBase, mode])
 
-  const updateItem = (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => setList((current) => current ? { ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) } : current)
+  const updateItem = (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => {
+    setPublished(false)
+    setList((current) => current ? { ...current, items: current.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) } : current)
+  }
 
   function applyNormalizedList(priceList: NormalizedPriceList, file: File, importIssues: ValidationIssue[] = []) {
     const scoped = { ...priceList, tenant: { ...priceList.tenant, ...tenantIdentity } }
@@ -1071,7 +1089,8 @@ function ValidatorApp({
     if (!list || validation.blockingCount > 0 || mode !== 'publisher' || publishBlocked) return
     setBusy(true); setError(''); setMessage('')
     try {
-      const id = draftId || await createRemoteDraft()
+      // Always persist the currently displayed edits, including edits after a previous save.
+      const id = await createRemoteDraft()
       if (!id) throw new Error('Za objavu je potreban aktivan Publisher.')
       const response = await fetch(`${apiBase}/publish`, {
         method: 'POST',
@@ -1089,11 +1108,13 @@ function ValidatorApp({
 
   function confirmNoSpecialSale() {
     if (!list || !window.confirm('Potvrdite da akcijske cijene nisu primijenjene tijekom posebnog oblika prodaje.')) return
-    setList({ ...list, items: list.items.map((item) => item.salePrice != null ? { ...item, specialSaleApplied: false, specialSaleName: null } : item) })
+    setPublished(false)
+    setList({ ...list, items: list.items.map((item) => item.specialSaleApplied == null && item.salePrice == null ? { ...item, specialSaleApplied: false, specialSaleName: null } : item) })
   }
 
   function bulkAvailability(value: Availability) {
     if (!list) return
+    setPublished(false)
     setList({ ...list, items: list.items.map((item) => (!isServiceItem(item) && !item.availability ? { ...item, availability: value } : item)) })
     setMessage(`Dostupnost je postavljena na „${value}” za stavke bez oznake. Pregledajte tablicu prije objave.`)
   }
@@ -1103,6 +1124,7 @@ function ValidatorApp({
     const pending = missingAnchorItems(list)
     if (!pending.length) return
     if (!window.confirm('Potvrdite da su navedene redovne cijene, bez akcija i popusta, vrijedile 10. rujna 2026. Sidrena cijena bit će postavljena na trenutnu maloprodajnu cijenu za ' + pending.length + ' usluga.')) return
+    setPublished(false)
     setList({
       ...list,
       items: list.items.map((item) => {
@@ -1118,7 +1140,9 @@ function ValidatorApp({
     : <section className="validator-app-intro">{embedded ? null : <span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span>}{embedded ? <h2>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h2> : <h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1>}{embedded ? null : <p>Učitajte CSV ili XML. Pregledajte podatke, zatim objavite probni cjenik na vlastitom URL-u (7 dana).</p>}</section>
 
   const tool = <>
-    <section className="validator-tool" aria-label={mode === 'publisher' ? 'Publisher cjenik' : 'Validator cjenika'}><div className="upload-card"><div className="upload-card-heading"><div><h2>CSV ili XML cjenik</h2><p>{mode === 'publisher' ? 'Nova datoteka zamjenjuje draft. Ručne izmjene u tablici ostaju dok ne objavite.' : 'Za besplatni pregled nije potrebna registracija.'}</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">{mode === 'publisher' ? 'PRIJE OBJAVE' : '2 / ŠTO PROVJERAVAMO'}</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena za usluge</li><li><span>03</span>Potvrda posebnog oblika prodaje kod akcijske cijene</li><li><span>04</span>Nova usluga ide na ručni pregled</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
+    {mode === 'publisher' && <PublicationSettings slug={tenantSlug} onSaved={() => setPublished(false)} />}
+    {mode === 'publisher' && published && list && <button className="app-button app-button-light" type="button" onClick={() => { setPublished(false); setMessage('') }}>Uredi postojeći cjenik</button>}
+    <section className="validator-tool" aria-label={mode === 'publisher' ? 'Publisher cjenik' : 'Validator cjenika'}><div className="upload-card"><div className="upload-card-heading"><div><h2>CSV ili XML cjenik</h2><p>{mode === 'publisher' ? 'Nova datoteka zamjenjuje draft. Ručne izmjene u tablici ostaju dok ne objavite.' : 'Za besplatni pregled nije potrebna registracija.'}</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">{mode === 'publisher' ? 'PRIJE OBJAVE' : '2 / ŠTO PROVJERAVAMO'}</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena i mjerodavni datum</li><li><span>03</span>Posebna prodaja i prethodna najniža cijena kod akcije</li><li><span>04</span>Datum prvog uvrštenja za nove stavke</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
     {list && claimOpen && mode === 'sandbox' && (
       <TrialClaimForm list={list} sourceFilename={sourceFilename} onCancel={() => setClaimOpen(false)} />
     )}

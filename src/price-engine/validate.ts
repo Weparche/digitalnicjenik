@@ -1,4 +1,4 @@
-import { isValidGtin } from './normalize'
+import { isValidGtin, normalizeReferenceDate } from './normalize'
 import { isServiceItem } from './profile'
 import type { NormalizedPriceList, ParseWarning, ValidationIssue, ValidationResult } from './types'
 
@@ -8,6 +8,7 @@ const keyFor = (item: NormalizedPriceList['items'][number]) => item.externalId |
 
 export function validatePriceList(priceList: NormalizedPriceList): ValidationResult {
   const issues: ValidationIssue[] = []
+  if (!priceList.items.length) issues.push({ row: 1, itemKey: 'empty', field: 'import', severity: 'error', message: 'Cjenik mora sadržavati barem jednu stavku.' })
   priceList.items.forEach((item, index) => {
     const row = index + 2
     const itemKey = keyFor(item)
@@ -17,17 +18,29 @@ export function validatePriceList(priceList: NormalizedPriceList): ValidationRes
     if (!item.type?.trim() || (!service && !/proiz|product|roba|artikl/i.test(item.type))) issues.push({ row, itemKey, field: 'type', severity: 'manual_review', message: 'Vrsta stavke nije dovoljno jasna za objavu.' })
     if (service && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0)) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Nedostaje sidrena cijena. Potrebna je vrijednost primjenjiva 10. rujna 2026. bez posebnog oblika prodaje.' })
     if (!service) validateProductFields(item, row, itemKey, issues)
-    if (service && item.isNewSinceReferenceDate) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Nova usluga zahtijeva ručni pregled referentne cijene.' })
+    const reference = normalizeReferenceDate(item.anchorReferenceDate)
+    if (item.anchorReferenceDate && !reference) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'error', message: 'Datum referentne cijene nije valjan.' })
+    if (!service && !reference) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Odaberite mjerodavni datum referentne cijene proizvoda: 2. svibnja 2025. ili 10. rujna 2026., odnosno datum prvog uvrštenja nove stavke.' })
+    if (item.isNewSinceReferenceDate) {
+      if (!reference || reference <= '2026-09-10') issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Nova usluga ili proizvod zahtijeva datum prvog uvrštenja nakon 10. rujna 2026. i cijenu s tog datuma.' })
+    } else if (reference && !(service ? reference === '2026-09-10' : ['2025-05-02', '2026-09-10'].includes(reference))) {
+      issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Provjerite referentni datum; za novu stavku izričito označite prvo uvrštenje.' })
+    }
     if (item.salePrice != null && (!Number.isFinite(item.salePrice) || item.salePrice <= 0)) issues.push({ row, itemKey, field: 'price', severity: 'error', message: 'Akcijska cijena mora biti pozitivan broj.' })
-    if (item.salePrice != null && item.specialSaleApplied == null) issues.push({ row, itemKey, field: 'specialSaleApplied', severity: 'manual_review', message: 'Potvrdite je li cijena primijenjena tijekom posebnog oblika prodaje.' })
+    if (item.specialSaleApplied == null) issues.push({ row, itemKey, field: 'specialSaleApplied', severity: 'manual_review', message: 'Potvrdite je li cijena primijenjena tijekom posebnog oblika prodaje.' })
+    if (item.salePrice != null && item.salePrice >= item.price) issues.push({ row, itemKey, field: 'price', severity: 'error', message: 'Akcijska cijena mora biti niža od redovne cijene.' })
+    if (item.salePrice != null && item.specialSaleApplied === false) issues.push({ row, itemKey, field: 'specialSaleApplied', severity: 'manual_review', message: 'Akcijska cijena nije usklađena s oznakom da nema posebne prodaje.' })
     if (item.specialSaleApplied === true && !item.specialSaleName?.trim()) issues.push({ row, itemKey, field: 'specialSaleName', severity: 'manual_review', message: 'Upišite naziv posebnog oblika prodaje.' })
+    if (item.specialSaleApplied === true && (item.lowest30DayPrice == null || !Number.isFinite(item.lowest30DayPrice) || item.lowest30DayPrice <= 0)) issues.push({ row, itemKey, field: 'price', severity: 'manual_review', message: 'Za javni prikaz akcije unesite prethodnu najnižu cijenu iz svoje evidencije (30 dana). Sidrena cijena nije zamjena za taj podatak. Za posebna izuzeća zatražite zasebni pregled.' })
+    if (item.lowest30DayPrice != null && (!Number.isFinite(item.lowest30DayPrice) || item.lowest30DayPrice <= 0)) issues.push({ row, itemKey, field: 'price', severity: 'error', message: 'Prethodna najniža cijena mora biti pozitivan broj.' })
+    if (item.specialSaleApplied === true && item.lowest30DayPrice != null && (item.salePrice ?? item.price) >= item.lowest30DayPrice) issues.push({ row, itemKey, field: 'price', severity: 'manual_review', message: 'Cijena posebne prodaje nije niža od navedene prethodne najniže cijene. Provjerite evidenciju i primjenjiva pravila.' })
   })
   return finalizeValidation(issues)
 }
 
 const MISSING_ANCHOR_PRODUCT = 'Nedostaje sidrena cijena. Odluka je traži i za proizvode.'
 
-/** Obvezna polja cjenika proizvoda (NN 101/2026-1213, čl. III). Barkod i cijena za jedinicu mjere traže se samo gdje su primjenjivi pa su upozorenja. */
+/** Product fields; applicability of unit pricing must be supplied explicitly, never inferred from two empty cells. */
 function validateProductFields(item: NormalizedPriceList['items'][number], row: number, itemKey: string, issues: ValidationIssue[]) {
   const text = (value: string | null | undefined) => (value ?? '').trim()
   if (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: MISSING_ANCHOR_PRODUCT })
@@ -35,10 +48,11 @@ function validateProductFields(item: NormalizedPriceList['items'][number], row: 
   if (!text(item.brand)) issues.push({ row, itemKey, field: 'brand', severity: 'manual_review', message: 'Nedostaje marka. Upišite „bez marke” ako je proizvod nema.' })
   if (!item.availability) issues.push({ row, itemKey, field: 'availability', severity: 'manual_review', message: 'Navedite je li proizvod dostupan ili nedostupan.' })
   const barcode = text(item.barcode)
-  if (!barcode) issues.push({ row, itemKey, field: 'barcode', severity: 'warning', message: 'Nedostaje barkod. Odluka ga traži gdje je primjenjiv.' })
+  if (!barcode) issues.push({ row, itemKey, field: 'barcode', severity: 'manual_review', message: 'Nedostaje barkod proizvoda. Provjerite obvezne podatke prije objave.' })
   else if (!isValidGtin(barcode)) issues.push({ row, itemKey, field: 'barcode', severity: 'warning', message: 'Barkod nije valjan (očekuje se EAN-8, EAN-13, UPC-A ili GTIN-14 s ispravnom kontrolnom znamenkom).' })
-  if (text(item.unit) && (item.unitPrice == null || !Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'warning', message: 'Uz jedinicu mjere navedite i cijenu za jedinicu mjere.' })
-  if (item.unitPrice != null && !text(item.unit)) issues.push({ row, itemKey, field: 'unit', severity: 'warning', message: 'Cijena za jedinicu mjere traži i navedenu jedinicu mjere.' })
+  const exempt = text(item.unitPricingExemption).length >= 10
+  if (!text(item.unit) && !exempt) issues.push({ row, itemKey, field: 'unit', severity: 'manual_review', message: 'Navedite jedinicu mjere ili obrazložite zašto cijena po jedinici nije primjenjiva.' })
+  if ((!exempt || text(item.unit)) && (item.unitPrice == null || !Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'manual_review', message: 'Navedite pozitivnu cijenu za jedinicu mjere ili obrazložite iznimku.' })
 }
 
 export function importIssuesFromParseWarnings(warnings: ParseWarning[], source: 'csv' | 'xlsx' | 'xml'): ValidationIssue[] {

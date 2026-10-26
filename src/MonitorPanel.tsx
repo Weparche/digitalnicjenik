@@ -62,7 +62,7 @@ export function MonitorPanel({ slug }: { slug: string }) {
         <div>
           <span className="app-label">NADZOR USKLAĐENOSTI</span>
           <h2 id="monitor-heading">{view ? view.headline : 'Prva provjera još nije obavljena'}</h2>
-          <p>{view ? view.checkedLabel : 'Cjenik provjeravamo svaki dan prije 08:00. Možete i odmah pokrenuti provjeru.'}</p>
+          <p>{view ? view.checkedLabel : 'Cjenik provjeravamo svakodnevno, uključujući provjeru nakon roka u 08:00. Možete i odmah pokrenuti provjeru.'}</p>
         </div>
         <button className="app-button app-button-light" type="button" disabled={busy} onClick={() => void runNow()}>{busy ? 'Provjeravam…' : 'Provjeri sada'}</button>
       </header>

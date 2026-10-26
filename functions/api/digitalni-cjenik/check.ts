@@ -251,13 +251,16 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
     if (!rawHref) continue;
     let url: URL;
     try { url = new URL(decodeHref(rawHref), baseUrl); } catch { continue; }
-    if (url.origin !== baseUrl.origin || !/^https?:$/.test(url.protocol) || url.username || url.password || isForbiddenHostname(url.hostname)) continue;
+    if (!/^https?:$/.test(url.protocol) || url.username || url.password || isForbiddenHostname(url.hostname)) continue;
     const href = url.href.toLowerCase();
     const text = match[2].replace(/<[^>]+>/g, " ").toLowerCase();
     const format = (url.searchParams.get("format") || url.searchParams.get("type") || "").toLowerCase();
     const csv = /\.csv(?:$|[?#])/.test(href) || format === "csv" || href.includes("csv");
     const xml = /\.xml(?:$|[?#])/.test(href) || format === "xml" || href.includes("xml");
     const archive = /(arhiva|archive)/.test(`${href} ${text}`) && /(cjenik|cijene|price)/.test(`${href} ${text}`);
+    // Follow explicit external feed/archive links through the same DNS/redirect
+    // protections, but do not turn this into a cross-site general crawl.
+    if (url.origin !== baseUrl.origin && !(csv || xml || archive)) continue;
     if (csv || xml || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`)) results.push({ url, kind: csv ? "csv" : xml ? "xml" : archive ? "archive" : "price" });
   }
   return results;
@@ -277,7 +280,7 @@ export function isBotChallenge(response: Response, body = ""): boolean {
 function isHtml(response: Response, body: string) {
   const contentType = (response.headers.get("content-type") || "").toLowerCase();
   const start = body.trimStart().slice(0, 120).toLowerCase();
-  return contentType.includes("text/html") || /^<!doctype\s+html|^<html[\s>]/i.test(start);
+  return contentType.includes("text/html") || /^<!doctype\s+html|^<(?:html|head|body|a|div|h1|nav)[\s>]/i.test(start);
 }
 
 function stripTags(html: string) {
@@ -422,7 +425,8 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string) {
     const validation = validatePriceList(parsed.priceList);
     const issues = validation.issues.length + (skipped ? 1 : 0);
     return { structure: skipped ? 'warning' as const : 'pass' as const, content: issues ? 'warning' as const : 'pass' as const, evidence: `Analizirano ${rawCount} redaka postojećim validatorom. ${issues ? `${issues} nalaza zahtijeva detaljnu provjeru.` : 'Nema nalaza u podržanim poljima.'} Ne potvrđuje stvarnu primjenjivost cijena ni pravnu usklađenost.` };
-  } catch {
+  } catch (caught) {
+    if (caught instanceof Error && /XML stavka|nezatvorene navodnike/.test(caught.message)) return { structure: 'warning' as const, content: 'warning' as const, evidence: caught.message };
     return { structure: 'unknown' as const, content: 'unknown' as const, evidence: 'Datoteka je dostupna, ali format nije prepoznat za detaljnu analizu. Učitajte je u validator.' };
   }
 }

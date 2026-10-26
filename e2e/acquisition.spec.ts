@@ -62,14 +62,14 @@ test('invalid input focuses field; bare domain normalizes; result has nine evide
   await expect(page.locator('.acq-status-list > li').nth(3).getByRole('link')).toBeVisible()
 })
 
-test('6/9 shows uncertain content, three annual plans, and context reaches Link inquiry', async ({ page }) => {
+test('one supported format does not reduce the score and context reaches Link inquiry', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await stub(page, { status: 'green', message: 'Pronađena je CSV datoteka.', details: { ...complete, xmlFound: false, xmlUrl: null, archiveFound: false, contentStatus: 'unknown' } })
   await page.goto('/')
   await page.getByLabel('Adresa web stranice', { exact: true }).fill('salon.hr')
   await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
-  await expect(page.locator('.acq-result-summary')).toContainText('6/9')
+  await expect(page.locator('.acq-result-summary')).toContainText('7/9')
   await expect(page.locator('.acq-result-anchor')).toBeFocused()
   await expect(page.locator('.acq-tone-yellow')).toBeVisible()
   await expect(page.locator('.acq-status-unknown')).toHaveCount(1)
@@ -90,7 +90,7 @@ test('6/9 shows uncertain content, three annual plans, and context reaches Link 
   await expect(page.getByRole('heading', { name: 'Zatražite paket Link' })).toBeVisible()
   await expect(page.locator('.lead-price')).toContainText('19,90 €/god')
   await expect(page.locator('.lead-form input[name="website"]')).toHaveValue('https://salon.hr/')
-  await expect(page.locator('.lead-context')).toContainText('6/9')
+  await expect(page.locator('.lead-context')).toContainText('7/9')
   await expect(page.locator('.lead-context')).toContainText('https://salon.hr/cjenik.csv')
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
 })
