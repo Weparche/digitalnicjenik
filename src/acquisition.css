@@ -6,7 +6,9 @@
 .acquisition button, .acquisition a, .acquisition summary { -webkit-tap-highlight-color: #dbeafe; }
 .acquisition a { text-underline-offset: 4px; }
 .acquisition ::selection { background: #bfdbfe; color: #0f172a; }
-.acquisition :focus-visible { outline: 3px solid #2563eb; outline-offset: 4px; }
+.acquisition :is(a, button, input, select, textarea, summary):focus-visible { outline: 3px solid #2563eb; outline-offset: 4px; }
+/* These are announcement/scroll targets, not interactive controls. */
+.acquisition :is(.acq-result-anchor, .premium-validator-anchor, .lead-section):focus { outline: none; }
 .acquisition input { caret-color: #2563eb; }
 .acq-skip { position: absolute; top: -80px; left: 20px; z-index: 20; padding: 14px; background: #fff; color: #1d4ed8; }
 .acq-skip:focus { top: 10px; }
@@ -33,8 +35,9 @@
 .acq-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 22px; scroll-margin-top: 30px; }
 .acq-input { display: flex; align-items: center; gap: 12px; min-width: 0; border: 1px solid #c5cfdf; border-radius: 10px; background: #fff; color: #64748b; padding: 0 15px; }
 .acq-input input { width: 100%; min-width: 0; height: 54px; padding: 0; border: 0; outline: none; background: transparent; color: #0f172a; font-size: 16px; }
+.acquisition #acq-url:focus-visible { outline: none; }
 .acq-input input::placeholder { color: #63718a; opacity: 1; }
-.acq-input:focus-within { outline: 3px solid #93baff; outline-offset: 2px; border-color: #2563eb; }
+.acq-input:focus-within { outline: 2px solid #2563eb; outline-offset: 2px; border-color: #2563eb; }
 .acq-primary, .acq-secondary { display: inline-flex; justify-content: center; align-items: center; gap: 12px; min-height: 52px; padding: 12px 20px; border: 0; border-radius: 9px; font-weight: 650; font-size: 16px; line-height: 1.25; text-decoration: none; cursor: pointer; transition: background-color 160ms ease-out, box-shadow 160ms ease-out; }
 .acq-primary { background: #0660ff; color: #fff; }
 .acq-primary:hover { background: #1d4ed8; box-shadow: 0 5px 14px #1d4ed820; }
