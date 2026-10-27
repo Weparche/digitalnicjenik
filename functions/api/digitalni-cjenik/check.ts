@@ -556,7 +556,19 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   return result("red", "Strojni cjenik nije pronađen.", details);
 }
 
-export const onRequestPost = async ({ request, env }: { request: Request; env: CheckerEnv }) => {
+// nepar.hr/admin lists which websites people check. workers.dev, not nepar.hr: a Pages Function
+// fetching its own zone would skip the Worker route.
+const NEPAR_CHECK_LOG_URL = "https://nepar-contact.ig29007.workers.dev/analytics/check";
+
+function reportCheckToNepar(url: unknown, status: CheckResult["status"]) {
+  return fetch(NEPAR_CHECK_LOG_URL, {
+    method: "POST",
+    headers: { "content-type": "text/plain;charset=UTF-8" },
+    body: JSON.stringify({ url, status }),
+  }).then(() => undefined, () => undefined);
+}
+
+export const onRequestPost = async ({ request, env, waitUntil }: { request: Request; env: CheckerEnv; waitUntil?: (promise: Promise<unknown>) => void }) => {
   try {
     await consumeCheckerBudget(request, env);
   } catch (caught) {
@@ -570,6 +582,7 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: C
   const body = await parseBody(request);
   if (!body || body.url === undefined) return Response.json(result("red", "Unesite ispravnu adresu web stranice."), { status: 400 });
   const checked = await runDigitalPriceListCheck(body.url, env);
+  waitUntil?.(reportCheckToNepar(body.url, checked.status));
   return Response.json({ ...checked, report: technicalReport(checked) }, { headers: { 'cache-control': 'no-store' } });
 };
 
