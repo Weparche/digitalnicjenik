@@ -1,4 +1,4 @@
-import { isValidGtin, normalizeReferenceDate } from './normalize'
+import { isValidGtin, normalizeReferenceDate, validRequiredPrice } from './normalize'
 import { isServiceItem } from './profile'
 import type { NormalizedPriceList, ParseWarning, ValidationIssue, ValidationResult } from './types'
 
@@ -14,11 +14,11 @@ export function validatePriceList(priceList: NormalizedPriceList, options: { now
     const row = index + 2
     const itemKey = keyFor(item)
     if (!item.name.trim()) issues.push({ row, itemKey, field: 'name', severity: 'error', message: 'Nedostaje naziv.' })
-    if (!Number.isFinite(item.price) || item.price <= 0) issues.push({ row, itemKey, field: 'price', severity: 'error', message: 'Maloprodajna cijena mora biti pozitivan broj.' })
-    if (item.unitPrice != null && (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'error', message: 'Unesena cijena za jedinicu mjere mora biti pozitivan broj, neovisno o izuzeću.' })
     const service = isServiceItem(item)
+    if (!validRequiredPrice(item.price, service)) issues.push({ row, itemKey, field: 'price', severity: 'error', message: service ? 'Maloprodajna cijena usluge mora biti broj veći ili jednak nuli.' : 'Maloprodajna cijena mora biti pozitivan broj.' })
+    if (item.unitPrice != null && (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'error', message: 'Unesena cijena za jedinicu mjere mora biti pozitivan broj, neovisno o izuzeću.' })
     if (!item.type?.trim() || (!service && !/proiz|product|roba|artikl/i.test(item.type))) issues.push({ row, itemKey, field: 'type', severity: 'manual_review', message: 'Vrsta stavke nije dovoljno jasna za objavu.' })
-    if (service && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0)) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Nedostaje sidrena cijena. Potrebna je vrijednost primjenjiva 10. rujna 2026. bez posebnog oblika prodaje.' })
+    if (service && !validRequiredPrice(item.anchorPrice, true)) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: item.anchorPrice == null ? 'Nedostaje sidrena cijena. Potrebna je vrijednost primjenjiva 10. rujna 2026. bez posebnog oblika prodaje.' : 'Sidrena cijena usluge mora biti broj veći ili jednak nuli.' })
     if (!service) validateProductFields(item, row, itemKey, issues)
     const reference = normalizeReferenceDate(item.anchorReferenceDate)
     if (reference && reference > today) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'error', message: 'Datum referentne cijene ne može biti u budućnosti.' })

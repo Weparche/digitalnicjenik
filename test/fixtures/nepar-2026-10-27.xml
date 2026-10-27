@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<digitalni-cjenik
+  vrsta="usluge"
+  oblik-prodajnog-objekta="mrežna stranica"
+  adresa-prodajnog-objekta="Koprivnička ulica 52, 10000 Zagreb"
+  oznaka-prodajnog-objekta="WEB-NEPAR-01"
+  broj-pohrane="1"
+  objavljeno="2026-09-15T22:45:00"
+  napomena="NN 101/2026-1213 ne propisuje službenu XML shemu ni semantiku &quot;cijena od&quot;. Polja nepar_cijena_od i nepar_napomena su NEPAR-ovo tehničko pojašnjenje dok ne postoji službena uputa."
+>
+  <usluga>
+    <naziv_usluge>Web Basic</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">300.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">300.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Web Business</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">500.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">500.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Web Pro</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">700.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">700.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Redizajn Basic</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">800.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">800.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Redizajn Business</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">1100.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">1100.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Redizajn Pro</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">1500.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">1500.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Održavanje Basic</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">200.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">200.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Održavanje Business</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">400.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">400.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Održavanje Pro</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">600.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">600.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Social Basic</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">300.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">300.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Social Business</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">450.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">450.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Social Pro</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">650.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">650.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>Dodatna podstranica</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">80.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">80.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Ciljana SEO landing stranica</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">100.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">100.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Google Business profil i osnovno podešavanje</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">100.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">100.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Dodatna administracija sadržaja</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">40.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">40.00</sidrena_cijena>
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena />
+  </usluga>
+  <usluga>
+    <naziv_usluge>AI chatbot ili AI integracija</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">500.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">500.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Content session na lokaciji (do 60 min snimanja fotografija i videa)</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">150.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">150.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Upravljanje Meta Ads kampanjama</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">150.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena valuta="EUR">150.00</sidrena_cijena>
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Provjera digitalnog cjenika web-stranice</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">0.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena />
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena>Nova usluga uvedena nakon 10.09.2026.; sidrena cijena nije primjenjiva.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>NEPAR Publisher – godišnja pretplata</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">39.90</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena />
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena>Nova usluga uvedena nakon 10.09.2026.; sidrena cijena nije utvrđena (REGULATORY TODO). Self-service putem digitalnicjenik.nepar.hr.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Postavljanje NEPAR Publishera (prva godina)</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">89.90</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena />
+    <nepar_cijena_od>false</nepar_cijena_od>
+    <nepar_napomena>Nova usluga uvedena nakon 10.09.2026.; sidrena cijena nije primjenjiva.</nepar_napomena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Wix / React / Next / Vite / custom integracija</naziv_usluge>
+    <maloprodajna_cijena valuta="EUR">149.00</maloprodajna_cijena>
+    <posebni_oblik_prodaje>false</posebni_oblik_prodaje>
+    <naziv_posebnog_oblika_prodaje />
+    <sidrena_cijena />
+    <nepar_cijena_od>true</nepar_cijena_od>
+    <nepar_napomena>Cijena je početna (&quot;od&quot;) — konačna cijena ovisi o opsegu ili platformi. Nova usluga uvedena nakon 10.09.2026.; sidrena cijena nije primjenjiva. Prilagođena integracija ERP/POS/webshop — individualna ponuda.</nepar_napomena>
+  </usluga>
+</digitalni-cjenik>

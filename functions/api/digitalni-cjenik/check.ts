@@ -1,8 +1,7 @@
 import { parseMarketinoCsv } from '../../../src/price-engine/adapters/marketinoCsv';
-import { parseXmlPriceList } from '../../../src/price-engine/xml';
+import { inspectXmlPriceList } from '../../../src/price-engine/xml';
 import { validatePriceList } from '../../../src/price-engine/validate';
-import { parseXmlFeed } from '../../../shared/compliance/document-parser';
-import { technicalReport, type WebsiteCheckDetails } from '../../../shared/website-check';
+import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckDetails } from '../../../shared/website-check';
 
 type Resolver = {
   resolve4: (hostname: string) => Promise<string[]>;
@@ -387,8 +386,13 @@ async function findDocument(
   candidates: URL[],
   env: CheckerEnv,
   network: { failed: boolean; blocked: boolean; checked: boolean },
-  analyses: Array<{ structure: 'pass' | 'warning' | 'unknown'; content: 'pass' | 'warning' | 'unknown'; evidence: string }>,
+  analyses: Array<ReturnType<typeof analyzeDocument>>,
 ) {
+  const remember = (analysis: ReturnType<typeof analyzeDocument>) => {
+    const index = analyses.findIndex(a => a.format === kind);
+    if (index < 0) analyses.push(analysis);
+    else analyses[index] = analysis;
+  };
   for (const candidate of candidates) {
     try {
       const fetched = await safeDigitalPriceListFetch(candidate, env);
@@ -397,7 +401,11 @@ async function findDocument(
         continue;
       }
       let body = "";
-      try { body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES); } catch { network.failed = true; continue; }
+      try { body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES); } catch {
+        network.failed = true;
+        if (fetched.response.ok) remember({ ...analyzeDocument(kind, '', fetched.url.href), structureReasons: ['Dohvat ili sigurnosno ograničenje onemogućuje potpunu analizu dokumenta.'] });
+        continue;
+      }
       if (isBotChallenge(fetched.response, body) || [401, 403, 429].includes(fetched.response.status)) {
         network.blocked = true;
         continue;
@@ -405,7 +413,7 @@ async function findDocument(
       network.checked = true;
       if (!fetched.response.ok) continue;
       if (documentLooksValid(kind, fetched.response, body)) {
-        analyses.push(analyzeDocument(kind, body));
+        remember(analyzeDocument(kind, body, fetched.url.href));
         return fetched.url.href;
       }
     } catch {
@@ -415,19 +423,31 @@ async function findDocument(
   return null;
 }
 
-/** Reuses the upload engine. Unrecognized formats never earn a content pass. */
-export function analyzeDocument(kind: 'csv' | 'xml', body: string) {
+/** The upload parsers inspect every bounded source row before the response is truncated. */
+export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string | null = null): DocumentAnalysis & { structure: DocumentAnalysis['status']; content: DocumentAnalysis['status']; evidence: string } {
+  const base: DocumentAnalysis = { format: kind, url, fetched: true, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: [], findings: [], totalFindings: 0 };
+  const finish = (analysis: DocumentAnalysis) => ({ ...analysis, structure: analysis.structureStatus, content: analysis.contentStatus, evidence: analysis.structureReasons.join(' ') });
   try {
-    const parsed = kind === 'csv' ? parseMarketinoCsv(body) : { priceList: parseXmlPriceList(body), warnings: [] };
-    const rawCount = kind === 'xml' ? parseXmlFeed(body).records.length : parsed.priceList.items.length + parsed.warnings.length;
-    if (rawCount > 2000) return { structure: 'unknown' as const, content: 'unknown' as const, evidence: 'Za veće cjenike učitajte datoteku u detaljni validator.' };
-    const skipped = rawCount !== parsed.priceList.items.length || parsed.warnings.length > 0;
-    const validation = validatePriceList(parsed.priceList);
-    const issues = validation.issues.length + (skipped ? 1 : 0);
-    return { structure: skipped ? 'warning' as const : 'pass' as const, content: issues ? 'warning' as const : 'pass' as const, evidence: `Analizirano ${rawCount} redaka postojećim validatorom. ${issues ? `${issues} nalaza zahtijeva detaljnu provjeru.` : 'Nema nalaza u podržanim poljima.'} Ne potvrđuje stvarnu primjenjivost cijena ni pravnu usklađenost.` };
+    if (new TextEncoder().encode(body).byteLength > MAX_DOCUMENT_BYTES) throw new Error('analysis_limit');
+    const parsed = kind === 'csv' ? parseMarketinoCsv(body, undefined, { inspection: true }) : inspectXmlPriceList(body);
+    const rawCount = parsed.rowCount ?? parsed.priceList.items.length;
+    if (rawCount > 2000) throw new Error('analysis_limit');
+    const findings: DocumentFinding[] = parsed.warnings.map(w => ({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }));
+    if (parsed.priceList.items.length) {
+      for (const issue of validatePriceList(parsed.priceList).issues) {
+        const index = issue.row - 2;
+        findings.push({ row: parsed.sourceRows?.[index] ?? issue.row, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message });
+      }
+    }
+    const structure = rawCount ? 'pass' : 'warning';
+    const content = findings.length || !rawCount ? 'warning' : 'pass';
+    if (!rawCount) findings.push({ message: 'Cjenik ne sadrži stavke.' });
+    return finish({ ...base, structureRecognized: true, itemCount: rawCount, structureStatus: structure, contentStatus: content, status: content,
+      structureReasons: [kind.toUpperCase() + ' je parsiran; prepoznata su polja cjenika. Pronađeno stavki: ' + rawCount + '.'],
+      findings: findings.slice(0, 20), totalFindings: findings.length });
   } catch (caught) {
-    if (caught instanceof Error && /XML stavka|nezatvorene navodnike/.test(caught.message)) return { structure: 'warning' as const, content: 'warning' as const, evidence: caught.message };
-    return { structure: 'unknown' as const, content: 'unknown' as const, evidence: 'Datoteka je dostupna, ali format nije prepoznat za detaljnu analizu. Učitajte je u validator.' };
+    const limited = caught instanceof Error && caught.message === 'analysis_limit';
+    return finish({ ...base, structureReasons: [limited ? 'Sigurnosno ograničenje onemogućuje potpunu analizu. Učitajte datoteku u validator.' : 'Datoteka je dostupna, ali struktura nije prepoznata ili dokument nije ispravan za detaljnu analizu. Učitajte je u validator.'] });
   }
 }
 
@@ -546,10 +566,14 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     } catch { network.failed = true; }
   }
   details.networkIncomplete = network.failed;
-  const aggregate = (field: 'structure' | 'content') => analyses.some((a) => a[field] === 'warning') ? 'warning' : analyses.length && analyses.every((a) => a[field] === 'pass') ? 'pass' : 'unknown';
-  details.structureStatus = aggregate('structure');
-  details.contentStatus = aggregate('content');
-  details.contentEvidence = analyses.map((a) => a.evidence).sort().join(' ');
+  details.csvAnalysis = analyses.find(a => a.format === 'csv') ?? { format: 'csv', url: csv[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['CSV nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
+  details.xmlAnalysis = analyses.find(a => a.format === 'xml') ?? { format: 'xml', url: xml[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['XML nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
+  details.structureStatus = aggregateDocumentStatus(analyses.map(a => a.structureStatus));
+  details.contentStatus = aggregateDocumentStatus(analyses.map(a => a.contentStatus));
+  details.structureReasons = analyses.map(a => a.format.toUpperCase() + ': ' + a.structureReasons.join(' '));
+  details.contentReasons = analyses.map(a => a.format.toUpperCase() + ': ' + (a.structureRecognized ? a.totalFindings + ' nalaza u ' + a.itemCount + ' stavki.' : 'Sadržaj nije moguće potvrditi.'));
+  details.contentEvidence = details.contentReasons.join(' ') + ' Ne potvrđuje stvarnu primjenjivost cijena ni pravnu usklađenost.';
+  if (details.contentStatus === 'warning' || details.structureStatus === 'warning') return result('yellow', 'Pronađen je strojni cjenik s konkretnim nalazima. Pregledajte odvojene CSV/XML rezultate.', details);
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
   if (details.pricePageFound) return result("yellow", "Pronađena je stranica ili cjenik, ali nije potvrđen valjan javni CSV/XML dokument.", details);
   if (network.blocked && !network.checked) {

@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import { ComparePage } from './ComparePage'
 import { FaqPage } from './FaqPage'
-import { ExcelGuidePage, GuidesHubPage, MikroGuidePage, WooGuidePage } from './GuidePages'
+import { AnchorGuidePage, AutomationGuidePage, ExcelGuidePage, GuidesHubPage, MikroGuidePage, WooGuidePage } from './GuidePages'
 import { PricingPage } from './PricingPage'
 import { SpecPage } from './SpecPage'
 import { InstallationPage, AutoGubicReferencePage } from './InstallationPage'
@@ -15,6 +15,8 @@ const COMPONENTS: Record<string, () => ReactElement> = {
   '/usporedba/': ComparePage,
   '/specifikacija-csv-xml/': SpecPage,
   '/vodici/': GuidesHubPage,
+  '/vodici/sidrena-cijena/': AnchorGuidePage,
+  '/vodici/automatizacija-digitalnog-cjenika/': AutomationGuidePage,
   '/vodici/excel-csv-digitalni-cjenik/': ExcelGuidePage,
   '/vodici/woocommerce-wordpress-digitalni-cjenik/': WooGuidePage,
   '/vodici/mikroeracun-digitalni-cjenik/': MikroGuidePage,

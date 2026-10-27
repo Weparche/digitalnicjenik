@@ -22,6 +22,8 @@ const UPDATED = '2026-10-18T10:00:00+02:00'
 const OFFER_UPDATED = '2026-10-26T23:20:00+01:00'
 
 export const SITE_PAGES: SitePageMeta[] = [
+  { path: '/vodici/sidrena-cijena/', kind: 'guide', parent: '/vodici/', label: 'Sidrena cijena', title: 'Sidrena cijena 2026: značenje, datumi i prikaz', seoTitle: 'Sidrena cijena 2026: što znači i kako se ističe | NEPAR', description: 'Sidrena odnosno dodatna cijena: referentni datumi, odnos prema digitalnom CSV/XML cjeniku i prikaz uz aktualnu cijenu. Vodič sa službenim izvorima.', updatedAt: '2026-10-27T12:00:00+01:00' },
+  { path: '/vodici/automatizacija-digitalnog-cjenika/', kind: 'guide', parent: '/vodici/', label: 'Automatizacija cjenika', title: 'Automatizacija digitalnog cjenika: objava, integracija i nadzor', seoTitle: 'Automatizacija digitalnog cjenika: što radi Publisher | NEPAR', description: 'Što NEPAR Publisher generira nakon objave, što traži vaš izvor podataka i integraciju te što periodični nadzor provjerava. Bez obećanja automatske sinkronizacije.', updatedAt: '2026-10-27T12:00:00+01:00' },
   {
     path: '/objava-digitalnog-cjenika/',
     kind: 'service',

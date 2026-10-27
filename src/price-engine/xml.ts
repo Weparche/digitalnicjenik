@@ -1,7 +1,7 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser'
 import { normalizeBarcode, normalizeNumber, normalizeReferenceDate, parseAvailability } from './normalize'
 import { usesProductStructure } from './profile'
-import type { NormalizedPriceList } from './types'
+import type { NormalizedPriceList, ParseResult } from './types'
 
 const xml = (value: unknown) => String(value ?? '').replace(/[<>&'\"]/g, (character) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[character] ?? character)
 
@@ -67,6 +67,13 @@ const xmlTextOf = (parent: XmlTree, name: string) => findXmlNode(parent, name)?.
 
 /** Shared parser for NEPAR and the published HOK-style service examples. Invalid rows fail the whole import. */
 export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug: 'nepar', name: 'NEPAR' }): NormalizedPriceList {
+  const parsed = inspectXmlPriceList(xmlText, tenant)
+  if (parsed.warnings.length) throw new Error(parsed.warnings[0].message + ' Nijedna stavka nije uvezena.')
+  return parsed.priceList
+}
+
+/** Inspection retains invalid source rows; the upload wrapper above still rejects them. */
+export function inspectXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug: 'nepar', name: 'NEPAR' }): ParseResult {
   const root = parseXmlTree(xmlText)
   const nodes: XmlTree[] = []
   const collectItems = (node: XmlTree) => {
@@ -75,12 +82,15 @@ export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug:
   }
   collectItems(root)
   if (!nodes.length) throw new Error('XML ne sadrži prepoznate stavke cjenika.')
-  const items = nodes.map((node, index) => {
-    const service = localXmlName(node.name) === 'usluga'
+  const warnings: ParseResult['warnings'] = []
+  const sourceRows: number[] = []
+  const items = nodes.flatMap((node, index) => {
+    try {
+    const service = localXmlName(node.name) === 'usluga' || Boolean(findXmlNode(node, 'naziv_usluge'))
     const field = (nepar: string, hok?: string) => xmlTextOf(node, nepar) || (hok ? xmlTextOf(node, hok) : '')
     const name = field('name', 'naziv_usluge')
     const price = normalizeNumber(field('price', 'maloprodajna_cijena'))
-    if (!name || price == null) throw new Error(`XML stavka ${index + 1}: ${!name ? 'nedostaje naziv' : 'cijena nije broj'}. Nijedna stavka nije uvezena.`)
+    if (!name || price == null) throw new Error(`XML stavka ${index + 1}: ${!name ? 'nedostaje naziv' : !field('price', 'maloprodajna_cijena') ? 'nedostaje maloprodajna cijena' : 'cijena nije broj'}.`)
     const sale = xmlTextOf(node, 'salePrice')
     const anchor = field('anchorPrice', 'sidrena_cijena')
     const unitPrice = xmlTextOf(node, 'unitPrice')
@@ -94,7 +104,8 @@ export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug:
     for (const [label, value] of [['akcijska cijena', sale], ['sidrena cijena', anchor], ['cijena za jedinicu mjere', unitPrice]] as const) {
       if (value && normalizeNumber(value) == null) throw new Error(`XML stavka ${index + 1}: ${label} nije broj.`)
     }
-    return {
+    sourceRows.push(index + 1)
+    return [{
       externalId: xmlTextOf(node, 'externalId') || undefined,
       category: xmlTextOf(node, 'category') || undefined,
       name,
@@ -112,12 +123,15 @@ export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug:
       barcode: normalizeBarcode(xmlTextOf(node, 'barcode')) || null,
       availability: parseAvailability(xmlTextOf(node, 'availability')),
       specialSaleApplied: applied === 'true' || applied === 'da' ? true : applied === 'false' || applied === 'ne' ? false : null,
-      specialSaleName: field('specialSaleName', 'naziv_posebnog_oblika') || null,
+      specialSaleName: field('specialSaleName', 'naziv_posebnog_oblika') || xmlTextOf(node, 'naziv_posebnog_oblika_prodaje') || null,
       isNewSinceReferenceDate: xmlTextOf(node, 'isNewSinceReferenceDate').toLocaleLowerCase('hr-HR') === 'true',
+    }]
+    } catch (caught) {
+      warnings.push({ row: index + 1, itemName: xmlTextOf(node, 'name') || xmlTextOf(node, 'naziv_usluge'), message: caught instanceof Error ? caught.message : 'Neispravna XML stavka.' })
+      return []
     }
   })
-  if (!items.length) throw new Error('XML nema nijednu valjanu stavku s nazivom i cijenom.')
-  return { tenant, source: 'nepar', currency: 'EUR', updatedAt: new Date().toISOString(), items }
+  return { priceList: { tenant, source: 'nepar', currency: 'EUR', updatedAt: new Date().toISOString(), items }, warnings, sourceRows, rowCount: nodes.length }
 }
 
 /** Raw per-item field map (lowercased child names → trimmed text) for compliance checks; unlike parseXmlPriceList it keeps items that lack a name or price. */

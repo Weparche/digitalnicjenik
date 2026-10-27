@@ -12,6 +12,8 @@ Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https:/
 ## Stranice
 
 - [Početna](https://digitalnicjenik.nepar.hr/): digitalni cjenik s nadzorom usklađenosti — provjera weba, validator Excel/CSV cjenika i objava.
+- [Sidrena cijena](https://digitalnicjenik.nepar.hr/vodici/sidrena-cijena/): Sidrena odnosno dodatna cijena: referentni datumi, odnos prema digitalnom CSV/XML cjeniku i prikaz uz aktualnu cijenu. Vodič sa službenim izvorima.
+- [Automatizacija cjenika](https://digitalnicjenik.nepar.hr/vodici/automatizacija-digitalnog-cjenika/): Što NEPAR Publisher generira nakon objave, što traži vaš izvor podataka i integraciju te što periodični nadzor provjerava. Bez obećanja automatske sinkronizacije.
 - [Objava i ugradnja](https://digitalnicjenik.nepar.hr/objava-digitalnog-cjenika/): Objavite pripremljeni CSV od 19,90 €/god. Usporedite pakete, povežite cjenik s postojećim webom i pogledajte stvarnu NEPAR implementaciju.
 - [Auto Gubić](https://digitalnicjenik.nepar.hr/reference/auto-gubic/): NEPAR referentna implementacija za Auto Gubić: javni prikaz usluge, aktualna i sidrena cijena, CSV/XML poveznice te podaci o objavi. Pogledajte primjer.
 - [Cijene](https://digitalnicjenik.nepar.hr/cijene/): Besplatna provjera weba i validator. Godišnji paketi: Link 19,90 €/god, Publisher 49,90 €/god, Web + Publisher 79,90 €/god. Objavite digitalni cjenik na svojoj web stranici.

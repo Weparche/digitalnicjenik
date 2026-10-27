@@ -2,6 +2,25 @@ import { expect, test, type Page } from '@playwright/test'
 import type { WebsiteCheckDetails, WebsiteCheckResult } from '../shared/website-check'
 
 const complete: WebsiteCheckDetails = { reachable: true, homepageReadable: true, https: true, csvFound: true, xmlFound: true, pricePageFound: true, csvUrl: 'https://salon.hr/cjenik.csv', xmlUrl: 'https://salon.hr/cjenik.xml', publicLinkUrl: 'https://salon.hr/cjenik.csv', archiveFound: true, structureStatus: 'pass', contentStatus: 'pass' }
+
+for (const width of [390, 1440]) {
+  test(`per-file analysis shows 20 of 34 named findings without overflow at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const analysis = { format: 'csv' as const, url: 'https://salon.hr/' + 'dugacki-url-'.repeat(30) + '.csv', fetched: true, structureRecognized: true, itemCount: 34, status: 'warning' as const, structureStatus: 'pass' as const, contentStatus: 'warning' as const, structureReasons: ['Prepoznata struktura. Pronađeno stavki: 34.'], findings: Array.from({ length: 20 }, (_, i) => ({ row: i + 2, itemName: 'Usluga ' + (i + 1), message: 'Nedostaje sidrena cijena.' })), totalFindings: 34 }
+    await stub(page, { status: 'yellow', message: 'Potrebna provjera sadržaja.', details: { ...complete, contentStatus: 'warning', csvAnalysis: analysis, xmlAnalysis: { ...analysis, format: 'xml', url: 'https://salon.hr/cjenik.xml', itemCount: 0, structureRecognized: false, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', findings: [], totalFindings: 0 } } })
+    await page.goto('/')
+    await page.getByLabel('Adresa web stranice', { exact: true }).fill('salon.hr')
+    await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
+    const csvPanel = page.getByRole('article', { name: 'CSV analiza' })
+    await expect(csvPanel).toContainText('20 od 34')
+    await expect(csvPanel.locator('li')).toHaveCount(20)
+    await expect(csvPanel).toContainText('„Usluga 20”')
+    await expect(page.getByRole('article', { name: 'XML analiza' })).toContainText('Sadržaj nije moguće potvrditi')
+    await csvPanel.scrollIntoViewIfNeeded()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+    await page.screenshot({ path: `.tmp-review/checker-${width}.png`, fullPage: false })
+  })
+}
 async function stub(page: Page, result: WebsiteCheckResult) {
   await page.route('**/api/public-config', (r) => r.fulfill({ json: { turnstileSiteKey: '' } }))
   await page.route('**/api/digitalni-cjenik/check', (r) => r.fulfill({ json: result }))

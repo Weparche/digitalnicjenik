@@ -1,4 +1,4 @@
-import { normalizeBarcode, normalizeNumber, normalizeReferenceDate, parseAvailability, validateItems } from '../normalize'
+import { normalizeBarcode, normalizeHeader, normalizeNumber, normalizeReferenceDate, parseAvailability, validateItems } from '../normalize'
 import type { NormalizedPriceList, ParseResult, PriceSourceAdapter } from '../types'
 
 function splitCsv(input: string, delimiter: string): string[][] {
@@ -16,7 +16,7 @@ function splitCsv(input: string, delimiter: string): string[][] {
   return rows
 }
 
-const cleanHeader = (header: string) => header.replace(/^\uFEFF/, '').trim().toLocaleLowerCase('hr-HR')
+const cleanHeader = normalizeHeader
 // Alias order is priority order (e.g. SKU wins over a generic ID column).
 const findColumn = (headers: string[], ...names: string[]) => {
   const cleaned = headers.map(cleanHeader)
@@ -34,7 +34,7 @@ const booleanValue = (value: string | undefined): boolean | null => {
   return null
 }
 
-export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', slug: 'marketino-demo', name: 'Marketino demo' }): ParseResult {
+export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', slug: 'marketino-demo', name: 'Marketino demo' }, options: { inspection?: boolean } = {}): ParseResult {
   const firstLine = csv.replace(/^\uFEFF/, '').split(/\r?\n/, 1)[0] ?? ''
   const delimiter = (firstLine.match(/;/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0) ? ';' : ','
   const rows = splitCsv(csv.replace(/^\uFEFF/, ''), delimiter)
@@ -60,14 +60,17 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const exemptionIndex = findColumn(headers, 'razlog izuzeća cijene po jedinici')
   if (nameIndex < 0 || priceIndex < 0) throw new Error('Nisu pronađeni obavezni stupci “Naziv*” i “Cijena*”. Provjerite da je ovo CSV izvoz cjenika.')
   const warnings: ParseResult['warnings'] = []
+  const sourceRows: number[] = []
   const items = rows.slice(1).flatMap((row, index) => {
+    try {
     const name = row[nameIndex]?.trim() ?? ''; const price = normalizeNumber(row[priceIndex]);
     if (!name && !row.some(Boolean)) return []
     if (!name || price == null) {
       warnings.push({
         row: index + 2,
         field: !name ? 'name' : 'price',
-        message: !name ? 'nedostaje naziv.' : 'cijena nije broj.',
+        itemName: name || undefined,
+        message: !name ? 'nedostaje naziv.' : !row[priceIndex]?.trim() ? 'nedostaje maloprodajna cijena.' : 'cijena nije broj.',
       })
       return []
     }
@@ -84,12 +87,18 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
     const lowest = lowestIndex >= 0 ? normalizeNumber(row[lowestIndex]) : null
     if (lowestIndex >= 0 && row[lowestIndex]?.trim() && lowest == null) throw new Error(`CSV redak ${index + 2}: najniža cijena nije broj.`)
     const historical = { ...(date ? { anchorReferenceDate: date } : {}), ...(lowest != null ? { lowest30DayPrice: lowest } : {}), ...(newIndex >= 0 ? { isNewSinceReferenceDate: booleanValue(row[newIndex]) === true } : {}), ...(exemptionIndex >= 0 ? { unitPricingExemption: row[exemptionIndex]?.trim() || null } : {}) }
+    sourceRows.push(index + 2)
     return [{ ...historical, externalId: row[idIndex]?.trim() || undefined, category: row[groupIndex]?.trim() || undefined, name, type, price, salePrice, anchorPrice: anchorIndex >= 0 ? normalizeNumber(row[anchorIndex]) : null, specialSaleApplied: specialSaleAppliedIndex >= 0 ? booleanValue(row[specialSaleAppliedIndex]) : null, specialSaleName: specialSaleNameIndex >= 0 ? row[specialSaleNameIndex]?.trim() || null : null, ...(unitIndex >= 0 ? { unit: row[unitIndex]?.trim() || null } : {}), ...(unitPriceIndex >= 0 ? { unitPrice: normalizeNumber(row[unitPriceIndex]) } : {}), ...(brandIndex >= 0 ? { brand: row[brandIndex]?.trim() || null } : {}), ...(barcodeIndex >= 0 ? { barcode: normalizeBarcode(row[barcodeIndex]) || null } : {}), ...(availabilityIndex >= 0 ? { availability: parseAvailability(row[availabilityIndex]) } : {}) }]
+    } catch (caught) {
+      if (!options.inspection) throw caught
+      warnings.push({ row: index + 2, itemName: row[nameIndex]?.trim(), message: caught instanceof Error ? caught.message : 'Neispravan redak.' })
+      return []
+    }
   })
   const validItems = validateItems(items)
-  if (!validItems.length) throw new Error('CSV nema nijedan valjan artikl s nazivom i cijenom.')
+  if (!validItems.length && !options.inspection) throw new Error('CSV nema nijedan valjan artikl s nazivom i cijenom.')
   const priceList: NormalizedPriceList = { tenant, source: 'marketino-csv', currency: 'EUR', updatedAt: new Date().toISOString(), items: validItems }
-  return { priceList, warnings }
+  return { priceList, warnings, sourceRows, rowCount: rows.length - 1 }
 }
 
 export class MarketinoCsvAdapter implements PriceSourceAdapter {

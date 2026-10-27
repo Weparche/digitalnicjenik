@@ -42,8 +42,8 @@ export type NormalizedPriceList = {
   items: NormalizedPriceItem[]
 }
 
-export type ParseWarning = { row: number; message: string; field?: ValidationField }
-export type ParseResult = { priceList: NormalizedPriceList; warnings: ParseWarning[] }
+export type ParseWarning = { row: number; message: string; field?: ValidationField; itemName?: string }
+export type ParseResult = { priceList: NormalizedPriceList; warnings: ParseWarning[]; sourceRows?: number[]; rowCount?: number }
 
 export type ValidationIssue = {
   row: number

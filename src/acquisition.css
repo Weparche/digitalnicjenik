@@ -350,3 +350,19 @@
 .trial-claim-form fieldset { min-width: 0; border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; }
 .trial-claim-form fieldset label { display: flex; flex-direction: row; gap: 10px; align-items: center; margin: 6px 0; }
 .trial-claim-form fieldset input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; flex: 0 0 20px; }
+/* Per-document evidence stays readable at narrow widths, including long feed URLs. */
+.acq-document-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 28px 0; }
+.acq-document { min-width: 0; padding: 24px; border: 1px solid #dce3ef; border-radius: 12px; background: #fff; }
+.acq-document header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; justify-content: space-between; }
+.acq-document h3 { margin: 0; font-size: 22px; }
+.acq-document h4 { margin: 22px 0 8px; font-size: 15px; }
+.acq-document p { margin: 8px 0; font-size: 14px; line-height: 1.55; }
+.acq-document-url { display: block; overflow-wrap: anywhere; font-size: 14px; margin: 14px 0; }
+.acq-document-url svg { vertical-align: middle; margin-left: 4px; }
+.acq-document-status { font-size: 13px; font-weight: 650; }
+.acq-document-status.acq-status-warning { color: #9c4900; }
+.acq-document-status.acq-status-pass { color: #087347; }
+.acq-document-findings { margin: 12px 0 0; padding-left: 22px; }
+.acq-document-findings li { padding: 8px 0; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.acq-document-findings small { display: block; margin-top: 4px; color: #515c73; }
+@media (max-width: 760px) { .acq-document-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; } .acq-document { padding: 18px; } }

@@ -76,7 +76,7 @@ describe('digital price list checker hardening', () => {
   it('returns green only for a valid tabular CSV', async () => {
     const fetch = routeFetch({
       '/': () => new Response('<a href="/exports/current.csv">CSV</a>', { status: 200 }),
-      '/exports/current.csv': () => new Response('Naziv,Cijena\nŠišanje,15', { status: 200, headers: { 'content-type': 'text/plain' } }),
+      '/exports/current.csv': () => new Response('Naziv usluge,Cijena,Sidrena cijena,Poseban oblik prodaje\nŠišanje,15,14,false', { status: 200, headers: { 'content-type': 'text/plain' } }),
     })
     vi.stubGlobal('fetch', fetch)
     const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
@@ -137,7 +137,7 @@ describe('digital price list checker hardening', () => {
     const padding = ' '.repeat(600 * 1024)
     const fetch = routeFetch({
       '/': () => new Response(`<a href="/exports/current.csv">CSV</a>${padding}`, { status: 200, headers: { 'content-type': 'text/html' } }),
-      '/exports/current.csv': () => new Response('Naziv,Cijena\nŠišanje,15', { status: 200, headers: { 'content-type': 'text/plain' } }),
+      '/exports/current.csv': () => new Response('Naziv usluge,Cijena,Sidrena cijena,Poseban oblik prodaje\nŠišanje,15,14,false', { status: 200, headers: { 'content-type': 'text/plain' } }),
     })
     vi.stubGlobal('fetch', fetch)
     const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })

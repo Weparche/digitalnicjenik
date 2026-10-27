@@ -1,4 +1,24 @@
 /** Evidence model shared by the anonymous checker and the acquisition UI. */
+export type DocumentAnalysisStatus = 'pass' | 'warning' | 'unknown'
+export type DocumentFinding = { row?: number; itemName?: string; field?: string; message: string }
+export type DocumentAnalysis = {
+  format: 'csv' | 'xml'
+  url: string | null
+  fetched: boolean
+  structureRecognized: boolean
+  itemCount: number
+  status: DocumentAnalysisStatus
+  structureStatus: DocumentAnalysisStatus
+  contentStatus: DocumentAnalysisStatus
+  structureReasons: string[]
+  findings: DocumentFinding[]
+  totalFindings: number
+}
+
+export function aggregateDocumentStatus(statuses: DocumentAnalysisStatus[]): DocumentAnalysisStatus {
+  return statuses.includes('warning') ? 'warning' : statuses.includes('pass') ? 'pass' : 'unknown'
+}
+
 export type WebsiteCheckDetails = {
   reachable?: boolean
   homepageReadable?: boolean
@@ -20,6 +40,10 @@ export type WebsiteCheckDetails = {
   structureStatus?: 'pass' | 'warning' | 'unknown'
   contentStatus?: 'pass' | 'warning' | 'unknown'
   contentEvidence?: string
+  csvAnalysis?: DocumentAnalysis
+  xmlAnalysis?: DocumentAnalysis
+  structureReasons?: string[]
+  contentReasons?: string[]
 }
 export type WebsiteCheckResult = {
   status: 'green' | 'yellow' | 'red' | 'unavailable'
@@ -55,9 +79,9 @@ export function technicalReport(result: WebsiteCheckResult) {
     { ...found(d.csvFound, d.csvFound ? 'Dohvaćen je tablični CSV sadržaj, ne samo naziv datoteke.' : 'Valjan CSV nije pronađen među provjerenim adresama.'), url: d.csvUrl },
     { ...found(d.xmlFound, d.xmlFound ? 'Dohvaćen je sintaktički ispravan XML sadržaj.' : 'Valjan XML nije pronađen među provjerenim adresama.'), url: d.xmlUrl },
     { ...found(Boolean(d.publicLinkUrl), 'Poveznica mora biti pročitana iz javnog HTML-a; pretpostavljena adresa nije dokaz poveznice.'), url: d.publicLinkUrl },
-    { status: d.structureStatus ?? 'unknown', evidence: d.contentEvidence || 'Potrebna detaljna provjera prepoznate strukture datoteke.' },
+    { status: d.structureStatus ?? 'unknown', evidence: d.structureReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera prepoznate strukture datoteke.' },
     { ...found(d.archiveFound, 'Provjera pronalazi arhivu; ne potvrđuje trajanje ni potpunost povijesti objava.'), url: d.archiveUrl },
-    { status: d.contentStatus ?? 'unknown', evidence: d.contentEvidence || 'Potrebna detaljna provjera. Učitajte cjenik u validator.' },
+    { status: d.contentStatus ?? 'unknown', evidence: d.contentReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera. Učitajte cjenik u validator.' },
   ]
   const checks = TECHNICAL_CHECKS.map((check, i) => ({ ...check, ...states[i] }))
   // CSV and XML are legal alternatives; lack of the second is not a fault.

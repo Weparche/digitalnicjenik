@@ -1,5 +1,12 @@
 import type { Availability, NormalizedPriceItem } from './types'
 
+/** Shared CSV/Excel header matching; aliases retain their Croatian spelling. */
+export const normalizeHeader = (value: string) => value.replace(/^\uFEFF/, '').trim().toLocaleLowerCase('hr-HR').replace(/[_\s]+/g, ' ')
+
+export function validRequiredPrice(value: number | null | undefined, service: boolean): boolean {
+  return value != null && Number.isFinite(value) && (service ? value >= 0 : value > 0)
+}
+
 export function normalizeNumber(value: unknown): number | null {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null
   // Accept a currency suffix and locale grouping, never discard arbitrary text.

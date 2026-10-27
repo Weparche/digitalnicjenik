@@ -1,5 +1,6 @@
 import type { NormalizedPriceItem } from '../../src/price-engine/types'
 import { isServiceItem } from '../../src/price-engine/profile'
+import { validRequiredPrice } from '../../src/price-engine/normalize'
 import { FEED_FIELDS, type FeedStructure } from './document-parser'
 import type { ProfileRule, RuleField, Ruleset } from './rulesets'
 import type { FreshnessStatus, MonitorIssue, MonitorOverall } from './types'
@@ -16,8 +17,8 @@ function isBlank(value: unknown) {
 }
 
 function fieldMissing(item: NormalizedPriceItem, field: RuleField) {
-  if (field === 'price') return !Number.isFinite(item.price) || item.price <= 0
-  if (field === 'anchorPrice') return item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0
+  if (field === 'price') return !validRequiredPrice(item.price, isServiceItem(item))
+  if (field === 'anchorPrice') return !validRequiredPrice(item.anchorPrice, isServiceItem(item))
   return isBlank((item as Record<string, unknown>)[field])
 }
 

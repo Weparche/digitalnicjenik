@@ -1,0 +1,24 @@
+naziv_usluge,maloprodajna_cijena,posebni_oblik_prodaje,naziv_posebnog_oblika_prodaje,sidrena_cijena,nepar_cijena_od,nepar_napomena
+Web Basic,300.00,false,,300.00,false,
+Web Business,500.00,false,,500.00,false,
+Web Pro,700.00,false,,700.00,false,
+Redizajn Basic,800.00,false,,800.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Redizajn Business,1100.00,false,,1100.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Redizajn Pro,1500.00,false,,1500.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Održavanje Basic,200.00,false,,200.00,false,
+Održavanje Business,400.00,false,,400.00,false,
+Održavanje Pro,600.00,false,,600.00,false,
+Social Basic,300.00,false,,300.00,false,
+Social Business,450.00,false,,450.00,false,
+Social Pro,650.00,false,,650.00,false,
+Dodatna podstranica,80.00,false,,80.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Ciljana SEO landing stranica,100.00,false,,100.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Google Business profil i osnovno podešavanje,100.00,false,,100.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Dodatna administracija sadržaja,40.00,false,,40.00,false,
+AI chatbot ili AI integracija,500.00,false,,500.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Content session na lokaciji (do 60 min snimanja fotografija i videa),150.00,false,,150.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Upravljanje Meta Ads kampanjama,150.00,false,,150.00,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi."
+Provjera digitalnog cjenika web-stranice,0.00,false,,,false,Nova usluga uvedena nakon 10.09.2026.; sidrena cijena nije primjenjiva.
+NEPAR Publisher – godišnja pretplata,39.90,false,,,false,Nova usluga uvedena nakon 10.09.2026.; sidrena cijena nije utvrđena (REGULATORY TODO). Self-service putem digitalnicjenik.nepar.hr.
+Postavljanje NEPAR Publishera (prva godina),89.90,false,,,false,Nova usluga uvedena nakon 10.09.2026.; sidrena cijena nije primjenjiva.
+Wix / React / Next / Vite / custom integracija,149.00,false,,,true,"Cijena je početna (""od"") — konačna cijena ovisi o opsegu ili platformi. Nova usluga uvedena nakon 10.09.2026.; sidrena cijena nije primjenjiva. Prilagođena integracija ERP/POS/webshop — individualna ponuda."

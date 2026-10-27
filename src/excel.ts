@@ -1,4 +1,4 @@
-import { normalizeBarcode, normalizeNumber, normalizeReferenceDate, parseAvailability } from './price-engine/normalize'
+import { normalizeBarcode, normalizeHeader, normalizeNumber, normalizeReferenceDate, parseAvailability } from './price-engine/normalize'
 import { importIssuesFromParseWarnings } from './price-engine/validate'
 import type { NormalizedPriceList, ParseWarning, ValidationIssue } from './price-engine/types'
 
@@ -67,7 +67,7 @@ const aliases: Record<ExcelField, string[]> = {
 }
 
 const clean = (value: unknown) => String(value ?? '').replace(/^\uFEFF/, '').trim()
-const normalizedHeader = (value: unknown) => clean(value).toLocaleLowerCase('hr-HR').replace(/[*_:]+$/g, '').trim()
+const normalizedHeader = (value: unknown) => normalizeHeader(clean(value)).replace(/[*:]+$/g, '').trim()
 
 function booleanValue(value: unknown): boolean | null {
   const normalized = clean(value).toLocaleLowerCase('hr-HR')
@@ -167,7 +167,7 @@ export function excelRowsToPriceList(
       })
       return []
     }
-    const rawType = clean(value('type'))
+    const rawType = clean(value('type')) || (normalizedHeader(mapping.name ?? '') === 'naziv usluge' ? 'Usluga' : '')
     const isGoodsKind = /^(simple|variable|variation|grouped|external)$/i.test(rawType)
     const salePrice = normalizeNumber(value('salePrice'))
     const specialSaleApplied = booleanValue(value('specialSaleApplied'))

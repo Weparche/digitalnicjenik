@@ -1,4 +1,5 @@
-import { SitePageLayout } from './PageLayout'
+import { OFFICIAL_SOURCES, SitePageLayout, SourceList } from './PageLayout'
+import { anchorGuide } from './anchorGuide'
 import { getSitePage, SITE_PAGES } from './registry'
 
 export function ExcelGuidePage() {
@@ -198,4 +199,30 @@ export function GuidesHubPage() {
       </section>
     </SitePageLayout>
   )
+}
+
+export function AnchorGuidePage() {
+  return <SitePageLayout page={getSitePage('/vodici/sidrena-cijena/')} lead={anchorGuide.lead} related={[
+    { href: '/specifikacija-csv-xml/', label: 'Specifikacija CSV/XML' },
+    { href: '/vodici/automatizacija-digitalnog-cjenika/', label: 'Automatizacija i nadzor' },
+    { href: '/vodici/', label: 'Svi vodiči' },
+  ]}>
+    {anchorGuide.sections.map((section, index) => <section className="site-section" key={section.heading} aria-labelledby={`anchor-${index}`}><h2 id={`anchor-${index}`}>{section.heading}</h2>{section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}</section>)}
+    <section className="site-section" aria-labelledby="anchor-faq"><h2 id="anchor-faq">Česta pitanja o sidrenoj cijeni</h2>{anchorGuide.faq.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</section>
+    <SourceList sources={OFFICIAL_SOURCES}/>
+  </SitePageLayout>
+}
+
+export function AutomationGuidePage() {
+  return <SitePageLayout page={getSitePage('/vodici/automatizacija-digitalnog-cjenika/')} lead="Automatizacija digitalnog cjenika povezuje izvor cijena, objavu i provjeru dostupnosti. NEPAR Publisher danas automatizira izradu izlaznih datoteka nakon vaše objave; preuzimanje promjena iz poslovnog programa zahtijeva zaseban izvor podataka i integraciju." related={[
+    { href: '/vodici/excel-csv-digitalni-cjenik/', label: 'Priprema i uvoz datoteke' },
+    { href: '/vodici/sidrena-cijena/', label: 'Sidrena cijena i referentni datumi' },
+    { href: '/objava-digitalnog-cjenika/', label: 'Objava na postojećem webu' },
+  ]}>
+    <section className="site-section" aria-labelledby="publisher-flow"><h2 id="publisher-flow">Što Publisher već automatizira</h2><p>Učitajte Excel, CSV ili XML, pregledajte nalaze i dopunite potrebne podatke. Spremanje drafta nije javna objava: objavu pokrećete zasebnom potvrdom kada su blokade riješene.</p><p>Iz iste objavljene verzije nastaju javni web prikaz, CSV i XML. Stabilne poveznice vode na aktualnu objavu, a prethodne verzije ostaju u arhivi. Publisher generira naziv datoteke iz podataka objekta, rednog broja i vremena objave.</p><p>Promjenu cijene zasad unosite ili uvozite i ponovno objavljujete. AutoSync nije dostupan kao postojeća funkcija proizvoda.</p></section>
+    <section className="site-section" aria-labelledby="source-flow"><h2 id="source-flow">Vaš izvor podataka i integracija</h2><p>ERP, POS, webshop, poslovni program ili Excel mogu biti izvor cijena. Najprije provjerite može li sustav izvesti potrebne podatke, uključujući stvarne referentne cijene. Trenutna cijena i napomena nisu zamjena za povijesnu evidenciju.</p><p>Automatsko preuzimanje putem API-ja, webhooka ili raspoređenog izvoza ovisi o mogućnostima vašeg sustava i zasebno dogovorenoj integraciji. Publisher nema univerzalni priključak koji sam prati svaki ERP ili WooCommerce.</p></section>
+    <section className="site-section" aria-labelledby="monitor-flow"><h2 id="monitor-flow">Što periodični nadzor provjerava</h2><p>Nadzor provjerava objavljene podatke, dostupnost feedova, podudaranje datoteka i arhivu te bilježi rezultate i upozorenja. Provjera se može pokrenuti i ručno u nadzornoj ploči.</p><p>Nadzor ne preuzima nove cijene iz vašeg poslovnog programa i ne objavljuje promjene umjesto vas. Tehnički uredan rezultat ne potvrđuje da su unesene cijene stvarno primjenjive niti daje pravnu potvrdu usklađenosti.</p></section>
+    <section className="site-section" aria-labelledby="web-flow"><h2 id="web-flow">WordPress, Wix, React i drugi webovi</h2><p>Postojeći web može prikazivati javni cjenik poveznicom ili ugradnjom. Sustav u kojem vodite cijene i web stranica mogu ostati odvojeni. Prije povezivanja provjerite izvor podataka, potrebne pristupe i učestalost promjena.</p><p>Stvarni NEPAR cjenik ostaje na <a href="https://nepar.hr/cjenik">nepar.hr/cjenik</a>. Primjeri Publishera ne zamjenjuju taj cjenik.</p></section>
+    <SourceList sources={OFFICIAL_SOURCES}/>
+  </SitePageLayout>
 }

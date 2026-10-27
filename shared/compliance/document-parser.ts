@@ -1,6 +1,7 @@
 import { parseXmlItemRecords } from '../../src/price-engine/xml'
 import type { NormalizedPriceItem } from '../../src/price-engine/types'
 import { usesProductStructure } from '../../src/price-engine/profile'
+import { normalizeHeader } from '../../src/price-engine/normalize'
 
 /** Canonical field → value, as found in a published feed row. Empty string means "present but empty". */
 export type FeedRecord = Partial<Record<'category' | 'name' | 'type' | 'externalId' | 'price' | 'salePrice' | 'specialSaleApplied' | 'specialSaleName' | 'anchorPrice' | 'unit' | 'brand' | 'barcode' | 'unitPrice' | 'availability' | 'anchorReferenceDate' | 'lowest30DayPrice' | 'isNewSinceReferenceDate' | 'unitPricingExemption', string>>
@@ -29,11 +30,15 @@ const CSV_HEADERS: Record<string, keyof FeedRecord> = {
   'razlog izuzeća cijene po jedinici': 'unitPricingExemption',
   grupa: 'category',
   naziv: 'name',
+  'naziv usluge': 'name',
+  'naziv proizvoda': 'name',
   vrsta: 'type',
   'interna šifra': 'externalId',
   cijena: 'price',
+  'maloprodajna cijena': 'price',
   'akcijska cijena': 'salePrice',
   'poseban oblik prodaje': 'specialSaleApplied',
+  'posebni oblik prodaje': 'specialSaleApplied',
   'naziv posebnog oblika prodaje': 'specialSaleName',
   'sidrena cijena': 'anchorPrice',
   jedinica: 'unit',
@@ -85,13 +90,14 @@ export function parseCsvFeed(text: string): ParsedFeed {
   const rows = parseCsvRows(text)
   const header = rows[0]
   if (!header) throw new Error('CSV je prazan.')
-  const columns = header.map((name) => CSV_HEADERS[name.trim().toLocaleLowerCase('hr-HR')])
+  const columns = header.map((name) => CSV_HEADERS[normalizeHeader(name)])
   if (!columns.includes('name') || !columns.includes('price')) throw new Error('CSV nema stupce Naziv i Cijena.')
   const records = rows.slice(1).map((cells) => {
     const record: FeedRecord = {}
     columns.forEach((key, position) => {
       if (key) record[key] = (cells[position] ?? '').trim()
     })
+    if (!record.type && header.some(name => normalizeHeader(name) === 'naziv usluge')) record.type = 'Usluga'
     return record
   })
   return { records, format: 'csv' }
@@ -101,6 +107,14 @@ export function parseXmlFeed(text: string): ParsedFeed {
   const records = parseXmlItemRecords(text).map((raw) => {
     const record: FeedRecord = {}
     for (const key of [...FEED_FIELDS.products.xml, 'anchorReferenceDate', 'lowest30DayPrice', 'isNewSinceReferenceDate', 'unitPricingExemption'] as const) record[key] = raw[key.toLowerCase()] ?? raw[key] ?? ''
+    if (raw.naziv_usluge !== undefined) {
+      record.name = raw.naziv_usluge
+      record.type ||= 'Usluga'
+      record.price = raw.maloprodajna_cijena ?? ''
+      record.anchorPrice = raw.sidrena_cijena ?? ''
+      record.specialSaleApplied = raw.posebni_oblik_prodaje ?? ''
+      record.specialSaleName = raw.naziv_posebnog_oblika_prodaje ?? raw.naziv_posebnog_oblika ?? ''
+    }
     return record
   })
   return { records, format: 'xml' }
