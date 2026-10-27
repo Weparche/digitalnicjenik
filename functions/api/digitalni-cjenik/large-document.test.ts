@@ -17,8 +17,8 @@ function routeFetch(routes: Record<string, Response | (() => Response)>, fallbac
 
 function largeCsv(rows = 18_071) {
   return [
-    'Naziv;Cijena;Sidrena cijena;Posebni oblik prodaje',
-    ...Array.from({ length: rows }, (_, index) => `Artikl ${index + 1};${10 + (index % 50)},00;9,00;ne`),
+    'Naziv;Vrsta;Cijena;Sidrena cijena;Poseban oblik prodaje',
+    ...Array.from({ length: rows }, (_, index) => `Usluga ${index + 1};Usluga;${10 + (index % 50)},00;${10 + (index % 50)},00;NE`),
   ].join('\n')
 }
 
