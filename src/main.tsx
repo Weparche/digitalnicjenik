@@ -2,8 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import App from './App'
 import { captureFirstTouch } from './acquisition'
+import { startPageAnalytics } from './pageAnalytics'
 import './styles.css'
 
+startPageAnalytics()
 captureFirstTouch()
 import './share-print.css'
 
