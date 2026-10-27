@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { Fragment, useState, type FormEvent } from 'react'
 import { formatNewsDate, getPostBySlug, newsArticlePath } from './posts'
 import { absoluteAssetUrl } from './site'
 import { NewsLayout } from './NewsLayout'
@@ -15,6 +15,10 @@ type CheckerResult = {
 }
 
 const PUBLISHER_URL = 'https://digitalnicjenik.nepar.hr/#csv-validator'
+const REGULATION_GUIDE_SLUG = 'digitalni-cjenik-sidrena-cijena-2026'
+const REQUIRED_CONTENT_HEADING = 'Što mora sadržavati strojno čitljiv cjenik prema Odluci NN 101/2026?'
+const XLSX_CONVERSION_HEADING = 'Kako pretvoriti XLSX u propisani CSV ili XML format?'
+const ANCHOR_PRICE_HEADING = 'Što je sidrena cijena i kako je upisati u tablicu?'
 
 function ArticleWebsiteChecker() {
   const [url, setUrl] = useState('')
@@ -194,41 +198,75 @@ export function NewsArticle({ slug }: { slug: string }) {
           />
         </header>
         {post.sections.map((section) => {
+          const isRequiredContentSection =
+            post.slug === REGULATION_GUIDE_SLUG && section.heading === 'Koji podaci moraju biti u cjeniku?'
           const Tag = section.level === 2 ? 'h2' : 'h3'
+          const displayHeading = isRequiredContentSection ? REQUIRED_CONTENT_HEADING : section.heading
           const showFormatExample =
             post.formatExample && section.heading === 'Primjer strukture CSV i XML'
           return (
-            <section key={section.heading} className="news-section">
-              <Tag>{section.heading}</Tag>
-              <div
-                className="news-section-body"
-                dangerouslySetInnerHTML={{ __html: section.html }}
-              />
-              {showFormatExample && post.formatExample && (
-                <div className="news-format-examples">
-                  <h3 className="news-format-examples-title">CSV za pružatelja usluga</h3>
-                  <pre className="news-code-sample">
-                    <code>{post.formatExample.csvText}</code>
-                  </pre>
-                  <h3 className="news-format-examples-title">XML za pružatelja usluga</h3>
-                  <pre className="news-code-sample">
-                    <code>{post.formatExample.xmlText}</code>
-                  </pre>
-                  <div className="news-format-actions">
-                    <a
-                      className="app-button app-button-light"
-                      href={post.formatExample.csvDownloadHref}
-                      download
-                    >
-                      Preuzmi primjer CSV
-                    </a>
-                    <a className="app-button app-button-primary" href="/#csv-validator">
-                      Provjeri svoj CSV →
-                    </a>
+            <Fragment key={section.heading}>
+              <section className="news-section">
+                <Tag>{displayHeading}</Tag>
+                <div
+                  className="news-section-body"
+                  dangerouslySetInnerHTML={{ __html: section.html }}
+                />
+                {isRequiredContentSection && (
+                  <div className="news-section-body">
+                    <h3>{ANCHOR_PRICE_HEADING}</h3>
+                    <p>
+                      U službenoj Odluci koristi se izraz <strong>dodatna cijena</strong>, dok se u praksi često govori o sidrenoj cijeni. U tablici je držite kao zasebnu vrijednost uz aktualnu maloprodajnu cijenu. Ne izračunava se iz današnje cijene, nego se preuzima referentna vrijednost prema pravilima koja vrijede za vašu robu ili uslugu. Ako se cijena od referentnog datuma nije mijenjala, aktualna i sidrena cijena mogu biti jednake.
+                    </p>
+                    <p>
+                      Za nove stavke, posebne kategorije te personalizirane ili dinamičke cijene provjerite službeni tekst i važeća pojašnjenja prije objave. Validator može provjeriti postoji li vrijednost u datoteci, ali ne može umjesto vas odrediti koja je povijesna cijena pravno ispravna.
+                    </p>
                   </div>
-                </div>
+                )}
+                {showFormatExample && post.formatExample && (
+                  <div className="news-format-examples">
+                    <h3 className="news-format-examples-title">CSV za pružatelja usluga</h3>
+                    <pre className="news-code-sample">
+                      <code>{post.formatExample.csvText}</code>
+                    </pre>
+                    <h3 className="news-format-examples-title">XML za pružatelja usluga</h3>
+                    <pre className="news-code-sample">
+                      <code>{post.formatExample.xmlText}</code>
+                    </pre>
+                    <div className="news-format-actions">
+                      <a
+                        className="app-button app-button-light"
+                        href={post.formatExample.csvDownloadHref}
+                        download
+                      >
+                        Preuzmi primjer CSV
+                      </a>
+                      <a className="app-button app-button-primary" href="/#csv-validator">
+                        Provjeri svoj CSV →
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </section>
+              {isRequiredContentSection && (
+                <section className="news-section">
+                  <h2>{XLSX_CONVERSION_HEADING}</h2>
+                  <div className="news-section-body">
+                    <p>
+                      XLSX može ostati vaš radni izvor, ali javna strojno čitljiva objava prema Odluci ide u <strong>CSV ili XML</strong>. Odluka propisuje format objave i podatke koje cjenik treba sadržavati, ali ne propisuje jedan univerzalni naziv CSV stupaca, separator ili način na koji morate napraviti konverziju.
+                    </p>
+                    <ol className="news-bullets">
+                      <li><strong>Uredite XLSX:</strong> jedan red neka bude zaglavlje, jedna stavka jedan red, a cijene i obvezni podaci neka budu u zasebnim poljima.</li>
+                      <li><strong>Izvezite CSV ili generirajte XML:</strong> kod CSV-a koristite konzistentan separator i kodiranje koje čuva hrvatske znakove; kod XML-a svaka stavka mora imati jasno strukturirana polja.</li>
+                      <li><strong>Provjerite prije objave:</strong> validirajte obvezne podatke, naziv objavljene datoteke i javnu dostupnost, a prethodne verzije zadržite onoliko dugo koliko propis zahtijeva.</li>
+                    </ol>
+                    <p>
+                      Ako već imate Excel, možete ga <a href="/#csv-validator">učitati u NEPAR validator</a>; za gotov primjer strukture pogledajte i <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/">primjer CSV/XML cjenika za usluge</a>.
+                    </p>
+                  </div>
+                </section>
               )}
-            </section>
+            </Fragment>
           )
         })}
         <section className="news-sources" aria-labelledby="news-sources-title">
