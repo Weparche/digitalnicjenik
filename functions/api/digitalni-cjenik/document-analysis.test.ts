@@ -31,6 +31,10 @@ async function check(csvBody?: string, xmlBody?: string) {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('shared service parsing and price semantics', () => {
+  it('preserves the explicit date in a reference-price header when spaces become underscores', () => {
+    const source = csv().replace('sidrena_cijena', 'sidrena_cijena_10.9.2026.')
+    for (const body of [source, source.replaceAll('_', ' ')]) expect(parseMarketinoCsv(body).priceList.items[0]).toMatchObject({ anchorPrice: 0, anchorReferenceDate: '2026-09-10' })
+  })
   it.each(['0', '0.00', '0,00'])('accepts explicit service zero %s through CSV, XML, Excel, validation and monitor', zero => {
     for (const body of [csv(zero), csv(zero).replaceAll('_', ' '), '\uFEFF  NAZIV__USLUGE ; MALOPRODAJNA  CIJENA ; SIDRENA_CIJENA ;POSEBNI_OBLIK_PRODAJE\nBesplatna provjera;0;0;false']) {
       const parsed = parseMarketinoCsv(body)

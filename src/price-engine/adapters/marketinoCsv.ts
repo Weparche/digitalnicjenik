@@ -81,7 +81,7 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
     const rawType = row[typeIndex]?.trim() || (cleanHeader(headers[nameIndex]) === 'naziv usluge' ? 'Usluga' : '')
     // WooCommerce exports use the product kind (simple, variable, ...) as "Type"; those are all goods.
     const type = rawType === '2' ? 'Usluga' : /^(simple|variable|variation|grouped|external)$/i.test(rawType) ? 'Proizvod' : rawType || undefined
-    const dateRaw = referenceDateIndex >= 0 ? row[referenceDateIndex]?.trim() : headers.some(header => /sidrena cijena.*10\.\s*9\.\s*2026/i.test(header)) ? '2026-09-10' : ''
+    const dateRaw = referenceDateIndex >= 0 ? row[referenceDateIndex]?.trim() : headers.some(header => /sidrena cijena.*10\.\s*9\.\s*2026/i.test(cleanHeader(header))) ? '2026-09-10' : ''
     const date = normalizeReferenceDate(dateRaw)
     if (dateRaw && !date) throw new Error(`CSV redak ${index + 2}: datum referentne cijene nije valjan.`)
     const lowest = lowestIndex >= 0 ? normalizeNumber(row[lowestIndex]) : null
