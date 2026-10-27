@@ -20,6 +20,14 @@ type CheckerEnv = {
   requestState?: { signal: AbortSignal; dns: Map<string, Promise<string[]>> };
 };
 
+export type PriceListKind = 'service' | 'product' | 'mixed' | 'unknown';
+type PriceListKindDetection = { priceListKind: PriceListKind; priceListKindEvidence: string };
+type CheckerDocumentAnalysis = DocumentAnalysis & PriceListKindDetection & {
+  structure: DocumentAnalysis['status'];
+  content: DocumentAnalysis['status'];
+  evidence: string;
+};
+
 type CheckDetails = WebsiteCheckDetails & {
   reachable: boolean;
   https: boolean;
@@ -35,6 +43,8 @@ type CheckDetails = WebsiteCheckDetails & {
   xmlLinkDiscovered: boolean;
   archiveLinkDiscovered: boolean;
   fetchBlocked: boolean;
+  priceListKind: PriceListKind;
+  priceListKindEvidence: string;
 };
 
 type CheckResult = {
@@ -75,6 +85,8 @@ const emptyDetails = (): CheckDetails => ({
   xmlLinkDiscovered: false,
   archiveLinkDiscovered: false,
   fetchBlocked: false,
+  priceListKind: 'unknown',
+  priceListKindEvidence: 'Nije pronađeno dovoljno podataka za klasifikaciju cjenika.',
 });
 
 const result = (status: CheckResult["status"], message: string, details: Partial<CheckDetails> = {}): CheckResult => ({
@@ -545,10 +557,56 @@ function withLevel(finding: DocumentFinding, rule: string): DocumentFinding {
   return { ...finding, rule, level: definition.level, source: definition.source }
 }
 
+const explicitProductPattern = /proiz|product|roba|artikl/i;
+
+function classifyPriceList(items: NormalizedPriceItem[]): PriceListKindDetection {
+  if (!items.length) return { priceListKind: 'unknown', priceListKindEvidence: 'Cjenik nema dovoljno prepoznatih stavki za klasifikaciju.' };
+  let services = 0;
+  let products = 0;
+  let unknown = 0;
+  for (const item of items) {
+    if (isServiceItem(item)) {
+      services += 1;
+      continue;
+    }
+    const explicitProduct = explicitProductPattern.test(item.type ?? '');
+    const strongProductCue = Boolean(item.brand?.trim() || item.barcode?.trim() || item.availability);
+    if (explicitProduct || strongProductCue) products += 1;
+    else unknown += 1;
+  }
+  if (services && products) {
+    return { priceListKind: 'mixed', priceListKindEvidence: `Prepoznate su i usluge (${services}) i proizvodi (${products}); ${unknown} stavki ostalo je neodređeno.` };
+  }
+  if (services && !products && !unknown) {
+    return { priceListKind: 'service', priceListKindEvidence: `Sve prepoznate stavke (${services}) imaju jasan signal usluge.` };
+  }
+  if (products && !services) {
+    return { priceListKind: 'product', priceListKindEvidence: `Pronađen je jasan signal proizvoda na ${products} stavki (vrsta proizvoda, marka, barkod ili dostupnost)${unknown ? `; ${unknown} stavki nema zaseban signal vrste` : ''}.` };
+  }
+  return { priceListKind: 'unknown', priceListKindEvidence: services ? `Prepoznato je ${services} usluga, ali ${unknown} stavki nema dovoljno jasan signal vrste.` : 'Nema dovoljno pouzdanih signala za razlikovanje proizvoda od usluga.' };
+}
+
+function aggregatePriceListKind(analyses: CheckerDocumentAnalysis[]): PriceListKindDetection {
+  const classified = analyses.filter((analysis) => analysis.structureRecognized);
+  const knownKinds = new Set(classified.map((analysis) => analysis.priceListKind).filter((kind) => kind !== 'unknown'));
+  const priceListKind: PriceListKind = knownKinds.has('mixed') || (knownKinds.has('service') && knownKinds.has('product'))
+    ? 'mixed'
+    : knownKinds.has('service')
+      ? 'service'
+      : knownKinds.has('product')
+        ? 'product'
+        : 'unknown';
+  const evidence = classified.map((analysis) => {
+    const sampled = analysis.structureReasons.some((reason) => /uzorku/i.test(reason));
+    return `${analysis.format.toUpperCase()}: ${analysis.priceListKindEvidence}${sampled ? ' Klasifikacija se temelji na analiziranom uzorku.' : ''}`;
+  }).join(' ');
+  return { priceListKind, priceListKindEvidence: evidence || 'Nije pronađeno dovoljno podataka za klasifikaciju cjenika.' };
+}
+
 /** The upload parsers inspect every bounded source row before the response is truncated. */
-export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string | null = null): DocumentAnalysis & { structure: DocumentAnalysis['status']; content: DocumentAnalysis['status']; evidence: string } {
-  const base: DocumentAnalysis = { format: kind, url, fetched: true, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: [], findings: [], totalFindings: 0, recommendations: [] };
-  const finish = (analysis: DocumentAnalysis) => ({ ...analysis, structure: analysis.structureStatus, content: analysis.contentStatus, evidence: analysis.structureReasons.join(' ') });
+export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string | null = null): CheckerDocumentAnalysis {
+  const base: DocumentAnalysis & PriceListKindDetection = { format: kind, url, fetched: true, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: [], findings: [], totalFindings: 0, recommendations: [], priceListKind: 'unknown', priceListKindEvidence: 'Dokument nije dovoljno analiziran za klasifikaciju.' };
+  const finish = (analysis: DocumentAnalysis & PriceListKindDetection): CheckerDocumentAnalysis => ({ ...analysis, structure: analysis.structureStatus, content: analysis.contentStatus, evidence: analysis.structureReasons.join(' ') });
   try {
     if (new TextEncoder().encode(body).byteLength > MAX_DOCUMENT_BYTES) throw new Error('analysis_limit');
     const parsed = kind === 'csv' ? parseMarketinoCsv(body, undefined, { inspection: true }) : inspectXmlPriceList(body);
@@ -567,7 +625,8 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
     const recommendations = [...findings.filter(f => f.level === 'info'), schemaRecommendation(parsed.fieldSources, parsed.priceList.items)].filter((f): f is DocumentFinding => Boolean(f));
     const structure = rawCount ? 'pass' : 'warning';
     const content = errors.length ? 'fail' : warnings.length ? 'warning' : 'pass';
-    return finish({ ...base, structureRecognized: true, itemCount: rawCount, structureStatus: structure, contentStatus: content, status: content,
+    const classification = classifyPriceList(parsed.priceList.items);
+    return finish({ ...base, ...classification, structureRecognized: true, itemCount: rawCount, structureStatus: structure, contentStatus: content, status: content,
       structureReasons: [kind.toUpperCase() + ' je parsiran; prepoznata su polja cjenika. Pronađeno stavki: ' + rawCount + '.'],
       findings: legal.slice(0, 20), totalFindings: legal.length, recommendations });
   } catch (caught) {
@@ -680,7 +739,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   let initialUrl: URL;
   try { initialUrl = normalizeDigitalPriceListUrl(input); } catch { return result("red", "Unesite ispravnu adresu web stranice."); }
   const network = { failed: false, blocked: false, checked: false };
-  const analyses: Parameters<typeof findDocument>[4] = [];
+  const analyses: CheckerDocumentAnalysis[] = [];
   let homepage: { response: Response; url: URL };
   try {
     homepage = await fetchHomepage(initialUrl, env);
@@ -779,6 +838,9 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   details.networkIncomplete = network.failed;
   details.csvAnalysis = analyses.find(a => a.format === 'csv') ?? { format: 'csv', url: csv[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['CSV nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
   details.xmlAnalysis = analyses.find(a => a.format === 'xml') ?? { format: 'xml', url: xml[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['XML nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
+  const classification = aggregatePriceListKind(analyses);
+  details.priceListKind = classification.priceListKind;
+  details.priceListKindEvidence = classification.priceListKindEvidence;
   details.structureStatus = aggregateDocumentStatus(analyses.map(a => a.structureStatus));
   details.contentStatus = aggregateDocumentStatus(analyses.map(a => a.contentStatus));
   details.structureReasons = analyses.map(a => a.format.toUpperCase() + ': ' + a.structureReasons.join(' '));
