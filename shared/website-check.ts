@@ -98,9 +98,9 @@ export function technicalReport(result: WebsiteCheckResult) {
     { status: d.contentStatus ?? 'unknown', evidence: d.contentReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera. Učitajte cjenik u validator.' },
   ]
   const checks = TECHNICAL_CHECKS.map((check, i) => ({ ...check, ...states[i] }))
-  // CSV and XML are legal alternatives; lack of the second is not a fault.
+  // CSV and XML are legal alternatives; once either format is verified, uncertainty about the other format must not reduce the score.
   for (const check of checks) {
-    if (check.status === 'missing' && ((check.id === 'csv' && !d.csvFound && d.xmlFound) || (check.id === 'xml' && !d.xmlFound && d.csvFound))) {
+    if ((check.status === 'missing' || check.status === 'unknown') && ((check.id === 'csv' && !d.csvFound && d.xmlFound) || (check.id === 'xml' && !d.xmlFound && d.csvFound))) {
       check.status = 'not_applicable'
       check.evidence = 'Zahtjev formata ispunjava CSV ili XML. Drugi format nije obvezan.'
     }
