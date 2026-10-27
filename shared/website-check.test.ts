@@ -32,10 +32,15 @@ describe('technical evidence score', () => {
     expect(report.score).toBe(8)
     expect(report.checks.find((c) => c.id === 'link')?.status).toBe('missing')
   })
-  it('preserves positive evidence on partial network failure', () => {
-    const report = technicalReport({ status: 'green', message: '', details: { ...complete, xmlFound: false, networkIncomplete: true } })
-    expect(report.checks.find((c) => c.id === 'xml')?.status).toBe('unknown')
-    expect(report.checks.find((c) => c.id === 'csv')?.status).toBe('pass')
+  it('preserves positive evidence and satisfies the alternate format on partial network failure', () => {
+    const csvReport = technicalReport({ status: 'green', message: '', details: { ...complete, xmlFound: false, networkIncomplete: true } })
+    expect(csvReport.checks.find((c) => c.id === 'xml')).toMatchObject({ status: 'not_applicable', evidence: expect.stringContaining('CSV ili XML') })
+    expect(csvReport.checks.find((c) => c.id === 'csv')?.status).toBe('pass')
+    expect(csvReport).toMatchObject({ score: 9, unknown: 0, attention: 0 })
+
+    const xmlReport = technicalReport({ status: 'green', message: '', details: { ...complete, csvFound: false, xmlFound: true, networkIncomplete: true } })
+    expect(xmlReport.checks.find((c) => c.id === 'csv')).toMatchObject({ status: 'not_applicable', evidence: expect.stringContaining('CSV ili XML') })
+    expect(xmlReport.checks.find((c) => c.id === 'xml')?.status).toBe('pass')
   })
   it('reports unavailable results without failures or invented evidence', () => {
     expect(technicalReport({ status: 'unavailable', message: '' })).toMatchObject({ score: 0, unknown: 9, attention: 0, tone: 'yellow' })
