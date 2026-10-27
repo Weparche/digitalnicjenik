@@ -145,6 +145,32 @@ describe('digital price list checker hardening', () => {
     expect(checked.details.csvUrl).toBe('https://example.com/exports/current.csv')
   })
 
+  it('recovers through www when an apex hostname returns a gateway error', async () => {
+    const current = '/cjenici/webshop_Spinel-34-Umag_WEB-01_30_27.10.2026_05:00.csv'
+    const previous = '/cjenici/webshop_Spinel-34-Umag_WEB-01_29_26.10.2026_05:00.csv'
+    const csv = 'Naziv usluge;Cijena;Sidrena cijena;Poseban oblik prodaje\nŠišanje;15;14;NE'
+    const fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input))
+      if (url.hostname === 'example.com') return new Response('Bad gateway', { status: 502 })
+      if (url.hostname !== 'www.example.com') return new Response('Not found', { status: 404 })
+      if (url.pathname === '/') return new Response('<html><body>Web shop</body></html>', { status: 200, headers: { 'content-type': 'text/html' } })
+      if (url.pathname === '/cjenici/') return new Response(`<a href="${current}">danas</a><a href="${previous}">jučer</a>`, { status: 200, headers: { 'content-type': 'text/html' } })
+      if (url.pathname === current || url.pathname === previous) return new Response(csv, { status: 200, headers: { 'content-type': 'text/csv' } })
+      return new Response('Not found', { status: 404 })
+    })
+    vi.stubGlobal('fetch', fetch)
+
+    const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+
+    expect(checked.status).toBe('green')
+    expect(checked.details.homepageReadable).toBe(true)
+    expect(checked.details.csvFound).toBe(true)
+    expect(checked.details.csvUrl).toBe(`https://www.example.com${current}`)
+    expect(checked.details.archiveFound).toBe(true)
+    expect(fetch.mock.calls.some(([input]) => new URL(String(input)).hostname === 'example.com')).toBe(true)
+    expect(fetch.mock.calls.some(([input]) => new URL(String(input)).hostname === 'www.example.com')).toBe(true)
+  })
+
   it('keeps a network failure separate from red', async () => {
     const fetch = vi.fn(async () => { throw new Error('timeout') })
     vi.stubGlobal('fetch', fetch)
