@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IconArrowRight, IconUpload, IconWorld, IconLock, IconLink, IconFileDescription, IconCode, IconExternalLink, IconDatabase, IconClock, IconList, IconCircleCheckFilled, IconAlertCircle, IconCalendar, IconShieldCheck, IconBolt, IconEye, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
 import { normalizeWebsiteInput, STATUS_LABELS, TECHNICAL_CHECKS, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckResult } from '../shared/website-check'
 import { PLANS, formatEur, type PlanId } from './publisherPricing'
+import { installationPriceLabel } from '../shared/pricing'
 import { ExistingWebSection, LargeListSection, NoPluginSection, PlatformPills } from './ExistingWebSections'
 import { LeadForm, type LeadContext, type LeadIntent } from './LeadForm'
 import { EducationSection } from './EducationSection'
@@ -22,7 +23,7 @@ function UploadPath({ onUpload }: { onUpload: () => void }) {
 }
 
 function InstallationHelp({ onHelp }: { onHelp: () => void }) {
-  return <section className="acq-help" id="pomoc"><div><h2>Već imate web i samo trebate pomoć?</h2><p>Možemo vam ugraditi link, gumb ili prikaz digitalnog cjenika na postojeću web stranicu.</p></div><button type="button" className="acq-secondary" onClick={onHelp}>Trebam pomoć s ugradnjom<IconArrowRight size={20}/></button></section>
+  return <section className="acq-help" id="pomoc"><div><h2>Već imate web i samo trebate pomoć?</h2><p>Postavimo poveznicu ili gumb za digitalni cjenik na vašu postojeću web stranicu — {installationPriceLabel()}.</p></div><button type="button" className="acq-secondary" onClick={onHelp}>Trebam pomoć s ugradnjom<IconArrowRight size={20}/></button></section>
 }
 
 

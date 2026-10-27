@@ -1,5 +1,5 @@
 import { PLANS, formatEur } from '../publisherPricing'
-import { MAX_ITEMS_LABEL } from '../../shared/pricing'
+import { MAX_ITEMS_LABEL, installationPriceLabel } from '../../shared/pricing'
 // Single source for the /faq page and its FAQPage JSON-LD (rendered in scripts/prerender.mjs).
 // Answers are plain text so the visible copy and the structured data can never drift apart.
 // Regulatory statements follow NN 101/2026 (Odluke 1212 i 1213), the Government's 29.9.2026 amendment
@@ -129,7 +129,7 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         question: 'Moram li mijenjati postojeći web?',
-        answer: 'Ne. Dodajete samo poveznicu na digitalni cjenik. Dizajn, sadržaj i platforma vašeg weba ostaju isti.',
+        answer: `Ne. Dodajete samo poveznicu na digitalni cjenik. Dizajn, sadržaj i platforma vašeg weba ostaju isti. Ako želite, poveznicu ili gumb postavimo mi za ${installationPriceLabel()}.`,
       },
       {
         question: 'Trebam li instalirati plugin?',
@@ -177,7 +177,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Koliko košta NEPAR Publisher?',
         answer:
-          `Provjera weba, validator i pretvorba Excela besplatni su, uz 7-dnevni probni rok. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom na postojeći web dogovara se zasebno.`,
+          `Provjera weba, validator i pretvorba Excela besplatni su, uz 7-dnevni probni rok. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom (postavljanje poveznice ili gumba na postojeći web): ${installationPriceLabel()}. Integracija s webshopom ili poslovnim sustavom radi se po individualnoj ponudi.`,
       },
       {
         question: 'Što se događa nakon probnog roka ako ne aktiviram Publisher?',

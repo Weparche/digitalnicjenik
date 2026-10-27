@@ -381,6 +381,8 @@ expect('index.html', 'href="/specifikacija-csv-xml/"', 'landing must link to /sp
 expect('index.html', 'href="/faq/"', 'landing must link to /faq/')
 expect('index.html', 'href="/digitalni-cjenik-za-wordpress-webshop/"', 'home must link to the existing-web landing')
 expect('index.html', 'Do 5.000 stavki', 'the item limit must be visible on the Web Link card')
+expect('index.html', '29,90 € jednokratno', 'the installation price must be visible')
+expect('cijene/index.html', '"price":"29.9"', 'the installation Offer must be in the pricing JSON-LD')
 for (const rel of ['objava-digitalnog-cjenika/index.html', 'cijene/index.html', 'faq/index.html', 'vodici/woocommerce-wordpress-digitalni-cjenik/index.html']) {
   expect(rel, 'href="/digitalni-cjenik-za-wordpress-webshop/"', 'must link back to the existing-web landing')
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_ITEMS_LABEL, MAX_PRICE_LIST_ITEMS, PLANS } from '../../shared/pricing'
+import { INSTALLATION, MAX_ITEMS_LABEL, MAX_PRICE_LIST_ITEMS, PLANS, installationPriceLabel } from '../../shared/pricing'
 import { MAX_PRICE_LIST_ITEMS as ENFORCED_LIMIT } from '../../functions/_limits'
 import { EXISTING_WEB_STEPS, LARGE_LIST_LIMIT, NO_PLUGIN_REASONS } from '../ExistingWebSections'
 import { EXTRA_SERVICES } from '../PlanCards'
@@ -19,6 +19,13 @@ describe('existing-web positioning', () => {
     expect(PLANS[0]).toMatchObject({ id: 'link', name: 'Web Link', price: 19.9 })
     expect(PLANS[0].highlight).toBe(`Do ${MAX_ITEMS_LABEL} stavki`)
     expect(PLANS[1]).toMatchObject({ id: 'publisher', price: 49.9, summary: 'Objava, validacija i svakodnevni nadzor digitalnog cjenika.' })
+  })
+
+  it('prices installation help once and shows it on the extra-service tile', () => {
+    expect(INSTALLATION.price).toBe(29.9)
+    expect(installationPriceLabel()).toBe('29,90 € jednokratno')
+    expect(EXTRA_SERVICES.find((service) => service.id === 'installation')?.price).toBe('29,90 € jednokratno')
+    expect(EXTRA_SERVICES.find((service) => service.id === 'integration')?.price).toBe('Individualna ponuda')
   })
 
   it('quotes the item limit that import and publish actually enforce', () => {

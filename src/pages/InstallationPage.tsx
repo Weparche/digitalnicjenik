@@ -1,5 +1,6 @@
 import { PlanCards } from '../PlanCards'
 import { PLANS, formatEur } from '../publisherPricing'
+import { installationPriceLabel } from '../../shared/pricing'
 import { SitePageLayout, SourceList } from './PageLayout'
 import { getSitePage } from './registry'
 
@@ -20,7 +21,7 @@ export function InstallationPage() {
         <li><strong>Pripremite podatke.</strong> Naziv poslovnog subjekta, podatke o objektu i cjenik s aktualnim cijenama te ostalim potrebnim poljima. Web Link je za pripremljeni CSV ili XML; Publisher dodaje Excel i detaljnu validaciju.</li>
         <li><strong>Pregledajte prije objave.</strong> Besplatni validator pokazuje probleme u podržanom formatu. Vlasnik provjerava stvarne cijene i potpunost ponude.</li>
         <li><strong>Objavite cjenik.</strong> Dobivate javnu stranicu i CSV/XML poveznice. Zamjena objave čuva prethodnu verziju u arhivi 30 dana, uz aktivnu pretplatu.</li>
-        <li><strong>Povežite s postojećim webom.</strong> Dodajte jasan link „Digitalni cjenik” i pristup datotekama i arhivi. Za prikaz unutar stranice Publisher nudi ugradnju; pomoć s postavljanjem dogovaramo prema platformi.</li>
+        <li><strong>Povežite s postojećim webom.</strong> Dodajte jasan link „Digitalni cjenik” i pristup datotekama i arhivi. Za prikaz unutar stranice Publisher nudi ugradnju. Ako želite, poveznicu ili gumb postavimo mi za {installationPriceLabel()}.</li>
         <li><strong>Održavajte aktualne podatke.</strong> Sami dostavljate novu verziju kada se cijene promijene. Publisher dodatno provjerava objavu i šalje e-mail upozorenja; nadzor nije automatski uvoz novih cijena.</li>
       </ol>
     </section>
@@ -33,7 +34,7 @@ export function InstallationPage() {
     <section className="site-section" aria-labelledby="installation-plans">
       <h2 id="installation-plans">Odaberite koliko pomoći trebate</h2>
       <PlanCards />
-      <p>Pretplata traje godinu dana od aktivacije. Plaćanje je po ponudi, bez automatske naplate. Ugradnja na postojeći web dogovara se zasebno; Web + Publisher uključuje jednostavan NEPAR web, a složenije izvedbe zasebnu ponudu.</p>
+      <p>Pretplata traje godinu dana od aktivacije. Plaćanje je po ponudi, bez automatske naplate. Pomoć s ugradnjom poveznice ili gumba na postojeći web stoji {installationPriceLabel()}; Web + Publisher uključuje jednostavan NEPAR web, a složenije izvedbe i integracije zasebnu ponudu.</p>
     </section>
     <section className="site-section" id="odgovornosti" aria-labelledby="installation-responsibilities">
       <h2 id="installation-responsibilities">Što treba provjeriti prije objave?</h2>

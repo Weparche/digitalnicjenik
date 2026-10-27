@@ -34,6 +34,11 @@ function safeJson(value) {
   return JSON.stringify(value).replaceAll('<', '\\u003c')
 }
 
+function installationOffer(pricing, url) {
+  const { INSTALLATION } = pricing
+  return { '@type': 'Offer', name: `${INSTALLATION.name} (jednokratno)`, description: INSTALLATION.scope, price: String(INSTALLATION.price), priceCurrency: 'EUR', url }
+}
+
 function buildHomeSchema(productFaq, pricing) {
   return {
     '@context': 'https://schema.org',
@@ -82,6 +87,7 @@ function buildHomeSchema(productFaq, pricing) {
         offers: [
           { '@type': 'Offer', name: 'Provjera, validator i probni rok 7 dana', price: '0', priceCurrency: 'EUR' },
           ...pricing.PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
+          installationOffer(pricing, `${SITE_URL}/cijene/`),
         ],
         provider: { '@id': ORGANIZATION_ID },
         isRelatedTo: { '@id': PRICE_ENGINE_ID },
@@ -157,6 +163,7 @@ function buildSitePageSchema(page, extras) {
       offers: [
         { '@type': 'Offer', name: 'Provjera, validator i probni rok 7 dana', price: '0', priceCurrency: 'EUR', url: pageUrl },
         ...extras.pricing.PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: pageUrl })),
+        installationOffer(extras.pricing, pageUrl),
       ],
     })
   }
@@ -181,7 +188,10 @@ function buildSitePageSchema(page, extras) {
       url: pageUrl,
       areaServed: { '@type': 'Country', name: 'Hrvatska' },
       provider: { '@id': ORGANIZATION_ID },
-      offers: extras.pricing.PLANS.filter((plan) => page.service.planIds.includes(plan.id)).map((plan) => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, description: plan.tagline, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
+      offers: [
+        ...extras.pricing.PLANS.filter((plan) => page.service.planIds.includes(plan.id)).map((plan) => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, description: plan.tagline, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
+        installationOffer(extras.pricing, `${SITE_URL}/cijene/`),
+      ],
     })
   }
   if (page.kind === 'spec') {

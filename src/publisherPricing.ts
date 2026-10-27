@@ -1,5 +1,5 @@
 ﻿import { PLANS, formatEur } from '../shared/pricing'
-export { PLANS, formatEur } from '../shared/pricing'
+export { PLANS, INSTALLATION, formatEur } from '../shared/pricing'
 export type { PlanId } from '../shared/pricing'
 // Compatibility exports for existing Publisher and educational surfaces.
 export const LAUNCH_ACTIVE = false

@@ -1,5 +1,5 @@
 import { PlanCards } from '../PlanCards'
-import { MAX_ITEMS_LABEL } from '../../shared/pricing'
+import { MAX_ITEMS_LABEL, installationPriceLabel } from '../../shared/pricing'
 import { SitePageLayout } from './PageLayout'
 import { getSitePage } from './registry'
 
@@ -37,7 +37,7 @@ export function PricingPage() {
 
       <section className="site-section" aria-labelledby="link-scope-title">
         <h2 id="link-scope-title">Što pokriva Web Link?</h2>
-        <p>Web Link je za pripremljeni CSV ili XML koji sami ažurirate, do {MAX_ITEMS_LABEL} stavki. Uključuje javni prikaz, CSV i XML te arhivu zamijenjenih verzija uz aktivnu pretplatu. Poveznicu postavljate na svoju postojeću web stranicu, bez plugina; pomoć s ugradnjom dogovara se zasebno.</p>
+        <p>Web Link je za pripremljeni CSV ili XML koji sami ažurirate, do {MAX_ITEMS_LABEL} stavki. Uključuje javni prikaz, CSV i XML te arhivu zamijenjenih verzija uz aktivnu pretplatu. Poveznicu postavljate na svoju postojeću web stranicu, bez plugina; ako želite da je postavimo mi, pomoć s ugradnjom stoji {installationPriceLabel()}.</p>
         <p>Web Link ne čita podatke iz blagajne ili webshopa i ne objavljuje svaki dan ponovno nepromijenjeni cjenik proizvoda. Točnost podataka, pravodobne izmjene i način povezivanja s vašim webom treba provjeriti za vaše poslovanje. <a href="/objava-digitalnog-cjenika/#odgovornosti">Pogledajte što treba pripremiti prije objave.</a></p>
       </section>
 

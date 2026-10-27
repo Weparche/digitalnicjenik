@@ -1,12 +1,13 @@
 import { IconArrowRight, IconCheck } from '@tabler/icons-react'
 import { PLANS, formatEur, type PlanId } from './publisherPricing'
+import { INSTALLATION, installationPriceLabel } from '../shared/pricing'
 
 export type ExtraServiceId = 'installation' | 'integration'
 
-/** Services without a public price: offered next to the plans, never as a plan feature. */
-export const EXTRA_SERVICES: Array<{ id: ExtraServiceId; title: string; text: string; cta: string }> = [
-  { id: 'installation', title: 'Pomoć s ugradnjom', text: 'Trebate pomoć s postavljanjem na web? Možemo to napraviti za vas: link, gumb ili prikaz cjenika na vašoj postojećoj stranici.', cta: 'Zatraži ugradnju' },
-  { id: 'integration', title: 'Napredna integracija', text: 'Treba vam povezivanje s WooCommerceom, webshopom, API-jem ili ERP/POS sustavom? Integraciju možemo izraditi prema vašem sustavu — individualna ponuda.', cta: 'Zatraži ponudu' },
+/** One-off and individual services offered next to the plans, never as a plan feature. */
+export const EXTRA_SERVICES: Array<{ id: ExtraServiceId; title: string; price: string; text: string; cta: string }> = [
+  { id: 'installation', title: INSTALLATION.name, price: installationPriceLabel(), text: 'Trebate pomoć s postavljanjem na web? Možemo to napraviti za vas: postavimo poveznicu ili gumb za digitalni cjenik na vašu postojeću stranicu.', cta: 'Zatraži ugradnju' },
+  { id: 'integration', title: 'Napredna integracija', price: 'Individualna ponuda', text: 'Treba vam povezivanje s WooCommerceom, webshopom, API-jem ili ERP/POS sustavom? Integraciju možemo izraditi prema vašem sustavu — individualna ponuda.', cta: 'Zatraži ponudu' },
 ]
 
 export function PlanCards({ onSelect, onExtra }: { onSelect?: (plan: PlanId) => void; onExtra?: (service: ExtraServiceId) => void }) {
@@ -21,7 +22,7 @@ export function PlanCards({ onSelect, onExtra }: { onSelect?: (plan: PlanId) => 
       {plan.id === 'web' && <small>Za složenije web stranice zatražite posebnu ponudu.</small>}
     </article>)}</div>
     <div className="acq-extras">{EXTRA_SERVICES.map((service) => <article key={service.id} className="acq-extra" id={service.id === 'integration' ? 'integracija' : 'ugradnja'}>
-      <div><h3>{service.title}</h3><p>{service.text}</p></div>
+      <div><h3>{service.title}</h3><p className="acq-extra-price">{service.price}</p><p>{service.text}</p></div>
       {onExtra ? <button type="button" className="acq-secondary" onClick={() => onExtra(service.id)}>{service.cta}<IconArrowRight size={19}/></button> : <a className="acq-secondary" href="/#posaljite-cjenik">{service.cta}<IconArrowRight size={19}/></a>}
     </article>)}</div>
   </>

@@ -12,6 +12,9 @@ export const PLANS = [
   { id: 'web', name: 'Web + Publisher', price: 79.9, tagline: 'Nemate web? Jednostavan web s cjenikom, uz našu pomoć.', highlight: null, summary: 'Jednostavan web za cjenik, uz našu pomoć.', features: ['Sve iz paketa Publisher', 'Jednostavan NEPAR web / landing', 'Hosting i SSL', 'Osnovno uređivanje', 'Postavljanje cjenika i tehničko povezivanje'] },
 ] as const
 export type PlanId = typeof PLANS[number]['id']
+/** One-off setup of a link or button on the customer's existing website. Custom integrations stay an individual offer. */
+export const INSTALLATION = { name: 'Pomoć s ugradnjom', price: 29.9, scope: 'postavljanje poveznice ili gumba za digitalni cjenik na vaš postojeći web' } as const
+export const installationPriceLabel = () => `${formatEur(INSTALLATION.price)} jednokratno`
 export function formatEur(amount: number, perYear = false): string {
   const value = amount.toLocaleString('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   return `${value} €${perYear ? '/god' : ''}`

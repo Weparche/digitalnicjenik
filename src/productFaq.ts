@@ -4,6 +4,8 @@
 // Kept short and factual by design: the full question list lives on /faq/.
 
 
+import { installationPriceLabel } from '../shared/pricing'
+
 export type ProductFaqEntry = { question: string; answer: string }
 
 export const productFaq: ProductFaqEntry[] = [
@@ -37,7 +39,7 @@ export const productFaq: ProductFaqEntry[] = [
   },
   {
     question: 'Koliko košta nakon probe?',
-    answer: 'Provjera weba i validator su besplatni. Nakon probne objave možete odabrati godišnji paket Web Link, Publisher ili Web + Publisher. Paketi i godišnje cijene vidljivi su na početnoj stranici bez prethodne provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web dogovara se zasebno.',
+    answer: `Provjera weba i validator su besplatni. Nakon probne objave možete odabrati godišnji paket Web Link, Publisher ili Web + Publisher. Paketi i godišnje cijene vidljivi su na početnoj stranici bez prethodne provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web stoji ${installationPriceLabel()}.`,
   },
   {
     question: 'Kako započeti?',

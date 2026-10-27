@@ -415,6 +415,7 @@
 .acq-extra { display: flex; flex-direction: column; justify-content: space-between; gap: 16px; padding: 22px 24px; border: 1px solid #dbe3ef; border-radius: 14px; background: #fbfcfe; }
 .acq-extra h3 { margin: 0; font-size: 19px; letter-spacing: -.02em; }
 .acq-extra p { margin-top: 6px; color: #43516b; font-size: 14px; line-height: 1.6; }
+.acq-extra .acq-extra-price { margin-top: 4px; color: #0f172a; font-size: 18px; font-weight: 750; letter-spacing: -.01em; }
 .acq-extra .acq-secondary { align-self: start; min-height: 46px; font-size: 15px; }
 @media (max-width: 999px) { .ew-steps { grid-template-columns: 1fr; } .acq-extras { grid-template-columns: 1fr; } }
 @media (max-width: 650px) {
