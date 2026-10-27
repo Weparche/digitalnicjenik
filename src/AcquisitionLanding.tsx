@@ -3,8 +3,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IconArrowRight, IconUpload, IconWorld, IconLock, IconLink, IconFileDescription, IconCode, IconExternalLink, IconDatabase, IconClock, IconList, IconCircleCheckFilled, IconAlertCircle, IconCalendar, IconShieldCheck, IconBolt, IconEye, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
 import { normalizeWebsiteInput, STATUS_LABELS, TECHNICAL_CHECKS, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckResult } from '../shared/website-check'
 import { PLANS, formatEur, type PlanId } from './publisherPricing'
-import { installationPriceLabel } from '../shared/pricing'
 import { ExistingWebSection, LargeListSection, NoPluginSection, PlatformPills } from './ExistingWebSections'
+import { installationPriceLabel } from '../shared/pricing'
 import { LeadForm, type LeadContext, type LeadIntent } from './LeadForm'
 import { EducationSection } from './EducationSection'
 import { RegulatoryNewsWidget } from './news/RegulatoryNewsWidget'
@@ -149,30 +149,26 @@ export function AcquisitionLanding({ renderValidator }: { renderValidator: (onCo
 
 
       <div>
-        <section className="acq-hero" aria-labelledby="acq-title"><div className="acq-hero-copy"><p className="acq-eyebrow">Već imate web? Ne trebate novi.</p><h1 id="acq-title">Digitalni cjenik za bilo koji <em>postojeći web</em></h1><p className="acq-intro">Dodajte digitalni cjenik na WordPress, webshop ili bilo koju postojeću stranicu — od {formatEur(PLANS[0].price, true)}. Bez obaveznog plugina i bez migracije weba.</p>
-          <div className="acq-hero-actions"><a className="acq-primary" href="#csv-validator" onClick={(event) => { event.preventDefault(); onUpload() }}>Objavi svoj cjenik<IconArrowRight size={22}/></a><a className="acq-secondary" href="#checker">Provjeri postojeći cjenik besplatno</a></div>
-          <p className="acq-hero-note">Prvo pregledate podatke; ništa se ne objavljuje bez vaše potvrde.</p>
-          <PlatformPills/>
-        </div></section>
-      </div>
-      <div className="acq-scene">
-      <picture className="acq-photo"><source media="(min-width: 1000px)" srcSet="/assets/checker-office.webp"/><img src="/assets/checker-office.webp" alt="" width="1536" height="1024" fetchPriority="low"/></picture>
-      <div className="acq-preview acq-preview-web" aria-label="Ilustrativni primjer: poveznica na digitalni cjenik na postojećem webu"><span className="acq-preview-label">Primjer · vaš postojeći web</span><div className="acq-preview-nav" aria-hidden="true"><span>Početna</span><span>Usluge</span><span>Kontakt</span><b>Digitalni cjenik</b></div>{['Javna poveznica cjenika', 'CSV i XML', 'Arhiva 30 dana'].map((label) => <div className="acq-preview-row" key={label}><IconCircleCheckFilled size={18}/><span>{label}</span></div>)}</div>
-      </div>
-    </div>
-    <div className="acq-content">
-      <ExistingWebSection/>
-      <section className="acq-checker" id="provjera" aria-labelledby="checker-title"><div className="acq-checker-copy"><h2 id="checker-title">Provjerite postojeći cjenik besplatno</h2><p>Unesite adresu svoje web stranice. Provjerit ćemo javno dostupni digitalni cjenik, CSV/XML datoteke, linkove i osnovnu tehničku strukturu.</p></div>
+        <section className="acq-hero" aria-labelledby="acq-title"><div className="acq-hero-copy"><h1 id="acq-title">Imate web<br/>stranicu?<br/>Provjerite<br className="acq-desktop-break"/> digitalni cjenik <br className="acq-final-break"/><em>besplatno.</em></h1><p className="acq-intro">Unesite adresu svoje web stranice. Provjerit ćemo javno dostupni digitalni cjenik, CSV/XML datoteke, linkove i osnovnu tehničku strukturu.</p>
           <form id="checker" className="acq-form" onSubmit={check} noValidate aria-busy={checking}><label className="sr-only" htmlFor="acq-url">Adresa web stranice</label><div className="acq-input"><IconWorld size={23}/><input id="acq-url" name="website" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} value={url} onChange={(e) => { setUrl(e.target.value); setError('') }} aria-invalid={Boolean(error)} aria-describedby={error ? 'acq-url-error' : undefined} placeholder="https://vasweb.hr"/></div><button type="submit" className="acq-primary" disabled={checking}>{checking ? 'Provjeravamo…' : 'Provjeri besplatno'}<IconArrowRight size={24}/></button></form>
           {error && <p id="acq-url-error" className="acq-error" role="alert">{error}</p>}
           <div className="acq-loading" role="status" aria-live="polite">{checking ? <><span className="acq-spinner" aria-hidden="true"/>{loadingCopy[phase]}<small>Provjera je u tijeku. Rezultate prikazujemo po završetku dohvata.</small><button type="button" className="acq-cancel" onClick={() => { cancelledRef.current = true; requestRef.current?.abort(); setCancelled(true); document.getElementById('acq-url')?.focus() }}>Odustani od provjere</button></> : cancelled ? 'Provjera je zaustavljena. Možete pokušati ponovno.' : null}</div>
           <ul className="acq-trust">{['Bez registracije', 'Rezultat odmah', 'Potpuno besplatno'].map((text) => <li key={text}><IconCircleCheckFilled size={20}/>{text}</li>)}</ul>
+          <div className="acq-hero-platforms"><p>Objava za bilo koji postojeći web od {formatEur(PLANS[0].price, true)} — bez plugina:</p><PlatformPills/></div>
           <UploadPath onUpload={onUpload}/>
-      </section>
+        </div></section>
+      </div>
+      <div className="acq-scene">
+      <picture className="acq-photo"><source media="(min-width: 1000px)" srcSet="/assets/checker-office.webp"/><img src="/assets/checker-office.webp" alt="" width="1536" height="1024" fetchPriority="low"/></picture>
+      <div className="acq-preview" aria-label="Ilustrativni primjer rezultata, nije provjera vaše stranice"><span className="acq-preview-label">Primjer rezultata</span><h2>Rezultat provjere</h2><div className="acq-preview-score"><strong>6 / 9</strong><span>3 provjere traže pažnju</span></div><progress max={9} value={6} aria-label="Primjer: šest od devet"/>{[['Javni CSV na webu', 'Nije pronađen'], ['Arhiva prethodnih objava', 'Nije pronađena'], ['Sadržaj cjenika', 'Detaljna provjera']].map(([label, status]) => <div className="acq-preview-row" key={label}><IconAlertCircle size={20}/><span>{label}</span><b>{status}</b></div>)}</div>
+      </div>
+    </div>
+    <div className="acq-content">
       <section className="acq-checks" aria-labelledby="checks-title"><h2 id="checks-title">Što provjeravamo?</h2><p>Brza i jednostavna provjera ključnih tehničkih stavki digitalnog cjenika.</p><ol>{TECHNICAL_CHECKS.map((check, index) => { const Icon = icons[check.icon]; return <li key={check.id}><Icon size={25}/><span className="acq-check-number">{index + 1}</span><span>{check.label}</span></li> })}</ol></section>
       <div className="acq-reassurance">{[[IconShieldCheck, 'Sigurno i anonimno', 'Bez registracije za provjeru'], [IconBolt, 'Brza provjera', 'Vrijeme ovisi o vašoj stranici'], [IconEye, 'Samo javno dostupni podaci', 'Ne zahtijevaju prijavu'], [IconCircleCheckFilled, 'Jasan tehnički rezultat', 'Uz objašnjenje svake provjere']].map(([Icon, title, text]) => { const I = Icon as typeof IconEye; return <div key={String(title)}><I size={29}/><p><strong>{String(title)}</strong><span>{String(text)}</span></p></div> })}</div>
       <div className="acq-result-anchor" ref={resultRef} tabIndex={-1} aria-label="Rezultat provjere"><div role="status" className="sr-only" aria-live="polite">{report && `Rezultat: ${report.score} potvrđenih od 9 tehničkih provjera; ${report.unknown} nije moguće potvrditi.`}</div>{result && <ResultPanel result={result} website={checkedUrl} onRetry={() => void check()} onUpload={onUpload}/>}</div>
-      <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title"><h2 id="solutions-title">Odaberite koliko pomoći trebate</h2><p>{!result ? 'Web Link je za web koji već imate. Publisher dodaje validaciju i svakodnevni nadzor. Napredna integracija je zasebna individualna ponuda.' : report?.attention ? 'Pronašli smo stavke koje treba riješiti. Možete sami objaviti cjenik ili prepustiti NEPAR-u više posla.' : report?.unknown ? 'Za dio stavki potrebna je detaljna provjera. Učitajte datoteku ili odaberite pomoć pri objavi.' : 'Tehničke provjere prolaze. Ako želite jednostavnije održavanje i objavu, odaberite rješenje za svoj cjenik.'}</p><PlanCards onSelect={(p) => onLead(p === 'web' ? 'implementation' : 'plugin', p)} onExtra={() => onLead('consultation')}/><p className="acq-domain-note">Vaša postojeća web stranica i domena ostaju vaše. NEPAR objavljuje cjenik i priprema link koji možete ugraditi.</p><p><a href="/objava-digitalnog-cjenika/">Kako izgleda objava i ugradnja →</a></p></section>
+      <ExistingWebSection/>
+      <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title"><h2 id="solutions-title">Trebate riješiti digitalni cjenik?</h2><p>{!result ? 'Web Link je za web koji već imate. Publisher dodaje validaciju i svakodnevni nadzor. Napredna integracija je zasebna individualna ponuda.' : report?.attention ? 'Pronašli smo stavke koje treba riješiti. Možete sami objaviti cjenik ili prepustiti NEPAR-u više posla.' : report?.unknown ? 'Za dio stavki potrebna je detaljna provjera. Učitajte datoteku ili odaberite pomoć pri objavi.' : 'Tehničke provjere prolaze. Ako želite jednostavnije održavanje i objavu, odaberite rješenje za svoj cjenik.'}</p><PlanCards onSelect={(p) => onLead(p === 'web' ? 'implementation' : 'plugin', p)} onExtra={() => onLead('consultation')}/><p className="acq-domain-note">Vaša postojeća web stranica i domena ostaju vaše. NEPAR objavljuje cjenik i priprema link koji možete ugraditi.</p><p><a href="/objava-digitalnog-cjenika/">Kako izgleda objava i ugradnja →</a></p></section>
       <LargeListSection/>
       <section className="acq-help acq-reference" aria-labelledby="reference-title"><div><span className="acq-preview-label">Stvarna NEPAR implementacija</span><h2 id="reference-title">Digitalni cjenik za Auto Gubić</h2><p>Javni cjenik na webu autoservisa, s aktualnom i sidrenom cijenom, CSV/XML poveznicama i podacima o objavi.</p></div><a className="acq-secondary" href="/reference/auto-gubic/">Pogledajte primjer<IconArrowRight size={19}/></a></section>
       {result && <InstallationHelp onHelp={() => onLead('consultation')}/>}

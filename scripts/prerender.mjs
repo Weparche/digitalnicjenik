@@ -16,10 +16,9 @@ const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
 const INDEXABLE_ROBOTS = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
 const FEED_URL = `${SITE_URL}/feed.xml`
 
-// The entry price in the title comes from shared/pricing.ts (set in main() once the module is loaded).
-export let HOME_TITLE = 'Digitalni cjenik za bilo koji postojeći web | NEPAR'
+export const HOME_TITLE = 'Digitalni cjenik: besplatna provjera CSV/XML | NEPAR'
 const DESCRIPTION =
-  'WordPress, WooCommerce, Shopify, Wix ili vlastiti web. Javni digitalni cjenik, CSV/XML objava i 30-dnevna arhiva bez obaveznog plugina i migracije weba.'
+  'Imate web stranicu? Besplatno provjerite digitalni cjenik, CSV/XML i javne linkove. Objava za bilo koji postojeći web od 19,90 €/god, bez plugina.'
 const TWITTER_DESCRIPTION = DESCRIPTION
 
 function escapeHtml(value) {
@@ -523,7 +522,6 @@ async function main() {
     html: renderToString(React.createElement(sitePageModule.SitePage, { page })),
   }))
   await vite.close()
-  HOME_TITLE = `Digitalni cjenik za bilo koji postojeći web od ${pricing.formatEur(pricing.PLANS[0].price)} | NEPAR`
 
   const distIndex = resolve('dist/index.html')
   const pristineShell = readFileSync(distIndex, 'utf8')
