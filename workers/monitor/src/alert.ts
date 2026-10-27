@@ -84,14 +84,16 @@ export async function sendAlert(
         continue
       }
     }
+    let transmitted = false
     try {
       await sendTransactionalEmail(env, { to, ...message }, fetcher)
+      transmitted = true
       if (deliveryId) await env.DB.prepare("UPDATE monitor_deliveries SET status = 'sent', updated_at = ? WHERE job_id = ? AND recipient = ?").bind(new Date().toISOString(), deliveryId, to).run()
       sent.push(to)
     } catch (error) {
       console.error('monitor_alert_failed', JSON.stringify({ tenant: tenant.id, kind, reason: error instanceof Error ? error.message : 'unknown' }))
       failed.push(to)
-      if (deliveryId) await env.DB.prepare("UPDATE monitor_deliveries SET status = 'failed', updated_at = ? WHERE job_id = ? AND recipient = ?").bind(new Date().toISOString(), deliveryId, to).run()
+      if (deliveryId && !transmitted) await env.DB.prepare("UPDATE monitor_deliveries SET status = 'failed', updated_at = ? WHERE job_id = ? AND recipient = ?").bind(new Date().toISOString(), deliveryId, to).run()
     }
   }
   return { sent, failed }

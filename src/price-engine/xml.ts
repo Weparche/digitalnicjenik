@@ -37,7 +37,7 @@ function parseXmlTree(xmlText: string): XmlTree {
   const markup = source.replace(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->|<\?[\s\S]*?\?>/g, '')
   if (!source || /<!doctype|<!entity/i.test(markup) || /&(?!(?:amp|lt|gt|quot|apos);|#(?:[0-9]+|x[0-9a-fA-F]+);)/.test(markup) || XMLValidator.validate(source) !== true) throw invalid()
   // Numeric references require htmlEntities in this version; the guard above permits only XML entities.
-  const parser = new XMLParser({ preserveOrder: true, ignoreAttributes: true, parseTagValue: false, trimValues: false, processEntities: true, htmlEntities: true })
+  const parser = new XMLParser({ preserveOrder: true, ignoreAttributes: true, parseTagValue: false, trimValues: false, processEntities: { enabled: true, maxExpandedLength: 5_000_000, maxTotalExpansions: 1_000_000 }, htmlEntities: true })
   const ordered = parser.parse(source) as Array<Record<string, unknown>>
   const convert = (entries: Array<Record<string, unknown>>, depth: number): XmlTree[] => {
     if (depth > 64) throw invalid()

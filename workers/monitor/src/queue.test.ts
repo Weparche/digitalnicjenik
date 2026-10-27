@@ -7,8 +7,8 @@ import type { NormalizedPriceList } from '../../../src/price-engine/types'
 import { enqueueMonitorCheck, latestMonitorJob, type MonitorMessage } from '../../../shared/compliance/jobs'
 import { readLimitedBytes, MAX_FEED_BYTES } from '../../../shared/compliance/transport'
 import { readLatestRun } from '../../../shared/compliance/store'
-import { failMonitorJob, processMonitorJob } from './queue'
-import worker, { type Env } from './index'
+import { failMonitorJob, MonitorLeaseBusy, processMonitorJob } from './queue'
+import worker, { runScheduled, type Env } from './index'
 
 const NOW = new Date('2026-10-27T07:00:00Z')
 const list: NormalizedPriceList = { tenant: { id: 'nepar', slug: 'nepar', name: 'NEPAR' }, source: 'nepar', currency: 'EUR', updatedAt: NOW.toISOString(), items: [{ name: 'Test', type: 'Usluga', price: 10, anchorPrice: 10, specialSaleApplied: false }] }
@@ -90,6 +90,60 @@ describe('queued monitor', () => {
     await worker.queue({ queue: 'digitalnicjenik-monitor', messages: [{ body: { cron: '30 4 * * *', now: NOW.toISOString(), afterSlug: '' }, ack: () => { acked = true }, retry: () => { throw new Error('unexpected retry') } }] }, runtime())
     expect(acked).toBe(true)
     expect(messages.some(message => 'jobId' in message)).toBe(true)
+    expect(await readLatestRun(env.DB, 'nepar')).toBeNull()
+  })
+  it('paginates multiple tenants without dropping the continuation', async () => {
+    await seed()
+    for (let i = 0; i < 12; i++) {
+      const slug = `shop-${String(i).padStart(2, '0')}`
+      const draft = await createDraft(env, slug, { ...list, tenant: { id: slug, slug, name: slug } }, 'shop.csv', 'test')
+      await env.DB.prepare("UPDATE publication_metadata SET object_type = 'salon', object_address = 'Ilica 1, Zagreb', object_code = ? WHERE tenant_id = ?").bind(slug, slug).run()
+      await env.DB.prepare("INSERT INTO entitlements (id, tenant_id, plan, status, period_end, created_at, updated_at) VALUES (?, ?, 'publisher_self_service', 'active', '2099-01-01', ?, ?)").bind(slug, slug, NOW.toISOString(), NOW.toISOString()).run()
+      await publishDraft(env, slug, draft.draft!.id)
+    }
+    const runtimeEnv = runtime()
+    expect(await runScheduled(runtimeEnv, '30 4 * * *', NOW)).toMatchObject({ queued: 10 })
+    const next = messages.find(message => 'afterSlug' in message)
+    if (!next || !('afterSlug' in next)) throw new Error('missing continuation')
+    expect(await runScheduled(runtimeEnv, next.cron, new Date(next.now), next.afterSlug)).toMatchObject({ queued: 3 })
+    expect(new Set(messages.filter(message => 'jobId' in message).map(message => 'jobId' in message ? message.jobId : '')).size).toBe(13)
+  })
+  it('does not steal an active lease and resumes an expired lease', async () => {
+    const publication = await seed()
+    const runtimeEnv = runtime()
+    const job = await enqueueMonitorCheck(env.DB, runtimeEnv.MONITOR_QUEUE!, 'nepar', 'manual', NOW)
+    await env.DB.prepare("UPDATE monitor_jobs SET lease_token = 'other', lease_until = '2099-01-01' WHERE id = ?").bind(job!.id).run()
+    await expect(processMonitorJob(runtimeEnv, job!.id)).rejects.toBeInstanceOf(MonitorLeaseBusy)
+    await env.DB.prepare("UPDATE monitor_jobs SET lease_until = '2020-01-01' WHERE id = ?").bind(job!.id).run()
+    const fetcher: typeof fetch = async input => {
+      const csv = String(input).endsWith('/cjenik.csv')
+      if (csv || String(input).endsWith('/cjenik.xml')) return new Response(csv ? renderCsv(list) : renderXml(list), { headers: { 'content-disposition': `inline; filename="${publication.filenameStem}.${csv ? 'csv' : 'xml'}"` } })
+      return new Response('ok')
+    }
+    await processMonitorJob(runtimeEnv, job!.id, fetcher)
+    expect(await latestMonitorJob(env.DB, 'nepar')).toMatchObject({ status: 'completed' })
+  })
+  it('checkpoints earlier when redirect chains consume the HTTP budget', async () => {
+    const publication = await seed(12)
+    const runtimeEnv = runtime()
+    const job = await enqueueMonitorCheck(env.DB, runtimeEnv.MONITOR_QUEUE!, 'nepar', 'manual', NOW)
+    let requests = 0
+    const fetcher: typeof fetch = async input => {
+      requests++
+      const url = new URL(String(input))
+      const csv = url.pathname.endsWith('/cjenik.csv')
+      if (csv || url.pathname.endsWith('/cjenik.xml')) return new Response(csv ? renderCsv(list) : renderXml(list), { headers: { 'content-disposition': `inline; filename="${publication.filenameStem}.${csv ? 'csv' : 'xml'}"` } })
+      if (url.pathname.includes('/old-') && Number(url.searchParams.get('hop') || 0) < 5) {
+        url.searchParams.set('hop', String(Number(url.searchParams.get('hop') || 0) + 1))
+        return new Response(null, { status: 302, headers: { location: url.href } })
+      }
+      return new Response('ok')
+    }
+    await processMonitorJob(runtimeEnv, job!.id, fetcher)
+    const before = requests
+    await processMonitorJob(runtimeEnv, job!.id, fetcher)
+    expect(requests - before).toBeLessThanOrEqual(40)
+    expect(await latestMonitorJob(env.DB, 'nepar')).toMatchObject({ status: 'running', checked: 3, total: 12 })
     expect(await readLatestRun(env.DB, 'nepar')).toBeNull()
   })
 })

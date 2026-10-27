@@ -46,6 +46,13 @@ it('does not bypass suspension or tenant scoping', async () => {
   expect((await getArchivedCsv({ request, params: { slug: 'retained', filename: stem }, env: runtime() })).status).toBe(404)
 })
 
+it('keeps immutable trial downloads out of search indexes', async () => {
+  await env.DB.prepare("UPDATE entitlements SET status = 'trial', period_end = '2099-01-01T00:00:00Z' WHERE tenant_id = 't-retained'").run()
+  const response = await getArchivedCsv({ request: new Request(`https://digitalnicjenik.nepar.hr/c/retained/${stem}.csv`), params: { slug: 'retained', filename: stem }, env: runtime() })
+  expect(response.status).toBe(200)
+  expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow')
+})
+
 it('does not permit an internal demo flag to force-publish an incomplete customer draft', async () => {
   const invalid = { ...list, items: [{ ...list.items[0], anchorPrice: null }] }
   const draft = await createDraft(runtime(), 'retained', invalid, 'invalid.csv', 'nepar')

@@ -1406,6 +1406,9 @@ body:has(.premium-entry) { background: var(--nepar-canvas); color: var(--nepar-i
 
 /* Compliance monitor (publisher dashboard) */
 .monitor-progress { width: 100%; max-width: 32rem; accent-color: #0660ff; }
+.monitor-status { margin: 16px 0 0; color: var(--nepar-muted); line-height: 1.5; }
+.monitor-status p { margin: 0 0 8px; }
+.monitor-head .app-button { font-family: inherit; letter-spacing: normal; }
 .monitor-panel { margin: 0 0 24px; padding: 22px; border: 1px solid var(--nepar-border); border-radius: 8px; background: #fff; color: var(--nepar-ink); }
 .monitor-ok { border-left-color: var(--nepar-success); }
 .monitor-warn { border-left-color: var(--nepar-warning); }

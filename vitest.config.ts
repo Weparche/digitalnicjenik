@@ -11,6 +11,8 @@ export default defineConfig({
     },
   }))],
   test: {
+    // Each spec starts a workerd/D1 runtime. Bound parallelism on developer machines and CI.
+    maxWorkers: 2,
     setupFiles: ['./test/apply-migrations.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
   },

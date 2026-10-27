@@ -1071,18 +1071,18 @@ function ValidatorApp({
 
   async function persistDraft() {
     if (!list) throw new Error('Cjenik nije učitan.')
-      const id = draftId || await createRemoteDraft()
-      if (!id) throw new Error('Cjenik nije moguće spremiti.')
-      const response = await fetch(`${apiBase}/draft/${id}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        ...fetchOpts,
-        body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }),
-      })
-      if (!response.ok) throw new Error(await writeErrorMessage(response, 'Dopuna nije spremljena.'))
-      const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
-      setIssues(payload.validation.issues)
-      return id
+    const id = draftId || await createRemoteDraft()
+    if (!id) throw new Error('Cjenik nije moguće spremiti.')
+    const response = await fetch(`${apiBase}/draft/${id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      ...fetchOpts,
+      body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }),
+    })
+    if (!response.ok) throw new Error(await writeErrorMessage(response, 'Dopuna nije spremljena.'))
+    const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
+    setIssues(payload.validation.issues)
+    return id
   }
 
   async function saveDraft() {

@@ -15,6 +15,7 @@ export function validatePriceList(priceList: NormalizedPriceList, options: { now
     const itemKey = keyFor(item)
     if (!item.name.trim()) issues.push({ row, itemKey, field: 'name', severity: 'error', message: 'Nedostaje naziv.' })
     if (!Number.isFinite(item.price) || item.price <= 0) issues.push({ row, itemKey, field: 'price', severity: 'error', message: 'Maloprodajna cijena mora biti pozitivan broj.' })
+    if (item.unitPrice != null && (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'error', message: 'Unesena cijena za jedinicu mjere mora biti pozitivan broj, neovisno o izuzeću.' })
     const service = isServiceItem(item)
     if (!item.type?.trim() || (!service && !/proiz|product|roba|artikl/i.test(item.type))) issues.push({ row, itemKey, field: 'type', severity: 'manual_review', message: 'Vrsta stavke nije dovoljno jasna za objavu.' })
     if (service && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0)) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Nedostaje sidrena cijena. Potrebna je vrijednost primjenjiva 10. rujna 2026. bez posebnog oblika prodaje.' })
@@ -53,7 +54,6 @@ function validateProductFields(item: NormalizedPriceList['items'][number], row: 
   if (!barcode) issues.push({ row, itemKey, field: 'barcode', severity: 'manual_review', message: 'Nedostaje barkod proizvoda. Provjerite obvezne podatke prije objave.' })
   else if (!isValidGtin(barcode)) issues.push({ row, itemKey, field: 'barcode', severity: 'warning', message: 'Barkod nije valjan (očekuje se EAN-8, EAN-13, UPC-A ili GTIN-14 s ispravnom kontrolnom znamenkom).' })
   const exempt = text(item.unitPricingExemption).length >= 10
-  if (item.unitPrice != null && (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'error', message: 'Unesena cijena za jedinicu mjere mora biti pozitivan broj, neovisno o izuzeću.' })
   if (!text(item.unit) && !exempt) issues.push({ row, itemKey, field: 'unit', severity: 'manual_review', message: 'Navedite jedinicu mjere ili obrazložite zašto cijena po jedinici nije primjenjiva.' })
   if ((!exempt || text(item.unit)) && (item.unitPrice == null || !Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'manual_review', message: 'Navedite pozitivnu cijenu za jedinicu mjere ili obrazložite iznimku.' })
 }

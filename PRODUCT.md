@@ -73,7 +73,7 @@ The fixture at `./marketino-artikli` remains available for the demo tenant only.
 
 ## Anonymous technical check
 
-Nine checks cover homepage availability, HTTPS, price-list discovery, CSV, XML, a public HTML link, supported data structure, archive discovery and supported content validation. The shared score counts only `pass` checks; warnings, missing signals and unknown checks earn no points. Unknown is not failure. Legacy API colors remain for existing consumers, while the new UI derives its tone from the nine checks.
+Nine checks cover homepage availability, HTTPS, price-list discovery, CSV, XML, a public HTML link, supported data structure, archive discovery and supported content validation. The shared score counts `pass` checks and a supported alternative format marked `not_applicable`; warnings, missing signals and unknown checks earn no points. Unknown is not failure. Legacy API colors remain for existing consumers, while the new UI derives its tone from the nine checks.
 
 Reuse the existing safe fetcher and content verification, the price engine's CSV/XML parsers and validator, and the compliance XML feed parser to detect skipped records. A request has a 25-second fetch/DNS budget, bounded candidates and bounded response bodies; CSV/XML probes run concurrently and DNS results are reused within the request. Supported small feeds receive extra analysis without a second download. Oversized, unrecognized, blocked or partially unavailable content remains explicitly unconfirmed. Discovery is not an exhaustive crawl.
 
