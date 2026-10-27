@@ -35,13 +35,20 @@ describe('document score evidence', () => {
     expect(result.details.fetchBlocked).toBe(true)
     expect(technicalReport(result)).toMatchObject({ score: 1, unknown: 8, attention: 0 })
   })
-  it('does not treat a truncated large CSV as a verified document', async () => {
+  it('confirms a large CSV from a bounded sample without claiming full-content verification', async () => {
+    const header = 'Naziv;Vrsta;Cijena;Sidrena cijena;Poseban oblik prodaje\n'
+    const row = 'Usluga;Usluga;20;20;NE\n'
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => new URL(String(input)).pathname === '/cjenik.csv'
-      ? new Response('Naziv,Cijena\n' + 'Usluga,20\n'.repeat(18000))
+      ? new Response(header + row.repeat(18000), { headers: { 'content-type': 'text/csv' } })
       : new Response('<a href="/cjenik.csv">Cjenik</a>')))
     const result = await runDigitalPriceListCheck('example.hr', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
-    expect(result.details.csvFound).toBe(false)
-    expect(result.details.networkIncomplete).toBe(true)
-    expect(technicalReport(result).checks.find((c) => c.id === 'csv')?.status).toBe('unknown')
+    const report = technicalReport(result)
+    expect(result.details.csvFound).toBe(true)
+    expect(result.details.networkIncomplete).toBe(false)
+    expect(result.details.structureStatus).toBe('pass')
+    expect(result.details.contentStatus).toBe('unknown')
+    expect(result.details.csvAnalysis?.structureReasons.join(' ')).toContain('uzorku')
+    expect(report.checks.find((c) => c.id === 'csv')?.status).toBe('pass')
+    expect(report.checks.find((c) => c.id === 'content')?.status).toBe('unknown')
   })
 })

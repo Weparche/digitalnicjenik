@@ -212,23 +212,31 @@ export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv
   throw new Error("too_many_redirects");
 }
 
-async function readLimited(response: Response, maxBytes: number): Promise<string> {
-  if (!response.body) return "";
+async function readBounded(response: Response, maxBytes: number): Promise<{ body: string; truncated: boolean }> {
+  if (!response.body) return { body: "", truncated: false };
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  let truncated = false;
   try {
     while (true) {
       const part = await reader.read();
       if (part.done) break;
       const room = maxBytes - total;
-      const chunk = part.value.byteLength > room ? part.value.slice(0, room) : part.value;
-      chunks.push(chunk);
-      total += chunk.byteLength;
-      if (part.value.byteLength > room) {
+      if (room <= 0) {
+        truncated = true;
         await reader.cancel();
-        throw new Error('response_too_large');
+        break;
       }
+      if (part.value.byteLength > room) {
+        chunks.push(part.value.slice(0, room));
+        total += room;
+        truncated = true;
+        await reader.cancel();
+        break;
+      }
+      chunks.push(part.value);
+      total += part.value.byteLength;
     }
   } finally {
     reader.releaseLock();
@@ -236,7 +244,31 @@ async function readLimited(response: Response, maxBytes: number): Promise<string
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-  return new TextDecoder().decode(bytes);
+  return { body: new TextDecoder().decode(bytes), truncated };
+}
+
+async function readLimited(response: Response, maxBytes: number): Promise<string> {
+  const read = await readBounded(response, maxBytes);
+  if (read.truncated) throw new Error('response_too_large');
+  return read.body;
+}
+
+function trimCsvToCompleteRecords(value: string): string {
+  let quoted = false;
+  let lastRecordEnd = -1;
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === '"') {
+      if (quoted && value[index + 1] === '"') index += 1;
+      else quoted = !quoted;
+      continue;
+    }
+    if (!quoted && (character === '\n' || character === '\r')) {
+      if (character === '\r' && value[index + 1] === '\n') index += 1;
+      lastRecordEnd = index + 1;
+    }
+  }
+  return lastRecordEnd > 0 ? value.slice(0, lastRecordEnd) : value;
 }
 
 function decodeHref(value: string) {
@@ -405,7 +437,16 @@ async function findDocument(
         continue;
       }
       let body = "";
-      try { body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES); } catch {
+      let sampled = false;
+      try {
+        if (kind === 'csv') {
+          const bounded = await readBounded(fetched.response, MAX_DOCUMENT_BYTES);
+          sampled = bounded.truncated;
+          body = sampled ? trimCsvToCompleteRecords(bounded.body) : bounded.body;
+        } else {
+          body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES);
+        }
+      } catch {
         network.failed = true;
         if (fetched.response.ok) remember({ ...analyzeDocument(kind, '', fetched.url.href), structureReasons: ['Dohvat ili sigurnosno ograničenje onemogućuje potpunu analizu dokumenta.'] });
         continue;
@@ -417,7 +458,20 @@ async function findDocument(
       network.checked = true;
       if (!fetched.response.ok) continue;
       if (documentLooksValid(kind, fetched.response, body)) {
-        remember(analyzeDocument(kind, body, fetched.url.href));
+        const analysis = analyzeDocument(kind, body, fetched.url.href);
+        if (sampled) {
+          const contentStatus = analysis.contentStatus === 'pass' ? 'unknown' : analysis.contentStatus;
+          remember({
+            ...analysis,
+            status: contentStatus,
+            contentStatus,
+            structureReasons: analysis.structureRecognized
+              ? [`CSV je veći od ${Math.floor(MAX_DOCUMENT_BYTES / 1024)} KB; struktura je potvrđena na uzorku od ${analysis.itemCount} stavki. Potpuni sadržaj nije analiziran u URL checkeru.`]
+              : analysis.structureReasons,
+          });
+        } else {
+          remember(analysis);
+        }
         return fetched.url.href;
       }
     } catch {
@@ -467,7 +521,6 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
     if (new TextEncoder().encode(body).byteLength > MAX_DOCUMENT_BYTES) throw new Error('analysis_limit');
     const parsed = kind === 'csv' ? parseMarketinoCsv(body, undefined, { inspection: true }) : inspectXmlPriceList(body);
     const rawCount = parsed.rowCount ?? parsed.priceList.items.length;
-    if (rawCount > 2000) throw new Error('analysis_limit');
     const findings: DocumentFinding[] = parsed.warnings.map(w => withLevel({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }, parseWarningRule(w.field)));
     if (parsed.priceList.items.length) {
       for (const issue of validatePriceList(parsed.priceList).issues) {
@@ -495,22 +548,25 @@ export type PublicationName = { storage: number; stamp: string; time: number | n
 
 /**
  * The Odluka requires the file name to carry the object type, address, object code, storage number and a
- * date/time stamp but not their exact layout, so compact (20260916T140627+0200, 20260917-143500) and split
- * (2026-09-15_22-45-00) stamps are accepted after at least three object segments.
+ * date/time stamp but not their exact layout, so compact (20260916T140627+0200), ISO split
+ * (2026-09-15_22-45-00) and Croatian split (27.10.2026_05:00) stamps are accepted after at least three object segments.
  */
 export function parsePublicationName(value: string): PublicationName | null {
   let path: string;
   try { path = decodeURIComponent(new URL(value).pathname); } catch { return null; }
   const parts = (path.split('/').pop() ?? '').replace(/\.(csv|xml)$/i, '').split('_');
   const compact = /^(\d{4})-?(\d{2})-?(\d{2})[T-](\d{2})[-:]?(\d{2})(?:[-:]?(\d{2}))?(Z|[+-]\d{2}:?\d{2})?$/i.exec(parts.at(-1) ?? '');
-  const splitDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(parts.at(-2) ?? '');
+  const splitIsoDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(parts.at(-2) ?? '');
+  const splitCroDate = /^(\d{2})\.(\d{2})\.(\d{4})\.?$/.exec(parts.at(-2) ?? '');
   const splitTime = /^(\d{2})[-:](\d{2})(?:[-:](\d{2}))?$/.exec(parts.at(-1) ?? '');
+  const splitDate = splitIsoDate ?? splitCroDate;
   const stampParts = compact ? 1 : splitDate && splitTime ? 2 : 0;
   if (!stampParts) return null;
   const storage = parts.at(-1 - stampParts) ?? '';
   const objectParts = parts.slice(0, -1 - stampParts);
   if (!/^\d{1,6}$/.test(storage) || objectParts.length < 3 || objectParts.some((part) => !part.trim())) return null;
-  const [year, month, day, hour, minute, second = '00', zone = ''] = compact ? compact.slice(1) : [...splitDate!.slice(1), ...splitTime!.slice(1)];
+  const dateParts = splitIsoDate ? splitIsoDate.slice(1) : splitCroDate ? [splitCroDate[3], splitCroDate[2], splitCroDate[1]] : [];
+  const [year, month, day, hour, minute, second = '00', zone = ''] = compact ? compact.slice(1) : [...dateParts, ...splitTime!.slice(1)];
   const offset = !zone ? 'Z' : zone.toUpperCase() === 'Z' ? 'Z' : zone.replace(/^([+-]\d{2}):?(\d{2})$/, '$1:$2');
   const time = Date.parse(`${year}-${month}-${day}T${hour}:${minute}:${second}${offset}`);
   return { storage: Number(storage), stamp: parts.slice(-stampParts).join('_'), time: Number.isFinite(time) ? time : null };
@@ -550,7 +606,7 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
   for (const entry of previous) {
     try {
       const fetched = await safeDigitalPriceListFetch(new URL(entry.href), env);
-      const body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES).catch(() => '');
+      const { body } = await readBounded(fetched.response, MAX_DOCUMENT_BYTES);
       if (isBotChallenge(fetched.response, body) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; continue; }
       if (fetched.response.ok && !isHtml(fetched.response, body)) {
         details.archiveFound = true;
@@ -694,7 +750,11 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   details.structureStatus = aggregateDocumentStatus(analyses.map(a => a.structureStatus));
   details.contentStatus = aggregateDocumentStatus(analyses.map(a => a.contentStatus));
   details.structureReasons = analyses.map(a => a.format.toUpperCase() + ': ' + a.structureReasons.join(' '));
-  details.contentReasons = analyses.map(a => a.format.toUpperCase() + ': ' + (a.structureRecognized ? a.totalFindings + ' nalaza u ' + a.itemCount + ' stavki' + (a.findings.some(f => f.level === 'error') ? ', uključujući nedostajuće ili neispravne obvezne podatke.' : '.') : 'Sadržaj nije moguće potvrditi.'));
+  details.contentReasons = analyses.map(a => {
+    const sampled = a.structureReasons.some(reason => /uzorku/i.test(reason));
+    const baseReason = a.structureRecognized ? a.totalFindings + ' nalaza u ' + a.itemCount + ' analiziranih stavki' + (a.findings.some(f => f.level === 'error') ? ', uključujući nedostajuće ili neispravne obvezne podatke.' : '.') : 'Sadržaj nije moguće potvrditi.';
+    return a.format.toUpperCase() + ': ' + baseReason + (sampled ? ' Velika datoteka provjerena je na ograničenom uzorku; potpuni sadržaj ostaje za validator.' : '');
+  });
   details.contentEvidence = details.contentReasons.join(' ') + ' Ne potvrđuje stvarnu primjenjivost cijena ni pravnu usklađenost.';
   if (details.contentStatus === 'fail' || details.contentStatus === 'warning' || details.structureStatus === 'warning') return result('yellow', 'Pronađen je strojni cjenik s konkretnim nalazima. Pregledajte odvojene CSV/XML rezultate.', details);
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
