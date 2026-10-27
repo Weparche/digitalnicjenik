@@ -208,7 +208,7 @@ export function AnchorGuidePage() {
     { href: '/vodici/', label: 'Svi vodiči' },
   ]}>
     {anchorGuide.sections.map((section, index) => <section className="site-section" key={section.heading} aria-labelledby={`anchor-${index}`}><h2 id={`anchor-${index}`}>{section.heading}</h2>{section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}</section>)}
-    <section className="site-section" aria-labelledby="anchor-faq"><h2 id="anchor-faq">Česta pitanja o sidrenoj cijeni</h2>{anchorGuide.faq.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</section>
+    <section className="site-section" aria-labelledby="anchor-faq"><h2 id="anchor-faq">Česta pitanja o sidrenoj cijeni</h2><div className="site-faq">{anchorGuide.faq.map(([question, answer]) => <div className="site-faq-item" key={question}><h3>{question}</h3><p>{answer}</p></div>)}</div></section>
     <SourceList sources={OFFICIAL_SOURCES}/>
   </SitePageLayout>
 }
