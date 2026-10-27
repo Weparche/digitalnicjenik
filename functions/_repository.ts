@@ -187,7 +187,7 @@ export async function updateDraft(env: RuntimeEnv, slug: string, draftId: string
   if (!draft || draft.status === "published") throw new Error("Draft nije pronađen ili je već objavljen.")
   if (draft.tenantId !== tenant.id) throw new Error("Draft nije pronađen.")
   const canonical = withCanonicalTenant(list, tenant)
-  const validation = validatePriceList(canonical)
+  const validation = mergeValidationIssues(validatePriceList(canonical), draft.validationIssues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED'))
   const timestamp = now()
   const updated = await env.DB.prepare("UPDATE price_uploads SET normalized_payload_json = ?, validation_issues_json = ?, status = ?, updated_at = ? WHERE id = ? AND tenant_id = ? AND status != 'published'").bind(json(canonical), json(validation.issues), validation.status, timestamp, draftId, tenant.id).run()
   if (!(updated.meta?.changes ?? 0)) throw new Error("Draft nije pronađen ili je već objavljen.")
@@ -203,7 +203,8 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   if (!draft || draft.tenantId !== tenant.id) throw new Error("Draft nije pronađen.")
   const payload = withCanonicalTenant(draft.normalizedPayload, tenant)
   if (draft.status !== "ready_to_publish" && !internalDemo) throw new Error("Cjenik još nije spreman za objavu.")
-  const draftValidation = validatePriceList(payload)
+  const metadata = await metadataFor(env, tenant.id)
+  const draftValidation = mergeValidationIssues(validatePriceList(payload, { timeZone: metadata.timezone }), draft.validationIssues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED'))
   if (!internalDemo && draftValidation.status !== "ready_to_publish") throw new Error("Cjenik više nije spreman za objavu. Ponovno provjerite dopune.")
   const entitlement = await readEntitlement(env, slug)
   const live =
@@ -214,7 +215,6 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
     && new Date(entitlement.periodEnd).getTime() >= Date.now()
   if (!internalDemo && !live) throw new Error("Aktivan Publisher entitlement nije pronađen.")
   const current = await readCurrentPublication(env, slug)
-  const metadata = await metadataFor(env, tenant.id)
   if (slug !== (env.DEMO_WRITE_TENANT || 'nepar')) parsePublicationDetails(metadata)
   const profile = getRuleset().profiles[usesProductStructure(payload) ? 'products' : 'services']
   const dailyStamp = profile.freshness.kind === 'working_day' ? new Intl.DateTimeFormat('en-CA', { timeZone: metadata.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) : undefined

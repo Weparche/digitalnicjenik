@@ -6,6 +6,8 @@ import type { NormalizedPriceList } from '../../../src/price-engine/types'
 import { checkAndAlert, RETRY_CRON, runScheduled, default as worker, type Env } from './index'
 import { buildAlertMessage, sendAlert } from './alert'
 import { runTenantCheck } from '../../../shared/compliance/run-check'
+import { processMonitorJob } from './queue'
+import type { MonitorMessage } from '../../../shared/compliance/jobs'
 import { readLatestRun } from '../../../shared/compliance/store'
 
 const HOST = 'cjenik.acme.hr'
@@ -20,6 +22,7 @@ function makeEnv(sent: Sent[], overrides: Partial<Env> = {}): Env {
     EMAIL_FROM: 'publisher@nepar.hr',
     EMAIL_TO: 'ops@nepar.hr',
     PUBLIC_APP_URL: 'https://digitalnicjenik.nepar.hr',
+    MONITOR_QUEUE: { send: async () => {} },
     MONITOR_SECRET: 'monitor-secret',
     EMAIL: { send: async (message) => { sent.push({ to: String(message.to), subject: message.subject, text: message.text ?? '' }); return {} } },
     ...overrides,
@@ -114,14 +117,21 @@ describe('monitor worker', () => {
 
   it('scheduled retry only re-checks tenants that are warn/fail or unchecked', async () => {
     const sent: Sent[] = []
-    const env = makeEnv(sent)
-    const first = await runScheduled(env, '30 4 * * *', NOW, feeds())
-    expect(first).toMatchObject({ trigger: 'cron', tenants: 1 })
-    const retryHealthy = await runScheduled(env, RETRY_CRON, new Date(NOW.getTime() + 3600_000), feeds())
-    expect(retryHealthy).toMatchObject({ trigger: 'retry', tenants: 0 })
-    // A failing tenant is picked up again by the retry pass.
-    await runScheduled(env, '30 4 * * *', new Date(NOW.getTime() + 7200_000), feeds(500))
-    expect(await runScheduled(env, RETRY_CRON, new Date(NOW.getTime() + 10_800_000), feeds())).toMatchObject({ tenants: 1, ok: 1 })
+    const pending: MonitorMessage[] = []
+    const env = makeEnv(sent, { MONITOR_QUEUE: { send: async body => { pending.push(body) } } })
+    const drain = async (fetcher: typeof fetch) => {
+      while (pending.length) {
+        const body = pending.shift()!
+        if ('jobId' in body) await processMonitorJob(env, body.jobId, fetcher)
+      }
+    }
+    expect(await runScheduled(env, '30 4 * * *', NOW)).toMatchObject({ trigger: 'cron', tenants: 1 })
+    await drain(feeds())
+    expect(await runScheduled(env, RETRY_CRON, new Date(NOW.getTime() + 3600_000))).toMatchObject({ trigger: 'retry', tenants: 0 })
+    await runScheduled(env, '30 4 * * *', new Date(NOW.getTime() + 7200_000))
+    await drain(feeds(500))
+    expect(await runScheduled(env, RETRY_CRON, new Date(NOW.getTime() + 10_800_000))).toMatchObject({ tenants: 1 })
+    await drain(feeds())
   })
 
   it('alert text escapes HTML and never claims legal proof', () => {
@@ -156,8 +166,9 @@ describe('monitor worker', () => {
       try {
         const response = await call({ method: 'POST', headers: { authorization: 'Bearer monitor-secret' }, body: JSON.stringify({ slug: 'acme' }) }, env)
         const body = await response.json() as { status: string; run?: { trigger: string; overall: string } }
-        expect(body).toMatchObject({ status: 'checked', run: { trigger: 'manual', overall: 'ok' } })
-        expect((await readLatestRun(env.DB, 't-acme'))?.trigger).toBe('manual')
+        expect(response.status).toBe(202)
+        expect(body).toMatchObject({ status: 'queued' })
+        expect(await readLatestRun(env.DB, 't-acme')).toBeNull()
       } finally {
         globalThis.fetch = realFetch
       }

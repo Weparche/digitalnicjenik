@@ -1,3 +1,4 @@
+import { latestMonitorJob } from '../../../../shared/compliance/jobs'
 import { complianceRules, getRuleset, isComplianceProfile } from '../../../../shared/compliance/rulesets'
 import { claimManualRun, readLatestRun, readRunHistory, readState } from '../../../../shared/compliance/store'
 import type { MonitorRunRecord } from '../../../../shared/compliance/types'
@@ -18,16 +19,18 @@ export const onRequestGet = async ({ request, params, env }: { request: Request;
   try {
     const tenant = await requireOwnerOrOperator({ request, env, slug: params.slug })
     const db = env.DB!
-    const [latest, history, state, metadata] = await Promise.all([
+    const [latest, history, state, metadata, job] = await Promise.all([
       readLatestRun(db, tenant.id),
       readRunHistory(db, tenant.id, new Date(Date.now() - HISTORY_DAYS * 86_400_000).toISOString()),
       readState(db, tenant.id),
       db.prepare('SELECT compliance_profile FROM publication_metadata WHERE tenant_id = ?').bind(tenant.id).first<{ compliance_profile: string }>(),
+      latestMonitorJob(db, tenant.id),
     ])
     const ruleset = complianceRules[latest?.ruleset ?? ''] ?? getRuleset()
     const profile = isComplianceProfile(metadata?.compliance_profile) ? metadata.compliance_profile : 'products'
     return Response.json({
       latest,
+      job,
       history: history.map(compact),
       alertOpen: state.alertOpen,
       lastOkAt: state.lastOkAt,
@@ -59,7 +62,8 @@ export const onRequestPost = async ({ request, params, env }: { request: Request
       body: JSON.stringify({ slug: tenant.slug }),
     })
     if (!response.ok) return Response.json({ error: 'Provjera nije uspjela.', code: 'monitor_failed' }, { status: 502, headers: noStore })
-    const body = await response.json() as { status: 'checked' | 'skipped'; run?: MonitorRunRecord; reason?: string }
+    const body = await response.json() as { status: 'checked' | 'skipped' | 'queued'; run?: MonitorRunRecord; reason?: string; jobId?: string }
+    if (body.status === 'queued') return Response.json({ status: 'queued', jobId: body.jobId }, { status: 202, headers: noStore })
     if (body.status === 'skipped') return Response.json({ status: 'skipped', reason: body.reason }, { headers: noStore })
     return Response.json({ status: 'checked', run: body.run }, { headers: noStore })
   } catch (error) {

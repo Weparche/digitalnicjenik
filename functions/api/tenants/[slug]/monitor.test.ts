@@ -78,4 +78,15 @@ describe('monitor API', () => {
     const broken = { fetch: async () => new Response('x', { status: 500 }) }
     expect((await call(onRequestPost, { MONITOR: broken, MONITOR_SECRET: 's' })).status).toBe(502)
   })
+
+  it('POST returns 202 for queued work and GET exposes progress without private payloads', async () => {
+    const MONITOR = { fetch: async () => Response.json({ status: 'queued', jobId: 'job-1' }, { status: 202 }) }
+    const response = await call(onRequestPost, { MONITOR, MONITOR_SECRET: 's' })
+    expect(response.status).toBe(202)
+    expect(await response.json()).toMatchObject({ status: 'queued', jobId: 'job-1' })
+    await env.DB.prepare("INSERT INTO monitor_jobs (id, tenant_id, slug, run_trigger, status, requested_at, updated_at, cursor, total, payload_json) VALUES ('job-1', 't-acme', 'acme', 'manual', 'running', ?, ?, 10, 35, 'private')").bind(iso, iso).run()
+    const body = await (await call(onRequestGet)).json() as { job: Record<string, unknown> }
+    expect(body.job).toMatchObject({ id: 'job-1', status: 'running', checked: 10, total: 35 })
+    expect(body.job).not.toHaveProperty('payload_json')
+  })
 })

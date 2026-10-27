@@ -6,6 +6,7 @@ import {
   attachCanonicalTenant,
   errorStatus,
   parsePriceListInput,
+  parseImportIssues,
   readJsonBody,
   sanitizeSourceFilename,
 } from '../../../_limits'
@@ -18,6 +19,7 @@ export const onRequestPost = async ({ request, params, env }: { request: Request
     const body = await readJsonBody(request) as {
       csv?: unknown
       priceList?: unknown
+      importIssues?: unknown
       name?: string
       sourceFilename?: string
       sourceArtifact?: string
@@ -31,6 +33,7 @@ export const onRequestPost = async ({ request, params, env }: { request: Request
 
     if (body.priceList !== undefined) {
       list = attachCanonicalTenant(parsePriceListInput(body.priceList), tenant)
+      importIssues = parseImportIssues(body.importIssues)
     } else if (typeof body.csv === 'string' && body.csv.trim()) {
       if (new TextEncoder().encode(body.csv).byteLength > 2_000_000) {
         return Response.json({ error: 'CSV datoteka je prevelika.' }, { status: 413 })

@@ -729,7 +729,7 @@ function PublisherWorkspace() {
 
   async function createRemoteDraft() {
     if (!list) return null
-    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename }) })
+    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename, importIssues: issues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED') }) })
     if (!response.ok) throw new Error(await writeErrorMessage(response, 'Draft nije spremljen.'))
     const payload = await response.json() as { draft: { id: string }; validation: { issues: ValidationIssue[] } }
     setDraftId(payload.draft.id); setIssues(payload.validation.issues)
@@ -759,6 +759,8 @@ function PublisherWorkspace() {
       let idToPublish = draftId
       if (!idToPublish) idToPublish = await createRemoteDraft() || ''
       if (!idToPublish) throw new Error('Za objavu pokrenite Cloudflare Pages lokalni server.')
+      const saved = await fetch('/api/tenants/nepar/draft/' + idToPublish, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }) })
+      if (!saved.ok) throw new Error(await writeErrorMessage(saved, 'Dopuna nije spremljena.'))
       const response = await fetch('/api/tenants/nepar/publish', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ draftId: idToPublish }) })
       const payload = await response.json() as { error?: string; message?: string; publication?: PricePublication }
       if (!response.ok) throw new Error(payload.error || (response.status === 429 ? 'Previše zahtjeva. Pokušajte kasnije.' : response.status === 401 ? 'Potrebna je operator autentikacija.' : response.status === 403 ? 'Pristup tenantu nije dopušten.' : 'Objava nije uspjela.'))
@@ -1059,7 +1061,7 @@ function ValidatorApp({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       ...fetchOpts,
-      body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename }),
+      body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename, importIssues: issues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED') }),
     })
     if (!response.ok) throw new Error(await writeErrorMessage(response, 'Cjenik nije moguće pripremiti.'))
     const payload = await response.json() as { draft: { id: string }; validation: { issues: ValidationIssue[] } }
@@ -1067,10 +1069,8 @@ function ValidatorApp({
     return payload.draft.id
   }
 
-  async function saveDraft() {
-    if (!list || mode !== 'publisher') return
-    setBusy(true); setError(''); setMessage('')
-    try {
+  async function persistDraft() {
+    if (!list) throw new Error('Cjenik nije učitan.')
       const id = draftId || await createRemoteDraft()
       if (!id) throw new Error('Cjenik nije moguće spremiti.')
       const response = await fetch(`${apiBase}/draft/${id}`, {
@@ -1081,7 +1081,16 @@ function ValidatorApp({
       })
       if (!response.ok) throw new Error(await writeErrorMessage(response, 'Dopuna nije spremljena.'))
       const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
-      setIssues(payload.validation.issues); setMessage('Dopune su spremljene. Provjerite sažetak prije objave.')
+      setIssues(payload.validation.issues)
+      return id
+  }
+
+  async function saveDraft() {
+    if (!list || mode !== 'publisher') return
+    setBusy(true); setError(''); setMessage('')
+    try {
+      await persistDraft()
+      setMessage('Dopune su spremljene. Provjerite sažetak prije objave.')
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Dopuna nije uspjela.') } finally { setBusy(false) }
   }
 
@@ -1090,7 +1099,7 @@ function ValidatorApp({
     setBusy(true); setError(''); setMessage('')
     try {
       // Always persist the currently displayed edits, including edits after a previous save.
-      const id = await createRemoteDraft()
+      const id = await persistDraft()
       if (!id) throw new Error('Za objavu je potreban aktivan Publisher.')
       const response = await fetch(`${apiBase}/publish`, {
         method: 'POST',
@@ -1100,7 +1109,7 @@ function ValidatorApp({
       })
       const payload = await response.json() as { error?: string; message?: string; publication?: PricePublication }
       if (!response.ok) throw new Error(payload.error || 'Objava nije uspjela.')
-      setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setPublished(true)
+      setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setPublished(true); setDraftId('')
       const current = await fetch(apiBase, fetchOpts).then((item) => item.json()).catch(() => null) as { priceList?: NormalizedPriceList } | null
       if (current?.priceList) setList(current.priceList)
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Objava nije uspjela.') } finally { setBusy(false) }

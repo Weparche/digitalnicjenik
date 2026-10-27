@@ -1,3 +1,4 @@
+import { readLimitedBytes } from './transport'
 import type { D1DatabaseLike } from '../db'
 import { entitlementIsLive } from '../entitlements'
 import { deterministicHash } from '../../src/price-engine/hash'
@@ -27,9 +28,15 @@ export type RunTenantCheckOptions = {
   now?: Date
   fetcher?: typeof fetch
   rulesetId?: string
+  deferArchive?: boolean
+  runId?: string
 }
 
+export type ArchiveProbeRow = { filename_stem: string; published_at: string; superseded_at: string | null; public_until: string | null }
+export type PreparedCheck = { status: 'prepared'; run: MonitorRunRecord; tenant: { id: string; slug: string; name: string }; archive: { base: string; days: number; rows: ArchiveProbeRow[] } }
+
 export type RunTenantCheckResult =
+  | PreparedCheck
   | { status: 'skipped'; reason: 'unknown_tenant' | 'not_live' | 'no_publication' }
   | { status: 'checked'; run: MonitorRunRecord; alert: AlertKind | null; state: MonitorState; tenant: { id: string; slug: string; name: string } }
 
@@ -61,7 +68,7 @@ async function probe(fetcher: typeof fetch, url: string, format: 'csv' | 'xml', 
       issues.push({ code: 'FEED_HTTP_ERROR', severity: 'fail', field: format, message: `${format.toUpperCase()} vraća HTTP ${response.status}.` })
       return { result, issues }
     }
-    const bytes = new Uint8Array(await response.arrayBuffer())
+    const bytes = await readLimitedBytes(response)
     result.sha256 = await sha256Hex(bytes)
     result.filename = evaluateFilename(response.headers.get('content-disposition'), stem, format, ruleset)
     try {
@@ -190,7 +197,7 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
   const live = archiveRows.results.filter((row) => row.public_until !== null && new Date(row.public_until).getTime() >= now.getTime())
   let archiveLatestStatus: number | null = null
   let archiveOldestStatus: number | null = null
-  if (live.length > 0) {
+  if (!options.deferArchive && live.length > 0) {
     const latest = live[0]!
     const oldest = live[live.length - 1]!
     for (const row of live) {
@@ -211,7 +218,7 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
   }
 
   const run: MonitorRunRecord = {
-    id: crypto.randomUUID(),
+    id: options.runId ?? crypto.randomUUID(),
     tenantId: tenant.id,
     publicationId: publication.id,
     checkedAt: now.toISOString(),
@@ -243,9 +250,25 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
     publicationSequence: publication.sequence,
   }
 
+  if (options.deferArchive) return { status: 'prepared', run, tenant, archive: { base, days: ruleset.archiveDays, rows: live } }
+
   const previousState = await readState(db, tenant.id)
   const { state, alert } = advanceMonitorState(previousState, run.overall, now)
   await insertRun(db, run)
   await writeState(db, state)
   return { status: 'checked', run, alert, state, tenant }
+}
+
+/** Apply a bounded archive slice; the queued job checkpoints only after the whole slice succeeds. */
+export async function checkArchiveRow(fetcher: typeof fetch, prepared: PreparedCheck, index: number) {
+  const row = prepared.archive.rows[index]
+  const [csvStatus, xmlStatus] = await Promise.all(['csv', 'xml'].map(format => statusOf(fetcher, `${prepared.archive.base}/${row.filename_stem}.${format}`)))
+  if (index === 0) prepared.run.archiveLatestStatus = csvStatus
+  if (index === prepared.archive.rows.length - 1) prepared.run.archiveOldestStatus = csvStatus
+  if (csvStatus !== 200 || xmlStatus !== 200) {
+    const requiredUntil = new Date(row.superseded_at ?? row.published_at).getTime() + prepared.archive.days * 86_400_000
+    if (Date.parse(row.public_until!) >= requiredUntil) prepared.run.archiveAvailable = Math.max(0, (prepared.run.archiveAvailable ?? 0) - 1)
+    prepared.run.issues.push({ code: 'ARCHIVE_UNREACHABLE', severity: 'fail', message: `Arhiva ${row.filename_stem}: CSV HTTP ${csvStatus ?? 'gre?ka'}, XML HTTP ${xmlStatus ?? 'gre?ka'}.` })
+  }
+  prepared.run.overall = overallFromIssues(prepared.run.issues, prepared.run.freshnessStatus)
 }

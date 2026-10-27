@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { MonitorOverall, MonitorRunRecord } from '../shared/compliance/types'
 import { buildMonitorView, formatZagreb, toneMark } from './monitorView'
+import type { latestMonitorJob } from '../shared/compliance/jobs'
 
 type MonitorApi = {
+  job?: Awaited<ReturnType<typeof latestMonitorJob>>
   latest: MonitorRunRecord | null
   history: Array<{ id: string; checkedAt: string; overall: MonitorOverall }>
   lastOkAt: string | null
@@ -31,6 +33,18 @@ export function MonitorPanel({ slug }: { slug: string }) {
   }, [endpoint])
 
   useEffect(() => { void load() }, [load])
+  const pending = Boolean(data?.job && ['queued', 'running', 'notifying'].includes(data.job.status))
+  const failed = data?.job?.status === 'failed'
+  useEffect(() => {
+    if (!pending) return
+    let loading = false
+    const timer = window.setInterval(async () => {
+      if (loading) return
+      loading = true
+      try { await load() } finally { loading = false }
+    }, 3000)
+    return () => window.clearInterval(timer)
+  }, [load, pending])
 
   async function runNow() {
     setBusy(true)
@@ -40,7 +54,8 @@ export function MonitorPanel({ slug }: { slug: string }) {
       if (response.status === 429) setMessage('Provjera je nedavno pokrenuta. Pokušajte ponovno za nekoliko minuta.')
       else if (!response.ok) setMessage('Provjera trenutačno nije moguća.')
       else {
-        const body = await response.json() as { status: string }
+        const body = await response.json() as { status: string; jobId?: string }
+        if (body.status === 'queued') setMessage('Provjera je pokrenuta. Rezultat će se prikazati automatski.')
         if (body.status === 'skipped') setMessage('Provjera se ne izvodi dok Publisher nije aktivan.')
         await load()
       }
@@ -54,19 +69,22 @@ export function MonitorPanel({ slug }: { slug: string }) {
   if (!loaded) return <section className="monitor-panel" aria-label="Nadzor usklađenosti"><p className="app-status" role="status">Učitavamo stanje nadzora…</p></section>
   if (!data) return null
 
-  const view = data.latest ? buildMonitorView(data.latest, data.ruleset.label, data.profile.label) : null
+  const view = data.latest && !pending && !failed ? buildMonitorView(data.latest, data.ruleset.label, data.profile.label) : null
 
   return (
     <section className={`monitor-panel${view ? ` monitor-${view.tone}` : ''}`} aria-labelledby="monitor-heading">
       <header className="monitor-head">
         <div>
           <span className="app-label">NADZOR USKLAĐENOSTI</span>
-          <h2 id="monitor-heading">{view ? view.headline : 'Prva provjera još nije obavljena'}</h2>
-          <p>{view ? view.checkedLabel : 'Cjenik provjeravamo svakodnevno, uključujući provjeru nakon roka u 08:00. Možete i odmah pokrenuti provjeru.'}</p>
+          <h2 id="monitor-heading">{pending ? 'Provjera je u tijeku' : failed ? 'Provjeru nije moguće dovršiti' : view ? view.headline : 'Prva provjera još nije obavljena'}</h2>
+          <p>{failed ? 'Pokušajte ponovno. Prethodni rezultat ne potvrđuje stanje ove provjere.' : pending ? 'Provjeravamo aktualni cjenik i arhivu. Rezultat će se prikazati kada provjera završi.' : view ? view.checkedLabel : 'Cjenik provjeravamo svakodnevno, uključujući provjeru nakon roka u 08:00. Možete i odmah pokrenuti provjeru.'}</p>
         </div>
-        <button className="app-button app-button-light" type="button" disabled={busy} onClick={() => void runNow()}>{busy ? 'Provjeravam…' : 'Provjeri sada'}</button>
+        <button className="app-button app-button-light" type="button" disabled={busy || pending} onClick={() => void runNow()}>{busy || pending ? 'Provjera u tijeku…' : 'Provjeri sada'}</button>
       </header>
       {message && <p className="app-status" role="status">{message}</p>}
+      {pending && data.job && <div role="status" className="app-status">
+        {data.job.total > 0 ? <><p>Provjereno {data.job.checked} od {data.job.total} arhivskih objava.</p><progress className="monitor-progress" aria-label="Napredak provjere arhive" value={data.job.checked} max={data.job.total} /></> : <p>Provjeravamo dostupnost i sadržaj datoteka…</p>}
+      </div>}
 
       {view && (
         <>

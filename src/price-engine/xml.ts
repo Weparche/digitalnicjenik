@@ -1,3 +1,4 @@
+import { XMLParser, XMLValidator } from 'fast-xml-parser'
 import { normalizeBarcode, normalizeNumber, normalizeReferenceDate, parseAvailability } from './normalize'
 import { usesProductStructure } from './profile'
 import type { NormalizedPriceList } from './types'
@@ -29,52 +30,31 @@ export function parseXmlPriceListBrowser(xmlText: string, tenant = { id: 'nepar'
 type XmlTree = { name: string; text: string; children: XmlTree[] }
 
 const localXmlName = (name: string) => name.split(':').pop()?.toLowerCase() ?? name.toLowerCase()
-const decodeXmlText = (value: string) => value.replace(/&(?:lt|gt|amp|quot|apos|#\d+|#x[\da-f]+);/gi, (entity) => {
-  const key = entity.toLowerCase()
-  if (key === '&lt;') return '<'
-  if (key === '&gt;') return '>'
-  if (key === '&amp;') return '&'
-  if (key === '&quot;') return '"'
-  if (key === '&apos;') return "'"
-  const code = key.startsWith('&#x') ? Number.parseInt(key.slice(3, -1), 16) : Number.parseInt(key.slice(2, -1), 10)
-  return Number.isSafeInteger(code) ? String.fromCodePoint(code) : entity
-})
-
+/** Syntax and decoding are identical in browsers and Workers. Never expand custom entities. */
 function parseXmlTree(xmlText: string): XmlTree {
   const source = xmlText.trim()
-  if (!source || /<!doctype|<!entity/i.test(source)) throw new Error('XML nije ispravan. Provjerite datoteku i pokušajte ponovno.')
-  const tokens = /<!--[\s\S]*?-->|<\?[\s\S]*?\?>|<\/?[A-Za-z_][\w:.-]*(?:\s[^<>]*?)?\/?\s*>|[^<]+/g
-  const stack: XmlTree[] = []
-  let root: XmlTree | null = null
-  let cursor = 0
-  let match: RegExpExecArray | null
-  while ((match = tokens.exec(source))) {
-    if (match.index !== cursor) throw new Error('XML nije ispravan. Provjerite datoteku i pokušajte ponovno.')
-    cursor = tokens.lastIndex
-    const token = match[0]
-    if (token.startsWith('<!--') || token.startsWith('<?')) continue
-    if (!token.startsWith('<')) {
-      if (stack.length) stack[stack.length - 1].text += decodeXmlText(token)
-      else if (token.trim()) throw new Error('XML mora imati samo jedan korijenski element.')
-      continue
+  const invalid = () => new Error('XML nije ispravan. Provjerite datoteku i pokušajte ponovno.')
+  const markup = source.replace(/<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->|<\?[\s\S]*?\?>/g, '')
+  if (!source || /<!doctype|<!entity/i.test(markup) || /&(?!(?:amp|lt|gt|quot|apos);|#(?:[0-9]+|x[0-9a-fA-F]+);)/.test(markup) || XMLValidator.validate(source) !== true) throw invalid()
+  // Numeric references require htmlEntities in this version; the guard above permits only XML entities.
+  const parser = new XMLParser({ preserveOrder: true, ignoreAttributes: true, parseTagValue: false, trimValues: false, processEntities: true, htmlEntities: true })
+  const ordered = parser.parse(source) as Array<Record<string, unknown>>
+  const convert = (entries: Array<Record<string, unknown>>, depth: number): XmlTree[] => {
+    if (depth > 64) throw invalid()
+    const result: XmlTree[] = []
+    for (const entry of entries) {
+      for (const [name, value] of Object.entries(entry)) {
+        if (name.startsWith('?') || name.startsWith('#') || name === ':@') continue
+        if (!Array.isArray(value)) throw invalid()
+        const children = value as Array<Record<string, unknown>>
+        result.push({ name, text: children.map(child => typeof child['#text'] === 'string' ? child['#text'] : '').join(''), children: convert(children, depth + 1) })
+      }
     }
-    if (token.startsWith('</')) {
-      const name = token.slice(2, -1).trim()
-      const current = stack.pop()
-      if (!current || current.name !== name) throw new Error('XML nije ispravan. Provjerite datoteku i pokušajte ponovno.')
-      continue
-    }
-    const selfClosing = /\/\s*>$/.test(token)
-    const name = token.slice(1, token.length - (selfClosing ? 2 : 1)).trim().split(/\s+/, 1)[0]
-    if (!name || /["']/.test(name)) throw new Error('XML nije ispravan. Provjerite datoteku i pokušajte ponovno.')
-    const node: XmlTree = { name, text: '', children: [] }
-    if (stack.length) stack[stack.length - 1].children.push(node)
-    else if (root) throw new Error('XML mora imati samo jedan korijenski element.')
-    else root = node
-    if (!selfClosing) stack.push(node)
+    return result
   }
-  if (cursor !== source.length || !root || stack.length) throw new Error('XML nije ispravan. Provjerite datoteku i pokušajte ponovno.')
-  return root
+  const roots = convert(ordered, 0)
+  if (roots.length !== 1) throw invalid()
+  return roots[0]
 }
 
 function findXmlNode(parent: XmlTree, name: string): XmlTree | undefined {
@@ -103,6 +83,7 @@ export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug:
     if (!name || price == null) throw new Error(`XML stavka ${index + 1}: ${!name ? 'nedostaje naziv' : 'cijena nije broj'}. Nijedna stavka nije uvezena.`)
     const sale = xmlTextOf(node, 'salePrice')
     const anchor = field('anchorPrice', 'sidrena_cijena')
+    const unitPrice = xmlTextOf(node, 'unitPrice')
     const applied = field('specialSaleApplied', 'posebni_oblik_prodaje').toLocaleLowerCase('hr-HR')
     const dateRaw = field('anchorReferenceDate', 'datum_referentne_cijene')
     const referenceDate = normalizeReferenceDate(dateRaw)
@@ -110,7 +91,7 @@ export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug:
     const lowestRaw = field('lowest30DayPrice', 'najniza_cijena_30_dana')
     const lowest = normalizeNumber(lowestRaw)
     if (lowestRaw && lowest == null) throw new Error('XML stavka ' + (index + 1) + ': najniža cijena nije broj.')
-    for (const [label, value] of [['akcijska cijena', sale], ['sidrena cijena', anchor]] as const) {
+    for (const [label, value] of [['akcijska cijena', sale], ['sidrena cijena', anchor], ['cijena za jedinicu mjere', unitPrice]] as const) {
       if (value && normalizeNumber(value) == null) throw new Error(`XML stavka ${index + 1}: ${label} nije broj.`)
     }
     return {
@@ -126,7 +107,7 @@ export function parseXmlPriceList(xmlText: string, tenant = { id: 'nepar', slug:
       ...(lowest != null ? { lowest30DayPrice: lowest } : {}),
       ...(xmlTextOf(node, 'unitPricingExemption') ? { unitPricingExemption: xmlTextOf(node, 'unitPricingExemption') } : {}),
       unit: xmlTextOf(node, 'unit') || null,
-      unitPrice: normalizeNumber(xmlTextOf(node, 'unitPrice')),
+      unitPrice: normalizeNumber(unitPrice),
       brand: xmlTextOf(node, 'brand') || null,
       barcode: normalizeBarcode(xmlTextOf(node, 'barcode')) || null,
       availability: parseAvailability(xmlTextOf(node, 'availability')),

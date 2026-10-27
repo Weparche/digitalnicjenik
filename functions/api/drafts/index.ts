@@ -5,7 +5,7 @@ import { accessErrorResponse } from '../../_write-auth'
 import { parsePublicationDetails, type PublicationDetails } from '../../../shared/publication-details'
 import { importIssuesFromParseWarnings } from '../../../src/price-engine/validate'
 import type { ValidationIssue } from '../../../src/price-engine/types'
-import { attachCanonicalTenant, errorStatus, parsePriceListInput, readJsonBody } from '../../_limits'
+import { attachCanonicalTenant, errorStatus, parsePriceListInput, parseImportIssues, readJsonBody } from '../../_limits'
 
 export const onRequestPost = async ({ request, env }: { request: Request; env: TrialEnv }) => {
   try {
@@ -38,10 +38,11 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: T
         importIssues = importIssuesFromParseWarnings(parsed.warnings, 'csv')
       }
     } else {
-      const body = await readJsonBody(request) as { csv?: string; xml?: string; filename?: string; list?: ReturnType<typeof parseMarketinoCsv>['priceList']; publicationDetails?: unknown }
+      const body = await readJsonBody(request) as { csv?: string; xml?: string; filename?: string; list?: ReturnType<typeof parseMarketinoCsv>['priceList']; publicationDetails?: unknown; importIssues?: unknown }
       if (body.publicationDetails) publicationDetails = parsePublicationDetails(body.publicationDetails)
       if (body.list) {
         list = attachCanonicalTenant(parsePriceListInput(body.list), { id: 'draft', slug: 'draft', name: 'Draft' })
+        importIssues = parseImportIssues(body.importIssues)
         filename = body.filename || 'cjenik.json'
         sourceType = 'marketino-csv'
       } else if (body.xml) {

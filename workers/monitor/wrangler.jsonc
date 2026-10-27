@@ -13,6 +13,14 @@
       "migrations_dir": "../../migrations"
     }
   ],
+  "observability": { "enabled": true, "traces": { "enabled": true } },
+  "queues": {
+    "producers": [{ "binding": "MONITOR_QUEUE", "queue": "digitalnicjenik-monitor" }],
+    "consumers": [
+      { "queue": "digitalnicjenik-monitor", "max_batch_size": 1, "max_batch_timeout": 1, "max_retries": 10, "retry_delay": 30, "max_concurrency": 4, "dead_letter_queue": "digitalnicjenik-monitor-dlq" },
+      { "queue": "digitalnicjenik-monitor-dlq", "max_batch_size": 1, "max_batch_timeout": 1, "max_retries": 3, "max_concurrency": 1 }
+    ]
+  },
   "send_email": [{ "name": "EMAIL" }],
   "r2_buckets": [{ "binding": "DRAFTS", "bucket_name": "digitalnicjenik-drafts" }],
   // Cron runs in UTC. 04:30 → 05:30 CET / 06:30 CEST first pass; 05:30 → 06:30 CET / 07:30 CEST retry

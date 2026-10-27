@@ -6,8 +6,9 @@ export { isServiceItem }
 
 const keyFor = (item: NormalizedPriceList['items'][number]) => item.externalId || `${item.category ?? ''}:${item.name}`
 
-export function validatePriceList(priceList: NormalizedPriceList): ValidationResult {
+export function validatePriceList(priceList: NormalizedPriceList, options: { now?: Date; timeZone?: string } = {}): ValidationResult {
   const issues: ValidationIssue[] = []
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: options.timeZone ?? 'Europe/Zagreb', year: 'numeric', month: '2-digit', day: '2-digit' }).format(options.now ?? new Date())
   if (!priceList.items.length) issues.push({ row: 1, itemKey: 'empty', field: 'import', severity: 'error', message: 'Cjenik mora sadržavati barem jednu stavku.' })
   priceList.items.forEach((item, index) => {
     const row = index + 2
@@ -19,6 +20,7 @@ export function validatePriceList(priceList: NormalizedPriceList): ValidationRes
     if (service && (item.anchorPrice == null || !Number.isFinite(item.anchorPrice) || item.anchorPrice <= 0)) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Nedostaje sidrena cijena. Potrebna je vrijednost primjenjiva 10. rujna 2026. bez posebnog oblika prodaje.' })
     if (!service) validateProductFields(item, row, itemKey, issues)
     const reference = normalizeReferenceDate(item.anchorReferenceDate)
+    if (reference && reference > today) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'error', message: 'Datum referentne cijene ne može biti u budućnosti.' })
     if (item.anchorReferenceDate && !reference) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'error', message: 'Datum referentne cijene nije valjan.' })
     if (!service && !reference) issues.push({ row, itemKey, field: 'anchorPrice', severity: 'manual_review', message: 'Odaberite mjerodavni datum referentne cijene proizvoda: 2. svibnja 2025. ili 10. rujna 2026., odnosno datum prvog uvrštenja nove stavke.' })
     if (item.isNewSinceReferenceDate) {
@@ -51,6 +53,7 @@ function validateProductFields(item: NormalizedPriceList['items'][number], row: 
   if (!barcode) issues.push({ row, itemKey, field: 'barcode', severity: 'manual_review', message: 'Nedostaje barkod proizvoda. Provjerite obvezne podatke prije objave.' })
   else if (!isValidGtin(barcode)) issues.push({ row, itemKey, field: 'barcode', severity: 'warning', message: 'Barkod nije valjan (očekuje se EAN-8, EAN-13, UPC-A ili GTIN-14 s ispravnom kontrolnom znamenkom).' })
   const exempt = text(item.unitPricingExemption).length >= 10
+  if (item.unitPrice != null && (!Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'error', message: 'Unesena cijena za jedinicu mjere mora biti pozitivan broj, neovisno o izuzeću.' })
   if (!text(item.unit) && !exempt) issues.push({ row, itemKey, field: 'unit', severity: 'manual_review', message: 'Navedite jedinicu mjere ili obrazložite zašto cijena po jedinici nije primjenjiva.' })
   if ((!exempt || text(item.unit)) && (item.unitPrice == null || !Number.isFinite(item.unitPrice) || item.unitPrice <= 0)) issues.push({ row, itemKey, field: 'unitPrice', severity: 'manual_review', message: 'Navedite pozitivnu cijenu za jedinicu mjere ili obrazložite iznimku.' })
 }

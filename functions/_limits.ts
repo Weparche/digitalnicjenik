@@ -1,4 +1,4 @@
-import type { NormalizedPriceItem, NormalizedPriceList } from '../src/price-engine/types'
+import type { NormalizedPriceItem, NormalizedPriceList, ValidationIssue, ValidationField } from '../src/price-engine/types'
 
 export const MAX_WRITE_REQUEST_BYTES = 2_200_000
 export const MAX_PRICE_LIST_ITEMS = 5_000
@@ -41,6 +41,24 @@ function clipString(value: unknown, field: string, max = MAX_ITEM_STRING_LENGTH)
   return value
 }
 
+export function parseImportIssues(raw: unknown): ValidationIssue[] {
+  if (raw == null) return []
+  if (!Array.isArray(raw) || raw.length > MAX_PRICE_LIST_ITEMS) throw new ValidationInputError('Nalazi uvoza nisu valjani.')
+  const fields: ValidationField[] = ['name', 'price', 'type', 'anchorPrice', 'specialSaleApplied', 'specialSaleName', 'externalId', 'brand', 'barcode', 'availability', 'unit', 'unitPrice', 'import']
+  return raw.map(value => {
+    if (!value || typeof value !== 'object') throw new ValidationInputError('Nalaz uvoza nije valjan.')
+    const issue = value as Record<string, unknown>
+    if (issue.code !== 'IMPORT_ROW_SKIPPED' || !Number.isInteger(issue.row) || Number(issue.row) < 1 || !['csv', 'xml', 'xlsx'].includes(String(issue.source))) throw new ValidationInputError('Nalaz uvoza nije valjan.')
+    return { row: Number(issue.row), itemKey: 'import:' + issue.row, field: fields.includes(issue.field as ValidationField) ? issue.field as ValidationField : 'import', severity: 'error', message: clipString(issue.message, 'importIssues.message', 1000) || 'Redak nije uvezen. Ponovno učitajte ispravljenu datoteku.', code: 'IMPORT_ROW_SKIPPED', source: issue.source as ValidationIssue['source'] }
+  })
+}
+
+function optionalNumber(value: unknown, field: string): number | null {
+  if (value == null) return null
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw new ValidationInputError(`Polje ${field} mora biti broj.`)
+  return value
+}
+
 function normalizeItem(raw: unknown, index: number): NormalizedPriceItem {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ValidationInputError(`Stavka ${index + 1} nije valjan objekt.`)
   const item = raw as Record<string, unknown>
@@ -57,12 +75,12 @@ function normalizeItem(raw: unknown, index: number): NormalizedPriceItem {
     unit: clipString(item.unit, `items[${index}].unit`) ?? null,
     unitPricingExemption: clipString(item.unitPricingExemption, `items[${index}].unitPricingExemption`) ?? null,
     anchorReferenceDate: clipString(item.anchorReferenceDate, `items[${index}].anchorReferenceDate`, 10) ?? null,
-    lowest30DayPrice: typeof item.lowest30DayPrice === 'number' && Number.isFinite(item.lowest30DayPrice) ? item.lowest30DayPrice : null,
+    lowest30DayPrice: optionalNumber(item.lowest30DayPrice, `items[${index}].lowest30DayPrice`),
     specialSaleName: clipString(item.specialSaleName, `items[${index}].specialSaleName`) ?? null,
-    anchorPrice: typeof item.anchorPrice === 'number' && Number.isFinite(item.anchorPrice) ? item.anchorPrice : item.anchorPrice === null ? null : undefined,
-    salePrice: typeof item.salePrice === 'number' && Number.isFinite(item.salePrice) ? item.salePrice : item.salePrice === null ? null : undefined,
+    anchorPrice: optionalNumber(item.anchorPrice, `items[${index}].anchorPrice`),
+    salePrice: optionalNumber(item.salePrice, `items[${index}].salePrice`),
     specialSaleApplied: typeof item.specialSaleApplied === 'boolean' ? item.specialSaleApplied : item.specialSaleApplied === null ? null : undefined,
-    unitPrice: typeof item.unitPrice === 'number' && Number.isFinite(item.unitPrice) ? item.unitPrice : item.unitPrice === null ? null : undefined,
+    unitPrice: optionalNumber(item.unitPrice, `items[${index}].unitPrice`),
     brand: clipString(item.brand, `items[${index}].brand`, 200) ?? null,
     barcode: clipString(item.barcode, `items[${index}].barcode`, 64)?.replace(/\s+/g, '') || null,
     availability: item.availability === 'dostupno' || item.availability === 'nedostupno' ? item.availability : null,

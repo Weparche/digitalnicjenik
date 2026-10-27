@@ -65,6 +65,7 @@ export async function sendAlert(
   run: MonitorRunRecord,
   tenant: { id: string; name: string },
   fetcher: typeof fetch = fetch,
+  deliveryId?: string,
 ): Promise<{ sent: string[]; failed: string[] }> {
   const message = buildAlertMessage(kind, run, tenant, env.PUBLIC_APP_URL)
   const owners = await readOwnerEmails(env.DB, tenant.id)
@@ -72,12 +73,25 @@ export async function sendAlert(
   const sent: string[] = []
   const failed: string[] = []
   for (const to of recipients) {
+    if (deliveryId) {
+      await env.DB.prepare("INSERT OR IGNORE INTO monitor_deliveries (job_id, recipient, status, updated_at) VALUES (?, ?, 'pending', ?)").bind(deliveryId, to, new Date().toISOString()).run()
+      const claimed = await env.DB.prepare("UPDATE monitor_deliveries SET status = 'sending', updated_at = ? WHERE job_id = ? AND recipient = ? AND status IN ('pending', 'failed')").bind(new Date().toISOString(), deliveryId, to).run()
+      if (!claimed.meta?.changes) {
+        const previous = await env.DB.prepare('SELECT status FROM monitor_deliveries WHERE job_id = ? AND recipient = ?').bind(deliveryId, to).first<{ status: string }>()
+        // An interrupted in-flight send is ambiguous: do not send a duplicate automatically.
+        if (previous?.status === 'sent') sent.push(to)
+        else failed.push(to)
+        continue
+      }
+    }
     try {
       await sendTransactionalEmail(env, { to, ...message }, fetcher)
+      if (deliveryId) await env.DB.prepare("UPDATE monitor_deliveries SET status = 'sent', updated_at = ? WHERE job_id = ? AND recipient = ?").bind(new Date().toISOString(), deliveryId, to).run()
       sent.push(to)
     } catch (error) {
       console.error('monitor_alert_failed', JSON.stringify({ tenant: tenant.id, kind, reason: error instanceof Error ? error.message : 'unknown' }))
       failed.push(to)
+      if (deliveryId) await env.DB.prepare("UPDATE monitor_deliveries SET status = 'failed', updated_at = ? WHERE job_id = ? AND recipient = ?").bind(new Date().toISOString(), deliveryId, to).run()
     }
   }
   return { sent, failed }

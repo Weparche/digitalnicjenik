@@ -37,8 +37,8 @@ export function mapRun(row: RunRow): MonitorRunRecord {
   }
 }
 
-export async function insertRun(db: D1DatabaseLike, run: MonitorRunRecord) {
-  await db.prepare(
+export function insertRunStatement(db: D1DatabaseLike, run: MonitorRunRecord) {
+  return db.prepare(
     `INSERT INTO monitor_runs (id, tenant_id, publication_id, checked_at, run_trigger, ruleset, profile, overall, csv_status, xml_status, csv_rows, xml_rows,
       expected_rows, prev_rows, filename_publication_match, filename_ruleset_match, filename_csv, filename_xml, freshness_status, archive_expected,
       archive_available, archive_latest_status, archive_oldest_status, payload_sha256, csv_sha256, xml_sha256, issues_json, duration_ms, published_at, publication_sequence)
@@ -48,8 +48,10 @@ export async function insertRun(db: D1DatabaseLike, run: MonitorRunRecord) {
     run.expectedRows, run.prevRows, bit(run.filenamePublicationMatch), bit(run.filenameRulesetMatch), run.filenameCsv, run.filenameXml, run.freshnessStatus,
     run.archiveExpected, run.archiveAvailable, run.archiveLatestStatus, run.archiveOldestStatus, run.payloadSha256, run.csvSha256, run.xmlSha256,
     JSON.stringify(run.issues), run.durationMs, run.publishedAt, run.publicationSequence,
-  ).run()
+  )
 }
+
+export async function insertRun(db: D1DatabaseLike, run: MonitorRunRecord) { await insertRunStatement(db, run).run() }
 
 export async function readLatestRun(db: D1DatabaseLike, tenantId: string): Promise<MonitorRunRecord | null> {
   const row = await db.prepare('SELECT * FROM monitor_runs WHERE tenant_id = ? ORDER BY checked_at DESC LIMIT 1').bind(tenantId).first<RunRow>()
@@ -76,14 +78,16 @@ export async function readState(db: D1DatabaseLike, tenantId: string): Promise<M
 }
 
 /** Upsert without touching `last_manual_at` (owned by claimManualRun). */
-export async function writeState(db: D1DatabaseLike, state: MonitorState) {
-  await db.prepare(
+export function writeStateStatement(db: D1DatabaseLike, state: MonitorState) {
+  return db.prepare(
     `INSERT INTO monitor_state (tenant_id, last_overall, last_ok_at, last_alert_at, last_alert_kind, alert_open, consecutive_failures)
      VALUES (?,?,?,?,?,?,?)
      ON CONFLICT(tenant_id) DO UPDATE SET last_overall = excluded.last_overall, last_ok_at = excluded.last_ok_at, last_alert_at = excluded.last_alert_at,
        last_alert_kind = excluded.last_alert_kind, alert_open = excluded.alert_open, consecutive_failures = excluded.consecutive_failures`,
-  ).bind(state.tenantId, state.lastOverall, state.lastOkAt, state.lastAlertAt, state.lastAlertKind, state.alertOpen ? 1 : 0, state.consecutiveFailures).run()
+  ).bind(state.tenantId, state.lastOverall, state.lastOkAt, state.lastAlertAt, state.lastAlertKind, state.alertOpen ? 1 : 0, state.consecutiveFailures)
 }
+
+export async function writeState(db: D1DatabaseLike, state: MonitorState) { await writeStateStatement(db, state).run() }
 
 export const MANUAL_RUN_MIN_INTERVAL_MS = 5 * 60 * 1000
 
@@ -104,13 +108,13 @@ export async function claimManualRun(db: D1DatabaseLike, tenantId: string, now: 
 export type MonitorTarget = { tenantId: string; slug: string; name: string }
 
 /** Tenants with an active public target and a current publication. Entitlement is checked per tenant in runTenantCheck. */
-export async function listMonitorTargets(db: D1DatabaseLike): Promise<MonitorTarget[]> {
+export async function listMonitorTargets(db: D1DatabaseLike, afterSlug = '', limit = 1000): Promise<MonitorTarget[]> {
   const rows = await db.prepare(
     `SELECT DISTINCT t.id AS tenant_id, t.slug, t.name FROM tenants t
      JOIN publication_targets target ON target.tenant_id = t.id AND target.status = 'active'
      JOIN price_publications p ON p.tenant_id = t.id AND p.is_current = 1
-     ORDER BY t.slug`,
-  ).all<{ tenant_id: string; slug: string; name: string }>()
+     WHERE t.slug > ? ORDER BY t.slug LIMIT ?`,
+  ).bind(afterSlug, limit).all<{ tenant_id: string; slug: string; name: string }>()
   return rows.results.map((row) => ({ tenantId: row.tenant_id, slug: row.slug, name: row.name }))
 }
 

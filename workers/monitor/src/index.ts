@@ -1,14 +1,15 @@
+import { enqueueMonitorCheck, type MonitorQueue } from '../../../shared/compliance/jobs'
+import { failMonitorJob, MonitorLeaseBusy, processMonitorJob, type QueueBatchLike } from './queue'
 import { runTenantCheck, type MonitorEnv } from '../../../shared/compliance/run-check'
 import { listMonitorTargets, selectRetryTargets, readState, writeState, type MonitorTarget } from '../../../shared/compliance/store'
 import type { MonitorTrigger } from '../../../shared/compliance/types'
 import { sendAlert, type AlertEnv } from './alert'
 import { cleanupExpiredDrafts, type DraftCleanupEnv } from '../../../shared/draft-cleanup'
 
-export type Env = MonitorEnv & AlertEnv & DraftCleanupEnv & { MONITOR_SECRET?: string }
+export type Env = MonitorEnv & AlertEnv & DraftCleanupEnv & { MONITOR_SECRET?: string; MONITOR_QUEUE?: MonitorQueue }
 
 /** Must match `triggers.crons` in wrangler.jsonc: the second pass retries warn/fail/unchecked tenants only. */
 export const RETRY_CRON = '30 5 * * *'
-const CONCURRENCY = 4
 const RETRY_LOOKBACK_MS = 6 * 60 * 60 * 1000
 
 type ScheduledEventLike = { cron: string; scheduledTime?: number }
@@ -42,36 +43,41 @@ export async function checkAndAlert(env: Env, slug: string, trigger: MonitorTrig
   return result
 }
 
-async function mapWithConcurrency<T>(items: T[], limit: number, task: (item: T) => Promise<void>) {
-  const queue = [...items]
-  await Promise.all(Array.from({ length: Math.min(limit, queue.length) }, async () => {
-    for (let next = queue.shift(); next; next = queue.shift()) await task(next)
-  }))
-}
-
-export async function runScheduled(env: Env, cron: string, now = new Date(), fetcher?: typeof fetch) {
+/** Dispatch ten tenants at a time so the scheduler itself has a bounded I/O budget. */
+export async function runScheduled(env: Env, cron: string, now = new Date(), afterSlug = '') {
+  if (!env.MONITOR_QUEUE) throw new Error('monitor_queue_unavailable')
   const retry = cron === RETRY_CRON
-  const all = await listMonitorTargets(env.DB)
+  const all = await listMonitorTargets(env.DB, afterSlug, 10)
   const targets: MonitorTarget[] = retry ? await selectRetryTargets(env.DB, all, new Date(now.getTime() - RETRY_LOOKBACK_MS).toISOString()) : all
   const trigger: MonitorTrigger = retry ? 'retry' : 'cron'
-  const summary = { trigger, tenants: targets.length, ok: 0, warn: 0, fail: 0, skipped: 0, errors: 0 }
-  await mapWithConcurrency(targets, CONCURRENCY, async (target) => {
-    try {
-      const result = await checkAndAlert(env, target.slug, trigger, now, fetcher)
-      if (result.status === 'skipped') summary.skipped += 1
-      else summary[result.run.overall === 'skipped' ? 'skipped' : result.run.overall] += 1
-    } catch (error) {
-      summary.errors += 1
-      console.error('monitor_check_failed', JSON.stringify({ slug: target.slug, reason: error instanceof Error ? error.message : 'unknown' }))
-    }
-  })
-  console.log('monitor_summary', JSON.stringify(summary))
-  return summary
+  for (const target of targets) await enqueueMonitorCheck(env.DB, env.MONITOR_QUEUE, target.slug, trigger, now)
+  if (all.length === 10) await env.MONITOR_QUEUE.send({ cron, now: now.toISOString(), afterSlug: all[all.length - 1].slug })
+  return { trigger, tenants: targets.length, queued: targets.length }
 }
 
 export default {
   async scheduled(event: ScheduledEventLike, env: Env, ctx: ExecutionContextLike) {
-    ctx.waitUntil(Promise.all([runScheduled(env, event.cron), cleanupExpiredDrafts(env)]))
+    if (!env.MONITOR_QUEUE) throw new Error('monitor_queue_unavailable')
+    ctx.waitUntil(Promise.all([env.MONITOR_QUEUE.send({ cron: event.cron, now: new Date(event.scheduledTime ?? Date.now()).toISOString(), afterSlug: '' }), cleanupExpiredDrafts(env)]))
+  },
+
+  async queue(batch: QueueBatchLike, env: Env) {
+    // Configuration uses max_batch_size=1; also enforce it if a binding drifts.
+    const [message, ...extra] = batch.messages
+    for (const deferred of extra) deferred.retry({ delaySeconds: 1 })
+    if (!message) return
+    try {
+      if ('jobId' in message.body && typeof message.body.jobId === 'string') {
+        if (batch.queue === 'digitalnicjenik-monitor-dlq') await failMonitorJob(env, message.body.jobId)
+        else await processMonitorJob(env, message.body.jobId)
+      } else if ('cron' in message.body && batch.queue !== 'digitalnicjenik-monitor-dlq') {
+        await runScheduled(env, message.body.cron, new Date(message.body.now), message.body.afterSlug)
+      } else throw new Error('monitor_invalid_message')
+      message.ack()
+    } catch (error) {
+      console.error('monitor_queue_failed', JSON.stringify({ reason: error instanceof Error ? error.message : 'unknown' }))
+      message.retry({ delaySeconds: error instanceof MonitorLeaseBusy ? 60 : 30 })
+    }
   },
 
   /** `POST /run {"slug": "..."}` with `Authorization: Bearer MONITOR_SECRET` — called by the Pages API for "Provjeri sada". */
@@ -84,9 +90,10 @@ export default {
     const body = await request.json().catch(() => null) as { slug?: unknown } | null
     if (!body || typeof body.slug !== 'string' || !body.slug) return Response.json({ error: 'invalid_input' }, { status: 400 })
     try {
-      const result = await checkAndAlert(env, body.slug, 'manual')
-      if (result.status === 'skipped') return Response.json({ status: 'skipped', reason: result.reason })
-      return Response.json({ status: 'checked', run: result.run })
+      if (!env.MONITOR_QUEUE) return Response.json({ error: 'monitor_queue_unavailable' }, { status: 503 })
+      const job = await enqueueMonitorCheck(env.DB, env.MONITOR_QUEUE, body.slug, 'manual')
+      if (!job) return Response.json({ status: 'skipped', reason: 'unknown_tenant' })
+      return Response.json({ status: 'queued', jobId: job.id }, { status: 202 })
     } catch (error) {
       console.error('monitor_manual_failed', JSON.stringify({ slug: body.slug, reason: error instanceof Error ? error.message : 'unknown' }))
       return Response.json({ error: 'check_failed' }, { status: 500 })
