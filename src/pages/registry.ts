@@ -1,4 +1,4 @@
-import { PLANS, formatEur } from '../publisherPricing'
+import { PLANS, formatEur, type PlanId } from '../publisherPricing'
 import { SITE_URL } from '../news/site'
 
 export type SitePageKind = 'hub' | 'pricing' | 'faq' | 'compare' | 'spec' | 'guide' | 'service' | 'reference'
@@ -16,12 +16,29 @@ export type SitePageMeta = {
   parent?: string
   /** Guides that are step-by-step procedures (HowTo schema). */
   howTo?: { name: string; steps: Array<{ name: string; text: string }> }
+  /** faqData group rendered on the page and emitted as its FAQPage JSON-LD. */
+  faqGroupId?: string
+  /** Service JSON-LD with offers for these plans. */
+  service?: { name: string; serviceType: string; planIds: PlanId[] }
 }
 
 const UPDATED = '2026-10-18T10:00:00+02:00'
-const OFFER_UPDATED = '2026-10-26T23:20:00+01:00'
+const OFFER_UPDATED = '2026-10-27T18:00:00+01:00'
+
+export const EXISTING_WEB_PATH = '/digitalni-cjenik-za-wordpress-webshop/'
 
 export const SITE_PAGES: SitePageMeta[] = [
+  {
+    path: EXISTING_WEB_PATH,
+    kind: 'service',
+    label: 'WordPress i webshop',
+    title: 'Digitalni cjenik za WordPress, webshop i bilo koji postojeći web',
+    seoTitle: 'Digitalni cjenik za WordPress i webshop, bez plugina | NEPAR',
+    description: `Digitalni cjenik za WordPress, WooCommerce, Shopify, Wix ili vlastiti web od ${formatEur(PLANS[0].price, true)}: bez plugina, s CSV/XML objavom i 30 dana arhive.`,
+    updatedAt: OFFER_UPDATED,
+    faqGroupId: 'postojeci-web',
+    service: { name: 'Web Link — digitalni cjenik za postojeći web', serviceType: 'Objava digitalnog cjenika', planIds: ['link', 'publisher'] },
+  },
   { path: '/vodici/sidrena-cijena/', kind: 'guide', parent: '/vodici/', label: 'Sidrena cijena', title: 'Sidrena cijena 2026: značenje, datumi i prikaz', seoTitle: 'Sidrena cijena 2026: što znači i kako se ističe | NEPAR', description: 'Sidrena odnosno dodatna cijena: referentni datumi, odnos prema digitalnom CSV/XML cjeniku i prikaz uz aktualnu cijenu. Vodič sa službenim izvorima.', updatedAt: '2026-10-27T12:00:00+01:00' },
   { path: '/vodici/automatizacija-digitalnog-cjenika/', kind: 'guide', parent: '/vodici/', label: 'Automatizacija cjenika', title: 'Automatizacija digitalnog cjenika: objava, integracija i nadzor', seoTitle: 'Automatizacija digitalnog cjenika: što radi Publisher | NEPAR', description: 'Što NEPAR Publisher generira nakon objave, što traži vaš izvor podataka i integraciju te što periodični nadzor provjerava. Bez obećanja automatske sinkronizacije.', updatedAt: '2026-10-27T12:00:00+01:00' },
   {
@@ -30,7 +47,7 @@ export const SITE_PAGES: SitePageMeta[] = [
     label: 'Objava i ugradnja',
     title: 'Objava i ugradnja digitalnog cjenika na web',
     seoTitle: 'Objava digitalnog cjenika na web: CSV/XML i ugradnja | NEPAR',
-    description: `Objavite pripremljeni CSV od ${formatEur(PLANS[0].price, true)}. Usporedite pakete, povežite cjenik s postojećim webom i pogledajte stvarnu NEPAR implementaciju.`,
+    description: `Objavite digitalni cjenik od ${formatEur(PLANS[0].price, true)} i povežite ga s postojećim webom. Usporedite pakete i pogledajte stvarnu NEPAR implementaciju.`,
     updatedAt: OFFER_UPDATED,
   },
   {
@@ -153,6 +170,7 @@ export function getSitePage(path: string): SitePageMeta {
 }
 
 export const NAV_LINKS: Array<{ href: string; label: string }> = [
+  { href: EXISTING_WEB_PATH, label: 'Postojeći web' },
   { href: '/objava-digitalnog-cjenika/', label: 'Objava i ugradnja' },
   { href: '/cijene/', label: 'Cijene' },
   { href: '/usporedba/', label: 'Usporedba' },

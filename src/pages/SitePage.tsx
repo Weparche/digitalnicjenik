@@ -5,9 +5,11 @@ import { AnchorGuidePage, AutomationGuidePage, ExcelGuidePage, GuidesHubPage, Mi
 import { PricingPage } from './PricingPage'
 import { SpecPage } from './SpecPage'
 import { InstallationPage, AutoGubicReferencePage } from './InstallationPage'
+import { ExistingWebPage } from './ExistingWebPage'
 import type { SitePageMeta } from './registry'
 
 const COMPONENTS: Record<string, () => ReactElement> = {
+  '/digitalni-cjenik-za-wordpress-webshop/': ExistingWebPage,
   '/objava-digitalnog-cjenika/': InstallationPage,
   '/reference/auto-gubic/': AutoGubicReferencePage,
   '/cijene/': PricingPage,

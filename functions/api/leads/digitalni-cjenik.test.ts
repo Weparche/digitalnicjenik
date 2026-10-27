@@ -91,7 +91,7 @@ describe('digitalni cjenik lead delivery', () => {
     const response = await handleLeadRequest(request({ intent: 'plugin', context: JSON.stringify({ website: 'https://salon.hr/', selectedPlan: 'link', checkerScore: 6, checkerStatus: 'yellow', discoveredUrls: ['https://salon.hr/cjenik.csv'] }) }), leadEnv(), fetcher)
     expect(response.status).toBe(200)
     const body = JSON.parse(String(((fetcher as unknown as ReturnType<typeof vi.fn>).mock.calls[1][1] as RequestInit).body)) as { subject: string; html: string }
-    expect(body.subject).toContain('Link — 19,90 €/god')
+    expect(body.subject).toContain('Web Link — 19,90 €/god')
     expect(body.html).toContain('https://salon.hr/')
     expect(body.html).toContain('https://salon.hr/cjenik.csv')
     expect(body.html).toContain('6/9')

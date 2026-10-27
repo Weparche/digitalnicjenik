@@ -1,9 +1,10 @@
 import type { LeadIntent } from './LeadForm'
 import { productFaq } from './productFaq'
-import { implementationFirstYearLabel, selfServicePriceLabel } from './publisherPricing'
+import { PLANS, formatEur, type PlanId } from './publisherPricing'
 import { IconChevronDown } from '@tabler/icons-react'
 
-export function EducationSection({ onLead, showOffer = true }: { onLead: (intent: LeadIntent) => void; showOffer?: boolean }) {
+export function EducationSection({ onLead, showOffer = true }: { onLead: (intent: LeadIntent, plan?: PlanId) => void; showOffer?: boolean }) {
+  const [webLink, publisher] = PLANS
   return <section className="education-section" aria-labelledby="education-title">
     <div className="education-heading">
       <h2 id="education-title">Objavljen cjenik nije isto što i ispravan cjenik</h2>
@@ -32,7 +33,7 @@ export function EducationSection({ onLead, showOffer = true }: { onLead: (intent
       </article>
     </div>
     <section className="education-faq" aria-labelledby="education-faq-title"><h3 id="education-faq-title">Česta pitanja</h3><div>{productFaq.map((entry) => <details className="education-faq-row" key={entry.question}><summary>{entry.question}<IconChevronDown size={19} aria-hidden="true"/></summary><p>{entry.answer}</p></details>)}</div></section>
-    <nav className="education-guides" aria-label="Više o digitalnom cjeniku"><h3>Saznajte više</h3><div className="education-guides-links"><a href="/cijene/">Cijene</a><a href="/usporedba/">Usporedba načina objave</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/faq/">Sva česta pitanja</a><a href="/vodici/excel-csv-digitalni-cjenik/">Vodič: Excel u CSV/XML</a><a href="/vodici/woocommerce-wordpress-digitalni-cjenik/">WooCommerce i WordPress</a><a href="/vodici/mikroeracun-digitalni-cjenik/">MIKROeRAČUN i cjenik</a></div></nav>
+    <nav className="education-guides" aria-label="Više o digitalnom cjeniku"><h3>Saznajte više</h3><div className="education-guides-links"><a href="/digitalni-cjenik-za-wordpress-webshop/">Digitalni cjenik za WordPress i webshop</a><a href="/cijene/">Cijene</a><a href="/usporedba/">Usporedba načina objave</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/faq/">Sva česta pitanja</a><a href="/vodici/excel-csv-digitalni-cjenik/">Vodič: Excel u CSV/XML</a><a href="/vodici/woocommerce-wordpress-digitalni-cjenik/">WooCommerce i WordPress</a><a href="/vodici/mikroeracun-digitalni-cjenik/">MIKROeRAČUN i cjenik</a></div></nav>
     <details className="education-more">
       <summary>Regulativni kontekst (ukratko)</summary>
       <div className="education-proof">
@@ -42,6 +43,6 @@ export function EducationSection({ onLead, showOffer = true }: { onLead: (intent
     </details>
     <div className="education-guides"><h3>Dokumentacija na nepar.hr</h3><div className="education-guides-links"><a href="https://nepar.hr/digitalni-cjenik">Pregled obveze</a><a href="https://nepar.hr/digitalni-cjenik/sidrena-cijena">Sidrena cijena</a><a href="https://nepar.hr/digitalni-cjenik/xml-csv">XML/CSV format</a><a href="https://nepar.hr/digitalni-cjenik/automatizacija">Automatizacija</a></div></div>
     <div className="education-sources"><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html" target="_blank" rel="noreferrer">Odluka NN 101/2026 — digitalni cjenik</a><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1212.html" target="_blank" rel="noreferrer">Odluka NN 101/2026 — dodatna cijena</a><span>NEPAR pruža tehničku i podatkovnu provjeru, ne individualni pravni savjet.</span></div>
-    {showOffer && <div className="education-cta"><div><strong>Želite aktivirati Publisher?</strong><span>Učitajte cjenik za probu ili pošaljite upit — self-service {selfServicePriceLabel()}.</span></div><div><button className="app-button app-button-primary" type="button" onClick={() => onLead('implementation')}>Web + Publisher {implementationFirstYearLabel()}</button><button className="app-button app-button-light" type="button" onClick={() => onLead('plugin')}>Self-service {selfServicePriceLabel()}</button></div></div>}
+    {showOffer && <div className="education-cta"><div><strong>Spremni za objavu?</strong><span>Učitajte cjenik za probu ili pošaljite upit za paket.</span></div><div><button className="app-button app-button-primary" type="button" onClick={() => onLead('plugin', webLink.id)}>{webLink.name} {formatEur(webLink.price, true)}</button><button className="app-button app-button-light" type="button" onClick={() => onLead('plugin', publisher.id)}>{publisher.name} {formatEur(publisher.price, true)}</button></div></div>}
   </section>
 }

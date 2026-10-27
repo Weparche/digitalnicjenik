@@ -27,17 +27,23 @@ async function stub(page: Page, result: WebsiteCheckResult) {
 }
 
 for (const width of [1440, 768, 390]) {
-  test(`checker and trust fit first viewport at ${width}px`, async ({ page }) => {
+  test(`existing-web hero, both CTAs and platforms fit first viewport at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
-    const button = page.getByRole('button', { name: 'Provjeri besplatno' })
-    await expect(button).toBeVisible()
-    expect((await button.boundingBox())!.y + (await button.boundingBox())!.height).toBeLessThan(900)
-    const trust = await page.locator('.acq-trust').boundingBox()
-    expect(trust!.y + trust!.height).toBeLessThan(900)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Digitalni cjenik za bilo koji postojeći web')
+    await expect(page.locator('.acq-intro')).toContainText('od 19,90 €/god')
+    const publish = page.getByRole('link', { name: 'Objavi svoj cjenik' })
+    const check = page.getByRole('link', { name: 'Provjeri postojeći cjenik besplatno' })
+    for (const locator of [publish, check, page.locator('.acq-hero .ew-pills')]) {
+      await expect(locator).toBeVisible()
+      const box = (await locator.boundingBox())!
+      expect(box.y + box.height).toBeLessThan(900)
+    }
+    await expect(page.locator('.acq-hero .ew-pills')).toContainText('WooCommerce')
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
     await expect(page.locator('.acq-plans')).toHaveCount(1)
     await expect(page.locator('.acq-plans')).toContainText('19,90 €')
+    await expect(page.locator('.acq-plan').first().locator('.acq-plan-highlight')).toHaveText('Do 5.000 stavki')
     await expect(page.locator('.education-cta')).toHaveCount(0)
     expect(await page.locator('main').count()).toBe(1)
     if (width === 1440) {
@@ -55,6 +61,22 @@ for (const width of [1440, 768, 390]) {
     await expect(page.locator('.acq-deadline')).toBeInViewport()
   })
 }
+
+test('secondary hero CTA reaches the free checker and primary CTA opens the validator', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Provjeri postojeći cjenik besplatno' }).click()
+  await expect(page).toHaveURL(/#checker$/)
+  await expect(page.getByRole('button', { name: 'Provjeri besplatno' })).toBeInViewport()
+  const header = await page.locator('.acq-header-bar').boundingBox()
+  const form = await page.locator('#checker').boundingBox()
+  expect(form!.y).toBeGreaterThanOrEqual(header!.y + header!.height)
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.getByRole('link', { name: 'Objavi svoj cjenik' }).click()
+  await expect(page.locator('#csv-validator')).toBeFocused()
+  await expect(page.locator('#csv-validator input[accept*=".csv"]')).toHaveCount(1)
+})
 
 test('invalid input focuses field; bare domain normalizes; result has nine evidence disclosures', async ({ page }) => {
   await stub(page, { status: 'green', message: 'Pronađena je javna datoteka.', details: complete })
@@ -81,7 +103,7 @@ test('invalid input focuses field; bare domain normalizes; result has nine evide
   await expect(page.locator('.acq-status-list > li').nth(3).getByRole('link')).toBeVisible()
 })
 
-test('one supported format does not reduce the score and context reaches Link inquiry', async ({ page }) => {
+test('one supported format does not reduce the score and context reaches Web Link inquiry', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await stub(page, { status: 'green', message: 'Pronađena je CSV datoteka.', details: { ...complete, xmlFound: false, xmlUrl: null, archiveFound: false, contentStatus: 'unknown' } })
@@ -103,12 +125,12 @@ test('one supported format does not reduce the score and context reaches Link in
   await resolve.click()
   await expect(page).toHaveURL(/#rjesenja$/)
   const header = await page.locator('.acq-header-bar').boundingBox()
-  const solutions = await page.getByRole('heading', { name: 'Trebate riješiti digitalni cjenik?' }).boundingBox()
+  const solutions = await page.getByRole('heading', { name: 'Odaberite koliko pomoći trebate' }).boundingBox()
   expect(solutions!.y).toBeGreaterThanOrEqual(header!.y + header!.height)
-  await page.getByRole('button', { name: 'Odaberi Link', exact: true }).click()
+  await page.getByRole('button', { name: 'Odaberi Web Link', exact: true }).click()
   await expect(page.locator('.lead-section')).toBeFocused()
   await expect(page.locator('.lead-section')).toHaveCSS('outline-style', 'none')
-  await expect(page.getByRole('heading', { name: 'Zatražite paket Link' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Zatražite paket Web Link' })).toBeVisible()
   await expect(page.locator('.lead-price')).toContainText('19,90 €/god')
   await expect(page.locator('.lead-form input[name="website"]')).toHaveValue('https://salon.hr/')
   await expect(page.locator('.lead-context')).toContainText('7/9')
@@ -158,6 +180,23 @@ test('loading can be cancelled, and the menu closes with Escape', async ({ page 
   await expect(page.locator('.acq-form button')).toBeEnabled()
   await expect(page.locator('.acq-loading')).toContainText('Provjera je zaustavljena')
   await expect(page.locator('.acq-result')).toHaveCount(0)
+})
+
+test('existing-web landing explains link-only setup with FAQ, plans and extra services', async ({ page }) => {
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/digitalni-cjenik-za-wordpress-webshop/')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Digitalni cjenik za WordPress, webshop i bilo koji postojeći web')
+    await expect(page.locator('.ew-platforms dt')).toHaveText(['WordPress', 'WooCommerce', 'Shopify', 'Wix, Webflow i vlastiti web'])
+    await expect(page.locator('#cesta-pitanja .site-faq-item')).toHaveCount(8)
+    await expect(page.locator('.acq-plan').first()).toContainText('Do 5.000 stavki')
+    await expect(page.locator('.acq-extra')).toHaveCount(2)
+    await expect(page.locator('.acq-extra').nth(1)).toContainText('individualna ponuda')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+  }
+  await page.getByRole('link', { name: 'Zatraži ugradnju' }).click()
+  await expect(page).toHaveURL(/\/#posaljite-cjenik$/)
+  await expect(page.locator('.lead-section')).toBeVisible()
 })
 
 test('pricing page shares plans and query handoff opens the selected annual offer', async ({ page }) => {

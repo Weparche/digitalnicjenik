@@ -8,14 +8,18 @@ export type ProductFaqEntry = { question: string; answer: string }
 
 export const productFaq: ProductFaqEntry[] = [
   {
-    question: 'Što je NEPAR Publisher?',
+    question: 'Što je NEPAR digitalni cjenik?',
     answer:
-      'Digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna: validacija Excela/CSV-a, javni cjenik s arhivom od 30 dana, svakodnevni nadzor usklađenosti i e-mail upozorenje čim nešto nije u redu.',
+      'Sloj za objavu digitalnog cjenika uz web koji već imate: javni cjenik na stalnoj poveznici, CSV i XML te arhiva prethodnih verzija 30 dana. Publisher je digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna, svakodnevnim nadzorom i e-mail upozorenjem.',
   },
   {
-    question: 'Za koga je Publisher?',
+    question: 'Radi li s WordPressom i webshopom?',
     answer:
-      'Za pružatelje usluga i male trgovce s vlastitom web stranicom koji žele da netko provjerava njihovu objavu. Ako vaš ERP ili blagajna već objavljuje cjenik (primjerice Marketino, Minimax ili Pantheon), provjerite to kod pružatelja prije kupnje.',
+      'Da. Web Link radi na WordPressu, WooCommerceu, Shopifyju, Wixu, Webflowu i vlastitom webu: dobivenu poveznicu dodate kao gumb, stavku izbornika ili običan link. Povezivanje s webshopom ili poslovnim sustavom radimo po individualnoj ponudi.',
+  },
+  {
+    question: 'Trebam li instalirati plugin?',
+    answer: 'Ne za osnovni Web Link. Ne mijenjate postojeći web osim što dodate poveznicu. Ako vaš ERP ili blagajna već objavljuje cjenik, provjerite to kod pružatelja prije kupnje.',
   },
   {
     question: 'Što alat provjerava na webu?',
@@ -33,7 +37,7 @@ export const productFaq: ProductFaqEntry[] = [
   },
   {
     question: 'Koliko košta nakon probe?',
-    answer: 'Provjera weba i validator su besplatni. Nakon probne objave možete odabrati godišnji paket Link, Publisher ili Web + Publisher. Paketi i godišnje cijene vidljivi su na početnoj stranici bez prethodne provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web dogovara se zasebno.',
+    answer: 'Provjera weba i validator su besplatni. Nakon probne objave možete odabrati godišnji paket Web Link, Publisher ili Web + Publisher. Paketi i godišnje cijene vidljivi su na početnoj stranici bez prethodne provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web dogovara se zasebno.',
   },
   {
     question: 'Kako započeti?',

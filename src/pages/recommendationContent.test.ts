@@ -42,7 +42,7 @@ describe('recommendation and pricing content', () => {
 
   it('states both where NEPAR fits and where another option can be better', () => {
     const recommendations = MARKET_RECOMMENDATIONS.map((item) => `${item.need} ${item.choice} ${item.reason}`).join('\n')
-    expect(recommendations).toContain('NEPAR Link')
+    expect(recommendations).toContain('NEPAR Web Link')
     expect(recommendations).toContain('NEPAR Publisher')
     expect(recommendations).toContain('eCjenik Mali')
     expect(recommendations).toContain('nije najbolji univerzalni izbor')
@@ -53,9 +53,9 @@ describe('recommendation and pricing content', () => {
     const faq = SITE_PAGES.find((page) => page.path === '/faq/')
     const comparison = SITE_PAGES.find((page) => page.path === '/usporedba/')
 
-    expect(pricing?.updatedAt.startsWith('2026-10-26')).toBe(true)
-    expect(faq?.updatedAt.startsWith('2026-10-26')).toBe(true)
-    expect(comparison?.updatedAt.startsWith('2026-10-26')).toBe(true)
+    expect(pricing?.updatedAt.startsWith('2026-10-27')).toBe(true)
+    expect(faq?.updatedAt.startsWith('2026-10-27')).toBe(true)
+    expect(comparison?.updatedAt.startsWith('2026-10-27')).toBe(true)
     expect(comparison?.title).toContain('eCjenik')
     expect(comparison?.title).toContain('digitalnicjenik.hr')
     expect(comparison?.description).toContain('26.10.2026.')

@@ -1,8 +1,15 @@
+/** Hard per-price-list item limit, enforced on import/publish (functions/_limits.ts) and quoted in marketing copy. */
+export const MAX_PRICE_LIST_ITEMS = 5_000
+export const MAX_ITEMS_LABEL = MAX_PRICE_LIST_ITEMS.toLocaleString('de-DE')
+
+/** Platforms where a plain link or button is enough. Text only: we do not ship native integrations or logos. */
+export const PLATFORMS = ['WordPress', 'WooCommerce', 'Shopify', 'Wix', 'Webflow', 'Custom web'] as const
+
 /** The commercial offer, shared by marketing, lead emails and prerendered SEO. */
 export const PLANS = [
-  { id: 'link', name: 'Link', price: 19.9, summary: 'Objavite pripremljeni CSV na stalnoj poveznici.', features: ['Upload i zamjena CSV cjenika', 'Stalni javni URL dok je pretplata aktivna', 'CSV/XML izlaz za podržani format', 'Arhiva prethodnih verzija 30 dana od zamjene uz aktivnu pretplatu', 'Link za vašu postojeću web stranicu'] },
-  { id: 'publisher', name: 'Publisher', price: 49.9, summary: 'Objavite, ažurirajte i pratite svoj cjenik.', features: ['Sve iz paketa Link', 'Excel, CSV i XML · detaljna validacija', 'Dashboard i jednostavna objava novih verzija', 'Stalni CSV/XML endpointi i verzioniranje', 'Javna arhiva najmanje 30 dana od zamjene', 'Nadzor i e-mail upozorenja', 'QR, ispis u PDF i ugradnja na web'] },
-  { id: 'web', name: 'Web + Publisher', price: 79.9, summary: 'Jednostavan web za cjenik, uz našu pomoć.', features: ['Sve iz paketa Publisher', 'Jednostavan NEPAR web / landing', 'Hosting i SSL', 'Osnovno uređivanje', 'Postavljanje cjenika i tehničko povezivanje'] },
+  { id: 'link', name: 'Web Link', price: 19.9, tagline: 'Za WordPress, webshop ili bilo koji postojeći web.', highlight: `Do ${MAX_ITEMS_LABEL} stavki`, summary: 'Digitalni cjenik za web koji već imate.', features: ['CSV i XML', '30 dana arhive', 'Radi na postojećem webu', 'Bez plugina', 'Javna poveznica i objava novih verzija'] },
+  { id: 'publisher', name: 'Publisher', price: 49.9, tagline: 'Za validaciju, dashboard, verzije i upozorenja.', highlight: `Do ${MAX_ITEMS_LABEL} stavki · svakodnevni nadzor`, summary: 'Objava, validacija i svakodnevni nadzor digitalnog cjenika.', features: ['Sve iz Web Linka', 'Excel, CSV i XML s detaljnom validacijom', 'Dashboard i objava novih verzija', 'Svakodnevni nadzor dostupnosti i sadržaja', 'E-mail upozorenje kad nešto nije u redu', 'QR, ispis u PDF i ugradnja na web'] },
+  { id: 'web', name: 'Web + Publisher', price: 79.9, tagline: 'Nemate web? Jednostavan web s cjenikom, uz našu pomoć.', highlight: null, summary: 'Jednostavan web za cjenik, uz našu pomoć.', features: ['Sve iz paketa Publisher', 'Jednostavan NEPAR web / landing', 'Hosting i SSL', 'Osnovno uređivanje', 'Postavljanje cjenika i tehničko povezivanje'] },
 ] as const
 export type PlanId = typeof PLANS[number]['id']
 export function formatEur(amount: number, perYear = false): string {

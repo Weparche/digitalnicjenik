@@ -1,4 +1,5 @@
 import { PLANS, formatEur } from '../publisherPricing'
+import { MAX_ITEMS_LABEL } from '../../shared/pricing'
 // Single source for the /faq page and its FAQPage JSON-LD (rendered in scripts/prerender.mjs).
 // Answers are plain text so the visible copy and the structured data can never drift apart.
 // Regulatory statements follow NN 101/2026 (Odluke 1212 i 1213), the Government's 29.9.2026 amendment
@@ -6,6 +7,9 @@ import { PLANS, formatEur } from '../publisherPricing'
 
 export type FaqEntry = { question: string; answer: string }
 export type FaqGroup = { id: string; title: string; entries: FaqEntry[] }
+
+/** Also rendered (with its own FAQPage JSON-LD) on /digitalni-cjenik-za-wordpress-webshop/. */
+export const EXISTING_WEB_FAQ_ID = 'postojeci-web'
 
 export const faqGroups: FaqGroup[] = [
   {
@@ -102,6 +106,47 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Imam web shop. Treba li zaseban cjenik?',
         answer: 'Da, za web shop se objavljuje zasebna CSV ili XML datoteka.',
+      },
+    ],
+  },
+  {
+    id: EXISTING_WEB_FAQ_ID,
+    title: 'Postojeći web, WordPress i webshop',
+    entries: [
+      {
+        question: 'Radi li NEPAR s WordPressom?',
+        answer:
+          'Da. Za Web Link nije potreban plugin. Dobivenu poveznicu možete dodati kao gumb, stavku izbornika ili običan link.',
+      },
+      {
+        question: 'Radi li s WooCommerceom?',
+        answer:
+          'Da, za osnovnu objavu digitalnog cjenika: poveznicu dodate kao i na bilo koji WordPress. Web Link ne čita proizvode iz WooCommercea; povezivanje s WooCommerceom možemo izraditi po individualnoj ponudi.',
+      },
+      {
+        question: 'Radi li sa Shopifyjem, Wixom ili vlastitim webom?',
+        answer: 'Da, ako platforma omogućuje dodavanje obične poveznice ili gumba. To vrijedi i za Webflow te vlastite React, PHP ili druge web stranice.',
+      },
+      {
+        question: 'Moram li mijenjati postojeći web?',
+        answer: 'Ne. Dodajete samo poveznicu na digitalni cjenik. Dizajn, sadržaj i platforma vašeg weba ostaju isti.',
+      },
+      {
+        question: 'Trebam li instalirati plugin?',
+        answer: 'Ne za osnovni Web Link. Javni cjenik, CSV/XML i arhiva nalaze se na NEPAR infrastrukturi, a na vaš web dodajete poveznicu.',
+      },
+      {
+        question: 'Što ako već imam CSV/XML?',
+        answer: 'To je idealan slučaj za Web Link. Učitate postojeću datoteku, pregledate nalaze i objavite je na stalnoj poveznici s arhivom prethodnih verzija.',
+      },
+      {
+        question: 'Što ako imam puno proizvoda ili usluga?',
+        answer: `Web Link i Publisher podržavaju do ${MAX_ITEMS_LABEL} stavki po cjeniku. Za veći cjenik javite nam se prije objave.`,
+      },
+      {
+        question: 'Hoće li NEPAR sam promijeniti cijene na mom webshopu?',
+        answer:
+          'Ne. Web Link objavljuje digitalni cjenik iz datoteke koju učitate. Povezivanje s webshopom ili poslovnim sustavom možemo izraditi po individualnoj ponudi.',
       },
     ],
   },

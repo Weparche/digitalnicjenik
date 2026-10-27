@@ -29,7 +29,8 @@ const indexHtml = read('index.html')
 const h1Count = (indexHtml.match(/<h1\b/gi) || []).length
 if (h1Count !== 1) failures.push(`index.html: expected exactly one <h1>, found ${h1Count}`)
 expect('index.html', /<h1[^>]*>/, 'prerendered H1 is missing')
-expect('index.html', 'nego provjerava da je ispravna', 'prerendered hero copy is missing')
+expect('index.html', 'Digitalni cjenik za bilo koji <em>postojeći web</em>', 'prerendered hero H1 is missing')
+expect('index.html', 'nego provjerava da je ispravna', 'prerendered Publisher FAQ copy is missing')
 expect('index.html', '<link rel="canonical" href="https://digitalnicjenik.nepar.hr/" />', 'self-canonical is missing')
 expect('index.html', /<title>[^<]{10,}<\/title>/, 'title is missing or too short')
 expect('index.html', /<meta name="description" content="[^"]{20,}" \/>/, 'meta description is missing or too short')
@@ -124,7 +125,7 @@ if (!redirects.includes('/app /app-shell 200')) failures.push('_redirects: missi
 if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: missing the /app/* route mapping to app-shell')
 if (!redirects.includes('/admin /app-shell 200')) failures.push('_redirects: missing the /admin route mapping to app-shell')
 
-const HOME_TITLE = 'Digitalni cjenik: besplatna provjera CSV/XML | NEPAR'
+const HOME_TITLE = (/<title>([^<]*)<\/title>/.exec(indexHtml) || [])[1] ?? ''
 const DRAFT_SLUG = 'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026'
 const LATEST_SLUG = 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026'
 const EXAMPLES_SLUG = 'primjeri-digitalnih-cjenika-hrvatska-2026'
@@ -333,6 +334,7 @@ if (!existsSync(resolve(distDir, 'og/vijesti-digitalni-cjenik-2026.png'))) {
 // --- Evergreen content pages: unique title/H1/canonical, structured data, interlinking, sitemap ---
 const SITE = 'https://digitalnicjenik.nepar.hr'
 const EVERGREEN = [
+  { path: 'digitalni-cjenik-za-wordpress-webshop', must: ['"@type":"FAQPage"', '"@type":"Service"', '"@type":"Offer"', '/cijene/', '/specifikacija-csv-xml/', '/objava-digitalnog-cjenika/', '/faq/', '/#csv-validator', '19,90', 'Do 5.000 stavki'] },
   { path: 'objava-digitalnog-cjenika', must: ['19,90', '/reference/auto-gubic/', 'id="odgovornosti"', 'NN 110/2026-1310'] },
   { path: 'reference/auto-gubic', must: ['https://autogubic.hr/cjenik', 'aktualni.csv', 'aktualni.xml', '/objava-digitalnog-cjenika/'] },
   { path: 'cijene', must: ['"@type":"Offer"', '/usporedba/', '/faq/'] },
@@ -377,6 +379,17 @@ expect('index.html', 'href="/cijene/"', 'landing must link to /cijene/')
 expect('index.html', 'href="/usporedba/"', 'landing must link to /usporedba/')
 expect('index.html', 'href="/specifikacija-csv-xml/"', 'landing must link to /specifikacija-csv-xml/')
 expect('index.html', 'href="/faq/"', 'landing must link to /faq/')
+expect('index.html', 'href="/digitalni-cjenik-za-wordpress-webshop/"', 'home must link to the existing-web landing')
+expect('index.html', 'Do 5.000 stavki', 'the item limit must be visible on the Web Link card')
+for (const rel of ['objava-digitalnog-cjenika/index.html', 'cijene/index.html', 'faq/index.html', 'vodici/woocommerce-wordpress-digitalni-cjenik/index.html']) {
+  expect(rel, 'href="/digitalni-cjenik-za-wordpress-webshop/"', 'must link back to the existing-web landing')
+}
+// Retired launch price and wording that overpromises must never reach a rendered page.
+for (const rel of ['index.html', ...EVERGREEN.map((page) => `${page.path}/index.html`)]) {
+  const html = read(rel)
+  if (/39,90|"price":"39\.9"/.test(html)) failures.push(`${rel}: retired 39,90 € price`)
+  if (/zakonski digitalni cjenik|najjeftinij|100\s*% uskla|zakonski certificiran/i.test(html)) failures.push(`${rel}: forbidden positioning claim`)
+}
 for (const file of ['nepar-format-primjer-usluge.csv', 'nepar-format-primjer-usluge.xml', 'nepar-format-primjer-proizvodi.csv', 'nepar-format-primjer-proizvodi.xml']) {
   if (!existsSync(resolve(distDir, 'examples', file))) failures.push(`Missing dist/examples/${file}`)
 }

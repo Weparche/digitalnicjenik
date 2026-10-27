@@ -64,6 +64,7 @@ export function WooGuidePage() {
       page={page}
       lead="Ako imate WooCommerce ili običan WordPress, postoje tri razumna puta do digitalnog cjenika. Besplatni dodatak je često dovoljan; evo kada nije."
       related={[
+        { href: '/digitalni-cjenik-za-wordpress-webshop/', label: 'Web Link: digitalni cjenik za WordPress i webshop bez plugina' },
         { href: '/usporedba/', label: 'Usporedba načina objave' },
         { href: '/vodici/excel-csv-digitalni-cjenik/', label: 'Vodič: od Excela do CSV/XML-a' },
         { href: '/cijene/', label: 'Cijene' },
@@ -87,8 +88,8 @@ export function WooGuidePage() {
                 <td>Izvoz iz WooCommercea prepoznajemo bez preimenovanja stupaca; dopunite samo ono što WooCommerce nema (sidrena cijena, često marka).</td>
               </tr>
               <tr>
-                <th scope="row">NEPAR Publisher</th>
-                <td>Želite objavu neovisnu o WordPressu, svakodnevnu provjeru i e-mail kad nešto nije u redu.</td>
+                <th scope="row">NEPAR Web Link ili Publisher</th>
+                <td>Želite objavu neovisnu o WordPressu, bez dodatka na stranici: dobivate poveznicu za izbornik ili gumb. Publisher dodaje svakodnevnu provjeru i e-mail kad nešto nije u redu. <a href="/digitalni-cjenik-za-wordpress-webshop/">Kako to izgleda na postojećem webu</a>.</td>
                 <td>Zasad održavamo jedan objekt po računu i uvoz je iz datoteke (Excel, CSV ili XML do 5 000 stavki), ne izravno iz WooCommercea.</td>
               </tr>
             </tbody>

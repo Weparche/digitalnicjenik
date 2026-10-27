@@ -95,7 +95,7 @@ export function ComparePage() {
           </table>
         </div>
         <p className="site-note">
-          eCjenik Mali je besplatan do 30 stavki i zato je cjenovno bolji izbor za dio mikro korisnika. Među ovdje uspoređenim plaćenim početnim planovima, NEPAR Link ima najniži javno objavljeni godišnji iznos na datum provjere. To nije tvrdnja o cijelom tržištu niti jamstvo da se cijene neće promijeniti.
+          eCjenik Mali je besplatan do 30 stavki i zato je cjenovno bolji izbor za dio mikro korisnika. Među ovdje uspoređenim plaćenim početnim planovima, NEPAR Web Link ima najniži javno objavljeni godišnji iznos na datum provjere. To nije tvrdnja o cijelom tržištu niti jamstvo da se cijene neće promijeniti.
         </p>
       </section>
 

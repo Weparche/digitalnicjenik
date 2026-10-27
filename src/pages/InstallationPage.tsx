@@ -6,8 +6,9 @@ import { getSitePage } from './registry'
 export function InstallationPage() {
   return <SitePageLayout
     page={getSitePage('/objava-digitalnog-cjenika/')}
-    lead={<>NEPAR pomaže obrtnicima i malim tvrtkama objaviti pripremljeni cjenik te ga povezati s postojećom web stranicom. Paket Link počinje od {formatEur(PLANS[0].price, true)}; za Excel, nadzor ili izradu jednostavnog weba odaberite odgovarajući paket.</>}
+    lead={<>NEPAR pomaže obrtnicima i malim tvrtkama objaviti pripremljeni cjenik te ga povezati s postojećom web stranicom, bez plugina i bez migracije weba. Web Link počinje od {formatEur(PLANS[0].price, true)}; za Excel, nadzor ili izradu jednostavnog weba odaberite odgovarajući paket.</>}
     related={[
+      { href: '/digitalni-cjenik-za-wordpress-webshop/', label: 'Digitalni cjenik za WordPress, webshop i postojeći web' },
       { href: '/cijene/', label: 'Sve cijene i uvjeti pretplate' },
       { href: '/reference/auto-gubic/', label: 'Stvarni primjer: Auto Gubić' },
       { href: '/specifikacija-csv-xml/', label: 'Podržana CSV/XML polja i primjeri' },
@@ -16,7 +17,7 @@ export function InstallationPage() {
     <section className="site-section" aria-labelledby="installation-steps">
       <h2 id="installation-steps">Od vašeg cjenika do poveznice na webu</h2>
       <ol className="news-bullets">
-        <li><strong>Pripremite podatke.</strong> Naziv poslovnog subjekta, podatke o objektu i cjenik s aktualnim cijenama te ostalim potrebnim poljima. Link je za pripremljeni CSV; Publisher podržava i Excel i XML.</li>
+        <li><strong>Pripremite podatke.</strong> Naziv poslovnog subjekta, podatke o objektu i cjenik s aktualnim cijenama te ostalim potrebnim poljima. Web Link je za pripremljeni CSV ili XML; Publisher dodaje Excel i detaljnu validaciju.</li>
         <li><strong>Pregledajte prije objave.</strong> Besplatni validator pokazuje probleme u podržanom formatu. Vlasnik provjerava stvarne cijene i potpunost ponude.</li>
         <li><strong>Objavite cjenik.</strong> Dobivate javnu stranicu i CSV/XML poveznice. Zamjena objave čuva prethodnu verziju u arhivi 30 dana, uz aktivnu pretplatu.</li>
         <li><strong>Povežite s postojećim webom.</strong> Dodajte jasan link „Digitalni cjenik” i pristup datotekama i arhivi. Za prikaz unutar stranice Publisher nudi ugradnju; pomoć s postavljanjem dogovaramo prema platformi.</li>
@@ -27,7 +28,7 @@ export function InstallationPage() {
       <h2 id="installation-platforms">WordPress, Wix ili prilagođena stranica</h2>
       <p>Obična poveznica može se dodati na postojeći web bez promjene domene. Na WordPressu je možete staviti u izbornik ili gumb; za ugrađeni prikaz provjerite mogućnosti HTML bloka. Na Wixu i Google Sitesu način ugradnje ovisi o mogućnostima stranice i njezinim postavkama.</p>
       <p>Za vlastiti React, PHP ili drugi web razvojnom timu predajete javne poveznice i, uz Publisher, kod za ugradnju. Ako želite da datoteke budu poslužene izravno s vaše domene, najprije provjeravamo hosting i dogovaramo tehničko povezivanje.</p>
-      <p><a href="/vodici/woocommerce-wordpress-digitalni-cjenik/">Vodič za WordPress i WooCommerce</a> · <a href="/#posaljite-cjenik">Zatražite pomoć s postojećim webom</a></p>
+      <p><a href="/digitalni-cjenik-za-wordpress-webshop/">Upute za WordPress, WooCommerce, Shopify, Wix i vlastiti web</a> · <a href="/vodici/woocommerce-wordpress-digitalni-cjenik/">Vodič za WordPress i WooCommerce</a> · <a href="/#posaljite-cjenik">Zatražite pomoć s postojećim webom</a></p>
     </section>
     <section className="site-section" aria-labelledby="installation-plans">
       <h2 id="installation-plans">Odaberite koliko pomoći trebate</h2>
@@ -37,13 +38,13 @@ export function InstallationPage() {
     <section className="site-section" id="odgovornosti" aria-labelledby="installation-responsibilities">
       <h2 id="installation-responsibilities">Što treba provjeriti prije objave?</h2>
       <p>Stalni link i arhiva dio su tehničkog rješenja. Važno je i da datoteka sadrži odgovarajuća polja, naziv objekta i oznaku objave, da se može automatski dohvatiti te da je dostupna s vaše web stranice. Samostalni link bez povezivanja s vašim webom nije dovršena ugradnja.</p>
-      <p>Prema Odluci NN 101/2026, uz izmjenu početka primjene na 17. studenoga 2026., razlikuju se rokovi ažuriranja cjenika proizvoda i usluga. Paket Link ne uključuje automatsku dnevnu ponovnu objavu nepromijenjenih podataka ni sinkronizaciju s ERP-om. Za trgovinu koja treba takav raspored prije narudžbe dogovorite odgovarajuću automatizaciju.</p>
+      <p>Prema Odluci NN 101/2026, uz izmjenu početka primjene na 17. studenoga 2026., razlikuju se rokovi ažuriranja cjenika proizvoda i usluga. Web Link ne uključuje automatsku dnevnu ponovnu objavu nepromijenjenih podataka ni povezivanje s ERP-om. Za trgovinu koja treba takav raspored prije narudžbe dogovorite odgovarajuću automatizaciju.</p>
       <p>Stalni URL znači da se adresa ne mijenja pri zamjeni cjenika, dok je pretplata aktivna. Nakon isteka pretplate javni pristup se gasi; prije isteka osigurajte nastavak dostupnosti aktualnog cjenika i potrebne arhive, produljenjem ili preseljenjem objava.</p>
       <p>Korisnik potvrđuje točne cijene i potpunost podataka. Pravila o isticanju cijena u poslovnici i drugim kanalima ne rješavaju se samom kupnjom hostinga. Za opseg obveze mjerodavni su važeći propisi; nacrti pravilnika nisu konačna pravila.</p>
     </section>
     <section className="site-section" aria-labelledby="installation-reference">
       <h2 id="installation-reference">Pogledajte stvarnu NEPAR implementaciju</h2>
-      <p>Auto Gubić ima javni cjenik usluge na vlastitoj domeni, s aktualnom i sidrenom cijenom, poveznicama na CSV/XML i podacima o objavi. To je individualna NEPAR implementacija; opseg aktualnog paketa Link opisan je iznad.</p>
+      <p>Auto Gubić ima javni cjenik usluge na vlastitoj domeni, s aktualnom i sidrenom cijenom, poveznicama na CSV/XML i podacima o objavi. To je individualna NEPAR implementacija; opseg Web Linka opisan je iznad.</p>
       <a href="/reference/auto-gubic/">Kako izgleda cjenik Auto Gubića →</a>
     </section>
     <SourceList sources={[
@@ -81,7 +82,7 @@ export function AutoGubicReferencePage() {
     <section className="site-section" aria-labelledby="reference-scope">
       <h2 id="reference-scope">Što ovaj primjer pokazuje</h2>
       <p>Primjer pokazuje kako se javni prikaz i strojno čitljive datoteke mogu povezati na vlastitoj domeni. Riječ je o našoj referentnoj implementaciji, a ne neovisnoj recenziji ili korisničkoj izjavi.</p>
-      <p>Prikaz ne potvrđuje trajanje ni potpunost arhive, neprekidan rad sustava ili pravnu usklađenost. Individualna implementacija Auto Gubića nije obećanje da su sve njezine mogućnosti uključene u paket Link.</p>
+      <p>Prikaz ne potvrđuje trajanje ni potpunost arhive, neprekidan rad sustava ili pravnu usklađenost. Individualna implementacija Auto Gubića nije obećanje da su sve njezine mogućnosti uključene u Web Link.</p>
     </section>
   </SitePageLayout>
 }

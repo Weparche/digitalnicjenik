@@ -1,7 +1,8 @@
+import { MAX_PRICE_LIST_ITEMS } from '../shared/pricing'
 import type { NormalizedPriceItem, NormalizedPriceList, ValidationIssue, ValidationField } from '../src/price-engine/types'
 
+export { MAX_PRICE_LIST_ITEMS }
 export const MAX_WRITE_REQUEST_BYTES = 2_200_000
-export const MAX_PRICE_LIST_ITEMS = 5_000
 export const MAX_ITEM_STRING_LENGTH = 500
 export const MAX_SOURCE_FILENAME_LENGTH = 240
 export const MAX_SOURCE_ARTIFACT_BYTES = 1_000_000

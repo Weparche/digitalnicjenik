@@ -1,22 +1,25 @@
 # NEPAR Publisher — Digitalni cjenik
 
-> Digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna: objava, svakodnevni nadzor usklađenosti i e-mail upozorenje.
+> Digitalni cjenik za bilo koji postojeći web (WordPress, WooCommerce, Shopify, Wix, Webflow ili vlastiti web) od 19,90 €/god: bez obaveznog plugina i bez migracije weba.
 
-NEPAR Publisher je alat kojim vlasnik web stranice provjerava ima li javno dostupan
-strojno čitljiv (CSV ili XML) digitalni cjenik, validira postojeću datoteku, pretvara
-Excel cjenik u CSV/XML, objavljuje ga uz arhivu od 30 dana i svaki dan provjerava objavu.
+Web Link daje javnu poveznicu digitalnog cjenika, CSV/XML objavu i arhivu prethodnih verzija 30 dana,
+do 5.000 stavki po cjeniku. Poveznicu vlasnik dodaje kao gumb, stavku izbornika ili običan link.
+Publisher je digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna:
+validacija Excela/CSV-a/XML-a, svakodnevni nadzor objave i e-mail upozorenje. Povezivanje s webshopom,
+API-jem ili ERP/POS sustavom radi se po individualnoj ponudi; to nije dio Web Linka.
 Rok primjene Odluka NN 101/2026 je 17. studenoga 2026. (odgoda potvrđena 29.9.2026.).
 
 Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https://nepar.hr
 
 ## Stranice
 
-- [Početna](https://digitalnicjenik.nepar.hr/): digitalni cjenik s nadzorom usklađenosti — provjera weba, validator Excel/CSV cjenika i objava.
+- [Početna](https://digitalnicjenik.nepar.hr/): digitalni cjenik za bilo koji postojeći web — objava, besplatna provjera weba i validator cjenika.
+- [WordPress i webshop](https://digitalnicjenik.nepar.hr/digitalni-cjenik-za-wordpress-webshop/): Digitalni cjenik za WordPress, WooCommerce, Shopify, Wix ili vlastiti web od 19,90 €/god: bez plugina, s CSV/XML objavom i 30 dana arhive.
 - [Sidrena cijena](https://digitalnicjenik.nepar.hr/vodici/sidrena-cijena/): Sidrena odnosno dodatna cijena: referentni datumi, odnos prema digitalnom CSV/XML cjeniku i prikaz uz aktualnu cijenu. Vodič sa službenim izvorima.
 - [Automatizacija cjenika](https://digitalnicjenik.nepar.hr/vodici/automatizacija-digitalnog-cjenika/): Što NEPAR Publisher generira nakon objave, što traži vaš izvor podataka i integraciju te što periodični nadzor provjerava. Bez obećanja automatske sinkronizacije.
-- [Objava i ugradnja](https://digitalnicjenik.nepar.hr/objava-digitalnog-cjenika/): Objavite pripremljeni CSV od 19,90 €/god. Usporedite pakete, povežite cjenik s postojećim webom i pogledajte stvarnu NEPAR implementaciju.
+- [Objava i ugradnja](https://digitalnicjenik.nepar.hr/objava-digitalnog-cjenika/): Objavite digitalni cjenik od 19,90 €/god i povežite ga s postojećim webom. Usporedite pakete i pogledajte stvarnu NEPAR implementaciju.
 - [Auto Gubić](https://digitalnicjenik.nepar.hr/reference/auto-gubic/): NEPAR referentna implementacija za Auto Gubić: javni prikaz usluge, aktualna i sidrena cijena, CSV/XML poveznice te podaci o objavi. Pogledajte primjer.
-- [Cijene](https://digitalnicjenik.nepar.hr/cijene/): Besplatna provjera weba i validator. Godišnji paketi: Link 19,90 €/god, Publisher 49,90 €/god, Web + Publisher 79,90 €/god. Objavite digitalni cjenik na svojoj web stranici.
+- [Cijene](https://digitalnicjenik.nepar.hr/cijene/): Besplatna provjera weba i validator. Godišnji paketi: Web Link 19,90 €/god, Publisher 49,90 €/god, Web + Publisher 79,90 €/god. Objavite digitalni cjenik na svojoj web stranici.
 - [Česta pitanja](https://digitalnicjenik.nepar.hr/faq/): Odgovori na najčešća pitanja o digitalnom cjeniku: tko mora objaviti CSV/XML, rok 17.11.2026., sidrena cijena, arhiva 30 dana, naziv datoteke, više poslovnica i web shop.
 - [Usporedba](https://digitalnicjenik.nepar.hr/usporedba/): Javno provjerene cijene i mogućnosti NEPAR-a, eCjenika i digitalnicjenik.hr na 26.10.2026., uz iskrenu preporuku prema veličini cjenika, nadzoru, lokacijama i API potrebama.
 - [Specifikacija CSV/XML](https://digitalnicjenik.nepar.hr/specifikacija-csv-xml/): Polje po polje: što Odluka NN 101/2026 traži, kako izgleda NEPAR CSV i XML, kakav je naziv datoteke, što provjeravamo i primjeri za preuzimanje.

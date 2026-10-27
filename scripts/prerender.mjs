@@ -16,11 +16,11 @@ const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
 const INDEXABLE_ROBOTS = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
 const FEED_URL = `${SITE_URL}/feed.xml`
 
-export const HOME_TITLE = 'Digitalni cjenik: besplatna provjera CSV/XML | NEPAR'
+// The entry price in the title comes from shared/pricing.ts (set in main() once the module is loaded).
+export let HOME_TITLE = 'Digitalni cjenik za bilo koji postojeći web | NEPAR'
 const DESCRIPTION =
-  'Imate web stranicu? Besplatno provjerite digitalni cjenik, CSV/XML i javne linkove. Tehnička provjera i objava cjenika na webu. Rok primjene: 17.11.2026.'
-const TWITTER_DESCRIPTION =
-  'Digitalni cjenik koji ne samo da objavi datoteku, nego provjerava da je ispravna: CSV/XML, nadzor i e-mail upozorenje.'
+  'WordPress, WooCommerce, Shopify, Wix ili vlastiti web. Javni digitalni cjenik, CSV/XML objava i 30-dnevna arhiva bez obaveznog plugina i migracije weba.'
+const TWITTER_DESCRIPTION = DESCRIPTION
 
 function escapeHtml(value) {
   return String(value)
@@ -66,7 +66,7 @@ function buildHomeSchema(productFaq, pricing) {
         about: [
           { '@type': 'Thing', name: 'Digitalni cjenik' },
           { '@type': 'Thing', name: 'XML/CSV cjenik' },
-          { '@type': 'Thing', name: 'Automatizacija cjenika' },
+          { '@type': 'Thing', name: 'Digitalni cjenik za postojeći web' },
         ],
         mainEntity: { '@id': APP_ID },
       },
@@ -160,14 +160,38 @@ function buildSitePageSchema(page, extras) {
       ],
     })
   }
+  if (page.faqGroupId) {
+    const group = extras.faqGroups.find((candidate) => candidate.id === page.faqGroupId)
+    if (!group) throw new Error(`faq_group_missing:${page.faqGroupId}`)
+    graph.push({
+      '@type': 'FAQPage',
+      '@id': `${pageUrl}#faq`,
+      inLanguage: 'hr-HR',
+      isPartOf: { '@id': `${pageUrl}#page` },
+      mainEntity: group.entries.map((entry) => ({ '@type': 'Question', name: entry.question, acceptedAnswer: { '@type': 'Answer', text: entry.answer } })),
+    })
+  }
+  if (page.service) {
+    graph.push({
+      '@type': 'Service',
+      '@id': `${pageUrl}#service`,
+      name: page.service.name,
+      serviceType: page.service.serviceType,
+      description: page.description,
+      url: pageUrl,
+      areaServed: { '@type': 'Country', name: 'Hrvatska' },
+      provider: { '@id': ORGANIZATION_ID },
+      offers: extras.pricing.PLANS.filter((plan) => page.service.planIds.includes(plan.id)).map((plan) => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, description: plan.tagline, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
+    })
+  }
   if (page.kind === 'spec') {
     const files = [
       ['NEPAR format — CSV za usluge', '/examples/nepar-format-primjer-usluge.csv', 'text/csv'],
       ['NEPAR format — XML za usluge', '/examples/nepar-format-primjer-usluge.xml', 'application/xml'],
       ['NEPAR format — CSV za proizvode', '/examples/nepar-format-primjer-proizvodi.csv', 'text/csv'],
       ['NEPAR format — XML za proizvode', '/examples/nepar-format-primjer-proizvodi.xml', 'application/xml'],
-      ['HOK stil — CSV za usluge', '/examples/primjer-digitalni-cjenik-usluge-2026.csv', 'text/csv'],
-      ['HOK stil — XML za usluge', '/examples/primjer-digitalni-cjenik-usluge-2026.xml', 'application/xml'],
+      ['Prema HOK predlošku — CSV za usluge', '/examples/primjer-digitalni-cjenik-usluge-2026.csv', 'text/csv'],
+      ['Prema HOK predlošku — XML za usluge', '/examples/primjer-digitalni-cjenik-usluge-2026.xml', 'application/xml'],
     ]
     graph.push({
       '@type': 'Dataset',
@@ -489,6 +513,7 @@ async function main() {
     html: renderToString(React.createElement(sitePageModule.SitePage, { page })),
   }))
   await vite.close()
+  HOME_TITLE = `Digitalni cjenik za bilo koji postojeći web od ${pricing.formatEur(pricing.PLANS[0].price)} | NEPAR`
 
   const distIndex = resolve('dist/index.html')
   const pristineShell = readFileSync(distIndex, 'utf8')
@@ -522,7 +547,7 @@ async function main() {
         imageAlt: page.title,
         modifiedTime: page.updatedAt,
       },
-      buildSitePageSchema(page, { pages: registry.SITE_PAGES, faqEntries: faq.allFaqEntries, pricing }),
+      buildSitePageSchema(page, { pages: registry.SITE_PAGES, faqEntries: faq.allFaqEntries, faqGroups: faq.faqGroups, pricing }),
     )
     console.log(`Prerendered ${page.path}`)
   }

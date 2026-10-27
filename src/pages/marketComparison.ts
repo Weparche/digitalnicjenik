@@ -1,4 +1,5 @@
 import { PLANS, formatEur } from '../publisherPricing'
+import { MAX_ITEMS_LABEL } from '../../shared/pricing'
 
 export const MARKET_SNAPSHOT_DATE = '2026-10-26'
 export const MARKET_SNAPSHOT_LABEL = '26. listopada 2026.'
@@ -22,12 +23,12 @@ export const MARKET_OPTIONS: MarketOption[] = [
   {
     id: 'nepar-link',
     provider: 'NEPAR',
-    plan: 'Link',
+    plan: 'Web Link',
     priceLabel: formatEur(PLANS[0].price, true),
     annualPriceEur: PLANS[0].price,
-    scope: 'Pripremljeni CSV, stalni javni URL, CSV/XML izlaz i arhiva prethodnih verzija 30 dana uz aktivnu pretplatu.',
-    bestFor: 'Postojeći web i mali godišnji trošak kada vam ne treba dashboard ni automatski nadzor.',
-    sourceUrl: 'https://digitalnicjenik.nepar.hr/objava-digitalnog-cjenika/',
+    scope: `Pripremljeni CSV/XML do ${MAX_ITEMS_LABEL} stavki, stalni javni URL, CSV i XML te arhiva prethodnih verzija 30 dana uz aktivnu pretplatu. Bez plugina na vašem webu.`,
+    bestFor: 'Postojeći web (WordPress, webshop ili vlastiti) i mali godišnji trošak kada vam ne treba dashboard ni automatski nadzor.',
+    sourceUrl: 'https://digitalnicjenik.nepar.hr/cijene/',
   },
   {
     id: 'ecjenik-mali',
@@ -53,8 +54,8 @@ export const MARKET_OPTIONS: MarketOption[] = [
 
 export const MARKET_RECOMMENDATIONS = [
   {
-    need: 'Već imate web i pripremljeni CSV',
-    choice: 'NEPAR Link',
+    need: 'Već imate web i pripremljeni CSV/XML',
+    choice: 'NEPAR Web Link',
     reason: `${formatEur(PLANS[0].price, true)} za stalni URL, CSV/XML i 30-dnevnu arhivu.`,
   },
   {

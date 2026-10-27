@@ -1,6 +1,7 @@
 import { NEWS_POSTS, type NewsPost } from '../news/posts'
 import { NEPAR_URL, SITE_URL, newsArticleUrl, newsIndexUrl } from '../news/site'
 import { SITE_PAGES, pageUrl } from '../pages/registry'
+import { MAX_ITEMS_LABEL, PLANS, formatEur } from '../../shared/pricing'
 
 export const DEMO_PUBLIC_SLUG = 'nepar'
 export const INDEXABLE_ROBOTS =
@@ -138,18 +139,20 @@ export function renderLlms(posts: NewsPost[] = NEWS_POSTS) {
   const lines = [
     '# NEPAR Publisher — Digitalni cjenik',
     '',
-    '> Digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna: objava, svakodnevni nadzor usklađenosti i e-mail upozorenje.',
+    `> Digitalni cjenik za bilo koji postojeći web (WordPress, WooCommerce, Shopify, Wix, Webflow ili vlastiti web) od ${formatEur(PLANS[0].price, true)}: bez obaveznog plugina i bez migracije weba.`,
     '',
-    'NEPAR Publisher je alat kojim vlasnik web stranice provjerava ima li javno dostupan',
-    'strojno čitljiv (CSV ili XML) digitalni cjenik, validira postojeću datoteku, pretvara',
-    'Excel cjenik u CSV/XML, objavljuje ga uz arhivu od 30 dana i svaki dan provjerava objavu.',
+    `${PLANS[0].name} daje javnu poveznicu digitalnog cjenika, CSV/XML objavu i arhivu prethodnih verzija 30 dana,`,
+    `do ${MAX_ITEMS_LABEL} stavki po cjeniku. Poveznicu vlasnik dodaje kao gumb, stavku izbornika ili običan link.`,
+    `${PLANS[1].name} je digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna:`,
+    'validacija Excela/CSV-a/XML-a, svakodnevni nadzor objave i e-mail upozorenje. Povezivanje s webshopom,',
+    'API-jem ili ERP/POS sustavom radi se po individualnoj ponudi; to nije dio Web Linka.',
     'Rok primjene Odluka NN 101/2026 je 17. studenoga 2026. (odgoda potvrđena 29.9.2026.).',
     '',
     `Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — ${NEPAR_URL}`,
     '',
     '## Stranice',
     '',
-    `- [Početna](${SITE_URL}/): digitalni cjenik s nadzorom usklađenosti — provjera weba, validator Excel/CSV cjenika i objava.`,
+    `- [Početna](${SITE_URL}/): digitalni cjenik za bilo koji postojeći web — objava, besplatna provjera weba i validator cjenika.`,
     ...SITE_PAGES.map((page) => `- [${page.label}](${pageUrl(page)}): ${page.description}`),
     `- [Vijesti](${newsIndexUrl()}): regulativa digitalnog cjenika, sidrena cijena i CSV/XML objava.`,
     `- [RSS](${SITE_URL}${FEED_PATH}): feed svih vijesti.`,

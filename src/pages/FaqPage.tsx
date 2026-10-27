@@ -9,6 +9,7 @@ export function FaqPage() {
       page={page}
       lead="Kratki odgovori na najčešća pitanja o digitalnom cjeniku i sidrenoj (dodatnoj) cijeni. Rok primjene je 17. studenoga 2026.; nacrti novih pravilnika su u savjetovanju."
       related={[
+        { href: '/digitalni-cjenik-za-wordpress-webshop/', label: 'Digitalni cjenik za WordPress, webshop i postojeći web' },
         { href: '/specifikacija-csv-xml/', label: 'Specifikacija CSV/XML polje po polje' },
         { href: '/cijene/', label: 'Cijene' },
         { href: '/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/', label: 'Odgoda do 17. studenoga: detalji' },

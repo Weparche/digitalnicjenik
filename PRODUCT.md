@@ -26,9 +26,9 @@ Success means a non-technical owner can preview data, start a 7-day trial on the
 
 **Category:** MIKROeRAČUN covers e-invoices (under Porezna’s conditions); Publisher covers **public price list publication on the web** (separate regulatory track).
 
-**Acquisition funnel:** AD / organic visitor → free website check → result → detailed file validation or solution → Link / Publisher / Web + Publisher → implementation help when needed. Upload is also directly available as the secondary path. The existing 7-day public trial remains available after validation.
+**Acquisition funnel:** AD / organic visitor → “Objavi svoj cjenik” (validator → 7-day trial) or free website check → Web Link / Publisher / Web + Publisher → installation help or individual integration offer when needed. Upload is also directly available as the secondary path. The existing 7-day public trial remains available after validation.
 
-**Hero message:** “Imate web stranicu? Provjerite digitalni cjenik besplatno.” The anonymous checker and supporting trust statements appear in the first viewport at 390px, 768px and 1440px. Pricing cards follow the result.
+**Hero message (2026-10-27):** “Već imate web? Ne trebate novi. Digitalni cjenik za bilo koji postojeći web — od 19,90 €/god.” Primary CTA “Objavi svoj cjenik” opens the validator; secondary “Provjeri postojeći cjenik besplatno” scrolls to the checker. Platform names (WordPress, WooCommerce, Shopify, Wix, Webflow, custom web) are text only: a plain link or button is the integration. Never claim native integrations, automatic synchronization, certification or “100 % usklađeno”. `/digitalni-cjenik-za-wordpress-webshop/` is the SEO landing for this intent.
 
 **Factual note (Sept 2026):** MIKROeRAČUN primarily enables **receiving** e-invoices today; **issuing** is planned from 1 Jan 2027; upgraded version testing in Oct 2026. Do not overclaim in marketing copy.
 
@@ -64,10 +64,11 @@ The fixture at `./marketino-artikli` remains available for the demo tenant only.
 
 ## Commercial offer
 
-- **Link — 19,90 €/god:** upload/replace supported CSV, persistent public URL, basic web view and supported CSV/XML output. Customer adds the link to their website.
+- **Web Link — 19,90 €/god** (id `link`): upload/replace a prepared CSV or XML, up to 5.000 items (`MAX_PRICE_LIST_ITEMS`), persistent public URL, basic web view, CSV/XML output and a 30-day archive. No plugin: the customer adds the link to any existing website.
 - **Publisher — 49,90 €/god:** Link plus Excel/CSV/XML validation, dashboard, stable feeds, versioning, archive of superseded versions for at least 30 days, monitoring, email alerts, QR, browser PDF printing and embed.
 - **Web + Publisher — 79,90 €/god:** Publisher plus a simple NEPAR web/landing, hosting, SSL, basic editing and technical setup. Complex custom development requires a separate offer.
-- **Existing-web help:** separate inquiry to install a link, button or price-list view. It does not require buying Web + Publisher.
+- **Existing-web help:** separate inquiry to install a link, button or price-list view. No public price; it does not require buying Web + Publisher.
+- **Advanced integration:** WooCommerce/webshop/API/ERP/POS connection built for a specific system, individual offer only. No automatic synchronization product exists.
 
 `shared/pricing.ts` is the single commercial source for frontend, pricing page, FAQs, prerendered offers and lead email labels. The old launch offer is inactive. All marketed package amounts are annual. Existing entitlement infrastructure and manual offer → payment → ops activation remain; this work does not add checkout, automated billing or tier-based access controls.
 

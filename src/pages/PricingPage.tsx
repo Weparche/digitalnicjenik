@@ -1,4 +1,5 @@
 import { PlanCards } from '../PlanCards'
+import { MAX_ITEMS_LABEL } from '../../shared/pricing'
 import { SitePageLayout } from './PageLayout'
 import { getSitePage } from './registry'
 
@@ -18,10 +19,11 @@ export function PricingPage() {
       page={page}
       lead={
         <>
-          Provjera i validacija su besplatne. Odaberite godišnji paket za objavu cjenika. Plaćanje po ponudi, bez automatske naplate.
+          Provjera i validacija su besplatne. Web Link je za web koji već imate, Publisher dodaje validaciju i svakodnevni nadzor. Plaćanje po ponudi, bez automatske naplate.
         </>
       }
       related={[
+        { href: '/digitalni-cjenik-za-wordpress-webshop/', label: 'Digitalni cjenik za WordPress, webshop i postojeći web' },
         { href: '/objava-digitalnog-cjenika/', label: 'Kako objaviti i ugraditi cjenik' },
         { href: '/usporedba/', label: 'Usporedba s besplatnim alatima i dodacima' },
         { href: '/faq/', label: 'Česta pitanja' },
@@ -34,9 +36,9 @@ export function PricingPage() {
       </section>
 
       <section className="site-section" aria-labelledby="link-scope-title">
-        <h2 id="link-scope-title">Što pokriva paket Link?</h2>
-        <p>Link je za pripremljeni CSV koji sami ažurirate. Uključuje javni prikaz, CSV/XML izlaz za podržani format i arhivu zamijenjenih verzija uz aktivnu pretplatu. Poveznicu postavljate na svoju web stranicu; pomoć s ugradnjom dogovara se zasebno.</p>
-        <p>To nije automatska sinkronizacija s blagajnom niti dnevna ponovna objava nepromijenjenog cjenika proizvoda. Točnost podataka, pravodobne izmjene i način povezivanja s vašim webom treba provjeriti za vaše poslovanje. <a href="/objava-digitalnog-cjenika/#odgovornosti">Pogledajte što treba pripremiti prije objave.</a></p>
+        <h2 id="link-scope-title">Što pokriva Web Link?</h2>
+        <p>Web Link je za pripremljeni CSV ili XML koji sami ažurirate, do {MAX_ITEMS_LABEL} stavki. Uključuje javni prikaz, CSV i XML te arhivu zamijenjenih verzija uz aktivnu pretplatu. Poveznicu postavljate na svoju postojeću web stranicu, bez plugina; pomoć s ugradnjom dogovara se zasebno.</p>
+        <p>Web Link ne čita podatke iz blagajne ili webshopa i ne objavljuje svaki dan ponovno nepromijenjeni cjenik proizvoda. Točnost podataka, pravodobne izmjene i način povezivanja s vašim webom treba provjeriti za vaše poslovanje. <a href="/objava-digitalnog-cjenika/#odgovornosti">Pogledajte što treba pripremiti prije objave.</a></p>
       </section>
 
       <section className="site-section" aria-labelledby="included-title">
