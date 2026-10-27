@@ -212,6 +212,38 @@ export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv
   throw new Error("too_many_redirects");
 }
 
+function wwwFallbackUrl(url: URL): URL | null {
+  const host = normalizedHostname(url.hostname);
+  if (!host || host.startsWith('www.')) return null;
+  const fallback = new URL(url.href);
+  fallback.hostname = `www.${host}`;
+  return fallback;
+}
+
+async function fetchHomepage(initialUrl: URL, env: CheckerEnv): Promise<{ response: Response; url: URL }> {
+  let primary: { response: Response; url: URL } | null = null;
+  let primaryError: unknown = null;
+  try {
+    primary = await safeDigitalPriceListFetch(initialUrl, env);
+    if (primary.response.status < 500) return primary;
+  } catch (caught) {
+    primaryError = caught;
+  }
+
+  const fallbackUrl = wwwFallbackUrl(initialUrl);
+  if (fallbackUrl) {
+    try {
+      const fallback = await safeDigitalPriceListFetch(fallbackUrl, env);
+      if (fallback.response.ok) return fallback;
+    } catch {
+      // Preserve the primary result/error below. The www probe is only a recovery path.
+    }
+  }
+
+  if (primary) return primary;
+  throw primaryError instanceof Error ? primaryError : new Error('homepage_unavailable');
+}
+
 async function readBounded(response: Response, maxBytes: number): Promise<{ body: string; truncated: boolean }> {
   if (!response.body) return { body: "", truncated: false };
   const reader = response.body.getReader();
@@ -651,7 +683,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const analyses: Parameters<typeof findDocument>[4] = [];
   let homepage: { response: Response; url: URL };
   try {
-    homepage = await safeDigitalPriceListFetch(initialUrl, env);
+    homepage = await fetchHomepage(initialUrl, env);
   } catch (caught) {
     if (caught instanceof Error && caught.message === "host_not_found") {
       return result("red", "Web stranica nije pronađena. Provjerite adresu.");
