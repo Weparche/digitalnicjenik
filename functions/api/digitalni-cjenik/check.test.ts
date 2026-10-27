@@ -59,7 +59,8 @@ describe('digital price list checker hardening', () => {
     vi.stubGlobal('fetch', fetch)
     const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
     expect(checked.status).toBe('unavailable')
-    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(fetch.mock.calls.every(([input]) => !String(input).includes('127.0.0.1'))).toBe(true)
   })
 
   it('requires meaningful CSV content and rejects HTML served from a csv URL', async () => {
