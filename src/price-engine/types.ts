@@ -43,7 +43,9 @@ export type NormalizedPriceList = {
 }
 
 export type ParseWarning = { row: number; message: string; field?: ValidationField; itemName?: string }
-export type ParseResult = { priceList: NormalizedPriceList; warnings: ParseWarning[]; sourceRows?: number[]; rowCount?: number }
+/** Canonical field → source column/element name as it appears in the file (e.g. name → "service_name"). */
+export type FieldSources = Partial<Record<'name' | 'price' | 'specialSaleApplied' | 'specialSaleName' | 'anchorPrice' | 'anchorReferenceDate' | 'isNewSinceReferenceDate', string>>
+export type ParseResult = { priceList: NormalizedPriceList; warnings: ParseWarning[]; sourceRows?: number[]; rowCount?: number; fieldSources?: FieldSources }
 
 export type ValidationIssue = {
   row: number
@@ -53,6 +55,8 @@ export type ValidationIssue = {
   message: string
   code?: ValidationIssueCode
   source?: ValidationIssueSource
+  /** Stable rule id; shared/compliance/legal-profile.ts maps it to a level and legal source. */
+  rule?: string
 }
 
 export type ValidationResult = {

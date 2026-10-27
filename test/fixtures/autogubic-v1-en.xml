@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<priceList version="1" storageNumber="1" publishedAt="2026-09-16T14:06:27+02:00">
+  <business objectType="usluzni-objekt" objectCode="1">
+    <legalName>Auto GUBIĆ d.o.o. za usluge</legalName>
+    <address>Samoborska cesta 344, 10000 Zagreb</address>
+  </business>
+  <service>
+    <name>Radni sat autoservisa</name>
+    <retailPrice currency="EUR">75.00</retailPrice>
+    <specialSale>false</specialSale>
+    <specialSaleName></specialSaleName>
+    <anchorPrice currency="EUR">75.00</anchorPrice>
+  </service>
+</priceList>

@@ -16,7 +16,7 @@ export function ExcelGuidePage() {
     >
       <section className="site-section" aria-labelledby="step1">
         <h2 id="step1">1. Pripremite tablicu</h2>
-        <p>Jedan redak po usluzi ili proizvodu. Za usluge su vam potrebni naziv, maloprodajna cijena, podatak o posebnom obliku prodaje i sidrena cijena. Najlakši početak je HOK predložak za usluge: NEPAR prepoznaje njegova zaglavlja.</p>
+        <p>Jedan redak po usluzi ili proizvodu. Za usluge su vam potrebni naziv, maloprodajna cijena, podatak o posebnom obliku prodaje i sidrena cijena. Najlakši početak je HOK predložak za usluge: NEPAR prepoznaje njegova zaglavlja. Nazivi stupaca nisu propisani, pa prepoznajemo i druga uobičajena zaglavlja istog značenja.</p>
         <div className="site-table-wrap" role="region" aria-label="Primjer tablice" tabIndex={0}>
           <table className="site-table">
             <caption className="sr-only">Primjer stupaca u Excelu</caption>

@@ -1,6 +1,7 @@
 /** Evidence model shared by the anonymous checker and the acquisition UI. */
-export type DocumentAnalysisStatus = 'pass' | 'warning' | 'unknown'
-export type DocumentFinding = { row?: number; itemName?: string; field?: string; message: string }
+export type DocumentAnalysisStatus = 'pass' | 'warning' | 'fail' | 'unknown'
+/** level/source come from shared/compliance/legal-profile.ts: only binding rules can be an error. */
+export type DocumentFinding = { row?: number; itemName?: string; field?: string; message: string; rule?: string; level?: 'error' | 'warning' | 'info'; source?: 'binding' | 'official-clarification' | 'draft' | 'recommendation' }
 export type DocumentAnalysis = {
   format: 'csv' | 'xml'
   url: string | null
@@ -13,10 +14,12 @@ export type DocumentAnalysis = {
   structureReasons: string[]
   findings: DocumentFinding[]
   totalFindings: number
+  /** NEPAR recommendations (level info). Never change the status and are never legal requirements. */
+  recommendations?: DocumentFinding[]
 }
 
 export function aggregateDocumentStatus(statuses: DocumentAnalysisStatus[]): DocumentAnalysisStatus {
-  return statuses.includes('warning') ? 'warning' : statuses.includes('pass') ? 'pass' : 'unknown'
+  return statuses.includes('fail') ? 'fail' : statuses.includes('warning') ? 'warning' : statuses.includes('pass') ? 'pass' : 'unknown'
 }
 
 export type WebsiteCheckDetails = {
@@ -37,8 +40,14 @@ export type WebsiteCheckDetails = {
   archiveLinkDiscovered?: boolean
   fetchBlocked?: boolean
   networkIncomplete?: boolean
-  structureStatus?: 'pass' | 'warning' | 'unknown'
-  contentStatus?: 'pass' | 'warning' | 'unknown'
+  structureStatus?: DocumentAnalysisStatus
+  contentStatus?: DocumentAnalysisStatus
+  /** What proved that an earlier publication is still public (versioned file or archive page). */
+  archiveEvidence?: string
+  /** A linked earlier publication superseded less than 30 days ago is no longer served. */
+  archiveRemoved?: boolean
+  /** Publication-level notes (file name metadata, single format, chain structure). */
+  publicationFindings?: DocumentFinding[]
   contentEvidence?: string
   csvAnalysis?: DocumentAnalysis
   xmlAnalysis?: DocumentAnalysis
@@ -61,9 +70,9 @@ export const TECHNICAL_CHECKS = [
   { id: 'archive', label: 'Arhiva prethodnih objava', icon: 'clock' },
   { id: 'content', label: 'Sadržaj cjenika', icon: 'list' },
 ] as const
-export type TechnicalStatus = 'pass' | 'missing' | 'warning' | 'unknown' | 'not_applicable'
+export type TechnicalStatus = 'pass' | 'missing' | 'warning' | 'fail' | 'unknown' | 'not_applicable'
 export const STATUS_LABELS: Record<TechnicalStatus, string> = {
-  pass: 'Prolazi', missing: 'Nije pronađeno', warning: 'Upozorenje', unknown: 'Nije moguće automatski potvrditi',
+  pass: 'Prolazi', missing: 'Nije pronađeno', warning: 'Upozorenje', fail: 'Ne prolazi', unknown: 'Nije moguće automatski potvrditi',
   not_applicable: 'Nije potrebno — drugi format je dostupan',
 }
 export function technicalReport(result: WebsiteCheckResult) {
@@ -80,7 +89,12 @@ export function technicalReport(result: WebsiteCheckResult) {
     { ...found(d.xmlFound, d.xmlFound ? 'Dohvaćen je sintaktički ispravan XML sadržaj.' : 'Valjan XML nije pronađen među provjerenim adresama.'), url: d.xmlUrl },
     { ...found(Boolean(d.publicLinkUrl), 'Poveznica mora biti pročitana iz javnog HTML-a; pretpostavljena adresa nije dokaz poveznice.'), url: d.publicLinkUrl },
     { status: d.structureStatus ?? 'unknown', evidence: d.structureReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera prepoznate strukture datoteke.' },
-    { ...found(d.archiveFound, 'Provjera pronalazi arhivu; ne potvrđuje trajanje ni potpunost povijesti objava.'), url: d.archiveUrl },
+    // Odluka traži dostupnost objava 30 dana, ne određenu stranicu ili adresu arhive.
+    d.archiveFound
+      ? { status: 'pass', evidence: `${d.archiveEvidence || 'Pronađena je prethodna objava cjenika.'} Ne potvrđuje trajanje ni potpunost povijesti objava.`, url: d.archiveUrl }
+      : d.archiveRemoved
+        ? { status: 'missing', evidence: 'Povezana prethodna objava više nije dostupna, iako je zamijenjena prije manje od 30 dana.', url: d.archiveUrl }
+        : { status: 'unknown', evidence: 'Arhivu prethodnih objava nije moguće potvrditi. Odluka traži da objavljene datoteke ostanu dostupne 30 dana; posebna stranica arhive nije propisana.' },
     { status: d.contentStatus ?? 'unknown', evidence: d.contentReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera. Učitajte cjenik u validator.' },
   ]
   const checks = TECHNICAL_CHECKS.map((check, i) => ({ ...check, ...states[i] }))
@@ -93,8 +107,9 @@ export function technicalReport(result: WebsiteCheckResult) {
   }
   const score = checks.filter((c) => c.status === 'pass' || c.status === 'not_applicable').length
   const unknown = checks.filter((c) => c.status === 'unknown').length
-  const attention = checks.filter((c) => c.status === 'missing' || c.status === 'warning').length
-  const tone = attention ? (score <= 2 ? 'red' : 'yellow') : unknown ? 'yellow' : 'green'
+  const attention = checks.filter((c) => c.status === 'missing' || c.status === 'warning' || c.status === 'fail').length
+  const publicationWarnings = (d.publicationFindings ?? []).filter((finding) => finding.level === 'warning' || finding.level === 'error').length
+  const tone = attention ? (score <= 2 ? 'red' : 'yellow') : unknown || publicationWarnings ? 'yellow' : 'green'
   return { checks, score, unknown, attention, tone }
 }
 

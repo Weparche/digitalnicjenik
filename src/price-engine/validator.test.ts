@@ -39,7 +39,15 @@ describe('NEPAR regulatory validator', () => {
 
     expect(validatePriceList(unknown.priceList).issues.some((issue) => issue.field === 'type')).toBe(true)
     expect(validatePriceList(newService).status).toBe('manual_review')
-    expect(validatePriceList(newService).issues.some((issue) => issue.message.includes('Nova usluga'))).toBe(true)
+    expect(validatePriceList(newService).issues.some((issue) => issue.rule === 'anchor.date.new-without-date')).toBe(true)
+  })
+
+  it('accepts a first-listing reference date after 10 September 2026 without a proprietary new-item flag', () => {
+    const base = parseMarketinoCsv('Naziv usluge;Cijena;Sidrena cijena;Poseban oblik prodaje\nNova usluga;49.90;49.90;false').priceList
+    const dated = { ...base, items: [{ ...base.items[0], anchorReferenceDate: '2026-10-15' }] }
+    expect(validatePriceList(dated, { now: new Date('2026-10-27T12:00:00Z') }).issues).toEqual([])
+    const early = { ...base, items: [{ ...base.items[0], anchorReferenceDate: '2026-08-01' }] }
+    expect(validatePriceList(early, { now: new Date('2026-10-27T12:00:00Z') }).issues.map((issue) => issue.rule)).toEqual(['anchor.date.before-reference'])
   })
 })
 

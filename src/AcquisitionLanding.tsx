@@ -1,7 +1,7 @@
 import { PlanCards } from './PlanCards'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IconArrowRight, IconUpload, IconWorld, IconLock, IconLink, IconFileDescription, IconCode, IconExternalLink, IconDatabase, IconClock, IconList, IconCircleCheckFilled, IconAlertCircle, IconCalendar, IconShieldCheck, IconBolt, IconEye, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
-import { normalizeWebsiteInput, STATUS_LABELS, TECHNICAL_CHECKS, technicalReport, type DocumentAnalysis, type WebsiteCheckResult } from '../shared/website-check'
+import { normalizeWebsiteInput, STATUS_LABELS, TECHNICAL_CHECKS, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckResult } from '../shared/website-check'
 import { PLANS, type PlanId } from './publisherPricing'
 import { LeadForm, type LeadContext, type LeadIntent } from './LeadForm'
 import { EducationSection } from './EducationSection'
@@ -25,15 +25,23 @@ function InstallationHelp({ onHelp }: { onHelp: () => void }) {
 }
 
 
+const LEVEL_LABELS = { error: 'Obvezni podatak', warning: 'Provjeriti', info: 'Preporuka' } as const
+
+function FindingLevel({ finding }: { finding: DocumentFinding }) {
+  return finding.level ? <span className={`acq-finding-level acq-finding-level-${finding.level}`}>{LEVEL_LABELS[finding.level]}</span> : null
+}
+
 function DocumentResult({ analysis }: { analysis: DocumentAnalysis }) {
   const findings = analysis.findings.slice(0, 20)
+  const recommendations = analysis.recommendations ?? []
   return <article className="acq-document" aria-label={`${analysis.format.toUpperCase()} analiza`}>
     <header><h3>{analysis.format.toUpperCase()}</h3><span className={`acq-document-status acq-status-${analysis.status}`}>{STATUS_LABELS[analysis.status]}</span></header>
     {analysis.url && /^https?:\/\//.test(analysis.url) && <a className="acq-document-url" href={analysis.url} target="_blank" rel="noreferrer">{analysis.url}<IconExternalLink size={15}/></a>}
     <p>{analysis.fetched ? 'Dokument dohvaćen' : 'Dokument nije potvrđen'} · {analysis.itemCount} stavki</p>
     <h4>Struktura</h4>{analysis.structureReasons.map((reason, i) => <p key={i}>{reason}</p>)}
     <h4>Sadržaj</h4>
-    {analysis.totalFindings > 0 ? <><p className="acq-finding-count">Prikazano {findings.length} od {analysis.totalFindings} nalaza u ovoj datoteci.</p><ol className="acq-document-findings">{findings.map((finding, i) => <li key={i}>{finding.itemName && <strong>„{finding.itemName}”: </strong>}{finding.message}{finding.row != null && <small>Izvorni redak / stavka {finding.row}</small>}</li>)}</ol></> : <p>{analysis.contentStatus === 'pass' ? 'Nema nalaza u podržanim poljima.' : 'Sadržaj nije moguće potvrditi ovom provjerom.'}</p>}
+    {analysis.totalFindings > 0 ? <><p className="acq-finding-count">Prikazano {findings.length} od {analysis.totalFindings} nalaza u ovoj datoteci.</p><ol className="acq-document-findings">{findings.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.itemName && <strong>„{finding.itemName}”: </strong>}{finding.message}{finding.row != null && <small>Izvorni redak / stavka {finding.row}</small>}</li>)}</ol></> : <p>{analysis.contentStatus === 'pass' ? 'Nema nalaza u podržanim poljima.' : 'Sadržaj nije moguće potvrditi ovom provjerom.'}</p>}
+    {recommendations.length > 0 && <div className="acq-recommendations"><h4>Preporuke (nije zakonska obveza)</h4><ul className="acq-document-findings">{recommendations.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.message}</li>)}</ul></div>}
   </article>
 }
 
@@ -48,6 +56,7 @@ function ResultPanel({ result, onUpload, onRetry, website }: { result: WebsiteCh
     {unconfirmed && <button type="button" className="acq-primary acq-retry-top" onClick={onRetry}>Pokušaj ponovno<IconArrowRight size={19}/></button>}
     <ol className="acq-status-list">{report.checks.map((check) => <li key={check.id} className={`acq-status-${check.status}`}><details><summary><span className="acq-status-icon" aria-hidden="true">{(check.status === 'pass' || check.status === 'not_applicable') ? <IconCircleCheckFilled size={21}/> : <IconAlertCircle size={21}/>}</span><strong>{check.label}</strong><span className="acq-status-label">{STATUS_LABELS[check.status]}</span><IconChevronDown className="acq-disclosure" size={17} aria-hidden="true"/></summary><div className="acq-evidence"><p>{check.evidence}</p>{check.url && /^https?:\/\//.test(check.url) && <a href={check.url} target="_blank" rel="noreferrer">{check.url}<IconExternalLink size={15}/></a>}</div></details></li>)}</ol>
     {(result.details?.csvAnalysis || result.details?.xmlAnalysis) && <div className="acq-document-grid">{[result.details.csvAnalysis, result.details.xmlAnalysis].map((analysis) => analysis && <DocumentResult key={analysis.format} analysis={analysis}/>)}</div>}
+    {(result.details?.publicationFindings?.length ?? 0) > 0 && <section className="acq-publication-notes" aria-label="Napomene o objavi"><h3>Objava i naziv datoteke</h3><ul className="acq-document-findings">{result.details!.publicationFindings!.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.message}</li>)}</ul></section>}
     <div className="acq-result-footer">
       <p>Ova provjera nije potvrda pravne usklađenosti. Arhiva ne potvrđuje potpunost ni trajanje povijesti objava.</p>
       <a className="acq-primary acq-resolve-cta" href="#rjesenja">Riješite digitalni cjenik<IconArrowRight size={24}/></a>

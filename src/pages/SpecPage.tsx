@@ -75,7 +75,7 @@ export function SpecPage() {
         { href: '/faq/', label: 'Česta pitanja o obvezi' },
         { href: '/vodici/excel-csv-digitalni-cjenik/', label: 'Vodič: od Excela do CSV/XML-a' },
         { href: '/usporedba/', label: 'Usporedba načina objave' },
-        { href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/', label: 'Primjer CSV-a za usluge (HOK stil)' },
+        { href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/', label: 'Primjer CSV-a za usluge (prema HOK predlošku)' },
       ]}
     >
       <section className="site-section" aria-labelledby="odluka-title">
@@ -85,17 +85,22 @@ export function SpecPage() {
           <li><strong>Usluge:</strong> naziv usluge, maloprodajna cijena, podatak o posebnom obliku prodaje (i njegov naziv) te sidrena odnosno dodatna cijena.</li>
           <li><strong>Proizvodi:</strong> među ostalim naziv, šifra, marka, maloprodajna i sidrena cijena, posebni oblik prodaje, barkod i dostupnost.</li>
           <li><strong>Naziv datoteke:</strong> oblik prodajnog odnosno uslužnog objekta, adresa, oznaka objekta, broj pohrane i vremenska oznaka.</li>
-          <li><strong>Arhiva:</strong> prethodno objavljeni cjenici dostupni su najmanje 30 dana.</li>
+          <li><strong>Arhiva:</strong> prethodno objavljeni cjenici dostupni su najmanje 30 dana. Posebna stranica ili adresa arhive nije propisana.</li>
+          <li><strong>Struktura:</strong> nazivi stupaca, XML elemenata i separator nisu propisani; trgovac s više objekata koristi jedinstvenu strukturu unutar lanca.</li>
           <li><strong>Rok primjene:</strong> 17. studenoga 2026. Referentni datum sidrene cijene je 10. rujna 2026. (za ranije obuhvaćene skupine proizvoda 2. svibnja 2025.).</li>
         </ul>
+        <h3>Službeno pojašnjenje Ministarstva</h3>
+        <p>Za proizvod ili uslugu uvedenu nakon 10. rujna 2026. sidrena (dodatna) cijena je cijena s datuma prvog uvrštenja u prodaju, uz jasno naveden taj datum.</p>
+        <h3>NEPAR preporuka</h3>
+        <p>Stupci u nastavku su NEPAR preporučena shema, usklađena s podacima iz Odluke i HOK predloškom. Objava oba formata (CSV i XML), stabilna adresa poput <code>/cjenik.csv</code> i javna stranica arhive korisne su preporuke, ali nisu zakonska obveza.</p>
         <p className="news-lead-note">
-          Ovo je sažetak, ne zamjena za službeni tekst. Dva nacrta pravilnika su na e-Savjetovanju do 13.11.2026.; NEPAR će profil provjere uskladiti s konačnim tekstom.
+          Ovo je sažetak, ne zamjena za službeni tekst. <strong>Nacrt — nije na snazi:</strong> dva nacrta pravilnika su na e-Savjetovanju do 13.11.2026.; NEPAR će profil provjere uskladiti s konačnim tekstom.
         </p>
       </section>
 
       <section className="site-section" aria-labelledby="csv-title">
         <h2 id="csv-title">NEPAR CSV: stupci</h2>
-        <p>Kodiranje UTF-8 (s BOM-om), separator zarez, kraj retka CRLF, decimalna točka. Pri uvozu prepoznajemo i točku-zarez te uobičajena zaglavlja (uključujući HOK predložak za usluge).</p>
+        <p>Kodiranje UTF-8 (s BOM-om), separator zarez, kraj retka CRLF, decimalna točka. Pri uvozu prepoznajemo i točku-zarez te uobičajena zaglavlja (uključujući HOK predložak za usluge). Provjera web stranice prepoznaje i drukčije nazvana polja istog značenja, npr. <code>service_name</code> ili <code>retail_price</code>, jer Odluka ne propisuje nazive stupaca.</p>
         <div className="site-table-wrap" role="region" aria-label="Stupci CSV-a" tabIndex={0}>
           <table className="site-table">
             <caption className="sr-only">Stupci NEPAR CSV formata</caption>
@@ -141,7 +146,7 @@ export function SpecPage() {
         <p>Za proizvode su uz to obavezni i šifra (<code>Interna šifra</code>) te sidrena cijena. Nedostajuća šifra, marka, dostupnost ili sidrena cijena zaustavljaju objavu dok se ne dopune.</p>
         <h3>Referentni datum i povijest cijena</h3>
         <p>NEPAR dodaje stupce <code>Datum referentne cijene</code>, <code>Najniža cijena u 30 dana</code>, <code>Nova stavka</code> i <code>Razlog izuzeća cijene po jedinici</code> kada je unesen barem jedan od tih podataka. U XML-u su to <code>anchorReferenceDate</code>, <code>lowest30DayPrice</code>, <code>isNewSinceReferenceDate</code> i <code>unitPricingExemption</code>. To su proširenja NEPAR formata za čuvanje korisnikove evidencije; Odluka ne određuje ova imena stupaca.</p>
-        <p>Za proizvode korisnik bira primjenjivi referentni datum: 2. svibnja 2025. za ranije obuhvaćene proizvode ili 10. rujna 2026. Za novu stavku izričito označite DA i unesite datum i cijenu prvog uvrštenja. Za usluge bez posebne oznake primjenjuje se 10. rujna 2026. Sustav ne može potvrditi točnost povijesne evidencije. Datum unesite kao GGGG-MM-DD.</p>
+        <p>Za proizvode korisnik bira primjenjivi referentni datum: 2. svibnja 2025. za ranije obuhvaćene proizvode ili 10. rujna 2026. Za novu stavku unesite datum prvog uvrštenja i cijenu s tog datuma; stupac <code>Nova stavka</code> je neobavezan NEPAR dodatak. Za usluge bez navedenog datuma primjenjuje se 10. rujna 2026. Sustav ne može potvrditi točnost povijesne evidencije. Datum unesite kao GGGG-MM-DD.</p>
         <p>Javni prikaz akcije traži zasebnu prethodnu najnižu cijenu iz evidencije; sidrena cijena nije zamjena. Posebni zakonski režimi i izuzeća zahtijevaju dodatnu provjeru.</p>
         <h3>Primjer CSV-a za proizvode</h3>
         <pre className="news-code-sample"><code>{exampleProductCsv}</code></pre>
@@ -245,8 +250,8 @@ export function SpecPage() {
           <li><a href="/examples/nepar-format-primjer-usluge.xml" download>NEPAR format — XML za usluge</a></li>
           <li><a href="/examples/nepar-format-primjer-proizvodi.csv" download>NEPAR format — CSV za proizvode</a></li>
           <li><a href="/examples/nepar-format-primjer-proizvodi.xml" download>NEPAR format — XML za proizvode</a></li>
-          <li><a href="/examples/primjer-digitalni-cjenik-usluge-2026.csv" download>HOK stil — CSV za usluge (točka-zarez)</a></li>
-          <li><a href="/examples/primjer-digitalni-cjenik-usluge-2026.xml" download>HOK stil — XML za usluge</a></li>
+          <li><a href="/examples/primjer-digitalni-cjenik-usluge-2026.csv" download>Prema HOK predlošku — CSV za usluge (točka-zarez)</a></li>
+          <li><a href="/examples/primjer-digitalni-cjenik-usluge-2026.xml" download>Prema HOK predlošku — XML za usluge</a></li>
         </ul>
         <p><a href="/#csv-validator"><strong>Provjerite svoju datoteku →</strong></a></p>
       </section>

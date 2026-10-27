@@ -6,6 +6,7 @@ export const anchorGuide = {
       "heading": "Što je sidrena odnosno dodatna cijena?",
       "paragraphs": [
         "Odluka NN 101/2026-1212 propisuje isticanje dodatne maloprodajne cijene uz važeću cijenu proizvoda ili usluge. Za većinu proizvoda i usluga referentna je cijena koja je bila na snazi 10. rujna 2026.",
+        "Za proizvod ili uslugu uvedenu u prodaju nakon 10. rujna 2026. Ministarstvo gospodarstva pojasnilo je da je dodatna cijena cijena s datuma prvog uvrštenja, uz jasno naveden taj datum. Posebna oznaka „nova stavka” nije propisana.",
         "Iznimka: trgovci odnosno pružatelji usluga koji su prema ranijoj mjeri već isticali dodatnu cijenu za određene kategorije proizvoda nastavljaju s cijenom koja je bila na snazi 2. svibnja 2025. za te kategorije. Datum 10. rujna 2026. zato nije univerzalan za svaki proizvod ili uslugu bez iznimke.",
         "Dodatna cijena mora biti jasno istaknuta uz aktualnu cijenu tamo gdje se cijena prikazuje prema pravilima Odluke. Ako cijene oglašavate na vlastitoj web stranici, i web prikaz treba promatrati odvojeno od tehničke obveze XML/CSV cjenika."
       ]

@@ -102,7 +102,7 @@
 .acq-status-list summary strong { font-weight: 600; }
 .acq-status-icon { display: flex; color: #b45309; }
 .acq-status-pass .acq-status-icon, .acq-status-pass .acq-status-label { color: #14763d; }
-.acq-status-missing .acq-status-icon, .acq-status-missing .acq-status-label { color: #c01e32; }
+.acq-status-missing .acq-status-icon, .acq-status-missing .acq-status-label, .acq-status-fail .acq-status-icon, .acq-status-fail .acq-status-label { color: #c01e32; }
 .acq-status-label { color: #925008; text-align: right; font-size: 12px; }
 .acq-evidence { padding: 0 12px 16px 39px; font-size: 13px; line-height: 1.6; color: #43516b; overflow-wrap: anywhere; }
 .acq-evidence a { color: #1d4ed8; display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; min-height: 44px; }
@@ -362,7 +362,17 @@
 .acq-document-status { font-size: 13px; font-weight: 650; }
 .acq-document-status.acq-status-warning { color: #9c4900; }
 .acq-document-status.acq-status-pass { color: #087347; }
+.acq-document-status.acq-status-fail { color: #c01e32; }
 .acq-document-findings { margin: 12px 0 0; padding-left: 22px; }
 .acq-document-findings li { padding: 8px 0; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
 .acq-document-findings small { display: block; margin-top: 4px; color: #515c73; }
+.acq-finding-level { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 650; letter-spacing: .02em; vertical-align: 1px; }
+.acq-finding-level-error { background: #fde8eb; color: #a3172a; }
+.acq-finding-level-warning { background: #fff1e0; color: #8a4200; }
+.acq-finding-level-info { background: #e8effc; color: #1e4fae; }
+.acq-recommendations { margin-top: 18px; padding-top: 14px; border-top: 1px dashed #dce3ef; }
+.acq-recommendations h4 { margin-top: 0; }
+.acq-recommendations li, .acq-publication-notes li { color: #43516b; }
+.acq-publication-notes { margin: 20px 0 0; padding: 18px 22px; border: 1px solid #dce3ef; border-radius: 12px; background: #fff; }
+.acq-publication-notes h3 { margin: 0 0 6px; font-size: 17px; }
 @media (max-width: 760px) { .acq-document-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; } .acq-document { padding: 18px; } }

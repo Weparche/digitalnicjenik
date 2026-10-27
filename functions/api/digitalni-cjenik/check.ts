@@ -1,6 +1,10 @@
 import { parseMarketinoCsv } from '../../../src/price-engine/adapters/marketinoCsv';
 import { inspectXmlPriceList } from '../../../src/price-engine/xml';
 import { validatePriceList } from '../../../src/price-engine/validate';
+import { normalizeHeader } from '../../../src/price-engine/normalize';
+import { isServiceItem } from '../../../src/price-engine/profile';
+import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engine/types';
+import { ruleFor } from '../../../shared/compliance/legal-profile';
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckDetails } from '../../../shared/website-check';
 
 type Resolver = {
@@ -423,31 +427,145 @@ async function findDocument(
   return null;
 }
 
+const CANONICAL_SERVICE_FIELDS = [
+  ['name', 'naziv_usluge', 'naziv usluge'],
+  ['price', 'maloprodajna_cijena', 'maloprodajna cijena'],
+  ['specialSaleApplied', 'posebni_oblik_prodaje', 'posebni oblik prodaje'],
+  ['specialSaleName', 'naziv_posebnog_oblika_prodaje', 'naziv posebnog oblika prodaje'],
+  ['anchorPrice', 'sidrena_cijena', 'sidrena cijena'],
+] as const
+
+const comparableName = (value: string) => normalizeHeader(value.replace(/([a-z])([A-Z])/g, '$1 $2'))
+
+/** Any recognized naming is valid; this only points to the NEPAR preporučena shema (HOK-template based). */
+function schemaRecommendation(fieldSources: FieldSources | undefined, items: NormalizedPriceItem[]): DocumentFinding | null {
+  if (!fieldSources || !items.length || !items.every(isServiceItem)) return null
+  const recognized = CANONICAL_SERVICE_FIELDS.filter(([field]) => fieldSources[field])
+  const differing = recognized.filter(([field, canonical]) => comparableName(fieldSources[field]!) !== comparableName(canonical))
+  if (!differing.length) return null
+  const definition = ruleFor('schema.alias')
+  return {
+    rule: 'schema.alias', level: definition.level, source: definition.source,
+    message: `Struktura je valjana: ${recognized.map(([field, , label]) => `${label} prepoznat je iz polja „${fieldSources[field]}”`).join(', ')}. Za bolju interoperabilnost možete koristiti NEPAR preporučenu shemu, usklađenu s podacima iz Odluke i HOK predloškom (${differing.map(([, canonical]) => canonical).join(', ')}). To nije zakonska obveza.`,
+  }
+}
+
+function parseWarningRule(field: string | undefined) {
+  return field === 'name' ? 'item.name.missing' : field === 'price' ? 'item.price.invalid' : 'item.row.unreadable'
+}
+
+function withLevel(finding: DocumentFinding, rule: string): DocumentFinding {
+  const definition = ruleFor(rule)
+  return { ...finding, rule, level: definition.level, source: definition.source }
+}
+
 /** The upload parsers inspect every bounded source row before the response is truncated. */
 export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string | null = null): DocumentAnalysis & { structure: DocumentAnalysis['status']; content: DocumentAnalysis['status']; evidence: string } {
-  const base: DocumentAnalysis = { format: kind, url, fetched: true, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: [], findings: [], totalFindings: 0 };
+  const base: DocumentAnalysis = { format: kind, url, fetched: true, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: [], findings: [], totalFindings: 0, recommendations: [] };
   const finish = (analysis: DocumentAnalysis) => ({ ...analysis, structure: analysis.structureStatus, content: analysis.contentStatus, evidence: analysis.structureReasons.join(' ') });
   try {
     if (new TextEncoder().encode(body).byteLength > MAX_DOCUMENT_BYTES) throw new Error('analysis_limit');
     const parsed = kind === 'csv' ? parseMarketinoCsv(body, undefined, { inspection: true }) : inspectXmlPriceList(body);
     const rawCount = parsed.rowCount ?? parsed.priceList.items.length;
     if (rawCount > 2000) throw new Error('analysis_limit');
-    const findings: DocumentFinding[] = parsed.warnings.map(w => ({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }));
+    const findings: DocumentFinding[] = parsed.warnings.map(w => withLevel({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }, parseWarningRule(w.field)));
     if (parsed.priceList.items.length) {
       for (const issue of validatePriceList(parsed.priceList).issues) {
         const index = issue.row - 2;
-        findings.push({ row: parsed.sourceRows?.[index] ?? issue.row, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message });
+        findings.push(withLevel({ row: parsed.sourceRows?.[index] ?? issue.row, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message }, issue.rule ?? 'unknown'));
       }
     }
+    if (!rawCount) findings.push(withLevel({ message: 'Cjenik ne sadrži stavke.' }, 'list.empty'));
+    const errors = findings.filter(f => f.level === 'error');
+    const warnings = findings.filter(f => f.level === 'warning');
+    const legal = [...errors, ...warnings];
+    const recommendations = [...findings.filter(f => f.level === 'info'), schemaRecommendation(parsed.fieldSources, parsed.priceList.items)].filter((f): f is DocumentFinding => Boolean(f));
     const structure = rawCount ? 'pass' : 'warning';
-    const content = findings.length || !rawCount ? 'warning' : 'pass';
-    if (!rawCount) findings.push({ message: 'Cjenik ne sadrži stavke.' });
+    const content = errors.length ? 'fail' : warnings.length ? 'warning' : 'pass';
     return finish({ ...base, structureRecognized: true, itemCount: rawCount, structureStatus: structure, contentStatus: content, status: content,
       structureReasons: [kind.toUpperCase() + ' je parsiran; prepoznata su polja cjenika. Pronađeno stavki: ' + rawCount + '.'],
-      findings: findings.slice(0, 20), totalFindings: findings.length });
+      findings: legal.slice(0, 20), totalFindings: legal.length, recommendations });
   } catch (caught) {
     const limited = caught instanceof Error && caught.message === 'analysis_limit';
-    return finish({ ...base, structureReasons: [limited ? 'Sigurnosno ograničenje onemogućuje potpunu analizu. Učitajte datoteku u validator.' : 'Datoteka je dostupna, ali struktura nije prepoznata ili dokument nije ispravan za detaljnu analizu. Učitajte je u validator.'] });
+    return finish({ ...base, structureReasons: [limited ? 'Sigurnosno ograničenje onemogućuje potpunu analizu. Učitajte datoteku u validator.' : 'Datoteka je dostupna, ali u njoj nisu prepoznati podaci cjenika (naziv, maloprodajna cijena) ili dokument nije ispravan za detaljnu analizu. Učitajte je u validator.'] });
+  }
+}
+
+export type PublicationName = { storage: number; stamp: string; time: number | null }
+
+/**
+ * The Odluka requires the file name to carry the object type, address, object code, storage number and a
+ * date/time stamp but not their exact layout, so compact (20260916T140627+0200, 20260917-143500) and split
+ * (2026-09-15_22-45-00) stamps are accepted after at least three object segments.
+ */
+export function parsePublicationName(value: string): PublicationName | null {
+  let path: string;
+  try { path = decodeURIComponent(new URL(value).pathname); } catch { return null; }
+  const parts = (path.split('/').pop() ?? '').replace(/\.(csv|xml)$/i, '').split('_');
+  const compact = /^(\d{4})-?(\d{2})-?(\d{2})[T-](\d{2})[-:]?(\d{2})(?:[-:]?(\d{2}))?(Z|[+-]\d{2}:?\d{2})?$/i.exec(parts.at(-1) ?? '');
+  const splitDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(parts.at(-2) ?? '');
+  const splitTime = /^(\d{2})[-:](\d{2})(?:[-:](\d{2}))?$/.exec(parts.at(-1) ?? '');
+  const stampParts = compact ? 1 : splitDate && splitTime ? 2 : 0;
+  if (!stampParts) return null;
+  const storage = parts.at(-1 - stampParts) ?? '';
+  const objectParts = parts.slice(0, -1 - stampParts);
+  if (!/^\d{1,6}$/.test(storage) || objectParts.length < 3 || objectParts.some((part) => !part.trim())) return null;
+  const [year, month, day, hour, minute, second = '00', zone = ''] = compact ? compact.slice(1) : [...splitDate!.slice(1), ...splitTime!.slice(1)];
+  const offset = !zone ? 'Z' : zone.toUpperCase() === 'Z' ? 'Z' : zone.replace(/^([+-]\d{2}):?(\d{2})$/, '$1:$2');
+  const time = Date.parse(`${year}-${month}-${day}T${hour}:${minute}:${second}${offset}`);
+  return { storage: Number(storage), stamp: parts.slice(-stampParts).join('_'), time: Number.isFinite(time) ? time : null };
+}
+
+const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_PUBLICATION_LINKS = 40;
+const MAX_ARCHIVE_PROBES = 3;
+
+function publicationFinding(rule: string, message: string): DocumentFinding {
+  const definition = ruleFor(rule);
+  return { rule, message, level: definition.level, source: definition.source };
+}
+
+/**
+ * Archive evidence is any earlier versioned publication that is still served; the Odluka requires 30-day
+ * availability, not an archive page or a particular URL. File names are checked for the prescribed parts.
+ */
+async function checkPublications(details: CheckDetails, links: URL[], env: CheckerEnv, network: { failed: boolean; blocked: boolean; checked: boolean }) {
+  const seen = new Set<string>();
+  const versioned = [details.csvUrl, details.xmlUrl, ...links.map((link) => link.href)]
+    .filter((href): href is string => Boolean(href) && !seen.has(href!) && Boolean(seen.add(href!)))
+    .map((href) => ({ href, name: parsePublicationName(href) }))
+    .filter((entry): entry is { href: string; name: PublicationName } => entry.name != null);
+  const findings: DocumentFinding[] = [];
+  if (details.csvFound || details.xmlFound) {
+    if (!versioned.length) findings.push(publicationFinding('publication.filename.unverified', 'Pronađena je adresa cjenika, ali nije pronađena verzionirana objava čiji naziv datoteke sadrži propisane podatke: vrstu i adresu objekta, oznaku objekta, broj pohrane i vremensku oznaku. Stabilna adresa (npr. /cjenik.csv) je korisna, ali objavljena datoteka mora imati propisani naziv.'));
+    if (details.csvFound !== details.xmlFound) findings.push(publicationFinding('publication.single-format', `Pronađen je samo ${details.csvFound ? 'CSV' : 'XML'}. Odluka traži CSV ili XML, pa drugi format nije obvezan; objava oba formata je NEPAR preporuka.`));
+    findings.push(publicationFinding('publication.chain.uniform', 'Ako trgovac ima više prodajnih objekata, struktura cjenika mora biti jedinstvena unutar lanca. Provjera jedne web stranice to ne može potvrditi.'));
+  }
+  details.publicationFindings = findings;
+  if (!versioned.length) return;
+  const key = (name: PublicationName) => `${name.storage}|${name.stamp}`;
+  const newestFirst = [...versioned].sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
+  const current = parsePublicationName(details.csvUrl ?? '') ?? parsePublicationName(details.xmlUrl ?? '') ?? newestFirst[0].name;
+  const previous = newestFirst.filter((entry) => key(entry.name) !== key(current) && entry.name.storage <= current.storage).slice(0, MAX_ARCHIVE_PROBES);
+  for (const entry of previous) {
+    try {
+      const fetched = await safeDigitalPriceListFetch(new URL(entry.href), env);
+      const body = await readLimited(fetched.response, MAX_DOCUMENT_BYTES).catch(() => '');
+      if (isBotChallenge(fetched.response, body) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; continue; }
+      if (fetched.response.ok && !isHtml(fetched.response, body)) {
+        details.archiveFound = true;
+        details.archiveUrl = fetched.url.href;
+        details.archiveEvidence = `Prethodna objava (broj pohrane ${entry.name.storage}) i dalje je javno dostupna.`;
+        return;
+      }
+      if ([404, 410].includes(fetched.response.status) && entry.name.time != null) {
+        const supersededAt = versioned.map((other) => other.name.time).filter((time): time is number => time != null && time > entry.name.time!).sort((a, b) => a - b)[0];
+        if (supersededAt != null && Date.now() - supersededAt < RETENTION_MS) {
+          details.archiveRemoved = true;
+          details.archiveUrl = fetched.url.href;
+        }
+      }
+    } catch { network.failed = true; }
   }
 }
 
@@ -509,19 +627,19 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const csv: URL[] = [];
   const xml: URL[] = [];
   const archive: URL[] = [];
+  const documentLinks: URL[] = [];
   for (const candidate of links) {
     if (candidate.kind === 'price' || candidate.kind === 'csv' || candidate.kind === 'xml') details.publicLinkUrl ||= candidate.url.href;
     if (candidate.kind === "price") appendUnique(secondary, candidate.url, MAX_SECONDARY_PAGES);
     if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
     if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
+    if (candidate.kind === "csv" || candidate.kind === "xml") appendUnique(documentLinks, candidate.url, MAX_PUBLICATION_LINKS);
     if (candidate.kind === "archive") { details.archiveLinkDiscovered = true; appendUnique(archive, candidate.url, MAX_SECONDARY_PAGES); }
   }
   appendUnique(secondary, new URL("/cjenik/", homepage.url.origin), MAX_SECONDARY_PAGES);
   appendUnique(secondary, new URL("/cjenici/", homepage.url.origin), MAX_SECONDARY_PAGES);
   appendUnique(csv, new URL("/cjenik.csv", homepage.url.origin), MAX_DOCUMENT_CANDIDATES);
   appendUnique(xml, new URL("/cjenik.xml", homepage.url.origin), MAX_DOCUMENT_CANDIDATES);
-  appendUnique(archive, new URL("/cjenik/arhiva/", homepage.url.origin), MAX_SECONDARY_PAGES);
-  appendUnique(archive, new URL("/cjenik/arhiva", homepage.url.origin), MAX_SECONDARY_PAGES);
 
   for (const page of secondary) {
     try {
@@ -539,6 +657,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
         if (candidate.kind === 'csv' || candidate.kind === 'xml') details.publicLinkUrl ||= candidate.url.href;
         if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
         if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
+        if (candidate.kind === "csv" || candidate.kind === "xml") appendUnique(documentLinks, candidate.url, MAX_PUBLICATION_LINKS);
         if (candidate.kind === "archive") { details.archiveLinkDiscovered = true; appendUnique(archive, candidate.url, MAX_SECONDARY_PAGES); }
       }
     } catch { network.failed = true; }
@@ -550,6 +669,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   details.csvFound = Boolean(details.csvUrl);
   details.xmlFound = Boolean(details.xmlUrl);
   details.fetchBlocked = network.blocked;
+  let archivePageUrl: string | null = null;
   for (const candidate of archive) {
     try {
       const fetched = await safeDigitalPriceListFetch(candidate, env);
@@ -558,12 +678,15 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
       if (isBotChallenge(fetched.response, archiveHtml) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; details.fetchBlocked = true; continue; }
       if (!fetched.response.ok) { network.checked = true; continue; }
       network.checked = true;
-      if (pageLooksLikeArchive(fetched.response, archiveHtml)) {
-        details.archiveFound = true;
-        details.archiveUrl = fetched.url.href;
-        break;
-      }
+      for (const link of extractLinks(archiveHtml, fetched.url)) if (link.kind === 'csv' || link.kind === 'xml') appendUnique(documentLinks, link.url, MAX_PUBLICATION_LINKS);
+      if (!archivePageUrl && pageLooksLikeArchive(fetched.response, archiveHtml)) archivePageUrl = fetched.url.href;
     } catch { network.failed = true; }
+  }
+  await checkPublications(details, documentLinks, env, network);
+  if (!details.archiveFound && !details.archiveRemoved && archivePageUrl) {
+    details.archiveFound = true;
+    details.archiveUrl = archivePageUrl;
+    details.archiveEvidence = 'Pronađena je javna stranica s prethodnim objavama cjenika.';
   }
   details.networkIncomplete = network.failed;
   details.csvAnalysis = analyses.find(a => a.format === 'csv') ?? { format: 'csv', url: csv[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['CSV nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
@@ -571,9 +694,9 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   details.structureStatus = aggregateDocumentStatus(analyses.map(a => a.structureStatus));
   details.contentStatus = aggregateDocumentStatus(analyses.map(a => a.contentStatus));
   details.structureReasons = analyses.map(a => a.format.toUpperCase() + ': ' + a.structureReasons.join(' '));
-  details.contentReasons = analyses.map(a => a.format.toUpperCase() + ': ' + (a.structureRecognized ? a.totalFindings + ' nalaza u ' + a.itemCount + ' stavki.' : 'Sadržaj nije moguće potvrditi.'));
+  details.contentReasons = analyses.map(a => a.format.toUpperCase() + ': ' + (a.structureRecognized ? a.totalFindings + ' nalaza u ' + a.itemCount + ' stavki' + (a.findings.some(f => f.level === 'error') ? ', uključujući nedostajuće ili neispravne obvezne podatke.' : '.') : 'Sadržaj nije moguće potvrditi.'));
   details.contentEvidence = details.contentReasons.join(' ') + ' Ne potvrđuje stvarnu primjenjivost cijena ni pravnu usklađenost.';
-  if (details.contentStatus === 'warning' || details.structureStatus === 'warning') return result('yellow', 'Pronađen je strojni cjenik s konkretnim nalazima. Pregledajte odvojene CSV/XML rezultate.', details);
+  if (details.contentStatus === 'fail' || details.contentStatus === 'warning' || details.structureStatus === 'warning') return result('yellow', 'Pronađen je strojni cjenik s konkretnim nalazima. Pregledajte odvojene CSV/XML rezultate.', details);
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
   if (details.pricePageFound) return result("yellow", "Pronađena je stranica ili cjenik, ali nije potvrđen valjan javni CSV/XML dokument.", details);
   if (network.blocked && !network.checked) {

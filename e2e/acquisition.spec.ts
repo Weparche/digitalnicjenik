@@ -91,7 +91,9 @@ test('one supported format does not reduce the score and context reaches Link in
   await expect(page.locator('.acq-result-summary')).toContainText('7/9')
   await expect(page.locator('.acq-result-anchor')).toBeFocused()
   await expect(page.locator('.acq-tone-yellow')).toBeVisible()
-  await expect(page.locator('.acq-status-unknown')).toHaveCount(1)
+  // Content and the archive are unconfirmed; an archive that cannot be confirmed is not reported as missing.
+  await expect(page.locator('.acq-status-unknown')).toHaveCount(2)
+  await expect(page.locator('.acq-status-missing')).toHaveCount(0)
   await expect(page.locator('.acq-plans')).toContainText('19,90 €')
   await expect(page.locator('.acq-plans')).toContainText('49,90 €')
   await expect(page.locator('.acq-plans')).toContainText('79,90 €')

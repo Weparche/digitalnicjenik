@@ -11,8 +11,11 @@ describe('technical evidence score', () => {
   })
   it('does not inherit legacy green as a guarantee of nine passes', () => {
     const report = technicalReport({ status: 'green', message: '', details: { ...complete, xmlFound: false, archiveFound: false, contentStatus: 'unknown' } })
-    expect(report).toMatchObject({ score: 7, attention: 1, unknown: 1, tone: 'yellow' })
-    expect(report.checks.find((c) => c.id === 'archive')?.evidence).toContain('ne potvrđuje')
+    // An archive that cannot be confirmed is unknown, not missing: no particular archive page is prescribed.
+    expect(report).toMatchObject({ score: 7, attention: 0, unknown: 2, tone: 'yellow' })
+    expect(report.checks.find((c) => c.id === 'archive')).toMatchObject({ status: 'unknown', evidence: expect.stringContaining('nije moguće potvrditi') })
+    expect(technicalReport({ status: 'green', message: '', details: { ...complete, archiveFound: false, archiveRemoved: true } }).checks.find((c) => c.id === 'archive')?.status).toBe('missing')
+    expect(technicalReport({ status: 'green', message: '', details: { ...complete, contentStatus: 'fail' } })).toMatchObject({ score: 8, attention: 1, tone: 'yellow' })
   })
   it('keeps blocked checks unknown instead of declaring missing files', () => {
     const report = technicalReport({ status: 'red', message: '', details: { reachable: true, homepageReadable: false, https: true, fetchBlocked: true } })

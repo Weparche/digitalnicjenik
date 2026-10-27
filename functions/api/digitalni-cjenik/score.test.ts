@@ -9,11 +9,11 @@ describe('document score evidence', () => {
     expect(analyzeDocument('csv', 'Naziv;Vrsta;Cijena;Sidrena cijena;Poseban oblik prodaje\nŠišanje;Usluga;20;20;NE')).toMatchObject({ structure: 'pass', content: 'pass' })
   })
   it('does not turn a skipped CSV row into a content pass', () => {
-    expect(analyzeDocument('csv', 'Naziv;Vrsta;Cijena;Sidrena cijena\nŠišanje;Usluga;20;20\nNedostaje cijena;Usluga;;20')).toMatchObject({ structure: 'pass', content: 'warning', itemCount: 2 })
+    expect(analyzeDocument('csv', 'Naziv;Vrsta;Cijena;Sidrena cijena\nŠišanje;Usluga;20;20\nNedostaje cijena;Usluga;;20')).toMatchObject({ structure: 'pass', content: 'fail', itemCount: 2 })
   })
   it('uses shared parser inspection to report invalid XML rows as content findings', () => {
     const result = analyzeDocument('xml', '<pricelist><item><name>Šišanje</name><type>Usluga</type><price>20</price><anchorPrice>20</anchorPrice></item><item><name>Nedostaje cijena</name></item></pricelist>')
-    expect(result).toMatchObject({ structure: 'pass', content: 'warning', itemCount: 2 })
+    expect(result).toMatchObject({ structure: 'pass', content: 'fail', itemCount: 2 })
   })
   it('keeps unsupported syntactically valid XML unknown', () => {
     expect(analyzeDocument('xml', '<catalog><entry amount="20">Usluga</entry></catalog>')).toMatchObject({ structure: 'unknown', content: 'unknown' })

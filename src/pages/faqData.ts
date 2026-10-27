@@ -66,7 +66,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Propisuje li Odluka nazive stupaca u CSV-u?',
         answer:
-          'Ne. Odluka propisuje podatke koje cjenik mora sadržavati, ali ne imena stupaca, separator ni kodiranje. Zato je važno da je struktura dosljedna i strojno čitljiva. Naš primjer strukture pogledajte u specifikaciji CSV/XML.',
+          'Ne. Odluka propisuje podatke koje cjenik mora sadržavati, ali ne imena stupaca ni XML elemenata, separator ni kodiranje. Zato je važno da je struktura dosljedna i strojno čitljiva. HOK je objavio pomoćne predloške, ne obvezujuću shemu. NEPAR preporučena shema, usklađena s podacima iz Odluke i HOK predloškom, opisana je u specifikaciji CSV/XML.',
       },
       {
         question: 'Kako se mora zvati datoteka cjenika?',
@@ -87,7 +87,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Koliko dugo prethodni cjenici moraju ostati dostupni?',
         answer:
-          'Najmanje 30 dana nakon objave novog cjenika. To znači arhivu verzija, a ne prepisivanje jedne datoteke bez povijesti.',
+          'Najmanje 30 dana nakon objave novog cjenika. To znači da prethodne datoteke ostaju javno dostupne, a ne prepisivanje jedne datoteke bez povijesti. Posebna stranica arhive nije propisana, ali olakšava pronalaženje verzija.',
       },
       {
         question: 'Što znači automatizirani dohvat podataka?',
