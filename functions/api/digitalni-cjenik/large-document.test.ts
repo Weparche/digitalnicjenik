@@ -7,11 +7,11 @@ const resolver = {
   resolve6: async () => [],
 }
 
-function routeFetch(routes: Record<string, Response | (() => Response)>, fallback = new Response('Not found', { status: 404 })) {
+function routeFetch(routes: Record<string, Response | (() => Response)>) {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = new URL(input.toString())
     const route = routes[url.pathname]
-    return typeof route === 'function' ? route() : route ?? fallback
+    return typeof route === 'function' ? route() : route ?? new Response('Not found', { status: 404 })
   })
 }
 
