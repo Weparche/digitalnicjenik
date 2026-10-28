@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { WebsiteCheckDetails, WebsiteCheckResult } from '../shared/website-check'
 
-const complete: WebsiteCheckDetails = { reachable: true, homepageReadable: true, https: true, csvFound: true, xmlFound: true, pricePageFound: true, csvUrl: 'https://salon.hr/cjenik.csv', xmlUrl: 'https://salon.hr/cjenik.xml', publicLinkUrl: 'https://salon.hr/cjenik.csv', archiveFound: true, structureStatus: 'pass', contentStatus: 'pass' }
+const complete: WebsiteCheckDetails = { reachable: true, homepageReadable: true, https: true, csvFound: true, xmlFound: true, pricePageFound: true, csvUrl: 'https://salon.hr/cjenik.csv', xmlUrl: 'https://salon.hr/cjenik.xml', publicLinkUrl: 'https://salon.hr/cjenik.csv', archiveFound: true, structureStatus: 'pass', contentStatus: 'pass', publicationFindings: [] }
 
 for (const width of [390, 1440]) {
   test(`per-file analysis shows 20 of 34 named findings without overflow at ${width}px`, async ({ page }) => {

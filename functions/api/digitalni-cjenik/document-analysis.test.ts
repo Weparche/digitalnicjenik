@@ -98,14 +98,14 @@ describe('aggregate and backward compatible checker contract', () => {
     expect(result.details.csvAnalysis?.format).toBe('csv')
     expect(result.details.xmlAnalysis?.format).toBe('xml')
   })
-  it('freezes the real NEPAR 2026-10-27 regression at 23 services, four missing anchors per format, 8/9', async () => {
+  it('freezes the real NEPAR 2026-10-27 regression at 23 services, four missing anchors per format, 7/9 when the publication filename is also unverified', async () => {
     const result = await check(csvFixture, xmlFixture)
     expect(result.status).toBe('yellow')
     for (const analysis of [result.details.csvAnalysis, result.details.xmlAnalysis]) {
       expect(analysis).toMatchObject({ fetched: true, structureRecognized: true, itemCount: 23, totalFindings: 4, structureStatus: 'pass', contentStatus: 'fail' })
       expect(analysis?.findings.every(f => f.field === 'anchorPrice' && f.itemName && /Nedostaje sidrena/.test(f.message) && f.level === 'error' && f.source === 'binding')).toBe(true)
     }
-    expect(technicalReport(result).score).toBe(8)
+    expect(technicalReport(result).score).toBe(7)
   })
 })
 

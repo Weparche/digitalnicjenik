@@ -62,9 +62,10 @@ describe('publication regressions from the audit', () => {
     expect(await deterministicPublicationHash(list, metadata, '2026-11-18')).not.toBe(first)
   })
   it('does not penalize a site for using only one supported machine format', () => {
-    const report = technicalReport({ status: 'green', details: { reachable: true, homepageReadable: true, https: true, pricePageFound: true, csvFound: true, xmlFound: false, publicLinkUrl: 'https://example.hr/cjenik.csv', archiveFound: true, structureStatus: 'pass', contentStatus: 'pass' } })
+    const report = technicalReport({ status: 'green', details: { reachable: true, homepageReadable: true, https: true, pricePageFound: true, csvFound: true, xmlFound: false, publicLinkUrl: 'https://example.hr/cjenik.csv', archiveFound: true, structureStatus: 'pass', contentStatus: 'pass', publicationFindings: [] } })
     expect(report).toMatchObject({ score: 9, attention: 0, tone: 'green' })
-    expect(report.checks.find(check => check.id === 'xml')?.status).toBe('not_applicable')
+    expect(report.checks.find(check => check.id === 'machine')).toMatchObject({ status: 'pass', evidence: expect.stringContaining('XML nije objavljen — nije obvezan') })
+    expect(report.checks.some(check => check.id === 'csv' || check.id === 'xml')).toBe(false)
   })
   it('keeps historical price evidence through CSV, XML and feed verification', () => {
     const historical = { ...list, items: [{ ...list.items[0], anchorReferenceDate: '2026-10-01', isNewSinceReferenceDate: true, price: 20, salePrice: 12, specialSaleApplied: true, specialSaleName: 'Akcija', lowest30DayPrice: 16 }] }
