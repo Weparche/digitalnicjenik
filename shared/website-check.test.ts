@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { normalizeWebsiteInput, technicalReport, TECHNICAL_CHECKS, type WebsiteCheckDetails } from './website-check'
 import { PLANS, formatEur } from './pricing'
 
-const complete: WebsiteCheckDetails = { reachable: true, homepageReadable: true, https: true, csvFound: true, xmlFound: true, pricePageFound: true, csvUrl: 'https://example.hr/cjenik.csv', xmlUrl: 'https://example.hr/cjenik.xml', publicLinkUrl: 'https://example.hr/cjenik.csv', archiveFound: true, structureStatus: 'pass', contentStatus: 'pass' }
+const complete: WebsiteCheckDetails = { reachable: true, homepageReadable: true, https: true, csvFound: true, xmlFound: true, pricePageFound: true, csvUrl: 'https://example.hr/cjenik.csv', xmlUrl: 'https://example.hr/cjenik.xml', publicLinkUrl: 'https://example.hr/cjenik.csv', archiveFound: true, structureStatus: 'pass', contentStatus: 'pass', publicationFindings: [] }
 describe('technical evidence score', () => {
   it('has exactly nine unique checks and scores only confirmed passes', () => {
     const report = technicalReport({ status: 'green', message: '', details: complete })
@@ -24,7 +24,7 @@ describe('technical evidence score', () => {
   })
   it('does not mistake a discovered but inaccessible CSV for a verified document', () => {
     const report = technicalReport({ status: 'yellow', message: '', details: { csvLinkDiscovered: true, publicLinkUrl: 'https://example.hr/cjenik.csv', fetchBlocked: true } })
-    expect(report.checks.find((c) => c.id === 'csv')?.status).toBe('unknown')
+    expect(report.checks.find((c) => c.id === 'machine')?.status).toBe('unknown')
     expect(report.checks.find((c) => c.id === 'link')?.status).toBe('pass')
   })
   it('keeps a guessed feed endpoint separate from a discovered public link', () => {
@@ -32,15 +32,38 @@ describe('technical evidence score', () => {
     expect(report.score).toBe(8)
     expect(report.checks.find((c) => c.id === 'link')?.status).toBe('missing')
   })
-  it('preserves positive evidence and satisfies the alternate format on partial network failure', () => {
+  it('treats CSV and XML as one legal requirement and keeps the other format informational', () => {
     const csvReport = technicalReport({ status: 'green', message: '', details: { ...complete, xmlFound: false, networkIncomplete: true } })
-    expect(csvReport.checks.find((c) => c.id === 'xml')).toMatchObject({ status: 'not_applicable', evidence: expect.stringContaining('CSV ili XML') })
-    expect(csvReport.checks.find((c) => c.id === 'csv')?.status).toBe('pass')
+    expect(csvReport.checks.find((c) => c.id === 'machine')).toMatchObject({
+      status: 'pass',
+      evidence: expect.stringContaining('XML nije objavljen — nije obvezan'),
+    })
+    expect(csvReport.checks.some((c) => c.id === 'csv' || c.id === 'xml')).toBe(false)
     expect(csvReport).toMatchObject({ score: 9, unknown: 0, attention: 0 })
 
     const xmlReport = technicalReport({ status: 'green', message: '', details: { ...complete, csvFound: false, xmlFound: true, networkIncomplete: true } })
-    expect(xmlReport.checks.find((c) => c.id === 'csv')).toMatchObject({ status: 'not_applicable', evidence: expect.stringContaining('CSV ili XML') })
-    expect(xmlReport.checks.find((c) => c.id === 'xml')?.status).toBe('pass')
+    expect(xmlReport.checks.find((c) => c.id === 'machine')).toMatchObject({
+      status: 'pass',
+      evidence: expect.stringContaining('CSV nije objavljen — nije obvezan'),
+    })
+    expect(xmlReport).toMatchObject({ score: 9, unknown: 0, attention: 0 })
+  })
+  it('uses the ninth point for the required publication filename instead of a second file format', () => {
+    const report = technicalReport({
+      status: 'green',
+      message: '',
+      details: {
+        ...complete,
+        publicationFindings: [{
+          rule: 'publication.filename.unverified',
+          message: 'Naziv verzionirane objave nije potvrđen.',
+          level: 'warning',
+          source: 'binding',
+        }],
+      },
+    })
+    expect(report.checks.find((c) => c.id === 'publication')).toMatchObject({ status: 'warning', evidence: 'Naziv verzionirane objave nije potvrđen.' })
+    expect(report).toMatchObject({ score: 8, attention: 1, tone: 'yellow' })
   })
   it('reports unavailable results without failures or invented evidence', () => {
     expect(technicalReport({ status: 'unavailable', message: '' })).toMatchObject({ score: 0, unknown: 9, attention: 0, tone: 'yellow' })
