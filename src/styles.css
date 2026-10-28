@@ -969,6 +969,48 @@ body:has(.premium-entry) { background: var(--nepar-canvas); color: var(--nepar-i
   background: #fffbeb;
   border-color: #fcd34d;
 }
+.licence-card.licence-web_link,
+.licence-card.licence-publisher { background: #f8fafc; border-color: var(--nepar-border, #e2e8f0); }
+.licence-card.licence-expired { background: #fef2f2; border-color: #fca5a5; }
+.licence-card > p,
+.publisher-welcome > p { margin: 0; color: var(--nepar-body, #334155); font-size: 14px; line-height: 1.5; }
+.licence-upsell { display: grid; gap: 10px; padding: 14px; border: 1px solid #bfdbfe; border-radius: 10px; background: #eff6ff; }
+.licence-upsell p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--nepar-body, #334155); }
+.publisher-welcome-link { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; }
+.publisher-welcome-link .publisher-welcome-url { color: var(--nepar-primary, #2563eb); font-weight: 700; overflow-wrap: anywhere; }
+.validation-ready-formats { color: #15803d; font-weight: 700; }
+.order-form { display: grid; gap: 12px; max-width: 520px; }
+.order-form h3,
+.payment-step h3 { margin: 0; color: var(--nepar-ink, #0f172a); font-size: 18px; letter-spacing: -.02em; }
+.order-form label { display: grid; gap: 6px; color: var(--nepar-body, #334155); font-size: 13px; font-weight: 600; }
+.order-form input:not([type="radio"]):not([type="checkbox"]) { min-height: 44px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: 14px inherit; background: #fff; }
+.order-customer-type { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; padding: 0; border: 0; }
+.order-customer-type label,
+.order-form .order-installation { display: flex; gap: 8px; align-items: center; font-weight: 500; }
+.order-form .order-installation { align-items: flex-start; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-size: 14px; }
+.order-installation input { margin-top: 3px; }
+.order-total { margin: 0; color: var(--nepar-body, #334155); font-size: 14px; }
+.payment-step { display: grid; gap: 10px; max-width: 560px; padding: 18px; border: 1px solid var(--nepar-border, #e2e8f0); border-radius: 12px; background: #fff; }
+.payment-amount { margin: 0; }
+.payment-amount strong { color: var(--nepar-ink, #0f172a); font-size: 30px; letter-spacing: -.03em; }
+.payment-what,
+.payment-note { margin: 0; color: var(--nepar-body, #334155); font-size: 14px; line-height: 1.5; }
+.payment-note { padding: 10px 12px; border-radius: 8px; background: #eff6ff; }
+.payment-tabs { display: flex; border-bottom: 1px solid #cbd5e1; }
+.payment-tabs button { flex: 1; min-height: 44px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--nepar-muted, #64748b); font: 600 14px inherit; cursor: pointer; }
+.payment-tabs button.is-active { border-bottom-color: var(--nepar-primary, #2563eb); color: var(--nepar-primary, #2563eb); }
+.hub3-barcode { display: grid; gap: 10px; justify-items: start; }
+.hub3-barcode-image { width: 100%; max-width: 460px; min-height: 90px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; }
+.hub3-barcode-image svg { display: block; width: 100%; height: auto; }
+.hub3-barcode p { margin: 0; color: var(--nepar-body, #334155); font-size: 13px; }
+.payment-details { display: grid; gap: 0; margin: 0; }
+.payment-row { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+.payment-row dt { color: var(--nepar-muted, #64748b); }
+.payment-row dd { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: space-between; margin: 0; color: var(--nepar-ink, #0f172a); font-weight: 600; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .payment-row { grid-template-columns: 1fr; gap: 2px; }
+  .payment-step { padding: 14px; }
+}
 @media (max-width: 760px) {
   .publisher-shell .publisher-auth { width: calc(100% - 32px); margin-top: 28px; }
   .publisher-auth-panel { padding: 22px; }

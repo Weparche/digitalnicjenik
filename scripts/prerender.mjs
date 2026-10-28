@@ -84,7 +84,7 @@ function buildHomeSchema(productFaq, pricing) {
         operatingSystem: 'Web',
         inLanguage: 'hr',
         offers: [
-          { '@type': 'Offer', name: 'Provjera, validator i probni rok 7 dana', price: '0', priceCurrency: 'EUR' },
+          { '@type': 'Offer', name: 'Provjera, validator i besplatna objava 24 sata', price: '0', priceCurrency: 'EUR' },
           ...pricing.PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
           installationOffer(pricing, `${SITE_URL}/cijene/`),
         ],
@@ -160,7 +160,7 @@ function buildSitePageSchema(page, extras) {
       url: `${SITE_URL}/`,
       provider: { '@id': ORGANIZATION_ID },
       offers: [
-        { '@type': 'Offer', name: 'Provjera, validator i probni rok 7 dana', price: '0', priceCurrency: 'EUR', url: pageUrl },
+        { '@type': 'Offer', name: 'Provjera, validator i besplatna objava 24 sata', price: '0', priceCurrency: 'EUR', url: pageUrl },
         ...extras.pricing.PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: pageUrl })),
         installationOffer(extras.pricing, pageUrl),
       ],

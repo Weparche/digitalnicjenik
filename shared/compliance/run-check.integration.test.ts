@@ -80,6 +80,16 @@ describe('runTenantCheck', () => {
     expect(result.alert).toBeNull()
     expect((await readLatestRun(monitorEnv().DB, 't-acme'))?.id).toBe(result.run.id)
   })
+  it('skips Web Link tenants: monitoring and alerts belong to Publisher', async () => {
+    await seed({ profile: 'services' })
+    await env.DB.prepare("UPDATE entitlements SET plan = 'web_link' WHERE tenant_id = 't-acme'").run()
+    const requested: string[] = []
+    const result = await runTenantCheck(monitorEnv(), { slug: 'acme', trigger: 'cron', now: NOW, fetcher: async (input) => { requested.push(String(input)); return new Response('') } })
+    expect(result).toEqual({ status: 'skipped', reason: 'plan' })
+    expect(requested).toEqual([])
+    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM monitor_runs').first<{ n: number }>()).toEqual({ n: 0 })
+  })
+
   it('monitors platform trial feeds at /c/slug rather than an unprovisioned subdomain', async () => {
     await seed({ profile: 'services' })
     await env.DB.prepare("UPDATE publication_targets SET hostname = 'acme.digitalnicjenik.nepar.hr' WHERE tenant_id = 't-acme'").run()

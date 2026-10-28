@@ -1,8 +1,9 @@
 import { renewEntitlement, type TrialEnv } from '../../_trial'
+import { sendPaymentConfirmedEmail } from '../../_orders'
 import { resolveTenant } from '../../_repository'
 import { AccessDeniedError, accessErrorResponse, operatorAuthorized } from '../../_write-auth'
 
-/** Ops-only: extend entitlement by MAX(now, period_end) + 1 year. */
+/** Ops-only: the bank transfer landed. Activates the pending order (Web Link year or Publisher upgrade). */
 export const onRequestPost = async ({ request, env }: { request: Request; env: TrialEnv }) => {
   try {
     if (!operatorAuthorized(env, request)) {
@@ -13,7 +14,10 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: T
     const tenant = await resolveTenant(env, body.slug)
     if (!tenant) return Response.json({ ok: false, error: 'not_found' }, { status: 404 })
     const result = await renewEntitlement(env, tenant.id)
-    return Response.json({ ok: true, slug: tenant.slug, periodEnd: result.periodEnd })
+    if (result.order) {
+      await sendPaymentConfirmedEmail(env, { email: result.order.email, slug: tenant.slug, plan: result.plan, periodEnd: result.periodEnd, origin: new URL(request.url).origin })
+    }
+    return Response.json({ ok: true, slug: tenant.slug, plan: result.plan, periodEnd: result.periodEnd, reference: result.order?.reference ?? null })
   } catch (error) {
     const denied = accessErrorResponse(error)
     if (denied) return denied

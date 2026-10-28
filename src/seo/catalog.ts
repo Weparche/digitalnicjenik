@@ -180,7 +180,7 @@ export function renderLlms(posts: NewsPost[] = NEWS_POSTS) {
     `- [NEPAR format XML za proizvode](${SITE_URL}${NEPAR_PRODUCT_XML_PATH}): XML varijanta cjenika proizvoda.`,
     '',
     'Aktivni javni cjenici kupaca na /c/slug, njihova arhiva i CSV/XML feedovi dodaju se u',
-    'sitemap.xml. Probni cjenici nose noindex i nisu u sitemapu.',
+    'sitemap.xml. Cjenici u besplatnoj 24-satnoj objavi nose noindex i nisu u sitemapu.',
     '',
     '## Dokumentacija na nepar.hr',
     '',

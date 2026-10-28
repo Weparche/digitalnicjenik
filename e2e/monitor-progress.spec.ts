@@ -9,7 +9,7 @@ for (const width of [390, 1440]) test(`monitor shows progress and replaces it wi
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname
     if (path === '/api/auth/me') return route.fulfill({ json: { authenticated: true, user: { id: 'u', email: 'owner@example.hr' }, tenants: [{ id: 't-shop', slug: 'shop', name: 'Shop', role: 'owner' }] } })
-    if (path.endsWith('/entitlement')) return route.fulfill({ json: { entitlement: { status: 'active', periodEnd: '2099-01-01T00:00:00Z' } } })
+    if (path === '/api/orders') return route.fulfill({ json: { ok: true, entitlement: { plan: 'publisher_self_service', status: 'active', periodStart: '2026-01-01T00:00:00Z', periodEnd: '2099-01-01T00:00:00Z' }, features: { publish: true, upload: true, archive: true, qr: true, pdf: true, embed: true, editItems: true, monitoring: true, alerts: true }, upgradeAvailable: false, order: null } })
     if (path.endsWith('/monitor')) {
       if (route.request().method() === 'POST') { phase = 'running'; return route.fulfill({ status: 202, json: { status: 'queued', jobId: 'job-1' } }) }
       return route.fulfill({ json: { latest: phase === 'idle' ? null : latest, history: [], lastOkAt: null, ruleset: { id: 'nn-101-2026', label: 'NN 101/2026' }, profile: { id: 'services', label: 'Usluge' }, job: phase === 'idle' ? null : { id: 'job-1', status: phase, checked: phase === 'running' ? 10 : 35, total: 35 } } })

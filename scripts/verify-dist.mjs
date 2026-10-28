@@ -392,6 +392,7 @@ for (const rel of ['index.html', ...EVERGREEN.map((page) => `${page.path}/index.
   const html = read(rel)
   if (/39,90|"price":"39\.9"/.test(html)) failures.push(`${rel}: retired 39,90 € price`)
   if (/zakonski digitalni cjenik|najjeftinij|100\s*% uskla|zakonski certificiran/i.test(html)) failures.push(`${rel}: forbidden positioning claim`)
+  if (/probn|7-dnevn/i.test(html)) failures.push(`${rel}: the free publication is "Besplatna objava 24 h", never a trial`)
 }
 for (const file of ['nepar-format-primjer-usluge.csv', 'nepar-format-primjer-usluge.xml', 'nepar-format-primjer-proizvodi.csv', 'nepar-format-primjer-proizvodi.xml']) {
   if (!existsSync(resolve(distDir, 'examples', file))) failures.push(`Missing dist/examples/${file}`)

@@ -20,13 +20,13 @@ Qualification (not the main funnel): operators on Marketino, Minimax, Pantheon, 
 
 NEPAR Publisher is a **publishing layer** between the operator’s own price list (Excel/CSV) and their public website: validate data, emit regulatory CSV/XML, expose stable “current” feeds and version history, and support automated fetch — so the operator can link the price list on their site without buying a commercial intermediary stack only for that feature.
 
-Success means a non-technical owner can preview data, start a 7-day trial on their own `/c/{slug}` URL, then continue self-serve or ask NEPAR to install the link.
+Success means a non-technical owner can preview data, publish their own `/c/{slug}` URL free for 24 hours, then keep the same link for 19,90 €/god (bank transfer via HUB-3 2D barcode) or ask NEPAR to install it.
 
 ## Positioning
 
 **Category:** MIKROeRAČUN covers e-invoices (under Porezna’s conditions); Publisher covers **public price list publication on the web** (separate regulatory track).
 
-**Acquisition funnel:** AD / organic visitor → “Objavi svoj cjenik” (validator → 7-day trial) or free website check → Web Link / Publisher / Web + Publisher → installation help or individual integration offer when needed. Upload is also directly available as the secondary path. The existing 7-day public trial remains available after validation.
+**Acquisition funnel (Web Link MVP, 2026-10-28):** free website check or upload (Excel/CSV/XML) → validation → e-mail confirmation → real public link free for 24 h → “Zadrži ovaj link trajno — 19,90 €/god” → billing details (+29,90 € installation optional) → HUB-3 2D barcode → automatic one-time +48 h from the order → bank transfer → ops “Potvrdi uplatu” in `/admin` → the same URL active 365 days → Publisher upsell +30 €/god (only within 30 days of activation; afterwards offered at renewal). After upload there is one decision (keep the link), not a three-package comparison. User-facing copy says “Besplatna objava 24 h”, never “probno”/“trial”; `trial` is an internal entitlement status only. No Stripe until manual payment matching becomes the bottleneck.
 
 **Hero message (2026-10-27):** checker-first: “Imate web stranicu? Provjerite digitalni cjenik besplatno.” with the URL checker and trust statements in the first viewport at 390px, 768px and 1440px. The free checker is the primary acquisition hook; a compact line under it adds the positioning (“Objava za bilo koji postojeći web od 19,90 €/god — bez plugina”) and platform pills. Existing-web and no-plugin sections follow below, and Web Link / Publisher are the monetization path after the diagnosis. Platform names (WordPress, WooCommerce, Shopify, Wix, Webflow, custom web) are text only: a plain link or button is the integration. Never claim native integrations, automatic synchronization, certification or “100 % usklađeno”. `/digitalni-cjenik-za-wordpress-webshop/` is the SEO landing for this intent.
 
@@ -38,11 +38,11 @@ Success means a non-technical owner can preview data, start a 7-day trial on the
 
 ## Operating Context
 
-Anonymous users upload into a private draft (≈24 h, R2 + D1 metadata). Publishing a trial requires all blocking validation issues resolved plus business name, e-mail, slug, actual object type/address/code and working calendar; the tenant is created only after magic-link verification. Owners use `/app` to edit, re-upload, and publish while entitlement is live. Expired tenants keep the dashboard (edit/upload). Current public HTML and stable CSV/XML aliases return 410 until renewed. The archive and immutable retained files survive ordinary expiry: the last version for 30 days from publication and previous versions until 30 days from replacement. Suspension blocks public access.
+Anonymous users upload into a private draft (≈24 h, R2 + D1 metadata). The free publication requires all blocking validation issues resolved plus business name, e-mail, slug, actual object type/address/code and working calendar; the tenant is created only after magic-link verification. Owners use `/app` to edit, re-upload, and publish while entitlement is live. Expired tenants keep the dashboard (edit/upload). Current public HTML and stable CSV/XML aliases return 410 until renewed. The archive and immutable retained files survive ordinary expiry: the last version for 30 days from publication and previous versions until 30 days from replacement. Suspension blocks public access.
 
 ## Capabilities and Constraints
 
-Supports CSV/XML/Excel normalization, private drafts, idempotent trial provisioning, entitlements (`trial` | `active` | `expired` | `suspended`) with always-set `period_end`, public access guard, trial `noindex`, iframe-friendly public pages, magic-link auth, and ops renew (`MAX(now, period_end) + 1 year`). Stripe/billing automation, CRM, and a WordPress plugin codebase are out of scope for this layer; commercial fulfillment is offer → payment → ops renew.
+Supports CSV/XML/Excel normalization, private drafts, idempotent provisioning of the free 24 h publication (plan `web_link`, status `trial`), entitlements (`trial` | `active` | `expired` | `suspended`) with always-set `period_end`, bank-transfer orders (`payment_orders`, DB-generated reference `yyyy-number`, one pending order per tenant and kind), public access guard, `noindex` during the free publication, iframe-friendly public pages, magic-link auth, and ops renew driven by the pending order (Web Link: one year from now after the free publication, otherwise `MAX(now, period_end) + 1 year`; Publisher upgrade: same period). Plan permissions come only from `featuresForPlan()` in `shared/entitlements.ts`. Stripe/billing automation, statement matching, CRM, and a WordPress plugin codebase are out of scope for this layer; fulfillment is order → bank transfer → ops “Potvrdi uplatu” → e-mail; the fiscal invoice is issued manually from the order e-mail.
 
 Frame **immutable versioning** and **stable aktualni.csv/xml** as NEPAR’s technical design that helps meet regulatory publication and fetch requirements — not as statutory labels.
 
@@ -58,19 +58,19 @@ The fixture at `./marketino-artikli` remains available for the demo tenant only.
 
 - For self-serve tenants the Publisher draft is the source until they publish; change prices at the source they actually maintain (Excel/CSV or dashboard).
 - One normalized list powers every output.
-- The customer keeps the same slug/URL from trial through paid renewal.
-- Demo `/c/nepar` is not a substitute for a customer trial or paid tenant.
+- The customer keeps the same slug/URL from the free publication through paid renewal.
+- Demo `/c/nepar` is not a substitute for a customer publication or paid tenant.
 - Never invent source data or future integration details.
 
 ## Commercial offer
 
-- **Web Link — 19,90 €/god** (id `link`): upload/replace a prepared CSV or XML, up to 5.000 items (`MAX_PRICE_LIST_ITEMS`), persistent public URL, basic web view, CSV/XML output and a 30-day archive. No plugin: the customer adds the link to any existing website.
-- **Publisher — 49,90 €/god:** Link plus Excel/CSV/XML validation, dashboard, stable feeds, versioning, archive of superseded versions for at least 30 days, monitoring, email alerts, QR, browser PDF printing and embed.
+- **Web Link — 19,90 €/god = hosting and publication** (id `link`, entitlement plan `web_link`): permanent public URL, CSV/XML, the public 30-day archive, QR/PDF/embed, replacing the whole price list with a new file (and filling in required fields), up to 5.000 items (`MAX_PRICE_LIST_ITEMS`). No plugin: the customer adds the link to any existing website. Web Link on its own is a complete, correct publication; nothing needed for compliance is locked behind Publisher.
+- **Publisher — 49,90 €/god = management and monitoring** (plan `publisher_self_service`): everything in Web Link plus editing single items without Excel, daily monitoring and e-mail alerts. Do not market automatic updating/sync or a detailed change history until they exist.
 - **Web + Publisher — 79,90 €/god:** Publisher plus a simple NEPAR web/landing, hosting, SSL, basic editing and technical setup. Complex custom development requires a separate offer.
 - **Existing-web help:** separate inquiry to install a link, button or price-list view. No public price; it does not require buying Web + Publisher.
 - **Advanced integration:** WooCommerce/webshop/API/ERP/POS connection built for a specific system, individual offer only. No automatic synchronization product exists.
 
-`shared/pricing.ts` is the single commercial source for frontend, pricing page, FAQs, prerendered offers and lead email labels. The old launch offer is inactive. All marketed package amounts are annual. Existing entitlement infrastructure and manual offer → payment → ops activation remain; this work does not add checkout, automated billing or tier-based access controls.
+`shared/pricing.ts` is the single commercial source for frontend, pricing page, FAQs, prerendered offers and lead email labels. The old launch offer is inactive. All marketed package amounts are annual. Web Link and Publisher upgrade are ordered in `/app` and paid by bank transfer (HUB-3 2D barcode, payee Nepar, vl. Ivan Gorupić, IBAN HR0623600001103276807); other packages stay offer → payment → ops activation. There is no card checkout or automated billing.
 
 ## Anonymous technical check
 

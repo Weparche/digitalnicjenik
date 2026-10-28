@@ -9,7 +9,7 @@ for (const products of [false, true]) {
     await page.route('**/api/**', async route => {
       const path = new URL(route.request().url()).pathname
       if (path === '/api/auth/me') return route.fulfill({ json: { authenticated: true, user: { id: 'u', email: 'owner@example.hr' }, tenants: [{ id: 't-shop', slug: 'shop', name: 'Shop', role: 'owner' }] } })
-      if (path.endsWith('/entitlement')) return route.fulfill({ json: { entitlement: { status: 'active', periodEnd: '2099-01-01T00:00:00Z' } } })
+      if (path === '/api/orders') return route.fulfill({ json: { ok: true, entitlement: { plan: 'publisher_self_service', status: 'active', periodStart: '2026-01-01T00:00:00Z', periodEnd: '2099-01-01T00:00:00Z' }, features: { publish: true, upload: true, archive: true, qr: true, pdf: true, embed: true, editItems: true, monitoring: true, alerts: true }, upgradeAvailable: false, order: null } })
       if (path === '/api/tenants/shop') return route.fulfill({ json: { priceList: list } })
       if (path.endsWith('/import')) { imports.push(route.request().postDataJSON()); return route.fulfill({ json: { draft: { id: 'draft-' + imports.length }, validation: { issues: [] } } }) }
       if (path.includes('/draft/')) { saves.push(route.request().postDataJSON()); return route.fulfill({ json: { validation: { issues: [] } } }) }
@@ -39,7 +39,7 @@ test('saving an incomplete CSV preserves skipped-row blockers in the dashboard',
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname
     if (path === '/api/auth/me') return route.fulfill({ json: { authenticated: true, user: { id: 'u', email: 'owner@example.hr' }, tenants: [{ id: 't-shop', slug: 'shop', name: 'Shop', role: 'owner' }] } })
-    if (path.endsWith('/entitlement')) return route.fulfill({ json: { entitlement: { status: 'active', periodEnd: '2099-01-01T00:00:00Z' } } })
+    if (path === '/api/orders') return route.fulfill({ json: { ok: true, entitlement: { plan: 'publisher_self_service', status: 'active', periodStart: '2026-01-01T00:00:00Z', periodEnd: '2099-01-01T00:00:00Z' }, features: { publish: true, upload: true, archive: true, qr: true, pdf: true, embed: true, editItems: true, monitoring: true, alerts: true }, upgradeAvailable: false, order: null } })
     if (path === '/api/tenants/shop') return route.fulfill({ json: { priceList: null } })
     if (path.endsWith('/import')) {
       findings = route.request().postDataJSON().importIssues

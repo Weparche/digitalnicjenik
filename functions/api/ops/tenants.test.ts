@@ -30,7 +30,7 @@ describe('ops tenants overview', () => {
   it('lists tenants with entitlement, owner and latest monitor result', async () => {
     await env.DB.prepare("INSERT INTO monitor_runs (id, tenant_id, checked_at, run_trigger, ruleset, profile, overall) VALUES ('r1', 't1', '2026-11-05T05:00:00Z', 'cron', 'nn-101-2026', 'products', 'warn')").run()
     const body = await (await get(`Bearer ${KEY}`)).json() as { tenants: Array<Record<string, unknown>> }
-    expect(body.tenants).toEqual([{ slug: 'acme', name: 'Acme', plan: 'publisher_self_service', status: 'trial', periodEnd: '2026-11-08T00:00:00Z', ownerEmail: 'vlasnik@acme.hr', monitorOverall: 'warn', monitorCheckedAt: '2026-11-05T05:00:00Z', request: null }])
+    expect(body.tenants).toEqual([{ slug: 'acme', name: 'Acme', plan: 'publisher_self_service', status: 'trial', periodEnd: '2026-11-08T00:00:00Z', ownerEmail: 'vlasnik@acme.hr', monitorOverall: 'warn', monitorCheckedAt: '2026-11-05T05:00:00Z', request: null, order: null }])
   })
 
   it('renew activates a lapsed tenant for a year from now and requires the key', async () => {

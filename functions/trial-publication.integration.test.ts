@@ -46,5 +46,9 @@ it('publishes a verified valid trial with the real object address and services p
   expect(publication?.filenameStem).toContain('ilica-10-10000-zagreb_p1')
   expect((await readMetadataForSlug(runtime, 'salon-real-address'))?.workingDays).toEqual([1, 2, 3, 4, 5, 6])
   const profile = await env.DB.prepare("SELECT compliance_profile FROM publication_metadata m JOIN tenants t ON t.id=m.tenant_id WHERE t.slug='salon-real-address'").first<{ compliance_profile: string }>()
-  expect(profile?.compliance_profile).toBe('services')
+  expect(profile?.compliance_profile).toBe('services')  // The free publication is a 24 h Web Link; the publish guard accepts the web_link plan.
+  const entitlement = await env.DB.prepare("SELECT e.plan, e.status, e.period_start, e.period_end FROM entitlements e JOIN tenants t ON t.id=e.tenant_id WHERE t.slug='salon-real-address'").first<{ plan: string; status: string; period_start: string; period_end: string }>()
+  expect(entitlement).toMatchObject({ plan: 'web_link', status: 'trial' })
+  expect(Date.parse(entitlement!.period_end) - Date.parse(entitlement!.period_start)).toBe(24 * 3_600_000)
+  expect(mail[0]).toContain('besplatna 24 sata')
 })

@@ -177,17 +177,17 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Koliko košta NEPAR Publisher?',
         answer:
-          `Provjera weba, validator i pretvorba Excela besplatni su, uz 7-dnevni probni rok. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom (postavljanje poveznice ili gumba na postojeći web): ${installationPriceLabel()}. Integracija s webshopom ili poslovnim sustavom radi se po individualnoj ponudi.`,
+          `Provjera weba, validator i pretvorba Excela besplatni su, a prva objava je besplatna 24 sata. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom (postavljanje poveznice ili gumba na postojeći web): ${installationPriceLabel()}. Integracija s webshopom ili poslovnim sustavom radi se po individualnoj ponudi.`,
       },
       {
-        question: 'Što se događa nakon probnog roka ako ne aktiviram Publisher?',
+        question: 'Što se događa nakon 24 sata ako ne platim?',
         answer:
-          'Aktualni javni URL se gasi (HTTP 410). Ranije zamijenjene verzije ostaju u javnoj arhivi do isteka svojeg roka dostupnosti, osim u slučaju suspenzije. Podaci za obnovu ostaju spremljeni; nakon aktivacije isti aktualni URL ponovno radi.',
+          'Kad ispunite podatke za račun, link ostaje aktivan još 48 sati da uplata stigne. Bez uplate se aktualni javni URL gasi (HTTP 410). Ranije zamijenjene verzije ostaju u javnoj arhivi do isteka svojeg roka dostupnosti, osim u slučaju suspenzije. Podaci ostaju spremljeni; nakon evidentirane uplate isti URL ponovno radi.',
       },
       {
         question: 'Kako se plaća?',
         answer:
-          'Po ponudi, uplatom na račun. Licenca se aktivira nakon što uplata bude evidentirana i vrijedi godinu dana.',
+          'Uplatom na račun: nakon objave upišete podatke za račun i dobijete 2D barkod za mobilno bankarstvo. Licenca se aktivira kad uplata bude evidentirana i vrijedi godinu dana, bez automatske obnove.',
       },
       {
         question: 'Mogu li cjenik ugraditi na postojeću web stranicu?',

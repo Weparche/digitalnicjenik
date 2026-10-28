@@ -1,6 +1,6 @@
 import { readLimitedBytes } from './transport'
 import type { D1DatabaseLike } from '../db'
-import { entitlementIsLive } from '../entitlements'
+import { entitlementIsLive, featuresForPlan } from '../entitlements'
 import { deterministicHash } from '../../src/price-engine/hash'
 import { usesProductStructure } from '../../src/price-engine/profile'
 import { validatePriceList } from '../../src/price-engine/validate'
@@ -37,7 +37,7 @@ export type PreparedCheck = { status: 'prepared'; run: MonitorRunRecord; tenant:
 
 export type RunTenantCheckResult =
   | PreparedCheck
-  | { status: 'skipped'; reason: 'unknown_tenant' | 'not_live' | 'no_publication' }
+  | { status: 'skipped'; reason: 'unknown_tenant' | 'not_live' | 'plan' | 'no_publication' }
   | { status: 'checked'; run: MonitorRunRecord; alert: AlertKind | null; state: MonitorState; tenant: { id: string; slug: string; name: string } }
 
 const FETCH_TIMEOUT_MS = 15_000
@@ -123,6 +123,8 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
     const entitlement: Entitlement | null = row ? { id: row.id, tenantId: row.tenant_id, plan: row.plan, status: row.status, periodStart: row.period_start, periodEnd: row.period_end } : null
     // Expired/suspended tenants intentionally serve HTTP 410: that is expected, not an incident.
     if (!entitlementIsLive(entitlement, now.getTime())) return { status: 'skipped', reason: 'not_live' }
+    // Daily monitoring and alerts belong to Publisher; a Web Link is published but not watched.
+    if (!featuresForPlan(entitlement?.plan).monitoring) return { status: 'skipped', reason: 'plan' }
   }
 
   const publication = await db.prepare(

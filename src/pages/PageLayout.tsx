@@ -47,7 +47,7 @@ export function SitePageLayout({
         <aside className="site-cta" aria-label="Sljedeći korak">
           <div>
             <strong>Provjerite svoj cjenik besplatno</strong>
-            <span>Učitajte Excel, CSV ili XML i odmah vidite što nedostaje. Probni javni cjenik traje 7 dana.</span>
+            <span>Učitajte Excel, CSV ili XML i odmah vidite što nedostaje. Objava je besplatna 24 sata.</span>
           </div>
           <a className="app-button app-button-primary" href="/#csv-validator">Učitaj cjenik →</a>
         </aside>

@@ -56,7 +56,7 @@ Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https:/
 - [NEPAR format XML za proizvode](https://digitalnicjenik.nepar.hr/examples/nepar-format-primjer-proizvodi.xml): XML varijanta cjenika proizvoda.
 
 Aktivni javni cjenici kupaca na /c/slug, njihova arhiva i CSV/XML feedovi dodaju se u
-sitemap.xml. Probni cjenici nose noindex i nisu u sitemapu.
+sitemap.xml. Cjenici u besplatnoj 24-satnoj objavi nose noindex i nisu u sitemapu.
 
 ## Dokumentacija na nepar.hr
 

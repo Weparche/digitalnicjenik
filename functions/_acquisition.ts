@@ -16,6 +16,7 @@ export type FunnelRow = {
 
 const PLAN_VALUE: Record<string, number> = {
   link: PLANS.find((plan) => plan.id === 'link')!.price,
+  web_link: PLANS.find((plan) => plan.id === 'link')!.price,
   publisher: PLANS.find((plan) => plan.id === 'publisher')!.price,
   publisher_self_service: PLANS.find((plan) => plan.id === 'publisher')!.price,
   web: PLANS.find((plan) => plan.id === 'web')!.price,

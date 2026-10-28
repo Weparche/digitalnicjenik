@@ -19,10 +19,10 @@ import type { NormalizedPriceList, ValidationIssue } from '../src/price-engine/t
 import { mergeValidationIssues, validatePriceList } from '../src/price-engine/validate'
 import { parsePublicationDetails, type PublicationDetails } from '../shared/publication-details'
 import { usesProductStructure } from '../src/price-engine/profile'
+import { freePublicationEnd } from '../shared/payment'
 
 export const DRAFT_TTL_MS = 24 * 60 * 60_000
 export const TRIAL_CLAIM_TTL_MS = 30 * 60_000
-export const TRIAL_DAYS = 7
 const HOUR_MS = 3_600_000
 const TRIAL_CLAIM_LIMIT_PER_HOUR = 5
 
@@ -76,10 +76,6 @@ function nowIso() {
   return new Date().toISOString()
 }
 
-function addDays(iso: string, days: number) {
-  return new Date(new Date(iso).getTime() + days * 86400000).toISOString()
-}
-
 function windowStartIso(now = Date.now()) {
   return new Date(Math.floor(now / HOUR_MS) * HOUR_MS).toISOString()
 }
@@ -108,19 +104,33 @@ export function nextPeriodEnd(periodEnd: string | null | undefined, now = new Da
   return new Date(base + 365 * 86400000).toISOString()
 }
 
-export async function renewEntitlement(env: RuntimeEnv, tenantId: string) {
+/**
+ * Ops confirms a bank transfer. The tenant's pending order decides what is activated:
+ * - `web_link` (or no order): one year from now after the free publication, otherwise MAX(now, period_end) + 1 year;
+ * - `publisher_upgrade`: the plan becomes Publisher for the period already paid (no extension).
+ * The same URL stays live throughout; the order is marked paid in the same batch.
+ */
+export async function renewEntitlement(env: RuntimeEnv, tenantId: string, now = new Date()) {
   if (!env.DB) throw new Error('db_unavailable')
   const row = await env.DB.prepare(
-    'SELECT id, period_end FROM entitlements WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1',
-  ).bind(tenantId).first<{ id: string; period_end: string | null }>()
+    'SELECT id, plan, status, period_start, period_end FROM entitlements WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1',
+  ).bind(tenantId).first<{ id: string; plan: string; status: string; period_start: string | null; period_end: string | null }>()
   if (!row) throw new Error('entitlement_missing')
-  const stamp = nowIso()
-  const periodEnd = nextPeriodEnd(row.period_end, new Date(stamp))
-  await env.DB.batch([
-    env.DB.prepare(`UPDATE entitlements SET status = 'active', period_end = ?, updated_at = ? WHERE id = ?`).bind(periodEnd, stamp, row.id),
+  const order = await env.DB.prepare(
+    `SELECT number, reference, kind, email FROM payment_orders WHERE tenant_id = ? AND status = 'pending' ORDER BY created_at ASC LIMIT 1`,
+  ).bind(tenantId).first<{ number: number; reference: string | null; kind: 'web_link' | 'publisher_upgrade'; email: string }>()
+  const stamp = now.toISOString()
+  const upgrade = order?.kind === 'publisher_upgrade'
+  const plan = upgrade ? 'publisher_self_service' : order ? 'web_link' : row.plan
+  const periodStart = upgrade ? row.period_start : stamp
+  const periodEnd = upgrade && row.period_end ? row.period_end : nextPeriodEnd(row.status === 'trial' ? null : row.period_end, now)
+  const statements = [
+    env.DB.prepare(`UPDATE entitlements SET plan = ?, status = 'active', period_start = ?, period_end = ?, updated_at = ? WHERE id = ?`).bind(plan, periodStart, periodEnd, stamp, row.id),
     env.DB.prepare(`UPDATE upgrade_requests SET status = 'done', handled_at = ? WHERE tenant_id = ? AND status = 'open'`).bind(stamp, tenantId),
-  ])
-  return { periodEnd }
+  ]
+  if (order) statements.push(env.DB.prepare(`UPDATE payment_orders SET status = 'paid', paid_at = ?, updated_at = ? WHERE number = ? AND status = 'pending'`).bind(stamp, stamp, order.number))
+  await env.DB.batch(statements)
+  return { periodEnd, plan, order: order ?? null }
 }
 
 /** Keeps at most one open request per tenant+intent; a repeated click refreshes it instead of duplicating. */
@@ -275,7 +285,7 @@ export async function startTrialClaim(
   }
 
   if (mergeValidationIssues(validatePriceList(draft.payload.list), draft.payload.validationIssues).blockingCount) {
-    throw new AccessDeniedError(422, 'draft_not_ready', 'Dopunite označene podatke prije javne probne objave.')
+    throw new AccessDeniedError(422, 'draft_not_ready', 'Dopunite označene podatke prije javne objave.')
   }
   try { parsePublicationDetails(draft.payload.publicationDetails) }
   catch (error) { throw new AccessDeniedError(400, 'publication_details_required', (error as Error).message) }
@@ -301,13 +311,13 @@ export async function startTrialClaim(
 
   const origin = new URL(request.url).origin
   const link = `${origin}/api/trials/callback?token=${encodeURIComponent(rawToken)}`
-  const text = `Potvrdite e-mail i objavite probni cjenik na ${origin}/c/${slug}:\n\n${link}\n\nLink vrijedi 30 minuta i može se iskoristiti jednom.`
-  const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><p>Potvrdite e-mail za probni NEPAR Publisher.</p><p>Vaš cjenik bit će na <strong>${escapeHtml(origin)}/c/${escapeHtml(slug)}</strong>.</p><p><a href="${escapeHtml(link)}">Potvrdi i objavi probno</a></p><p style="color:#64748b;font-size:13px">Link vrijedi 30 minuta.</p></body></html>`
+  const text = `Potvrdite e-mail i objavite cjenik na ${origin}/c/${slug}. Objava je besplatna 24 sata:\n\n${link}\n\nLink vrijedi 30 minuta i može se iskoristiti jednom.`
+  const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><p>Potvrdite e-mail i objavite svoj digitalni cjenik. Objava je besplatna 24 sata.</p><p>Vaš cjenik bit će na <strong>${escapeHtml(origin)}/c/${escapeHtml(slug)}</strong>.</p><p><a href="${escapeHtml(link)}">Potvrdi i objavi</a></p><p style="color:#64748b;font-size:13px">Link vrijedi 30 minuta.</p></body></html>`
 
   try {
     await sendTransactionalEmail(env, {
       to: email,
-      subject: 'Potvrda probnog cjenika — NEPAR Publisher',
+      subject: 'Potvrdite e-mail — besplatna objava cjenika 24 sata',
       text,
       html,
     }, fetcher)
@@ -457,11 +467,12 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
     if (validation.blockingCount) throw new AccessDeniedError(422, 'draft_not_ready', 'Cjenik nije spreman za javnu objavu.')
     const { tenantId, slug } = await insertTenantWithSlug(env, claim.requested_slug, claim.business_name, details, usesProductStructure(draft.payload.list))
     const stamp = nowIso()
-    const periodEnd = addDays(stamp, TRIAL_DAYS)
+    const periodEnd = freePublicationEnd(stamp)
 
+    // The free 24 h publication is a Web Link: link, CSV/XML and archive, without monitoring.
     await db.prepare(
       `INSERT INTO entitlements (id, tenant_id, plan, status, period_start, period_end, created_at, updated_at)
-       VALUES (?, ?, 'publisher_self_service', 'trial', ?, ?, ?, ?)`,
+       VALUES (?, ?, 'web_link', 'trial', ?, ?, ?, ?)`,
     ).bind(`entitlement-${tenantId}`, tenantId, stamp, periodEnd, stamp, stamp).run()
 
     await ensureTenantOwner(env, tenantId, claim.email)

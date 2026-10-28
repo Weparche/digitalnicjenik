@@ -33,16 +33,16 @@ export const productFaq: ProductFaqEntry[] = [
     answer: 'Da. Validator prihvaća CSV i XML, Excel pretvorite u istom alatu. Oba izlazna formata dolaze iz jednog normaliziranog zapisa.',
   },
   {
-    question: 'Što dobivam u probnom roku?',
+    question: 'Što dobivam besplatnom objavom?',
     answer:
-      'Nakon potvrde e-maila dobivate stvarni javni link /c/vaš-slug, CSV/XML feedove i dashboard. Ako ne aktivirate Publisher u 7 dana, javni URL se gasi — podaci ostaju.',
+      'Nakon potvrde e-maila dobivate stvarni javni link /c/vaš-slug, CSV/XML feedove i dashboard, besplatno 24 sata. Isti link zadržite uz godišnji paket Web Link, uplatom putem 2D barkoda; ako ne platite, javni URL se gasi — podaci ostaju.',
   },
   {
-    question: 'Koliko košta nakon probe?',
-    answer: `Provjera weba i validator su besplatni. Nakon probne objave možete odabrati godišnji paket Web Link, Publisher ili Web + Publisher. Paketi i godišnje cijene vidljivi su na početnoj stranici bez prethodne provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web stoji ${installationPriceLabel()}.`,
+    question: 'Koliko košta nakon besplatne objave?',
+    answer: `Provjera weba i validator su besplatni. Nakon besplatne objave isti link zadržavate s paketom Web Link, a nadogradnja na Publisher ili Web + Publisher dostupna je uz uređivanje stavki, nadzor i upozorenja. Paketi i godišnje cijene vidljivi su na početnoj stranici bez prethodne provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web stoji ${installationPriceLabel()}.`,
   },
   {
     question: 'Kako započeti?',
-    answer: 'Učitajte Excel/CSV/XML besplatno ili provjerite svoj web — zatim 7-dnevni probni bez registracije unaprijed.',
+    answer: 'Učitajte Excel/CSV/XML besplatno ili provjerite svoj web — zatim objavite cjenik besplatno na 24 sata, bez registracije unaprijed.',
   },
 ]

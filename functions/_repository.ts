@@ -2,6 +2,7 @@ import { deterministicPublicationHash, diffPriceLists } from "../src/price-engin
 import { usesProductStructure } from '../src/price-engine/profile'
 import { getRuleset } from '../shared/compliance/rulesets'
 import { parsePublicationDetails } from '../shared/publication-details'
+import { featuresForPlan, PUBLISHING_PLANS } from '../shared/entitlements'
 import { createFilenameStemPrefix, filenameTimestamp } from "../src/price-engine/filename"
 import { parseMarketinoCsv } from "../src/price-engine/adapters/marketinoCsv"
 import { mergeValidationIssues, validatePriceList } from "../src/price-engine/validate"
@@ -210,7 +211,7 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const live =
     entitlement
     && (entitlement.status === 'active' || entitlement.status === 'trial')
-    && entitlement.plan !== 'validator'
+    && featuresForPlan(entitlement.plan).publish
     && entitlement.periodEnd
     && new Date(entitlement.periodEnd).getTime() >= Date.now()
   if (!internalDemo && !live) throw new Error("Aktivan Publisher entitlement nije pronađen.")
@@ -235,7 +236,7 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   // requires that this payload is not already current. This makes a retry or
   // concurrent request idempotent without relying on a JavaScript-side lock.
   const guard = "EXISTS (SELECT 1 FROM price_uploads WHERE id = ? AND tenant_id = ? AND status = 'published') AND NOT EXISTS (SELECT 1 FROM price_publications WHERE tenant_id = ? AND is_current = 1 AND hash = ?)"
-  const entitlementGuard = internalDemo ? "1 = 1" : "EXISTS (SELECT 1 FROM entitlements WHERE tenant_id = ? AND status IN ('active', 'trial') AND plan IN ('publisher_self_service', 'managed') AND period_end IS NOT NULL AND period_end >= ?)"
+  const entitlementGuard = internalDemo ? "1 = 1" : "EXISTS (SELECT 1 FROM entitlements WHERE tenant_id = ? AND status IN ('active', 'trial') AND plan IN (" + PUBLISHING_PLANS.map((plan) => `'${plan}'`).join(', ') + ") AND period_end IS NOT NULL AND period_end >= ?)"
   const firstBindings = internalDemo ? [timestamp, draftId, tenantId] : [timestamp, draftId, tenantId, tenantId, timestamp]
   const insertedGuard = "EXISTS (SELECT 1 FROM price_publications WHERE id = ? AND tenant_id = ?)"
   const results = await env.DB.batch([

@@ -43,14 +43,14 @@ export function ExcelGuidePage() {
       </section>
 
       <section className="site-section" aria-labelledby="step4">
-        <h2 id="step4">4. Objavite probno 7 dana</h2>
+        <h2 id="step4">4. Objavite besplatno na 24 sata</h2>
         <p>Nakon provjere otvara se stvarni javni cjenik na <code>/c/vaš-slug</code> s CSV-om, XML-om i arhivom. Provjerite ih u pregledniku ili otvorite <a href="/specifikacija-csv-xml/">specifikaciju</a> i usporedite polja. Naziv datoteke generira se automatski.</p>
       </section>
 
       <section className="site-section" aria-labelledby="step5">
         <h2 id="step5">5. Povežite s webom i aktivirajte</h2>
-        <p>Na svoju stranicu stavite poveznicu na cjenik ili ugradite cjenik jednom linijom koda (dobivate je u nadzornoj ploči, zajedno s QR kodom i prikazom za ispis). Ako ne aktivirate Publisher u 7 dana, javni URL se gasi, a podaci ostaju.</p>
-        <p>Kad se cijene promijene, učitajte novu verziju: stari cjenik ostaje u arhivi, a nadzor svaki dan provjerava da je objava ispravna.</p>
+        <p>Na svoju stranicu stavite poveznicu na cjenik ili ugradite cjenik jednom linijom koda (dobivate je u nadzornoj ploči, zajedno s QR kodom i prikazom za ispis). Isti link zadržite za 19,90 €/god uplatom putem 2D barkoda; bez uplate se javni URL gasi, a podaci ostaju.</p>
+        <p>Kad se cijene promijene, učitajte novu verziju: stari cjenik ostaje u arhivi. S paketom Publisher nadzor svaki dan provjerava da je objava ispravna.</p>
         <p><a className="app-button app-button-primary" href="/#csv-validator">Učitaj Excel ili CSV →</a></p>
       </section>
     </SitePageLayout>

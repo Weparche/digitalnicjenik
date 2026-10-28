@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { adminState, daysLeft, isPaymentRequest, projectedPeriodEnd, REQUEST_LABEL, STATE_LABEL, type AdminTenant } from './adminView'
+import { adminState, daysLeft, isPaymentRequest, orderBadge, PLAN_LABEL, projectedPeriodEnd, REQUEST_LABEL, STATE_LABEL, type AdminTenant } from './adminView'
 import { formatZagreb } from './monitorView'
 
 const MONITOR_LABEL: Record<string, string> = { ok: '✓ U redu', warn: '⚠ Upozorenje', fail: '✕ Greška', skipped: 'Preskočeno' }
@@ -35,8 +35,9 @@ export function AdminPanel() {
   }
 
   async function activate(tenant: AdminTenant) {
-    const projected = projectedPeriodEnd(tenant.periodEnd)
-    const ok = window.confirm(`Je li uplata za „${tenant.name}” (${tenant.slug}) legla na račun?\n\nAktivacija vrijedi do ${formatZagreb(projected, false)}.`)
+    const projected = projectedPeriodEnd(tenant.periodEnd, Date.now(), { status: tenant.status, orderKind: tenant.order?.kind })
+    const order = tenant.order ? `\n\n${orderBadge(tenant.order)}${tenant.order.billingName ? ` — ${tenant.order.billingName}` : ''}` : ''
+    const ok = window.confirm(`Je li uplata za „${tenant.name}” (${tenant.slug}) legla na račun?${order}\n\nAktivacija vrijedi do ${formatZagreb(projected, false)}.`)
     if (!ok) return
     setError('')
     setMessage('')
@@ -48,8 +49,8 @@ export function AdminPanel() {
         body: JSON.stringify({ slug: tenant.slug }),
       })
       if (!response.ok) throw new Error('Aktivacija nije uspjela.')
-      const result = await response.json() as { periodEnd: string }
-      setMessage(`${tenant.name}: aktivno do ${formatZagreb(result.periodEnd, false)}.`)
+      const result = await response.json() as { periodEnd: string; plan?: string }
+      setMessage(`${tenant.name}: ${PLAN_LABEL[result.plan ?? ''] ?? 'aktivno'} do ${formatZagreb(result.periodEnd, false)}.`)
       await load()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Aktivacija nije uspjela.')
@@ -76,13 +77,13 @@ export function AdminPanel() {
   return (
     <main className="admin-shell">
       <h1>Administracija</h1>
-      <p className="admin-hint">Aktivaciju pokrenite tek kad uplata legne na račun. Aktivacija produljuje licencu za godinu dana.</p>
+      <p className="admin-hint">Potvrdite uplatu tek kad legne na račun (poziv na broj = referenca narudžbe). Web Link vrijedi godinu dana; nadogradnja na Publisher zadržava plaćeno razdoblje.</p>
       {message && <p className="app-success" role="status">{message}</p>}
       {error && <p className="app-error" role="alert">{error}</p>}
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
-            <tr><th scope="col">Tenant</th><th scope="col">Vlasnik</th><th scope="col">Stanje</th><th scope="col">Vrijedi do</th><th scope="col">Nadzor</th><th scope="col"><span className="sr-only">Radnja</span></th></tr>
+            <tr><th scope="col">Tenant</th><th scope="col">Vlasnik</th><th scope="col">Plan</th><th scope="col">Stanje</th><th scope="col">Vrijedi do</th><th scope="col">Nadzor</th><th scope="col"><span className="sr-only">Radnja</span></th></tr>
           </thead>
           <tbody>
             {tenants.map((tenant) => {
@@ -90,12 +91,13 @@ export function AdminPanel() {
               const days = daysLeft(tenant.periodEnd)
               return (
                 <tr key={tenant.slug}>
-                  <td><strong>{tenant.name}</strong><small>{tenant.slug}</small>{tenant.request && <span className={`admin-badge ${isPaymentRequest(tenant.request) ? 'admin-badge-pending' : 'admin-badge-help'}`}>{REQUEST_LABEL[tenant.request.intent] ?? tenant.request.intent}{tenant.request.createdAt ? ` · ${formatZagreb(tenant.request.createdAt, false)}` : ''}</span>}</td>
+                  <td><strong>{tenant.name}</strong><small>{tenant.slug}</small>{tenant.order && <span className="admin-badge admin-badge-pending">{orderBadge(tenant.order)}{tenant.order.billingName ? ` · ${tenant.order.billingName}` : ''}</span>}{tenant.request && <span className={`admin-badge ${isPaymentRequest(tenant.request) ? 'admin-badge-pending' : 'admin-badge-help'}`}>{REQUEST_LABEL[tenant.request.intent] ?? tenant.request.intent}{tenant.request.createdAt ? ` · ${formatZagreb(tenant.request.createdAt, false)}` : ''}</span>}</td>
                   <td>{tenant.ownerEmail ?? '—'}</td>
+                  <td>{tenant.plan ? PLAN_LABEL[tenant.plan] ?? tenant.plan : '—'}</td>
                   <td><span className={`admin-badge admin-badge-${state}`}>{STATE_LABEL[state]}</span></td>
                   <td>{tenant.periodEnd ? formatZagreb(tenant.periodEnd, false) : '—'}{days !== null && state !== 'expired' && <small>{days} dana</small>}</td>
                   <td>{tenant.monitorOverall ? MONITOR_LABEL[tenant.monitorOverall] ?? tenant.monitorOverall : '—'}{tenant.monitorCheckedAt && <small>{formatZagreb(tenant.monitorCheckedAt)}</small>}</td>
-                  <td><button className="app-button app-button-light" type="button" disabled={busy !== '' || state === 'none'} onClick={() => void activate(tenant)}>{busy === tenant.slug ? 'Aktiviram…' : state === 'active' ? 'Produlji za 1 god.' : 'Aktiviraj (1 god.)'}</button></td>
+                  <td><button className="app-button app-button-light" type="button" disabled={busy !== '' || state === 'none'} onClick={() => void activate(tenant)}>{busy === tenant.slug ? 'Aktiviram…' : tenant.order ? (tenant.order.kind === 'publisher_upgrade' ? 'Potvrdi uplatu (Publisher)' : 'Potvrdi uplatu') : state === 'active' ? 'Produlji za 1 god.' : 'Aktiviraj (1 god.)'}</button></td>
                 </tr>
               )
             })}

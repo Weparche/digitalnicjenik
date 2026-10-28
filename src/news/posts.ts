@@ -710,7 +710,7 @@ export const NEWS_POSTS: NewsPost[] = [
 <li>Na NEPAR Publisheru otvorite dio <strong>Učitajte Excel ili CSV</strong>.</li>
 <li>Učitajte <code>.xlsx</code>; standardna HOK polja bit će predložena za mapiranje.</li>
 <li>Provjerite vrijednosti i rezultate validacije.</li>
-<li>Nakon provjere nastavite prema CSV/XML objavi i probnom javnom URL-u.</li>
+<li>Nakon provjere objavite CSV/XML na stalnom javnom URL-u — prva 24 sata besplatno.</li>
 </ol>
 <p><strong>Važno:</strong> automatsko prepoznavanje u ovom flowu odnosi se na HOK predložak za <strong>usluge</strong>. Za proizvode Odluka traži širi skup podataka pa ih treba provjeriti prema HOK predlošku i službenom tekstu Odluke.</p>`,
       },
@@ -756,7 +756,7 @@ export const NEWS_POSTS: NewsPost[] = [
     kicker: 'Praktični vodič',
     widgetEyebrow: 'NOVO · PRIMJER',
     widgetHeadline: 'Primjer CSV digitalnog cjenika za usluge',
-    widgetSub: 'Preuzmite primjer, provjerite datoteku i objavite probno',
+    widgetSub: 'Preuzmite primjer, provjerite datoteku i objavite besplatno na 24 h',
     schemaSection: 'Vodič',
     formatExample: {
       csvText: SERVICE_CSV_EXAMPLE,
@@ -770,7 +770,7 @@ export const NEWS_POSTS: NewsPost[] = [
       height: 630,
     },
     cta: { label: 'Provjeri svoj CSV', href: '/#csv-validator' },
-    secondaryCta: { label: 'Objavi probno 7 dana', href: '/#csv-validator' },
+    secondaryCta: { label: 'Objavi besplatno na 24 h', href: '/#csv-validator' },
     sources: [
       {
         title: 'NN 101/2026-1213 — Odluka o objavi cjenika proizvoda i usluga',
@@ -828,8 +828,8 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         heading: 'Želite ga odmah objaviti na webu?',
         level: 2,
-        html: `<p>Nakon provjere možete pokrenuti <strong>7-dnevni probni</strong> javni cjenik na vlastitom URL-u — isti Publisher flow kao na početnoj stranici.</p>
-<p><a href="/#csv-validator"><strong>Objavi probno 7 dana →</strong></a></p>`,
+        html: `<p>Nakon provjere cjenik možete objaviti na vlastitom javnom URL-u — <strong>besplatno 24 sata</strong>, a isti link zadržite za 19,90 €/god.</p>
+<p><a href="/#csv-validator"><strong>Objavi besplatno na 24 h →</strong></a></p>`,
       },
     ],
   },
@@ -954,7 +954,7 @@ export const NEWS_POSTS: NewsPost[] = [
 <ul class="news-bullets">
 <li>provjeriti postoji li već javni CSV/XML na vašem webu (readiness checker),</li>
 <li>učitati Excel ili CSV i proći <strong>validaciju strukture</strong> (uključujući dodatnu/sidrenu cijenu gdje je potrebna),</li>
-<li>pokrenuti <strong>7-dnevni probni</strong> javni cjenik na vlastitom URL-u prije aktivacije Publishera.</li>
+<li>objaviti javni cjenik na vlastitom URL-u <strong>besplatno na 24 sata</strong>, a zatim zadržati isti link.</li>
 </ul>
 <p><a href="/#csv-validator">Učitajte cjenik za besplatnu provjeru →</a> · <a href="/">Provjera postojeće stranice →</a></p>
 <p>Za praktičan primjer CSV/XML za usluge pogledajte <a href="/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/">Primjer CSV digitalnog cjenika za pružatelje usluga</a>.</p>`,
