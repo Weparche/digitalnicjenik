@@ -48,7 +48,7 @@ describe('document score evidence', () => {
     expect(result.details.structureStatus).toBe('pass')
     expect(result.details.contentStatus).toBe('unknown')
     expect(result.details.csvAnalysis?.structureReasons.join(' ')).toContain('uzorku')
-    expect(report.checks.find((c) => c.id === 'csv')?.status).toBe('pass')
+    expect(report.checks.find((c) => c.id === 'machine')?.status).toBe('pass')
     expect(report.checks.find((c) => c.id === 'content')?.status).toBe('unknown')
   })
 })
