@@ -60,7 +60,7 @@ describe('large digital price lists', () => {
     expect(checked.details.contentStatus).toBe('unknown')
     expect(checked.details.csvAnalysis?.structureReasons.join(' ')).toContain('uzorku')
     expect(checked.details.archiveFound).toBe(true)
-    expect(report.checks.find(check => check.id === 'xml')?.status).toBe('not_applicable')
+    expect(report.checks.find(check => check.id === 'machine')).toMatchObject({ status: 'pass', evidence: expect.stringContaining('XML nije objavljen — nije obvezan') })
     expect(report.score).toBeGreaterThanOrEqual(8)
   })
 })
