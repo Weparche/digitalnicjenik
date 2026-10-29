@@ -1,5 +1,6 @@
+import { requireAdmin, opsError } from '../../_admin-auth'
 import type { TrialEnv } from '../../_trial'
-import { AccessDeniedError, accessErrorResponse, operatorAuthorized } from '../../_write-auth'
+import { AccessDeniedError } from '../../_write-auth'
 
 type Row = {
   slug: string
@@ -24,7 +25,7 @@ type Row = {
 /** Ops-only overview for /admin: every tenant with entitlement, owner e-mail and latest monitor result. */
 export const onRequestGet = async ({ request, env }: { request: Request; env: TrialEnv }) => {
   try {
-    if (!operatorAuthorized(env, request)) throw new AccessDeniedError(401, 'unauthorized', 'Operator key required.')
+    await requireAdmin(request, env)
     if (!env.DB) throw new AccessDeniedError(503, 'db_unavailable', 'D1 binding DB nije konfiguriran.')
     const rows = await env.DB.prepare(
       `SELECT t.slug, t.name, e.plan, e.status, e.period_end,
@@ -63,6 +64,6 @@ export const onRequestGet = async ({ request, env }: { request: Request; env: Tr
       })),
     }, { headers: { 'cache-control': 'no-store' } })
   } catch (error) {
-    return accessErrorResponse(error) ?? Response.json({ error: 'Pregled trenutačno nije dostupan.' }, { status: 500, headers: { 'cache-control': 'no-store' } })
+    return opsError(error)
   }
 }

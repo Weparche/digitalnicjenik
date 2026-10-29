@@ -13,7 +13,7 @@ describe('recommendation and pricing content', () => {
     expect(PLANS.map((plan) => [plan.id, plan.price])).toEqual([
       ['link', 19.9],
       ['publisher', 49.9],
-      ['web', 79.9],
+      ['web', 99],
     ])
 
     const faq = allFaqText()

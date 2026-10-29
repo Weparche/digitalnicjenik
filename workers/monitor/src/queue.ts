@@ -4,7 +4,8 @@ import { insertRunStatement, readState, writeStateStatement } from '../../../sha
 import type { MonitorJob, MonitorMessage, MonitorQueue } from '../../../shared/compliance/jobs'
 import type { AlertKind, MonitorState } from '../../../shared/compliance/types'
 import { budgetedFetch } from '../../../shared/compliance/transport'
-import { sendAlert } from './alert'
+import { recordMonitorNotifications } from '../../../shared/monitor-notifications'
+import { dispatchLifecycle } from '../../../shared/lifecycle'
 import type { Env } from './index'
 
 type CheckPayload = PreparedCheck & { notification?: { kind: AlertKind; before: MonitorState; after: MonitorState } }
@@ -19,16 +20,8 @@ async function saveProgress(env: Env, job: MonitorJob, token: string, prepared: 
 }
 
 async function notify(env: Env, job: MonitorJob, prepared: CheckPayload) {
-  const notification = prepared.notification
-  if (notification) {
-    const delivered = await sendAlert(env, notification.kind, prepared.run, prepared.tenant, fetch, job.id)
-    if (delivered.failed.length || !delivered.sent.length) {
-      const retryState = { ...notification.after, lastAlertAt: notification.before.lastAlertAt, lastAlertKind: notification.before.lastAlertKind, alertOpen: notification.before.alertOpen }
-      await writeStateStatement(env.DB, retryState).run()
-      throw new Error('monitor_delivery_incomplete')
-    }
-    await writeStateStatement(env.DB, notification.after).run()
-  }
+  await recordMonitorNotifications(env,prepared.run,prepared.tenant)
+  await dispatchLifecycle(env)
   await env.DB.prepare("UPDATE monitor_jobs SET status = 'completed', updated_at = ?, lease_token = NULL, lease_until = NULL WHERE id = ? AND lease_token = ?")
     .bind(new Date().toISOString(), job.id, job.lease_token).run()
 }

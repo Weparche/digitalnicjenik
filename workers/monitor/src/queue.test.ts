@@ -28,7 +28,7 @@ async function seed(archives = 0) {
 describe('queued monitor', () => {
   beforeEach(async () => {
     messages.length = 0; sent.length = 0
-    await env.DB.batch(['monitor_deliveries', 'monitor_jobs', 'monitor_runs', 'monitor_state', 'sync_logs', 'price_publications', 'price_list_versions', 'price_uploads', 'publication_targets', 'publication_metadata', 'entitlements', 'tenants'].map(table => env.DB.prepare(`DELETE FROM ${table}`)))
+    await env.DB.batch(['lifecycle_events','monitor_incidents','monitor_deliveries', 'monitor_jobs', 'monitor_runs', 'monitor_state', 'sync_logs', 'price_publications', 'price_list_versions', 'price_uploads', 'publication_targets', 'publication_metadata', 'entitlements', 'tenants'].map(table => env.DB.prepare(`DELETE FROM ${table}`)))
   })
   it('checkpoints a large archive, never reports partial success, and ignores duplicate deliveries', async () => {
     const publication = await seed(35)
@@ -54,25 +54,26 @@ describe('queued monitor', () => {
     }
     expect(await latestMonitorJob(env.DB, 'nepar')).toMatchObject({ status: 'completed', checked: 35, total: 35 })
     expect((await readLatestRun(env.DB, 'nepar'))?.overall).toBe('fail')
-    expect(sent).toEqual(['ops@nepar.hr'])
+    expect(sent).toEqual([])
     await processMonitorJob(runtimeEnv, job!.id, fetcher)
-    expect(sent).toEqual(['ops@nepar.hr'])
+    expect(sent).toEqual([])
     expect((await env.DB.prepare('SELECT COUNT(*) AS n FROM monitor_runs').first<{ n: number }>())?.n).toBe(1)
   })
-  it('recovers after an owner delivery failure without repeating a successful recipient', async () => {
-    const publication = await seed()
-    await env.DB.prepare("INSERT INTO auth_users (id, email, created_at, updated_at) VALUES ('owner', 'owner@example.hr', ?, ?)").bind(NOW.toISOString(), NOW.toISOString()).run()
-    await env.DB.prepare("INSERT INTO tenant_members (id, tenant_id, user_id, role, created_at) VALUES ('member-owner', 'nepar', 'owner', 'owner', ?)").bind(NOW.toISOString()).run()
-    const runtimeEnv = runtime()
-    let unavailable = true
-    runtimeEnv.EMAIL = { send: async message => { if (unavailable && message.to === 'owner@example.hr') throw new Error('temporary'); sent.push(String(message.to)); return {} } }
-    const job = await enqueueMonitorCheck(env.DB, runtimeEnv.MONITOR_QUEUE!, 'nepar', 'manual', NOW)
-    const fetcher: typeof fetch = async input => String(input).endsWith('/cjenik.csv') ? new Response(renderCsv(list), { headers: { 'content-disposition': `inline; filename="${publication.filenameStem}.csv"` } }) : new Response('down', { status: 500 })
-    await expect(processMonitorJob(runtimeEnv, job!.id, fetcher)).rejects.toThrow('delivery_incomplete')
-    unavailable = false
-    await processMonitorJob(runtimeEnv, job!.id, fetcher)
-    expect(sent.filter(to => to === 'ops@nepar.hr')).toHaveLength(1)
-    expect(sent.filter(to => to === 'owner@example.hr')).toHaveLength(1)
+  it('finishes the monitor job while an ambiguous delivery awaits review in the outbox',async()=>{
+    const publication=await seed()
+    await env.DB.prepare("INSERT INTO auth_users(id,email,email_verified_at,created_at,updated_at) VALUES ('owner','owner@example.hr',?,?,?)").bind(NOW.toISOString(),NOW.toISOString(),NOW.toISOString()).run()
+    await env.DB.prepare("INSERT INTO tenant_members(id,tenant_id,user_id,role,created_at) VALUES ('member-owner','nepar','owner','owner',?)").bind(NOW.toISOString()).run()
+    const runtimeEnv=runtime()
+    runtimeEnv.LIFECYCLE_EMAILS_ENABLED='true'
+    let attempts=0
+    runtimeEnv.EMAIL={send:async()=>{attempts++;throw new Error('ambiguous')}}
+    const job=await enqueueMonitorCheck(env.DB,runtimeEnv.MONITOR_QUEUE!,'nepar','manual',NOW)
+    const fetcher:typeof fetch=async input=>String(input).endsWith('/cjenik.csv')?new Response(renderCsv(list),{headers:{'content-disposition':`inline; filename="${publication.filenameStem}.csv"`}}):new Response('down',{status:500})
+    await processMonitorJob(runtimeEnv,job!.id,fetcher)
+    await processMonitorJob(runtimeEnv,job!.id,fetcher)
+    expect(attempts).toBe(1)
+    expect(await latestMonitorJob(env.DB,'nepar')).toMatchObject({status:'completed'})
+    expect(await env.DB.prepare('SELECT status FROM lifecycle_deliveries').first()).toMatchObject({status:'uncertain'})
   })
   it('marks exhausted jobs failed, rather than successful', async () => {
     await seed()

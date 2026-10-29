@@ -7,7 +7,7 @@ import { recordUpgradeRequest } from '../../_trial'
 const KEY = 'ops-key'
 const iso = '2026-11-01T00:00:00Z'
 const get = () => onRequestGet({ request: new Request('https://x.test/api/ops/tenants', { headers: { authorization: `Bearer ${KEY}` } }), env: { ...env, OPERATOR_WRITE_KEY: KEY } as never })
-const doRenew = () => renew({ request: new Request('https://x.test/api/ops/renew', { method: 'POST', headers: { authorization: `Bearer ${KEY}` }, body: JSON.stringify({ slug: 'acme' }) }), env: { ...env, OPERATOR_WRITE_KEY: KEY } as never })
+const doRenew = () => renew({ request: new Request('https://x.test/api/ops/renew', { method: 'POST', headers: { authorization: `Bearer ${KEY}` }, body: JSON.stringify({ slug:'acme',action:'activate',reason:'Manual demonstration',requestKey:'ops-request-activate' }) }), env: { ...env, OPERATOR_WRITE_KEY: KEY } as never })
 const input = { tenantId: 't1', intent: 'self_service' as const, email: 'vlasnik@acme.hr' }
 
 describe('upgrade requests ("čeka uplatu")', () => {
@@ -35,16 +35,11 @@ describe('upgrade requests ("čeka uplatu")', () => {
     expect(open.results).toEqual([{ message: 'ponovno' }])
   })
 
-  it('renew closes open requests, and a new one can be opened afterwards', async () => {
+  it('manual activation preserves unrelated open service inquiries', async () => {
     await recordUpgradeRequest(env as never, input)
-    await doRenew()
-    const after = await env.DB.prepare('SELECT status, handled_at FROM upgrade_requests').all<{ status: string; handled_at: string | null }>()
-    expect(after.results).toHaveLength(1)
-    expect(after.results[0]!.status).toBe('done')
-    expect(after.results[0]!.handled_at).not.toBeNull()
-    const body = await (await get()).json() as { tenants: Array<{ request: unknown }> }
-    expect(body.tenants[0]!.request).toBeNull()
-    await recordUpgradeRequest(env as never, input)
-    expect((await env.DB.prepare("SELECT count(*) c FROM upgrade_requests WHERE status = 'open'").first<{ c: number }>())?.c).toBe(1)
+    const response=await doRenew()
+    expect(response.status).toBe(200)
+    const after=await env.DB.prepare('SELECT status FROM upgrade_requests').all<{status:string}>()
+    expect(after.results).toEqual([{status:'open'}])
   })
 })

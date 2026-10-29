@@ -24,6 +24,7 @@ function makeEnv(sent: Sent[], overrides: Partial<Env> = {}): Env {
     PUBLIC_APP_URL: 'https://digitalnicjenik.nepar.hr',
     MONITOR_QUEUE: { send: async () => {} },
     MONITOR_SECRET: 'monitor-secret',
+    LIFECYCLE_EMAILS_ENABLED:'true',
     EMAIL: { send: async (message) => { sent.push({ to: String(message.to), subject: message.subject, text: message.text ?? '' }); return {} } },
     ...overrides,
   }
@@ -61,6 +62,8 @@ async function seed() {
 describe('monitor worker', () => {
   beforeEach(async () => {
     await testEnv.DB.batch([
+      testEnv.DB.prepare('DELETE FROM lifecycle_events'),
+      testEnv.DB.prepare('DELETE FROM monitor_incidents'),
       testEnv.DB.prepare('DELETE FROM monitor_runs'),
       testEnv.DB.prepare('DELETE FROM monitor_state'),
       testEnv.DB.prepare('DELETE FROM price_publications'),
@@ -73,46 +76,41 @@ describe('monitor worker', () => {
       testEnv.DB.prepare('DELETE FROM tenants'),
     ])
     await seed()
+    await testEnv.DB.prepare("UPDATE auth_users SET email_verified_at=created_at").run()
   })
 
-  it('e-mails owner and ops once on fail, then once on recovery', async () => {
-    const sent: Sent[] = []
-    const env = makeEnv(sent)
-    await checkAndAlert(env, 'acme', 'cron', NOW, feeds(404))
-    expect(sent.map((mail) => mail.to).sort()).toEqual(['ops@nepar.hr', 'vlasnik@acme.hr'])
-    expect(sent[0]!.subject).toContain('Cjenik nije ispravno objavljen')
-    expect(sent[0]!.text).toContain('KRITIČNO — XML vraća HTTP 404.')
-    expect(sent[0]!.text).toContain('CSV je uredan.')
-    expect(sent[0]!.text).toContain('prije 08:00')
-
-    await checkAndAlert(env, 'acme', 'retry', new Date(NOW.getTime() + 3600_000), feeds(404))
-    expect(sent).toHaveLength(2) // deduped
-
-    sent.length = 0
-    await checkAndAlert(env, 'acme', 'cron', new Date(NOW.getTime() + 86_400_000), feeds())
-    expect(sent.map((mail) => mail.subject)).toEqual(['Cjenik je ponovno ispravan — Acme d.o.o.', 'Cjenik je ponovno ispravan — Acme d.o.o.'])
+  it('notifies only the current owner once per continuous incident and once on recovery',async()=>{
+    const sent:Sent[]=[]
+    const runtime=makeEnv(sent)
+    await checkAndAlert(runtime,'acme','cron',NOW,feeds(404))
+    expect(sent.map(mail=>mail.to)).toEqual(['vlasnik@acme.hr'])
+    expect(sent[0].subject).toContain('CSV/XML')
+    await checkAndAlert(runtime,'acme','retry',new Date(NOW.getTime()+3600_000),feeds(404))
+    expect(sent).toHaveLength(1)
+    await checkAndAlert(runtime,'acme','cron',new Date(NOW.getTime()+86_400_000),feeds())
+    expect(sent).toHaveLength(2)
+    expect(sent[1].to).toBe('vlasnik@acme.hr')
+    expect((await testEnv.DB.prepare("SELECT COUNT(*) AS n FROM lifecycle_events WHERE event_type='monitor_recovery'").first<{n:number}>())?.n).toBe(1)
   })
-
-  it('a failing recipient does not block the others', async () => {
-    const sent: Sent[] = []
-    const env = makeEnv(sent, { EMAIL: { send: async (message) => { if (String(message.to).startsWith('vlasnik')) throw new Error('bounce'); sent.push({ to: String(message.to), subject: message.subject, text: message.text ?? '' }); return {} } } })
-    const result = await runTenantCheck(env, { slug: 'acme', trigger: 'cron', now: NOW, fetcher: feeds(500) })
-    if (result.status !== 'checked' || !result.alert) throw new Error('expected an alert')
-    const outcome = await sendAlert(env, result.alert, result.run, result.tenant)
-    expect(outcome).toEqual({ sent: ['ops@nepar.hr'], failed: ['vlasnik@acme.hr'] })
+  it('does not blindly resend an ambiguous transport outcome',async()=>{
+    let attempts=0
+    const runtime=makeEnv([],{EMAIL:{send:async()=>{attempts++;throw new Error('connection lost')}}})
+    await checkAndAlert(runtime,'acme','cron',NOW,feeds(500))
+    await checkAndAlert(runtime,'acme','retry',new Date(NOW.getTime()+3600_000),feeds(500))
+    expect(attempts).toBe(1)
+    expect(await testEnv.DB.prepare('SELECT status FROM lifecycle_deliveries').first()).toMatchObject({status:'uncertain'})
   })
-
-  it('retries a failed owner delivery without waiting 24 hours', async () => {
-    const sent: Sent[] = []
-    let rejectOwner = true
-    const deliveryEnv = makeEnv(sent, { EMAIL: { send: async message => {
-      if (rejectOwner && String(message.to).startsWith('vlasnik')) throw new Error('temporary failure')
-      sent.push({ to: String(message.to), subject: message.subject, text: message.text ?? '' }); return {}
-    } } })
-    await checkAndAlert(deliveryEnv, 'acme', 'cron', NOW, feeds(500))
-    rejectOwner = false
-    await checkAndAlert(deliveryEnv, 'acme', 'retry', new Date(NOW.getTime() + 3600_000), feeds(500))
-    expect(sent.some(mail => mail.to === 'vlasnik@acme.hr')).toBe(true)
+  it('retries a known rate-limit rejection through the durable outbox',async()=>{
+    const sent:Sent[]=[]
+    let limited=true
+    const runtime=makeEnv(sent,{EMAIL:{send:async message=>{
+      if(limited)throw new Error('email_rate_limited')
+      sent.push({to:String(message.to),subject:message.subject,text:message.text??''});return {messageId:'ok'}
+    }}})
+    await checkAndAlert(runtime,'acme','cron',NOW,feeds(500))
+    limited=false
+    await checkAndAlert(runtime,'acme','retry',new Date(NOW.getTime()+3600_000),feeds(500))
+    expect(sent.map(mail=>mail.to)).toEqual(['vlasnik@acme.hr'])
   })
 
   it('scheduled retry only re-checks tenants that are warn/fail or unchecked', async () => {

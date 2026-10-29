@@ -7,6 +7,6 @@ describe('publisher pricing labels', () => {
   })
 
   it('formats implementation intent', () => {
-    expect(implementationIntentLabel()).toBe('Web + Publisher — 79,90 €/god')
+    expect(implementationIntentLabel()).toBe('Web + Publisher — 99,00 €/god')
   })
 })

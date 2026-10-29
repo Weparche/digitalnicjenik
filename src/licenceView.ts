@@ -1,8 +1,13 @@
 import type { PlanFeatures } from '../shared/entitlements'
+import { entitlementAccess } from '../shared/entitlements'
+import type { Entitlement } from './price-engine/types'
+import type { OrderKind } from '../shared/payment'
 
 export type OrderPayment = {
   reference: string
-  kind: 'web_link' | 'publisher_upgrade'
+  kind: OrderKind
+  status?: string
+  paymentReportedAt?: string | null
   installation: boolean
   amountCents: number
   amountLabel: string
@@ -19,10 +24,11 @@ export type OrderPayment = {
 }
 
 export type Licence = {
-  entitlement: { plan: string; status: string; periodStart: string | null; periodEnd: string | null } | null
+  entitlement: (Pick<Entitlement,'plan'|'status'|'periodStart'|'periodEnd'|'paidConfirmedAt'|'graceUntil'>) | null
   features: PlanFeatures
   upgradeAvailable: boolean
   order: OrderPayment | null
+  access?: ReturnType<typeof entitlementAccess>
 }
 
 /**
@@ -31,15 +37,16 @@ export type Licence = {
  * - expired: the public link is switched off, data is kept
  * - web_link / publisher: paid and live
  */
-export type LicenceState = 'none' | 'free' | 'awaiting_payment' | 'expired' | 'web_link' | 'publisher'
+export type LicenceState = 'none' | 'free' | 'awaiting_payment' | 'expired' | 'web_link' | 'publisher' | 'grace' | 'suspended'
 
 export function licenceState(licence: Licence | null, now = Date.now()): LicenceState {
   const entitlement = licence?.entitlement
   if (!licence || !entitlement) return 'none'
-  const ended = entitlement.status === 'expired' || entitlement.status === 'suspended'
-    || (entitlement.periodEnd !== null && new Date(entitlement.periodEnd).getTime() < now)
-  if (ended) return 'expired'
-  if (licence.order?.kind === 'web_link') return 'awaiting_payment'
+  const effective = entitlementAccess({id:'view',tenantId:'view',...entitlement},now)
+  if (effective.state === 'suspended') return 'suspended'
+  if (effective.state === 'grace') return 'grace'
+  if (!effective.live) return 'expired'
+  if (entitlement.status === 'trial' && licence.order?.status !== 'paid' && licence.order) return 'awaiting_payment'
   if (entitlement.status === 'trial') return 'free'
   return licence.features.monitoring ? 'publisher' : 'web_link'
 }

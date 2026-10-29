@@ -2,7 +2,7 @@ import { deterministicPublicationHash, diffPriceLists } from "../src/price-engin
 import { usesProductStructure } from '../src/price-engine/profile'
 import { getRuleset } from '../shared/compliance/rulesets'
 import { parsePublicationDetails } from '../shared/publication-details'
-import { featuresForPlan, PUBLISHING_PLANS } from '../shared/entitlements'
+import { entitlementIsLive, featuresForPlan, liveEntitlementSql } from '../shared/entitlements'
 import { createFilenameStemPrefix, filenameTimestamp } from "../src/price-engine/filename"
 import { parseMarketinoCsv } from "../src/price-engine/adapters/marketinoCsv"
 import { mergeValidationIssues, validatePriceList } from "../src/price-engine/validate"
@@ -19,6 +19,10 @@ export type RuntimeEnv = {
   DEMO_WRITE_TENANT?: string
   DEMO_PUBLIC_HOSTNAME?: string
   DEFAULT_PUBLICATION_TIMEZONE?: string
+  ADMIN_EMAILS?: string
+  LIFECYCLE_EMAILS_ENABLED?: string
+  DAILY_PUBLICATION_ENABLED?: string
+  PUBLIC_APP_URL?: string
   OPERATOR_WRITE_KEY?: string
   DEMO_WRITE_RATE_LIMIT_SECRET?: string
   LEAD_RATE_LIMIT_SECRET?: string
@@ -148,8 +152,8 @@ export async function readMetadataForSlug(env: RuntimeEnv, slug: string) {
 }
 
 export async function readEntitlement(env: RuntimeEnv, slug: string): Promise<Entitlement | null> {
-  const row = await env.DB?.prepare("SELECT e.id, e.tenant_id, e.plan, e.status, e.period_start, e.period_end FROM entitlements e JOIN tenants t ON t.id = e.tenant_id WHERE t.slug = ? ORDER BY e.created_at DESC LIMIT 1").bind(slug).first<{ id: string; tenant_id: string; plan: Entitlement["plan"]; status: Entitlement["status"]; period_start: string | null; period_end: string | null }>()
-  return row ? { id: row.id, tenantId: row.tenant_id, plan: row.plan, status: row.status, periodStart: row.period_start, periodEnd: row.period_end } : null
+  const row = await env.DB?.prepare("SELECT e.id, e.tenant_id, e.plan, e.status, e.period_start, e.period_end, e.paid_confirmed_at, e.grace_until FROM entitlements e JOIN tenants t ON t.id = e.tenant_id WHERE t.slug = ? ORDER BY e.created_at DESC LIMIT 1").bind(slug).first<{ id: string; tenant_id: string; plan: Entitlement["plan"]; status: Entitlement["status"]; period_start: string | null; period_end: string | null; paid_confirmed_at: string | null; grace_until: string | null }>()
+  return row ? { id: row.id, tenantId: row.tenant_id, plan: row.plan, status: row.status, periodStart: row.period_start, periodEnd: row.period_end, paidConfirmedAt: row.paid_confirmed_at, graceUntil: row.grace_until } : null
 }
 
 export async function readCurrent(env: RuntimeEnv, slug: string) {
@@ -195,7 +199,8 @@ export async function updateDraft(env: RuntimeEnv, slug: string, draftId: string
   return { draft: await readDraft(env, slug, draftId), validation }
 }
 
-export async function publishDraft(env: RuntimeEnv, slug: string, draftId: string, internalDemo = false) {
+export async function publishDraft(env: RuntimeEnv, slug: string, draftId: string, internalDemo = false, options: { now?: Date; expectedCurrentId?: string } = {}) {
+  const clock = options.now ?? new Date()
   if (!env.DB) throw new Error("D1 binding DB nije konfiguriran.")
   // Internal fixture shortcuts may never bypass validation/entitlements for a customer.
   internalDemo = internalDemo && slug === (env.DEMO_WRITE_TENANT || 'nepar')
@@ -205,26 +210,22 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const payload = withCanonicalTenant(draft.normalizedPayload, tenant)
   if (draft.status !== "ready_to_publish" && !internalDemo) throw new Error("Cjenik još nije spreman za objavu.")
   const metadata = await metadataFor(env, tenant.id)
-  const draftValidation = mergeValidationIssues(validatePriceList(payload, { timeZone: metadata.timezone }), draft.validationIssues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED'))
+  const draftValidation = mergeValidationIssues(validatePriceList(payload, { now: clock, timeZone: metadata.timezone }), draft.validationIssues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED'))
   if (!internalDemo && draftValidation.status !== "ready_to_publish") throw new Error("Cjenik više nije spreman za objavu. Ponovno provjerite dopune.")
   const entitlement = await readEntitlement(env, slug)
-  const live =
-    entitlement
-    && (entitlement.status === 'active' || entitlement.status === 'trial')
-    && featuresForPlan(entitlement.plan).publish
-    && entitlement.periodEnd
-    && new Date(entitlement.periodEnd).getTime() >= Date.now()
+  const live = entitlementIsLive(entitlement, clock.getTime()) && featuresForPlan(entitlement?.plan).publish
   if (!internalDemo && !live) throw new Error("Aktivan Publisher entitlement nije pronađen.")
   const current = await readCurrentPublication(env, slug)
+  if (options.expectedCurrentId && current?.id !== options.expectedCurrentId) throw new Error('publication_changed')
   if (slug !== (env.DEMO_WRITE_TENANT || 'nepar')) parsePublicationDetails(metadata)
   const profile = getRuleset().profiles[usesProductStructure(payload) ? 'products' : 'services']
-  const dailyStamp = profile.freshness.kind === 'working_day' ? new Intl.DateTimeFormat('en-CA', { timeZone: metadata.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) : undefined
+  const dailyStamp = profile.freshness.kind === 'working_day' ? new Intl.DateTimeFormat('en-CA', { timeZone: metadata.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(clock) : undefined
   const hash = await deterministicPublicationHash(payload, metadata, dailyStamp)
   if (current?.hash === hash) {
     await env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ?").bind(now(), draftId, tenant.id).run()
     return { changed: false, message: "Nema promjena za objavu.", publication: current, current: current.payload, changedItems: [] }
   }
-  const timestamp = now()
+  const timestamp = clock.toISOString()
   const tenantId = tenant.id
   const publicationId = id()
   const priceListId = id()
@@ -235,15 +236,17 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   // The first statement claims the draft. Every following statement also
   // requires that this payload is not already current. This makes a retry or
   // concurrent request idempotent without relying on a JavaScript-side lock.
+  const cas = options.expectedCurrentId ? " AND EXISTS (SELECT 1 FROM price_uploads cas_u JOIN publication_targets cas_t ON cas_t.tenant_id = cas_u.tenant_id WHERE cas_u.id = '" + draftId.replaceAll("'", "''") + "' AND cas_t.current_publication_id = cas_u.base_publication_id AND EXISTS (SELECT 1 FROM publication_metadata cas_m WHERE cas_m.tenant_id = cas_u.tenant_id AND cas_m.updated_at = cas_u.base_metadata_updated_at))" : ''
   const guard = "EXISTS (SELECT 1 FROM price_uploads WHERE id = ? AND tenant_id = ? AND status = 'published') AND NOT EXISTS (SELECT 1 FROM price_publications WHERE tenant_id = ? AND is_current = 1 AND hash = ?)"
-  const entitlementGuard = internalDemo ? "1 = 1" : "EXISTS (SELECT 1 FROM entitlements WHERE tenant_id = ? AND status IN ('active', 'trial') AND plan IN (" + PUBLISHING_PLANS.map((plan) => `'${plan}'`).join(', ') + ") AND period_end IS NOT NULL AND period_end >= ?)"
-  const firstBindings = internalDemo ? [timestamp, draftId, tenantId] : [timestamp, draftId, tenantId, tenantId, timestamp]
+  const guarded = guard + cas
+  const entitlementGuard = internalDemo ? "1 = 1" : "EXISTS (SELECT 1 FROM entitlements WHERE tenant_id = ? AND " + liveEntitlementSql('entitlements') + ')'
+  const firstBindings = internalDemo ? [timestamp, draftId, tenantId] : [timestamp, draftId, tenantId, tenantId, timestamp, timestamp, timestamp, timestamp]
   const insertedGuard = "EXISTS (SELECT 1 FROM price_publications WHERE id = ? AND tenant_id = ?)"
   const results = await env.DB.batch([
-    env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ? AND status " + (internalDemo ? "IN ('ready_to_publish', 'manual_review', 'invalid')" : "= 'ready_to_publish'") + " AND " + entitlementGuard).bind(...firstBindings),
-    env.DB.prepare("UPDATE price_publications SET is_current = 0, superseded_at = ?, public_until = ? WHERE tenant_id = ? AND is_current = 1 AND " + guard).bind(timestamp, publicUntil, tenantId, draftId, tenantId, tenantId, hash),
-    env.DB.prepare("INSERT INTO price_list_versions (id, tenant_id, hash, payload_json, created_at) SELECT ?, ?, ?, ?, ? WHERE " + guard).bind(priceListId, tenantId, hash, json(payload), timestamp, draftId, tenantId, tenantId, hash),
-    env.DB.prepare("INSERT INTO price_publications (id, tenant_id, price_list_id, sequence, filename_stem, published_at, superseded_at, public_until, hash, payload_json, is_current) SELECT ?, ?, ?, next_publication_sequence, ? || '_' || next_publication_sequence || '_' || ?, ?, NULL, NULL, ?, ?, 1 FROM publication_metadata WHERE tenant_id = ? AND " + guard).bind(publicationId, tenantId, priceListId, filenamePrefix, filenameTime, timestamp, hash, json(payload), tenantId, draftId, tenantId, tenantId, hash),
+    env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ? AND status " + (internalDemo ? "IN ('ready_to_publish', 'manual_review', 'invalid')" : "= 'ready_to_publish'") + " AND " + entitlementGuard + cas).bind(...firstBindings),
+    env.DB.prepare("UPDATE price_publications SET is_current = 0, superseded_at = ?, public_until = ? WHERE tenant_id = ? AND is_current = 1 AND " + guarded).bind(timestamp, publicUntil, tenantId, draftId, tenantId, tenantId, hash),
+    env.DB.prepare("INSERT INTO price_list_versions (id, tenant_id, hash, payload_json, created_at) SELECT ?, ?, ?, ?, ? WHERE " + guarded).bind(priceListId, tenantId, hash, json(payload), timestamp, draftId, tenantId, tenantId, hash),
+    env.DB.prepare("INSERT INTO price_publications (id, tenant_id, price_list_id, sequence, filename_stem, published_at, superseded_at, public_until, hash, payload_json, is_current) SELECT ?, ?, ?, next_publication_sequence, ? || '_' || next_publication_sequence || '_' || ?, ?, NULL, NULL, ?, ?, 1 FROM publication_metadata WHERE tenant_id = ? AND " + guarded).bind(publicationId, tenantId, priceListId, filenamePrefix, filenameTime, timestamp, hash, json(payload), tenantId, draftId, tenantId, tenantId, hash),
     env.DB.prepare("UPDATE publication_metadata SET next_publication_sequence = next_publication_sequence + 1, updated_at = ? WHERE tenant_id = ? AND " + insertedGuard).bind(timestamp, tenantId, publicationId, tenantId),
     env.DB.prepare("UPDATE publication_targets SET current_publication_id = ?, updated_at = ? WHERE tenant_id = ? AND " + insertedGuard).bind(publicationId, timestamp, tenantId, publicationId, tenantId),
     env.DB.prepare("INSERT INTO sync_logs (id, tenant_id, provider, status, message, created_at, event_type, details_json) SELECT ?, ?, ?, 'published', ?, ?, 'publication_published', ? WHERE " + insertedGuard).bind(id(), tenantId, draft.sourceType, "Objavljena nova verzija cjenika.", timestamp, json({ publicationId, hash }), publicationId, tenantId),

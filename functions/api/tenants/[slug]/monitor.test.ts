@@ -27,9 +27,11 @@ describe('monitor API', () => {
       env.DB.prepare('DELETE FROM monitor_state'),
       env.DB.prepare('DELETE FROM publication_targets'),
       env.DB.prepare('DELETE FROM publication_metadata'),
+      env.DB.prepare('DELETE FROM entitlements'),
       env.DB.prepare('DELETE FROM tenants'),
       env.DB.prepare("INSERT INTO tenants (id, slug, name, currency, created_at, updated_at) VALUES ('t-acme', 'acme', 'Acme', 'EUR', '2026-11-17T00:00:00Z', '2026-11-17T00:00:00Z')"),
     ])
+    await env.DB.prepare("INSERT INTO entitlements(id,tenant_id,plan,status,period_end,created_at,updated_at) VALUES ('e-acme','t-acme','publisher_self_service','active','2099-01-01',?,?)").bind(iso,iso).run()
   })
 
   it('requires owner or operator access, even for the demo tenant', async () => {

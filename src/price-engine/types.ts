@@ -109,6 +109,8 @@ export type Entitlement = {
   status: EntitlementStatus
   periodStart: string | null
   periodEnd: string | null
+  paidConfirmedAt?: string | null
+  graceUntil?: string | null
 }
 
 export interface PriceSourceAdapter {

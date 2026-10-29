@@ -19,7 +19,7 @@ export function PricingPage() {
       page={page}
       lead={
         <>
-          Provjera i validacija su besplatne. Web Link je za web koji već imate, Publisher dodaje validaciju i svakodnevni nadzor. Plaćanje po ponudi, bez automatske naplate.
+          Provjera i validacija su besplatne. Web Link vodite kroz upload, Publisher kroz dashboard. Plaćanje uplatom na račun i ručna potvrda, bez automatske naplate; Web + Publisher ugovara se po ponudi.
         </>
       }
       related={[
@@ -37,8 +37,8 @@ export function PricingPage() {
 
       <section className="site-section" aria-labelledby="link-scope-title">
         <h2 id="link-scope-title">Što pokriva Web Link?</h2>
-        <p>Web Link je za pripremljeni CSV ili XML koji sami ažurirate, do {MAX_ITEMS_LABEL} stavki. Uključuje javni prikaz, CSV i XML te arhivu zamijenjenih verzija uz aktivnu pretplatu. Poveznicu postavljate na svoju postojeću web stranicu, bez plugina; ako želite da je postavimo mi, pomoć s ugradnjom stoji {installationPriceLabel()}.</p>
-        <p>Web Link ne čita podatke iz blagajne ili webshopa i ne objavljuje svaki dan ponovno nepromijenjeni cjenik proizvoda. Točnost podataka, pravodobne izmjene i način povezivanja s vašim webom treba provjeriti za vaše poslovanje. <a href="/objava-digitalnog-cjenika/#odgovornosti">Pogledajte što treba pripremiti prije objave.</a></p>
+        <p>Web Link je za Excel, CSV ili XML koji sami ažurirate, do {MAX_ITEMS_LABEL} stavki. Neograničeno zamjenjujete cijeli cjenik novom datotekom uz validaciju. Uključeni su HTML, CSV/XML, arhiva, QR, PDF, iframe i embed. Ugradnja na postojeći web zasebno stoji {installationPriceLabel()}.</p>
+        <p>Posljednje valjano objavljeno stanje proizvoda automatski se ponovno objavljuje svakog radnog dana prema kalendaru. NEPAR ne mijenja cijene niti ih preuzima iz blagajne ili webshopa. Usluge ne dobivaju dnevne duplikate bez promjene. <a href="/objava-digitalnog-cjenika/#odgovornosti">Priprema i odgovornosti prije objave.</a></p>
       </section>
 
       <section className="site-section" aria-labelledby="included-title">
@@ -57,10 +57,11 @@ export function PricingPage() {
       <section className="site-section" aria-labelledby="payment-title">
         <h2 id="payment-title">Kako se plaća i što je s licencom</h2>
         <ul className="news-bullets">
-          <li><strong>Po ponudi, uplatom na račun.</strong> Nema automatske naplate ni obnove kartice.</li>
+          <li><strong>Uplatom na račun uz HUB-3 2D barkod.</strong> Web Link i Publisher naručujete u dashboardu; novi web ide kroz upit i ponudu.</li>
           <li>Licenca se aktivira nakon što uplata bude evidentirana i vrijedi <strong>godinu dana</strong> od aktivacije.</li>
           <li>Isti javni URL ostaje nakon aktivacije, pa se poveznice na vašem webu ne mijenjaju.</li>
-          <li>Ako ne produljite licencu, javni URL se gasi, a podaci ostaju spremljeni.</li>
+          <li>Potvrđeno plaćeni godišnji paketi imaju još 7 dana gracea nakon isteka. Aktualni link, feedovi i objava rade do tog roka; potom se deaktiviraju ako obnova nije potvrđena. Prijava „Uplatio sam” sama ne aktivira niti produljuje paket.</li>
+          <li>Besplatna objava traje 24 sata, bez novog gracea. Arhiva ostaje dostupna prema rokovima zadržavanja i nakon običnog isteka.</li>
         </ul>
         <p>
           Cijene su godišnje i ne uključuju mjesečnu pretplatu. NEPAR pruža tehničku provjeru objave cjenika, ne pravni savjet ni jamstvo usklađenosti.

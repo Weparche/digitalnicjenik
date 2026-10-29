@@ -3,12 +3,14 @@ import { featuresForPlan, PUBLISHING_PLANS } from './entitlements'
 
 describe('featuresForPlan', () => {
   it('gives Web Link a complete publication without management features', () => {
-    expect(featuresForPlan('web_link')).toEqual({ publish: true, upload: true, archive: true, qr: true, pdf: true, embed: true, editItems: false, monitoring: false, alerts: false })
+    expect(featuresForPlan('web_link')).toEqual({ publish: true, upload: true, archive: true, qr: true, pdf: true, embed: true, editItems: false, monitoring: false, alerts: false, staticWebsite: false })
   })
 
   it('gives Publisher and managed tenants everything', () => {
     for (const plan of ['publisher_self_service', 'managed'] as const) {
-      expect(Object.values(featuresForPlan(plan)).every(Boolean)).toBe(true)
+      const {staticWebsite,...features}=featuresForPlan(plan)
+      expect(Object.values(features).every(Boolean)).toBe(true)
+      expect(staticWebsite).toBe(plan==='managed')
     }
   })
 

@@ -11,6 +11,8 @@ export const PLATFORM_GUIDES = [
   { platform: 'WooCommerce', text: 'Isti princip kao WordPress: poveznica u izborniku, podnožju ili na stranici trgovine. Za osnovni Web Link nije potreban WooCommerce plugin.' },
   { platform: 'Shopify', text: 'U postavkama navigacije (Navigation) dodajte stavku izbornika s poveznicom na digitalni cjenik, primjerice u podnožje trgovine.' },
   { platform: 'Wix, Webflow i vlastiti web', text: 'Dodajte običnu poveznicu ili gumb u izbornik, podnožje ili sadržaj. Za React, PHP ili drugi vlastiti web razvojnom timu predajete samo URL.' },
+  { platform:'Google Sites',text:'Umetanje → Ugradi: unesite javni URL cjenika ili podržani iframe kod. Ako ugrađivanje nije dostupno, dodajte običan gumb prema istom URL-u.' },
+  { platform:'Custom HTML / React',text:'Dodajte običan <a href="JAVNI_URL">Digitalni cjenik</a>, iframe ili postojeći embed.js s data-cjenik slugom. Skriptu u Reactu postavite prema pravilima svoje aplikacije; nema NEPAR native dodatka.' },
 ]
 
 export const LINK_PLACEMENTS = ['Glavni izbornik', 'Podnožje stranice', 'Gumb na stranici usluga ili trgovine', 'Poveznica u tekstu stranice']
@@ -31,6 +33,7 @@ export function ExistingWebPage() {
     ]}
   >
     <PlatformPills/>
+    <section className="site-section"><h2>Tri jednostavna načina</h2><ol className="news-bullets"><li><strong>Link ili gumb:</strong> javni NEPAR URL stavite u izbornik, podnožje ili sadržaj.</li><li><strong>Cjenik direktno na stranici:</strong> upotrijebite postojeći embed.js ili iframe iz dashboarda. WordPress: Custom HTML blok; Wix: Embed HTML.</li><li><strong>Redirect /cjenici:</strong> vaš developer ili standardna opcija hostinga može preusmjeriti tu adresu na javni NEPAR cjenik. Ne morate posluživati CSV/XML na istoj domeni.</li></ol></section>
     <ExistingWebSection landingLink={false}/>
 
     <section className="site-section" aria-labelledby="link-placement">

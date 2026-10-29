@@ -3,7 +3,7 @@ import type { D1DatabaseLike } from '../../../shared/db'
 import { readOwnerEmails } from '../../../shared/compliance/store'
 import type { AlertKind, MonitorIssue, MonitorRunRecord, MonitorTrigger } from '../../../shared/compliance/types'
 
-export type AlertEnv = EmailEnv & { DB: D1DatabaseLike; PUBLIC_APP_URL?: string }
+export type AlertEnv = EmailEnv & { LIFECYCLE_EMAILS_ENABLED?: string; DAILY_PUBLICATION_ENABLED?: string; DB: D1DatabaseLike; PUBLIC_APP_URL?: string }
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char)
 
@@ -67,34 +67,9 @@ export async function sendAlert(
   fetcher: typeof fetch = fetch,
   deliveryId?: string,
 ): Promise<{ sent: string[]; failed: string[] }> {
-  const message = buildAlertMessage(kind, run, tenant, env.PUBLIC_APP_URL)
-  const owners = await readOwnerEmails(env.DB, tenant.id)
-  const recipients = [...new Set([...owners, ...(env.EMAIL_TO ? [env.EMAIL_TO] : [])].map((email) => email.trim()).filter(Boolean))]
-  const sent: string[] = []
-  const failed: string[] = []
-  for (const to of recipients) {
-    if (deliveryId) {
-      await env.DB.prepare("INSERT OR IGNORE INTO monitor_deliveries (job_id, recipient, status, updated_at) VALUES (?, ?, 'pending', ?)").bind(deliveryId, to, new Date().toISOString()).run()
-      const claimed = await env.DB.prepare("UPDATE monitor_deliveries SET status = 'sending', updated_at = ? WHERE job_id = ? AND recipient = ? AND status IN ('pending', 'failed')").bind(new Date().toISOString(), deliveryId, to).run()
-      if (!claimed.meta?.changes) {
-        const previous = await env.DB.prepare('SELECT status FROM monitor_deliveries WHERE job_id = ? AND recipient = ?').bind(deliveryId, to).first<{ status: string }>()
-        // An interrupted in-flight send is ambiguous: do not send a duplicate automatically.
-        if (previous?.status === 'sent') sent.push(to)
-        else failed.push(to)
-        continue
-      }
-    }
-    let transmitted = false
-    try {
-      await sendTransactionalEmail(env, { to, ...message }, fetcher)
-      transmitted = true
-      if (deliveryId) await env.DB.prepare("UPDATE monitor_deliveries SET status = 'sent', updated_at = ? WHERE job_id = ? AND recipient = ?").bind(new Date().toISOString(), deliveryId, to).run()
-      sent.push(to)
-    } catch (error) {
-      console.error('monitor_alert_failed', JSON.stringify({ tenant: tenant.id, kind, reason: error instanceof Error ? error.message : 'unknown' }))
-      failed.push(to)
-      if (deliveryId && !transmitted) await env.DB.prepare("UPDATE monitor_deliveries SET status = 'failed', updated_at = ? WHERE job_id = ? AND recipient = ?").bind(new Date().toISOString(), deliveryId, to).run()
-    }
-  }
-  return { sent, failed }
+  const { recordMonitorNotifications } = await import('../../../shared/monitor-notifications')
+  const { dispatchLifecycle } = await import('../../../shared/lifecycle')
+  await recordMonitorNotifications(env,run,tenant)
+  await dispatchLifecycle(env)
+  return { sent: [], failed: [] }
 }

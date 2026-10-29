@@ -10,7 +10,7 @@ export async function onRequestGet({ request, env }: Context) {
   try {
     const session = await consumeMagicLink(env, token)
     const headers = new Headers({
-      location: '/app',
+      location: session.returnPath,
       'set-cookie': sessionCookieHeader(session.sessionToken, session.maxAgeSeconds, secure),
       'cache-control': 'no-store',
     })

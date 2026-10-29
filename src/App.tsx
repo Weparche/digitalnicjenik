@@ -1,3 +1,5 @@
+import { PublicationOverview, UploadReview, InstallationChoice, OwnedArchive } from './PublicationOverview'
+import { entitlementIsLive } from '../shared/entitlements'
 import { validRequiredPrice } from './price-engine/normalize'
 import { PlanCards } from './PlanCards'
 import { PublicationSettings } from './PublicationSettings'
@@ -215,6 +217,8 @@ function ValidationResultPanel({
   message,
   publication,
   onUpdateItem,
+  onAddItem,
+  onDeleteItem,
   onConfirmAnchorsFromRetail,
   onConfirmNoSpecialSale,
   onBulkAvailability,
@@ -233,6 +237,8 @@ function ValidationResultPanel({
   message: string
   publication: PricePublication | null
   onUpdateItem: (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => void
+  onAddItem?: () => void
+  onDeleteItem?: (index: number) => void
   onConfirmAnchorsFromRetail: () => void
   onConfirmNoSpecialSale: () => void
   onBulkAvailability: (value: Availability) => void
@@ -250,6 +256,10 @@ function ValidationResultPanel({
   const missingAvailability = list.items.filter((item) => !isServiceItem(item) && !item.availability).length
   const incomplete = validation.blockingCount > 0
   const tableRef = useRef<HTMLDivElement>(null)
+  const [page, setPage] = useState(0)
+  // Name, type and price are edited only in the Publisher editor; the sandbox only fills in required fields.
+  const editItems = Boolean(onDeleteItem)
+  const editorPage = Math.min(page, Math.max(0, Math.ceil(list.items.length / 50) - 1))
 
   useEffect(() => {
     if (!published) return
@@ -356,21 +366,22 @@ function ValidationResultPanel({
               <th>Sidrena cijena</th>
               <th>Posebna prodaja</th>
               {hasProducts && <><th>Šifra</th><th>Marka</th><th>Barkod</th><th>Jedinica i cijena po jedinici</th><th>Dostupnost</th></>}
-            </tr>
+            {onDeleteItem && <th>Akcije</th>}</tr>
           </thead>
           <tbody>
-            {list.items.map((item, index) => {
+            {list.items.slice(editorPage * 50, editorPage * 50 + 50).map((item, offset) => {
+              const index = editorPage * 50 + offset
               const service = isServiceItem(item)
               const anchorMissing = !validRequiredPrice(item.anchorPrice, isServiceItem(item))
               const specialApplied = item.specialSaleApplied === true
               return (
                 <tr key={index} className={anchorMissing ? 'row-needs-anchor' : undefined}>
                   <td>
-                    <strong>{item.name}</strong>
+                    {editItems ? <input className="app-table-input" aria-label={'Naziv za ' + (item.name || 'novu stavku')} value={item.name} onChange={event => onUpdateItem(index, {name:event.target.value})}/> : <strong>{item.name}</strong>}
                     <small>{item.category || 'Bez kategorije'}</small>
                   </td>
-                  <td>{item.type || 'Nije navedena'}</td>
-                  <td>{money(item.price)}</td>
+                  <td>{editItems ? <select aria-label={'Vrsta za ' + item.name} value={item.type ?? ''} onChange={event => onUpdateItem(index,{type:event.target.value})}><option value="">Odaberite</option><option value="Usluga">Usluga</option><option value="Proizvod">Proizvod</option></select> : item.type || 'Nije navedena'}</td>
+                  <td>{editItems ? <input className="app-table-input" aria-label={'Cijena za ' + item.name} type="number" min="0" step="0.01" value={Number.isFinite(item.price) ? item.price : ''} onChange={event => onUpdateItem(index,{price:event.target.value === '' ? NaN : Number(event.target.value)})}/> : money(item.price)}</td>
                   <td>
                     <label className={'anchor-field' + (anchorMissing ? ' is-required' : '')}>
                       <span className="sr-only">Sidrena cijena za {item.name}</span>
@@ -444,6 +455,7 @@ function ValidationResultPanel({
                       </select>
                     </td>
                   </>)}
+                  {onDeleteItem && <td><button type="button" className="app-link-button" onClick={() => {if(window.confirm('Obrisati ovu stavku iz nacrta?'))onDeleteItem(index)}}>Obriši</button></td>}
                 </tr>
               )
             })}
@@ -451,11 +463,12 @@ function ValidationResultPanel({
         </table>
       </div>
 
+      <div className="publication-actions"><button type="button" className="app-button app-button-light" disabled={editorPage === 0} onClick={() => setPage(editorPage-1)}>Prethodna</button><span>Stranica {editorPage+1} / {Math.max(1, Math.ceil(list.items.length/50))}</span><button type="button" className="app-button app-button-light" disabled={(editorPage+1)*50 >= list.items.length} onClick={() => setPage(editorPage+1)}>Sljedeća</button>{onAddItem && <button type="button" className="app-button app-button-light" onClick={() => {onAddItem();setPage(Math.floor(list.items.length/50))}}>Dodaj stavku</button>}</div>
       <div className="validator-actions">
         {mode === 'publisher' ? (
           <>
-            <button className="app-button app-button-light" type="button" onClick={onSaveDraft} disabled={busy}>Spremi dopune</button>
-            <button className="app-button app-button-primary" type="button" onClick={onPublish} disabled={incomplete || busy || published || publishBlocked}>{publishBlocked ? 'Objava zaključana' : 'Objavi novi cjenik'}</button>
+            <button className="app-button app-button-light" type="button" onClick={onSaveDraft} disabled={busy}>Spremi promjene</button>
+            <button className="app-button app-button-primary" type="button" onClick={onPublish} disabled={incomplete || busy || published || publishBlocked}>{publishBlocked ? 'Objava zaključana' : 'Objavi'}</button>
           </>
         ) : (
           <button className="app-button app-button-primary" type="button" onClick={onStartTrial} disabled={busy || !list || incomplete}>
@@ -573,7 +586,7 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
   return <main className={`public-shell${mode === 'normal' ? '' : ` public-shell--${mode}`}`}>
     {mode === 'print' && <div className="print-toolbar"><button className="app-button app-button-primary" type="button" onClick={() => window.print()}>Ispis / Spremi kao PDF</button><a href={customHost ? '/' : '/c/' + slug}>← Natrag na cjenik</a></div>}
     {showChrome && <div className="public-top"><Logo /><span className="public-badge">{demo ? 'DEMO PODACI' : isArchive ? 'JAVNA ARHIVA' : 'AKTUALNI CJENIK'}</span></div>}
-    <header className="public-header"><p className="eyebrow">NEPAR PUBLISHER</p><h1>{list.tenant.name}</h1><p className="public-updated">Zadnje objavljeno: {dateTime(list.updatedAt)}</p>{demo && <p className="public-demo-note">Demo podaci — ovo nije stvarni cjenik salona.</p>}</header>
+    <header className="public-header"><p className="eyebrow">NEPAR PUBLISHER</p><h1>{list.tenant.name}</h1><p className="public-updated">Zadnje objavljeno: {dateTime(currentPublication?.publishedAt ?? list.updatedAt)}</p>{demo && <p className="public-demo-note">Demo podaci — ovo nije stvarni cjenik salona.</p>}</header>
     {mode === 'print' && <section className="print-qr" aria-label="QR kod za aktualni cjenik"><QrCode value={publicUrl} label={'QR kod: ' + publicUrl} size={112} /><div><strong>Aktualni digitalni cjenik</strong><span>Skenirajte QR kod ili otvorite:</span><span className="print-url">{publicUrl}</span>{currentPublication && <span>Verzija {currentPublication.sequence} · objavljeno {dateTime(currentPublication.publishedAt)}</span>}</div></section>}
     {showChrome && !isArchive && (
       <aside className="public-checker-cta">
@@ -980,6 +993,8 @@ function ValidatorApp({
   const [publication, setPublication] = useState<PricePublication | null>(null)
   const [published, setPublished] = useState(false)
   const [claimOpen, setClaimOpen] = useState(false)
+  const [replacing,setReplacing] = useState(false)
+  const [currentPublication,setCurrentPublication] = useState<PricePublication | null>(null)
   const resolvedTenantId = tenantId || tenantSlug
   const tenantIdentity = { id: resolvedTenantId, slug: tenantSlug, name: tenantName }
   const apiBase = `/api/tenants/${encodeURIComponent(tenantSlug)}`
@@ -1004,15 +1019,17 @@ function ValidatorApp({
     let cancelled = false
     void fetch(apiBase, { credentials: 'include' }).then(async (response) => {
       if (cancelled || !response.ok) return
-      const payload = await response.json() as { priceList?: NormalizedPriceList; publication?: PricePublication }
+      const payload = await response.json() as { priceList?: NormalizedPriceList; publication?: PricePublication; draft?: {id:string; source_filename:string; normalized_payload_json:string; validation_issues_json:string} | null }
       if (!payload.priceList) return
-      setList(payload.priceList)
-      setPublished(!usesProductStructure(payload.priceList))
-      setSourceFilename('trenutna-objava')
+      setList(canEditItems && payload.draft ? JSON.parse(payload.draft.normalized_payload_json) as NormalizedPriceList : payload.priceList)
+      if (canEditItems && payload.draft) {setDraftId(payload.draft.id);setSourceFilename(payload.draft.source_filename);setIssues(JSON.parse(payload.draft.validation_issues_json) as ValidationIssue[])}
+      if(payload.publication)setCurrentPublication(payload.publication)
+      setPublished(!canEditItems)
+      if(!canEditItems||!payload.draft)setSourceFilename('trenutna-objava')
       if (payload.publication) setPublication(payload.publication)
     }).catch(() => undefined)
     return () => { cancelled = true }
-  }, [apiBase, mode])
+  }, [apiBase, mode, canEditItems])
 
   const updateItem = (index: number, patch: Partial<NormalizedPriceList['items'][number]>) => {
     setPublished(false)
@@ -1030,6 +1047,7 @@ function ValidatorApp({
     setPublication(null)
     setMessage('')
     setClaimOpen(false)
+    setReplacing(true)
     requestAnimationFrame(() => document.querySelector('.validation-app-panel')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }))
   }
 
@@ -1074,6 +1092,7 @@ function ValidatorApp({
   async function persistDraft() {
     if (!list) throw new Error('Cjenik nije učitan.')
     const id = draftId || await createRemoteDraft()
+    if (!canEditItems) return id
     if (!id) throw new Error('Cjenik nije moguće spremiti.')
     const response = await fetch(`${apiBase}/draft/${id}`, {
       method: 'PATCH',
@@ -1111,7 +1130,7 @@ function ValidatorApp({
       })
       const payload = await response.json() as { error?: string; message?: string; publication?: PricePublication }
       if (!response.ok) throw new Error(payload.error || 'Objava nije uspjela.')
-      setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setPublished(true); setDraftId('')
+      setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setPublished(true); setDraftId(''); setReplacing(false); setCurrentPublication(payload.publication ?? null)
       const current = await fetch(apiBase, fetchOpts).then((item) => item.json()).catch(() => null) as { priceList?: NormalizedPriceList } | null
       if (current?.priceList) setList(current.priceList)
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Objava nije uspjela.') } finally { setBusy(false) }
@@ -1151,14 +1170,14 @@ function ValidatorApp({
     : <section className="validator-app-intro">{embedded ? null : <span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span>}{embedded ? <h2>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h2> : <h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1>}{embedded ? null : <p>Učitajte CSV ili XML. Pregledajte podatke, zatim objavite cjenik na vlastitom URL-u — besplatno 24 sata.</p>}</section>
 
   const tool = <>
-    {mode === 'publisher' && <PublicationSettings slug={tenantSlug} onSaved={() => setPublished(false)} />}
+    {mode === 'publisher' && <details><summary>Podaci objekta i radni dani</summary><PublicationSettings slug={tenantSlug} onSaved={() => setPublished(false)} /></details>}
     {mode === 'publisher' && canEditItems && published && list && <button className="app-button app-button-light" type="button" onClick={() => { setPublished(false); setMessage('') }}>Uredi postojeći cjenik</button>}
     <section className="validator-tool" aria-label={mode === 'publisher' ? 'Publisher cjenik' : 'Validator cjenika'}><div className="upload-card"><div className="upload-card-heading"><div><h2>CSV ili XML cjenik</h2><p>{mode === 'publisher' ? 'Nova datoteka zamjenjuje draft. Ručne izmjene u tablici ostaju dok ne objavite.' : 'Za besplatni pregled nije potrebna registracija.'}</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">{mode === 'publisher' ? 'PRIJE OBJAVE' : '2 / ŠTO PROVJERAVAMO'}</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena i mjerodavni datum</li><li><span>03</span>Posebna prodaja i prethodna najniža cijena kod akcije</li><li><span>04</span>Datum prvog uvrštenja za nove stavke</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
     {list && claimOpen && mode === 'sandbox' && (
       <TrialClaimForm list={list} sourceFilename={sourceFilename} onCancel={() => setClaimOpen(false)} />
     )}
     {list && !(claimOpen && mode === 'sandbox') && (
-      <ValidationResultPanel
+      mode === 'publisher' && !canEditItems ? <UploadReview list={list} issues={validation.issues} busy={busy} blocked={publishBlocked} onPublish={() => void publish()} onCancel={() => setReplacing(false)} /> : <ValidationResultPanel
         list={list}
         validation={validation}
         sourceFilename={sourceFilename}
@@ -1167,6 +1186,8 @@ function ValidatorApp({
         message={message}
         publication={publication}
         onUpdateItem={updateItem}
+        onAddItem={canEditItems && mode === 'publisher' ? () => {setPublished(false);setList(current => current ? {...current,items:[...current.items,{name:'',type:'',price:0,anchorPrice:null,specialSaleApplied:null}]} : current)} : undefined}
+        onDeleteItem={canEditItems && mode === 'publisher' ? index => {setPublished(false);setList(current => current ? {...current,items:current.items.filter((_,i) => i !== index)} : current)} : undefined}
         onConfirmAnchorsFromRetail={confirmAnchorsFromRetail}
         onConfirmNoSpecialSale={confirmNoSpecialSale}
         onBulkAvailability={bulkAvailability}
@@ -1186,6 +1207,7 @@ function ValidatorApp({
     return <div className="validator-app validator-app-embedded">{intro}{tool}</div>
   }
 
+  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}}/>{replacing && tool}{message && <p role="status">{message}</p>}{!replacing && <InstallationChoice slug={tenantSlug}/>}</div>
   if (mode === 'publisher') {
     return <div className="validator-app">{intro}{tool}</div>
   }
@@ -1216,6 +1238,7 @@ function PublisherWelcome({
   onContinue: () => void
 }) {
   const [copied, setCopied] = useState(false)
+  const [installation,setInstallation] = useState<boolean | null>(null)
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
   const publicUrl = `${origin}/c/${slug}`
   const periodEnd = licence?.entitlement?.periodEnd ?? null
@@ -1230,7 +1253,8 @@ function PublisherWelcome({
         <button className="app-link-button" type="button" onClick={() => void navigator.clipboard?.writeText(publicUrl).then(() => setCopied(true))}>{copied ? 'Kopirano' : 'Kopiraj link'}</button>
       </div>
       <p>Ovaj link možete odmah staviti na svoju web stranicu. Isti link ostaje aktivan ako ga zadržite.</p>
-      {licence && (state === 'free' || state === 'awaiting_payment' || state === 'expired') && <KeepLinkFlow licence={licence} email={email} name={name} onChanged={onLicenceChanged} />}
+      <InstallationChoice slug={slug} onChoice={setInstallation}/>
+      {licence && (state === 'free' || state === 'awaiting_payment' || state === 'expired') && <KeepLinkFlow key={String(installation)} initialInstallation={installation === true} startOpen={installation === true} licence={licence} email={email} name={name} onChanged={onLicenceChanged} />}
       <div className="publisher-welcome-actions">
         <a className="app-button app-button-light" href={`${publicUrl}/cjenik.csv`}>Preuzmi CSV</a>
         <a className="app-button app-button-light" href={`${publicUrl}/cjenik.xml`}>Preuzmi XML</a>
@@ -1294,7 +1318,7 @@ function PublisherEntry() {
   const features = licence?.features
   const status = entitlement?.status || 'trial'
   const periodEnd = entitlement?.periodEnd ?? welcomeTrialEndsAt
-  const publishBlocked = status === 'expired' || status === 'suspended' || (periodEnd != null && new Date(periodEnd).getTime() < Date.now() && status !== 'active')
+  const publishBlocked = !entitlement || !entitlementIsLive({id:'view',tenantId:tenant.id,...entitlement})
 
   if (showWelcome) {
     return (
@@ -1337,6 +1361,7 @@ function PublisherEntry() {
       </header>
       <main className="validator-app premium-entry-main publisher-dashboard">
         {licence && <LicenceCard licence={licence} email={session.user.email} name={tenant.name} onChanged={reloadLicence} />}
+        <OwnedArchive slug={tenant.slug}/>
         {features?.monitoring && <MonitorPanel slug={tenant.slug} />}
         <ValidatorApp
           mode="publisher"

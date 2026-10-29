@@ -28,6 +28,7 @@ const OFFER_UPDATED = '2026-10-27T18:00:00+01:00'
 export const EXISTING_WEB_PATH = '/digitalni-cjenik-za-wordpress-webshop/'
 
 export const SITE_PAGES: SitePageMeta[] = [
+  {path:'/web-publisher/',kind:'service',label:'Web + Publisher',title:'Web i digitalni cjenik na jednom mjestu',seoTitle:'Novi poslovni web i Publisher | NEPAR',description:`Novi jednostavni statički web na NEPAR hostingu i Publisher za ${formatEur(PLANS[2].price,true)}. Upit i ponuda; bez redizajna postojećeg WordPress/Wix weba.`,updatedAt:'2026-10-29T12:00:00+01:00',service:{name:'Web + Publisher',serviceType:'Novi statički poslovni web i objava cjenika',planIds:['web']}},
   {
     path: EXISTING_WEB_PATH,
     kind: 'service',

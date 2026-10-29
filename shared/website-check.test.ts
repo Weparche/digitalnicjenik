@@ -80,5 +80,5 @@ describe('website input', () => {
   it.each(['', 'nije adresa', 'javascript:alert(1)', 'ftp://example.hr', 'https://user:password@example.hr', 'localhost'])('rejects invalid input %s', (input) => { expect(() => normalizeWebsiteInput(input)).toThrow() })
 })
 it('shares the three annual commercial prices', () => {
-  expect(PLANS.map((p) => [p.id, formatEur(p.price, true)])).toEqual([['link', '19,90 €/god'], ['publisher', '49,90 €/god'], ['web', '79,90 €/god']])
+  expect(PLANS.map((p) => [p.id, formatEur(p.price, true)])).toEqual([['link', '19,90 €/god'], ['publisher', '49,90 €/god'], ['web', '99,00 €/god']])
 })

@@ -12,12 +12,14 @@ const order = {
 }
 
 async function mockApi(page: Page, licence: () => Record<string, unknown>, onOrder?: (body: Record<string, unknown>) => void) {
+  // Fixtures use absolute deadlines; pin the browser clock so they stay in the future.
+  await page.clock.setFixedTime(new Date('2026-10-28T14:00:00Z'))
   await page.route('**/api/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     if (path === '/api/auth/me') return route.fulfill({ json: session })
     if (path === '/api/orders' && route.request().method() === 'POST') {
       onOrder?.(route.request().postDataJSON())
-      return route.fulfill({ json: { ok: true, order, activeUntil: '2026-10-30T13:35:00Z' } })
+      return route.fulfill({ json: { ok: true, order, activeUntil: '2026-10-29T09:00:00Z' } })
     }
     if (path === '/api/orders') return route.fulfill({ json: { ok: true, ...licence() } })
     if (path === '/api/tenants/salon') return route.fulfill({ json: { priceList } })
@@ -28,7 +30,7 @@ async function mockApi(page: Page, licence: () => Record<string, unknown>, onOrd
 test('free publication: keep the link, fill billing details, pay by HUB-3 2D barcode', async ({ page }) => {
   let placed: Record<string, unknown> | null = null
   await mockApi(page, () => placed
-    ? { entitlement: { plan: 'web_link', status: 'trial', periodStart: '2026-10-28T09:00:00Z', periodEnd: '2026-10-30T13:35:00Z' }, features: WEB_LINK, upgradeAvailable: false, order }
+    ? { entitlement: { plan: 'web_link', status: 'trial', periodStart: '2026-10-28T09:00:00Z', periodEnd: '2026-10-29T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: false, order }
     : { entitlement: { plan: 'web_link', status: 'trial', periodStart: '2026-10-28T09:00:00Z', periodEnd: '2026-10-29T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: false, order: null },
   (body) => { placed = body })
 
@@ -48,10 +50,10 @@ test('free publication: keep the link, fill billing details, pay by HUB-3 2D bar
   await page.getByRole('button', { name: 'Nastavi na uplatu →' }).click()
 
   expect(placed).toMatchObject({ kind: 'web_link', installation: true, customerType: 'company', billingName: 'Salon Lana obrt', oib: '69435151530' })
-  await expect(page.getByRole('heading', { name: 'Uplata za trajnu aktivaciju' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Uplata — Web Link' })).toBeVisible()
   await expect(page.locator('.payment-amount')).toHaveText('49,80 €')
   await expect(page.locator('.hub3-barcode-image svg')).toBeVisible()
-  await expect(page.locator('.payment-note')).toHaveText('Link ostaje aktivan do 30. 10. 2026. u 14:35. Nakon evidentirane uplate isti link ostaje aktivan godinu dana.')
+  await expect(page.locator('.payment-note')).toContainText('Tek nakon potvrde bankovne uplate')
 
   await page.getByRole('tab', { name: 'Podaci za uplatu' }).click()
   await expect(page.locator('.payment-details')).toContainText('HR0623600001103276807')
@@ -60,10 +62,10 @@ test('free publication: keep the link, fill billing details, pay by HUB-3 2D bar
 })
 
 test('a pending order on the dashboard says until when the link stays live', async ({ page }) => {
-  await mockApi(page, () => ({ entitlement: { plan: 'web_link', status: 'trial', periodStart: '2026-10-28T09:00:00Z', periodEnd: '2026-10-30T13:35:00Z' }, features: WEB_LINK, upgradeAvailable: false, order }))
+  await mockApi(page, () => ({ entitlement: { plan: 'web_link', status: 'trial', periodStart: '2026-10-28T09:00:00Z', periodEnd: '2026-10-29T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: false, order }))
   await page.goto('/app')
   await expect(page.getByRole('heading', { name: 'Čekamo uplatu' })).toBeVisible()
-  await expect(page.locator('.licence-card')).toContainText('Link ostaje aktivan do 30. 10. 2026. u 14:35.')
+  await expect(page.locator('.licence-card')).toContainText('Link ostaje aktivan do 29. 10. 2026. u 10:00.')
   await expect(page.locator('.hub3-barcode-image svg')).toBeVisible()
 })
 
@@ -72,7 +74,7 @@ test('active Web Link: no item editing or monitoring, Publisher upsell for +30 �
   await page.goto('/app')
   await expect(page.getByRole('heading', { name: 'Aktivno do 20. 10. 2027. u 11:00' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Nadogradi na Publisher +30,00 €/god' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Cjenik je objavljen', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Vaš digitalni cjenik je aktivan', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Uredi postojeći cjenik' })).toHaveCount(0)
   await expect(page.locator('.monitor-panel')).toHaveCount(0)
 })

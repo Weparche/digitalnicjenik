@@ -2,6 +2,7 @@ import { escapeHtml, hmacIp } from './_lead'
 import { emailConfigured, sendTransactionalEmail, type EmailEnv } from './_email'
 import type { D1DatabaseLike, RuntimeEnv } from './_repository'
 import { AccessDeniedError } from './_write-auth'
+import { adminEmailAllowed, safeReturnPath } from '../shared/admin'
 
 export const SESSION_COOKIE = 'nepar_session'
 export const MAGIC_LINK_TTL_MS = 15 * 60_000
@@ -148,6 +149,7 @@ export async function requestMagicLink(
   env: AuthEnv,
   emailRaw: string,
   fetcher: typeof fetch = fetch,
+  returnTo: string = '/app',
 ) {
   if (!env.DB) throw new AccessDeniedError(503, 'db_unavailable', 'D1 binding DB nije konfiguriran.')
   if (!emailConfigured(env)) {
@@ -158,10 +160,16 @@ export async function requestMagicLink(
 
   await consumeMagicLinkBudget(env, request, email)
 
-  const user = await env.DB.prepare('SELECT id, email FROM auth_users WHERE email = ?').bind(email).first<AuthUser>()
+  const returnPath = safeReturnPath(returnTo)
+  const isAdmin = adminEmailAllowed(env, email)
+  let user = await env.DB.prepare('SELECT id, email FROM auth_users WHERE email = ?').bind(email).first<AuthUser>()
+  if (isAdmin && !user) {
+    await env.DB.prepare('INSERT OR IGNORE INTO auth_users (id,email,created_at,updated_at) VALUES (?,?,?,?)').bind(crypto.randomUUID(), email, nowIso(), nowIso()).run()
+    user = await env.DB.prepare('SELECT id,email FROM auth_users WHERE email = ?').bind(email).first<AuthUser>()
+  }
   const memberships = user ? await loadMemberships(env.DB, user.id) : []
   // Always return success to the client; only send mail when a membership exists.
-  if (!user || memberships.length === 0) {
+  if (!user || (!isAdmin && memberships.length === 0) || (returnPath.startsWith('/admin') && !isAdmin)) {
     return { sent: false as const, userId: user?.id }
   }
 
@@ -171,8 +179,8 @@ export async function requestMagicLink(
   const secret = env.AUTH_RATE_LIMIT_SECRET || env.LEAD_RATE_LIMIT_SECRET || 'auth'
   const ipHash = await hmacIp(clientIp(request), secret)
   await env.DB.prepare(
-    'INSERT INTO magic_link_tokens (id, user_id, token_hash, expires_at, used_at, created_at, ip_hash) VALUES (?, ?, ?, ?, NULL, ?, ?)',
-  ).bind(crypto.randomUUID(), user.id, tokenHash, expiresAt, nowIso(), ipHash).run()
+    'INSERT INTO magic_link_tokens (id, user_id, token_hash, expires_at, used_at, created_at, ip_hash, return_path) VALUES (?, ?, ?, ?, NULL, ?, ?, ?)',
+  ).bind(crypto.randomUUID(), user.id, tokenHash, expiresAt, nowIso(), ipHash, returnPath).run()
 
   const origin = new URL(request.url).origin
   const link = `${origin}/api/auth/callback?token=${encodeURIComponent(rawToken)}`
@@ -203,7 +211,9 @@ export async function consumeMagicLink(env: AuthEnv, rawToken: string) {
   if (!row || row.used_at) throw new AccessDeniedError(400, 'invalid_token', 'Prijavni link nije valjan ili je već iskorišten.')
   if (new Date(row.expires_at).getTime() <= Date.now()) throw new AccessDeniedError(400, 'expired_token', 'Prijavni link je istekao. Zatražite novi.')
 
-  await env.DB.prepare('UPDATE magic_link_tokens SET used_at = ? WHERE id = ? AND used_at IS NULL').bind(nowIso(), row.id).run()
+  const claimed = await env.DB.prepare('UPDATE magic_link_tokens SET used_at = ? WHERE id = ? AND used_at IS NULL AND expires_at > ? RETURNING user_id, return_path').bind(nowIso(), row.id, nowIso()).first<{ user_id: string; return_path: string }>()
+  if (!claimed) throw new AccessDeniedError(400, 'invalid_token', 'Prijavni link je već iskorišten.')
+  await env.DB.prepare('UPDATE auth_users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?').bind(nowIso(), row.user_id).run()
   const sessionToken = randomToken()
   const sessionHash = await sha256Hex(sessionToken)
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString()
@@ -211,7 +221,7 @@ export async function consumeMagicLink(env: AuthEnv, rawToken: string) {
     'INSERT INTO auth_sessions (id, user_id, token_hash, expires_at, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)',
   ).bind(crypto.randomUUID(), row.user_id, sessionHash, expiresAt, nowIso(), nowIso()).run()
 
-  return { sessionToken, maxAgeSeconds: Math.floor(SESSION_TTL_MS / 1000) }
+  return { sessionToken, maxAgeSeconds: Math.floor(SESSION_TTL_MS / 1000), returnPath: safeReturnPath(claimed.return_path) }
 }
 
 export async function destroySession(env: AuthEnv, request: Request) {

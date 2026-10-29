@@ -1,5 +1,7 @@
+import { lifecycleStatement, dispatchLifecycle } from '../shared/lifecycle'
+import { templateId } from '../shared/web-templates'
 import type { D1DatabaseLike } from './_repository'
-import { emailConfigured, sendTransactionalEmail, type EmailEnv } from './_email'
+import { emailConfigured, type EmailEnv } from './_email'
 import { implementationIntentLabel, selfServiceIntentLabel } from './_pricing'
 import { PLANS, formatEur } from '../shared/pricing'
 import { sanitizeAttribution } from '../shared/acquisition'
@@ -10,9 +12,12 @@ export const MAX_REQUEST_BYTES = 4_600_000
 const TURNSTILE_ACTION = 'turnstile-spin-v2'
 
 export type LeadEnv = EmailEnv & {
+  DRAFTS?: import('./_repository').RuntimeEnv['DRAFTS']
   DB?: D1DatabaseLike
   TURNSTILE_SECRET_KEY?: string
   LEAD_RATE_LIMIT_SECRET?: string
+  LIFECYCLE_EMAILS_ENABLED?: string
+  PUBLIC_APP_URL?: string
 }
 
 type LeadErrorCode = 'invalid_input' | 'turnstile_failed' | 'rate_limited' | 'file_rejected' | 'send_failed'
@@ -137,6 +142,8 @@ function normalizeContext(raw: string) {
       website: String(value.website ?? '').slice(0, 500),
       checkerStatus: String(value.checkerStatus ?? '').slice(0, 40),
       selectedPlan: PLANS.find((p) => p.id === value.selectedPlan)?.id,
+      templateId: templateId(value.templateId),
+      service: value.service === 'installation' ? 'installation' : undefined,
       checkerScore: Number.isInteger(value.checkerScore) && Number(value.checkerScore) >= 0 && Number(value.checkerScore) <= 9 ? Number(value.checkerScore) : undefined,
       discoveredUrls: Array.isArray(value.discoveredUrls) ? value.discoveredUrls.slice(0, 2).map((item) => String(item).slice(0, 500)) : [],
       sourceFilename: String(value.sourceFilename ?? '').slice(0, 160),
@@ -149,7 +156,7 @@ function normalizeContext(raw: string) {
   }
 }
 
-export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher: typeof fetch = fetch) {
+export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher: typeof fetch = fetch, waitUntil?: (p:Promise<unknown>)=>void) {
   const requestUrl = new URL(request.url)
   const origin = request.headers.get('origin')
   if (!origin || origin !== requestUrl.origin) return jsonResponse(403, { ok: false, code: 'invalid_input' })
@@ -191,6 +198,15 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
     await updateAttempt(env, attemptId, 'turnstile_failed')
     return jsonResponse(403, { ok: false, code: 'turnstile_failed' })
   }
+  const submittedId=stringField(form,'submissionId',36)
+  const inquiryId=/^[a-f0-9-]{36}$/i.test(submittedId)?submittedId:attemptId
+  const previous=await env.DB.prepare('SELECT email,name,message FROM lead_inquiries WHERE id=?').bind(inquiryId).first<{email:string;name:string;message:string}>()
+  if(previous) {
+    if(previous.email!==email||previous.name!==name||previous.message!==message)return jsonResponse(409,{ok:false,code:'invalid_input'})
+    await updateAttempt(env,attemptId,'stored')
+    waitUntil?.(dispatchLifecycle({...env,DB:env.DB}))
+    return jsonResponse(200,{ok:true,leadId:inquiryId})
+  }
 
   let attachment: Awaited<ReturnType<typeof validateLeadAttachment>> | null = null
   const file = form.get('attachment')
@@ -224,21 +240,23 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   ]
   const text = rows.map(([label, value]) => `${label}: ${value}`).join('\n\n')
   const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><h1>Novi upit za digitalni cjenik</h1><table role="presentation" style="border-collapse:collapse;width:100%">${rows.map(([label, value]) => `<tr><th style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top">${escapeHtml(label)}</th><td style="padding:8px;border-bottom:1px solid #e2e8f0;white-space:pre-wrap">${escapeHtml(value)}</td></tr>`).join('')}</table></body></html>`
-  let sent = false
-  try {
-    await sendTransactionalEmail(env, {
-      to: env.EMAIL_TO,
-      subject: `${intentLabel} · digitalni cjenik · ${name}`.slice(0, 180),
-      text,
-      html,
-      replyTo: { email, name },
-      attachments: attachment
-        ? [{ content: attachment.bytes, filename: attachment.filename, type: attachment.type }]
-        : undefined,
-    }, fetcher)
-    sent = true
-  } catch { sent = false }
-  await updateAttempt(env, attemptId, sent ? 'sent' : 'send_failed')
-  if (sent) await recordAttribution(env.DB, 'lead', attemptId, attribution)
-  return sent ? jsonResponse(200, { ok: true, leadId: attemptId }) : jsonResponse(502, { ok: false, code: 'send_failed' })
+  let attachmentKey: string | null = null
+  if (attachment) {
+    if (!env.DRAFTS) return jsonResponse(503,{ok:false,code:'send_failed'})
+    attachmentKey = `inquiries/${inquiryId}/attachment`
+    let binary = ''
+    for (const byte of attachment.bytes) binary += String.fromCharCode(byte)
+    await env.DRAFTS.put(attachmentKey,btoa(binary),{httpMetadata:{contentType:'text/plain'}})
+  }
+  const stamp = new Date().toISOString()
+  const kind = context?.service === 'installation' ? 'installation' : selectedPlan?.id === 'web' ? 'web_publisher' : selectedPlan?.id ?? intent
+  await env.DB.batch([
+    env.DB.prepare("INSERT OR IGNORE INTO lead_inquiries(id,kind,name,email,website,message,context_json,selected_plan,template_id,attachment_key,attachment_name,attachment_type,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(inquiryId,kind,name,email,website,message,JSON.stringify({phone,platform,materials,context}),selectedPlan?.id??null,context?.templateId??null,attachmentKey,attachment?.filename??null,attachment?.type??null,stamp,stamp),
+    lifecycleStatement(env.DB,{id:`lead:${inquiryId}:received`,type:'inquiry_received',entityId:inquiryId,audience:'email',email}),
+    ...(['web_publisher','installation','implementation'].includes(kind)?[lifecycleStatement(env.DB,{id:`lead:${inquiryId}:ops`,type:'inquiry_ops',entityId:inquiryId,audience:'ops',payload:{message:text}})]:[]),
+  ])
+  await updateAttempt(env,attemptId,'stored')
+  await recordAttribution(env.DB,'lead',inquiryId,attribution)
+  waitUntil?.(dispatchLifecycle({...env,DB:env.DB}))
+  return jsonResponse(200,{ok:true,leadId:inquiryId})
 }

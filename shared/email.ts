@@ -60,15 +60,16 @@ export async function sendTransactionalEmail(
 ) {
   const from = fromAddress(env)
   if (!from) throw new Error('email_misconfigured')
+  const replyTo=message.replyTo ?? {email:'nepar@nepar.hr',name:'NEPAR'}
 
   if (env.EMAIL) {
-    await env.EMAIL.send({
+    const receipt = await env.EMAIL.send({
       to: message.to,
       from,
       subject: message.subject,
       text: message.text,
       html: message.html,
-      replyTo: message.replyTo,
+      replyTo,
       attachments: message.attachments?.map((item) => ({
         content: item.content,
         filename: item.filename,
@@ -76,7 +77,7 @@ export async function sendTransactionalEmail(
         disposition: 'attachment' as const,
       })),
     })
-    return
+    return { messageId: receipt?.messageId, status: 'accepted' }
   }
 
   if (env.EMAIL_SENDER && env.MAILER_SECRET) {
@@ -92,7 +93,7 @@ export async function sendTransactionalEmail(
         subject: message.subject,
         text: message.text,
         html: message.html,
-        replyTo: message.replyTo,
+        replyTo,
         attachments: message.attachments?.map((item) => ({
           filename: item.filename,
           type: item.type,
@@ -100,8 +101,9 @@ export async function sendTransactionalEmail(
         })),
       }),
     })
-    if (!response.ok) throw new Error('send_failed')
-    return
+    if (!response.ok) throw new Error(response.status === 429 ? 'email_rate_limited' : response.status < 500 ? 'email_rejected' : 'send_failed')
+    const receipt = await response.json().catch(() => ({})) as { messageId?: string }
+    return { messageId: receipt.messageId, status: 'accepted' }
   }
 
   if (!env.CF_ACCOUNT_ID || !env.CF_EMAIL_API_TOKEN) throw new Error('email_misconfigured')
@@ -113,7 +115,7 @@ export async function sendTransactionalEmail(
     text: message.text,
     html: message.html,
   }
-  if (message.replyTo) body.reply_to = { address: message.replyTo.email, name: message.replyTo.name }
+  body.reply_to = { address: replyTo.email, name: replyTo.name }
   if (message.attachments?.length) {
     body.attachments = message.attachments.map((item) => ({
       filename: item.filename,
@@ -147,7 +149,8 @@ export async function sendTransactionalEmail(
       && result?.success === true
       && (result.result?.permanent_bounces?.length ?? 0) === 0
       && ((result.result?.delivered?.length ?? 0) + (result.result?.queued?.length ?? 0) > 0)
-    if (!delivered) throw new Error('send_failed')
+    if (!delivered) throw new Error(response.status === 429 ? 'email_rate_limited' : response.status < 500 ? 'email_rejected' : 'send_failed')
+    return { messageId: undefined, status: result?.result?.delivered?.length ? 'delivered' : 'queued' }
   } finally {
     clearTimeout(timeout)
   }

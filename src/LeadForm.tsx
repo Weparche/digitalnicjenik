@@ -8,6 +8,7 @@ import {
 import { useTurnstileSiteKey } from './turnstileConfig'
 import { readAcquisitionTouch } from './acquisition'
 import { installationPriceLabel } from '../shared/pricing'
+import { WEB_TEMPLATES } from '../shared/web-templates'
 
 export type LeadIntent = 'implementation' | 'consultation' | 'plugin'
 export type LeadContext = {
@@ -21,6 +22,8 @@ export type LeadContext = {
   sourceFile?: File | null
   selectedPlan?: PlanId
   checkerScore?: number
+  service?: 'installation'
+  templateId?: string
 }
 
 type TurnstileApi = {
@@ -95,6 +98,7 @@ export function LeadForm({ intent, context, onIntentChange, onPlanChange }: { in
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
   const [error, setError] = useState('')
   const [attachment, setAttachment] = useState<File | null>(null)
+  const submissionId=useRef(crypto.randomUUID())
   const { siteKey, loading: turnstileLoading } = useTurnstileSiteKey()
 
   useEffect(() => { setAttachCurrent(false) }, [context.sourceFile])
@@ -107,6 +111,7 @@ export function LeadForm({ intent, context, onIntentChange, onPlanChange }: { in
       return
     }
     const form = new FormData(event.currentTarget)
+    form.set('submissionId',submissionId.current)
     form.set('intent', intent)
     form.set('cf-turnstile-response', turnstileToken)
     const attribution = readAcquisitionTouch()
@@ -121,6 +126,8 @@ export function LeadForm({ intent, context, onIntentChange, onPlanChange }: { in
       manualReviewCount: context.manualReviewCount,
       selectedPlan: context.selectedPlan,
       checkerScore: context.checkerScore,
+      templateId: context.templateId ?? String(form.get('templateId') ?? ''),
+      service: context.service,
     }))
     const selectedAttachment = attachCurrent ? context.sourceFile : attachment
     if (selectedAttachment) form.set('attachment', selectedAttachment, selectedAttachment.name)
@@ -156,6 +163,7 @@ export function LeadForm({ intent, context, onIntentChange, onPlanChange }: { in
     <form className="lead-form" onSubmit={submit} encType="multipart/form-data">
       <fieldset className="intent-switch"><legend>Što vam treba?</legend>{onPlanChange ? <>{PLANS.map((p) => <label key={p.id}><input type="radio" name="intent-choice" checked={context.selectedPlan === p.id} onChange={() => onPlanChange(p.id)}/><span>{p.name} · {formatEur(p.price, true)}</span></label>)}<label><input type="radio" name="intent-choice" checked={!context.selectedPlan} onChange={() => onPlanChange(undefined)}/><span>Pomoć s ugradnjom / konzultacija</span></label></> : <><label><input type="radio" name="intent-choice" checked={intent === 'plugin'} onChange={() => onIntentChange('plugin')} /><span>Publisher · {selfServicePriceLabel()}</span></label><label><input type="radio" name="intent-choice" checked={intent === 'implementation'} onChange={() => onIntentChange('implementation')} /><span>Web + Publisher · {implementationFirstYearLabel()}</span></label><label><input type="radio" name="intent-choice" checked={intent === 'consultation'} onChange={() => onIntentChange('consultation')} /><span>Konzultacija</span></label></>}</fieldset>
       <div className="lead-fields">
+        {(context.selectedPlan === 'web' || intent === 'implementation') && <label>Predložak weba<select name="templateId" defaultValue={context.templateId ?? 'minimal'}>{WEB_TEMPLATES.map(template=><option key={template.id} value={template.id}>{template.name} — {template.audience}</option>)}</select></label>}
         <label>Ime ili naziv tvrtke<input name="name" required maxLength={120} autoComplete="name" /></label>
         <label>E-mail<input name="email" type="email" required maxLength={254} autoComplete="email" /></label>
         <label>Telefon <small>opcionalno</small><input name="phone" type="tel" maxLength={40} autoComplete="tel" /></label>

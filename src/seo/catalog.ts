@@ -2,6 +2,8 @@ import { NEWS_POSTS, type NewsPost } from '../news/posts'
 import { NEPAR_URL, SITE_URL, newsArticleUrl, newsIndexUrl } from '../news/site'
 import { SITE_PAGES, pageUrl } from '../pages/registry'
 import { MAX_ITEMS_LABEL, PLANS, formatEur } from '../../shared/pricing'
+import { entitlementIsLive } from '../../shared/entitlements'
+import type { EntitlementPlan,EntitlementStatus } from '../price-engine/types'
 
 export const DEMO_PUBLIC_SLUG = 'nepar'
 export const INDEXABLE_ROBOTS =
@@ -28,6 +30,8 @@ export type IndexablePublication = {
   status: string | null
   plan: string | null
   periodEnd: string | null
+  paidConfirmedAt?: string | null
+  graceUntil?: string | null
   now?: number
   demoSlug?: string
 }
@@ -47,10 +51,10 @@ export function isoDate(iso: string) {
 
 export function isIndexablePublication(input: IndexablePublication) {
   if (input.slug === (input.demoSlug || DEMO_PUBLIC_SLUG)) return true
-  if (input.status !== 'active') return false
+  if (input.status === 'trial') return false
   if (!input.plan || input.plan === 'validator') return false
   if (!input.periodEnd) return false
-  return new Date(input.periodEnd).getTime() >= (input.now ?? Date.now())
+  return entitlementIsLive({id:'seo',tenantId:'seo',plan:input.plan as EntitlementPlan,status:input.status as EntitlementStatus,periodStart:null,periodEnd:input.periodEnd,paidConfirmedAt:input.paidConfirmedAt,graceUntil:input.graceUntil},input.now)
 }
 
 export function publicationSitemapUrls(slug: string, lastmod?: string): SitemapUrl[] {

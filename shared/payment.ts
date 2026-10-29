@@ -10,12 +10,11 @@ export const PAYEE = {
   purpose: 'OTHR',
 } as const
 
-export type OrderKind = 'web_link' | 'publisher_upgrade'
+export type OrderKind = 'web_link' | 'publisher' | 'publisher_upgrade' | 'web_publisher' | 'installation'
 export type CustomerType = 'company' | 'person'
 
 /** Free public link after e-mail confirmation, then extra time once the customer orders. */
 export const FREE_PUBLICATION_HOURS = 24
-export const ORDER_GRACE_HOURS = 48
 /** The +30 € Publisher upgrade is offered only right after buying Web Link, never for a few remaining months. */
 export const UPGRADE_WINDOW_DAYS = 30
 
@@ -27,6 +26,9 @@ export function orderAmountCents(kind: OrderKind, installation = false) {
   const webLink = PLANS.find((plan) => plan.id === 'link')!.price
   const publisher = PLANS.find((plan) => plan.id === 'publisher')!.price
   if (kind === 'publisher_upgrade') return cents(publisher) - cents(webLink)
+  if (kind === 'installation') return cents(INSTALLATION.price)
+  if (kind === 'web_publisher') return cents(PLANS[2].price)
+  if (kind === 'publisher') return cents(publisher) + (installation ? cents(INSTALLATION.price) : 0)
   return cents(webLink) + (installation ? cents(INSTALLATION.price) : 0)
 }
 
@@ -39,13 +41,14 @@ export function orderReference(number: number, createdAt: string) {
 }
 
 export function orderDescription(kind: OrderKind, slug: string) {
-  return fold(`${kind === 'publisher_upgrade' ? 'Publisher' : 'Digitalni cjenik'} ${slug}`).slice(0, 35)
+  return fold(`${kind === 'installation' ? 'Ugradnja' : kind === 'web_publisher' ? 'Web i Publisher' : kind === 'publisher_upgrade' || kind === 'publisher' ? 'Publisher' : 'Digitalni cjenik'} ${slug}`).slice(0, 35)
 }
 
-/** Grace starts when the customer decides to pay, but never shortens the free period they already have. */
-export function graceEnd(periodEnd: string | null, now = Date.now()) {
-  const current = periodEnd ? new Date(periodEnd).getTime() : 0
-  return new Date(Math.max(current, now + ORDER_GRACE_HOURS * HOUR_MS)).toISOString()
+export function planForOrder(kind: OrderKind) {
+  return kind === 'web_link' ? 'web_link' : kind === 'web_publisher' ? 'managed' : kind === 'installation' ? null : 'publisher_self_service'
+}
+export function orderLabel(kind: OrderKind) {
+  return kind === 'installation' ? INSTALLATION.name : kind === 'publisher_upgrade' ? 'Nadogradnja na Publisher' : kind === 'web_publisher' ? PLANS[2].name : kind === 'publisher' ? PLANS[1].name : PLANS[0].name
 }
 
 export function freePublicationEnd(start: string) {

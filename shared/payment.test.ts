@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fold, formatCents, graceEnd, hub3Payload, orderAmountCents, orderDescription, orderReference, upgradeAvailable, validOib } from './payment'
+import { fold, formatCents, hub3Payload, orderAmountCents, orderDescription, orderReference, upgradeAvailable, validOib } from './payment'
 
 const DAY = 86_400_000
 
@@ -54,16 +54,6 @@ describe('HUB-3 payload', () => {
 describe('order reference', () => {
   it('derives the reference from the DB number and the order year', () => {
     expect(orderReference(1042, '2026-10-28T13:00:00Z')).toBe('2026-1042')
-  })
-})
-
-describe('grace after ordering', () => {
-  it('gives 48 h from the order but never shortens the free period', () => {
-    const monday = Date.parse('2026-10-26T09:05:00Z')
-    expect(graceEnd('2026-10-27T09:00:00Z', monday)).toBe('2026-10-28T09:05:00.000Z')
-    const tuesday = Date.parse('2026-10-27T08:55:00Z')
-    expect(graceEnd('2026-10-27T09:00:00Z', tuesday)).toBe('2026-10-29T08:55:00.000Z')
-    expect(graceEnd('2026-11-30T00:00:00Z', monday)).toBe('2026-11-30T00:00:00.000Z')
   })
 })
 

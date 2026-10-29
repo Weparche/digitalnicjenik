@@ -1,8 +1,9 @@
 import { resolveSession, userHasTenantMembership } from './_auth'
 import { hmacIp } from './_lead'
 import type { D1DatabaseLike, RuntimeEnv } from './_repository'
+import { featuresForPlan, type PlanFeatures } from '../shared/entitlements'
 
-export type WriteOperation = 'import' | 'draft_get' | 'draft_patch' | 'publish' | 'simulate'
+export type WriteOperation = 'import' | 'draft_get' | 'draft_patch' | 'metadata' | 'publish' | 'simulate'
 
 export type ResolvedTenant = { id: string; slug: string; name: string }
 
@@ -135,11 +136,17 @@ export async function requireTenantAccess(options: {
 
   const session = await resolveSession(env, request)
   if (session && tenant && await userHasTenantMembership(env, session.user.id, tenant.id)) {
+    if (operation === 'draft_patch') await requirePlanFeature(env, tenant.id, 'editItems')
     return tenant
   }
 
   // Unauthenticated non-demo: always 401 (do not reveal whether the tenant exists).
   throw new AccessDeniedError(401, 'unauthorized', 'Prijava ili operator autentikacija je obavezna.')
+}
+
+export async function requirePlanFeature(env: RuntimeEnv, tenantId: string, feature: keyof PlanFeatures) {
+  const row = await env.DB!.prepare('SELECT plan FROM entitlements WHERE tenant_id=? ORDER BY created_at DESC LIMIT 1').bind(tenantId).first<{plan: import('../src/price-engine/types').EntitlementPlan}>()
+  if (!featuresForPlan(row?.plan)[feature]) throw new AccessDeniedError(403,'feature_not_in_plan','Ova funkcija nije uključena u vaš paket.')
 }
 
 /**

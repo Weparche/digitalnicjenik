@@ -339,8 +339,22 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
     const archive = /(arhiva|archive)/.test(`${href} ${text}`) && /(cjenik|cijene|price)/.test(`${href} ${text}`);
     // Follow explicit external feed/archive links through the same DNS/redirect
     // protections, but do not turn this into a cross-site general crawl.
-    if (url.origin !== baseUrl.origin && !(csv || xml || archive)) continue;
+    if (url.origin !== baseUrl.origin && !(csv || xml || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`))) continue;
     if (csv || xml || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`)) results.push({ url, kind: csv ? "csv" : xml ? "xml" : archive ? "archive" : "price" });
+  }
+  const embedded = /<(?:iframe|script)\b([^>]*)>/gi;
+  while ((match = embedded.exec(html)) && results.length < MAX_DISCOVERED_LINKS) {
+    const attrs = match[1];
+    const src = attrs.match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1];
+    if (!src) continue;
+    try {
+      const url = new URL(decodeHref(src),baseUrl);
+      if(url.protocol !== 'https:' || url.username || url.password || isForbiddenHostname(url.hostname)) continue;
+      if(url.hostname === 'digitalnicjenik.nepar.hr' && url.pathname === '/embed.js') {
+        const slug = attrs.match(/\bdata-cjenik\s*=\s*["']([a-z0-9][a-z0-9-]{0,62})["']/i)?.[1];
+        if(slug)results.push({url:new URL('/c/'+encodeURIComponent(slug),url.origin),kind:'price'});
+      } else if(/^<iframe/i.test(match[0]) && /(?:\/c\/[a-z0-9-]+|cjenik|cjenici|price)/i.test(url.pathname)) results.push({url,kind:'price'});
+    } catch { /* Unsupported embed remains unconfirmed; never execute third-party JS. */ }
   }
   return results;
 }
@@ -770,6 +784,10 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     details.pricePageUrl = homepage.url.href;
   }
   const links = homepageReadable ? extractLinks(html, homepage.url) : [];
+  const directFormat = homepageReadable && !isHtml(homepage.response,html)
+    ? documentLooksValid('csv',homepage.response,html) ? 'csv' : documentLooksValid('xml',homepage.response,html) ? 'xml' : null
+    : null;
+  if(directFormat) analyses.push(analyzeDocument(directFormat,html,homepage.url.href));
   const secondary: URL[] = [];
   const csv: URL[] = [];
   const xml: URL[] = [];
@@ -810,8 +828,8 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     } catch { network.failed = true; }
   }
   [details.csvUrl, details.xmlUrl] = await Promise.all([
-    findDocument("csv", csv, env, network, analyses),
-    findDocument("xml", xml, env, network, analyses),
+    directFormat === 'csv' ? Promise.resolve(homepage.url.href) : findDocument("csv", csv, env, network, analyses),
+    directFormat === 'xml' ? Promise.resolve(homepage.url.href) : findDocument("xml", xml, env, network, analyses),
   ]);
   details.csvFound = Boolean(details.csvUrl);
   details.xmlFound = Boolean(details.xmlUrl);

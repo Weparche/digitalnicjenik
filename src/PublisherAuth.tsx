@@ -6,6 +6,7 @@ export type PublisherSession = {
   authenticated: true
   user: { id: string; email: string }
   tenants: PublisherTenant[]
+  isAdmin?: boolean
 }
 
 const authErrorCopy: Record<string, string> = {
@@ -19,8 +20,8 @@ function Logo() {
   return <a className="logo" href="/" aria-label="NEPAR Publisher početna"><img src="/assets/nepar-logo.png" alt="NEPAR Solutions" /><span>Publisher</span></a>
 }
 
-export function PublisherLogin({ initialError }: { initialError?: string }) {
-  const [email, setEmail] = useState('')
+export function PublisherLogin({ initialError, admin = false }: { initialError?: string; admin?: boolean }) {
+  const [email, setEmail] = useState(admin?'nepar@nepar.hr':'')
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent'>('idle')
   const [error, setError] = useState(initialError ? (authErrorCopy[initialError] || 'Prijava nije uspjela.') : '')
 
@@ -32,7 +33,7 @@ export function PublisherLogin({ initialError }: { initialError?: string }) {
       const response = await fetch('/api/auth/magic-link', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, attribution: readAcquisitionTouch() }),
+        body: JSON.stringify({ email, attribution: readAcquisitionTouch(), returnTo: admin ? window.location.pathname + window.location.search : '/app' + window.location.search }),
       })
       const payload = await response.json().catch(() => ({})) as { ok?: boolean; code?: string; error?: string }
       if (!response.ok) {
@@ -54,8 +55,8 @@ export function PublisherLogin({ initialError }: { initialError?: string }) {
       </header>
       <main className="publisher-auth">
         <section className="publisher-auth-panel" aria-labelledby="publisher-login-title">
-          <h1 id="publisher-login-title">Prijava u Publisher</h1>
-          <p>Unesite e-mail na koji ste aktivirali Publisher. Poslat ćemo jednokratni link za prijavu — bez lozinke.</p>
+          <h1 id="publisher-login-title">{admin ? 'Prijava u administraciju' : 'Prijava u Publisher'}</h1>
+          <p>{admin ? 'Unesite dopušteni administratorski e-mail. Poslat ćemo jednokratni link za prijavu.' : 'Unesite e-mail na koji ste aktivirali Publisher. Poslat ćemo jednokratni link za prijavu — bez lozinke.'}</p>
           {status === 'sent' ? (
             <div className="publisher-auth-sent" role="status">
               <strong>Provjerite e-mail</strong>
@@ -113,10 +114,10 @@ export function usePublisherSession() {
     return () => { cancelled = true }
   }, [])
 
-  async function logout() {
+  async function logout(returnTo = '/app') {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: '{}' })
     setSession(null)
-    window.location.assign('/app')
+    window.location.assign(returnTo)
   }
 
   return { session, error, logout, setSession }

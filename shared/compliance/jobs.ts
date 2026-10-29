@@ -1,7 +1,7 @@
 import type { D1DatabaseLike } from '../db'
 import type { MonitorTrigger } from './types'
 
-export type MonitorMessage = { jobId: string } | { cron: string; now: string; afterSlug: string }
+export type MonitorMessage = { jobId: string } | { cron: string; now: string; afterSlug: string } | { dailySlug: string; watchdog?: boolean; now: string; trigger: MonitorTrigger }
 export type MonitorQueue = { send(body: MonitorMessage): Promise<void> }
 export type MonitorJob = {
   id: string; tenant_id: string; slug: string; run_trigger: MonitorTrigger

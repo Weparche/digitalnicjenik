@@ -1,4 +1,5 @@
 import { resolveSession, type AuthEnv } from '../../_auth'
+import { adminEmailAllowed } from '../../../shared/admin'
 
 type Context = { request: Request; env: AuthEnv }
 
@@ -11,5 +12,6 @@ export async function onRequestGet({ request, env }: Context) {
     authenticated: true,
     user: session.user,
     tenants: session.tenants,
+    isAdmin: adminEmailAllowed(env, session.user.email),
   }, { headers: { 'cache-control': 'no-store' } })
 }

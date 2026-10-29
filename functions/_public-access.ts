@@ -1,5 +1,5 @@
 import type { Entitlement } from '../src/price-engine/types'
-import { entitlementIsLive } from '../shared/entitlements'
+import { entitlementAccess, entitlementIsLive } from '../shared/entitlements'
 import { resolveTenant, readEntitlement, type RuntimeEnv } from './_repository'
 
 export type PublicTenantAccess = {
@@ -9,6 +9,9 @@ export type PublicTenantAccess = {
   trial: boolean
   expired: boolean
   canPublish: boolean
+  accessState?: string
+  graceUntil?: string | null
+  accessUntil?: string | null
 }
 
 const DEMO_SLUG = (env: RuntimeEnv) => env.DEMO_WRITE_TENANT || 'nepar'
@@ -40,6 +43,7 @@ export async function getPublicTenantAccess(env: RuntimeEnv, slug: string): Prom
 
   const entitlement = await readEntitlement(env, slug)
   const live = entitlementIsLive(entitlement)
+  const effective = entitlementAccess(entitlement)
   return {
     tenant,
     entitlement,
@@ -47,6 +51,9 @@ export async function getPublicTenantAccess(env: RuntimeEnv, slug: string): Prom
     trial: entitlement?.status === 'trial' && live,
     expired: !live,
     canPublish: entitlementCanPublish(entitlement),
+    accessState: effective.state,
+    graceUntil: effective.graceUntil,
+    accessUntil: effective.accessUntil,
   }
 }
 
@@ -69,7 +76,8 @@ export function publicGoneJson() {
 }
 
 export function applyPublicAccessHeaders(headers: Headers, access: PublicTenantAccess) {
-  headers.set('cache-control', access.accessible ? 'public, max-age=60' : 'no-store')
+  const nearEnd=access.accessUntil&&Date.parse(access.accessUntil)-Date.now()<60_000
+  headers.set('cache-control', access.accessible&&!nearEnd ? 'public, max-age=60' : 'no-store')
   if (access.trial || !access.accessible) {
     headers.set('x-robots-tag', 'noindex, nofollow')
   }

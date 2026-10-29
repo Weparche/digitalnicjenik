@@ -110,6 +110,8 @@ export function AcquisitionLanding({ renderValidator }: { renderValidator: (onCo
   }
   function onUpload() { setValidatorVisible(true); focus(validatorRef.current) }
   function onLead(next: LeadIntent, selected?: PlanId) {
+    const selectedTemplate = new URLSearchParams(window.location.search).get('template')
+    if (selectedTemplate) setContext(current=>({...current,templateId:selectedTemplate}))
     setIntent(next); setPlan(selected ?? (next === 'implementation' ? 'web' : next === 'plugin' ? 'publisher' : undefined)); setLeadOpen(true)
     window.setTimeout(() => focus(document.getElementById('posaljite-cjenik')), 0)
   }

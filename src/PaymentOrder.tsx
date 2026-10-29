@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { INSTALLATION, PLANS, formatEur } from '../shared/pricing'
-import { formatCents, orderAmountCents } from '../shared/payment'
+import { formatCents, orderAmountCents, orderLabel, type OrderKind } from '../shared/payment'
 import { readAcquisitionTouch } from './acquisition'
 import { hoursLeft, licenceState, untilLabel, type Licence, type OrderPayment } from './licenceView'
 
@@ -9,7 +9,8 @@ const UPGRADE_LABEL = `+${formatCents(orderAmountCents('publisher_upgrade'))}/go
 const BARCODE_OPTIONS = { bcid: 'pdf417', eclevel: 4, columns: 9, rowmult: 3 } as const
 
 export async function fetchLicence(): Promise<Licence | null> {
-  const response = await fetch('/api/orders', { credentials: 'include' })
+  const selected = new URLSearchParams(window.location.search).get('order')
+  const response = await fetch('/api/orders' + (selected ? '?order=' + encodeURIComponent(selected) : ''), { credentials: 'include' })
   if (!response.ok) return null
   return await response.json() as Licence
 }
@@ -69,16 +70,28 @@ function CopyValue({ label, value, display }: { label: string; value: string; di
 
 export function PaymentStep({ order, activeUntil, publisherUntil }: { order: OrderPayment; activeUntil: string | null; publisherUntil?: string | null }) {
   const [tab, setTab] = useState<'barcode' | 'details'>('barcode')
+  const [reported, setReported] = useState(Boolean(order.paymentReportedAt))
+  const [reporting, setReporting] = useState(false)
+  const [reportError, setReportError] = useState('')
+  async function reportPayment() {
+    setReporting(true); setReportError('')
+    try {
+      const response = await fetch('/api/orders/report', {method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({reference:order.reference})})
+      if (!response.ok) throw new Error('Prijavu trenutačno nije moguće spremiti. Osvježite prikaz i pokušajte ponovno.')
+      setReported(true)
+    } catch(error) {setReportError(error instanceof Error ? error.message : 'Prijava nije uspjela.')} finally {setReporting(false)}
+  }
   const upgrade = order.kind === 'publisher_upgrade'
+  if(order.status==='paid'||order.status==='cancelled')return <section className="payment-step"><h3>{order.status==='paid'?'Uplata je potvrđena':'Narudžba je otkazana'}</h3><p>{order.reference} · {orderLabel(order.kind)} · {order.amountLabel}</p><p>{order.status==='paid'?'Ne trebate ponovno uplatiti. Aktualni paket i rok prikazani su u dashboardu.':'Za novu narudžbu otvorite dashboard.'}</p></section>
   return (
     <section className="payment-step" aria-labelledby={`payment-${order.reference}`}>
       <span className="app-label">UPLATA · {order.reference}</span>
-      <h3 id={`payment-${order.reference}`}>{upgrade ? 'Nadogradnja na Publisher' : 'Uplata za trajnu aktivaciju'}</h3>
+      <h3 id={`payment-${order.reference}`}>{upgrade ? 'Nadogradnja na Publisher' : 'Uplata — ' + orderLabel(order.kind)}</h3>
       <p className="payment-amount"><strong>{order.amountLabel}</strong></p>
       <p className="payment-what">
         {upgrade
           ? `Publisher za preostalo razdoblje licence (${UPGRADE_LABEL}).`
-          : `${WEB_LINK.name} — ${formatEur(WEB_LINK.price, true)}${order.installation ? ` + ${INSTALLATION.name.toLocaleLowerCase('hr-HR')} ${formatEur(INSTALLATION.price)} jednokratno` : ''}. Godišnja licenca, bez automatske obnove.`}
+          : `${orderLabel(order.kind)}${order.installation ? ` + ${INSTALLATION.name.toLocaleLowerCase('hr-HR')} ${formatEur(INSTALLATION.price)} jednokratno` : ''}. ${order.kind === 'installation' ? 'Jednokratna usluga, bez produljenja pretplate.' : 'Godišnja licenca, bez automatske obnove.'}`}
       </p>
       <div className="payment-tabs" role="tablist" aria-label="Način uplate">
         <button type="button" role="tab" aria-selected={tab === 'barcode'} className={tab === 'barcode' ? 'is-active' : ''} onClick={() => setTab('barcode')}>2D barkod</button>
@@ -98,8 +111,10 @@ export function PaymentStep({ order, activeUntil, publisherUntil }: { order: Ord
       <p className="payment-note" role="status">
         {upgrade
           ? `Nakon evidentirane uplate Publisher je aktivan${publisherUntil ? ` do ${untilLabel(publisherUntil)}` : ''}.`
-          : `${activeUntil ? `Link ostaje aktivan do ${untilLabel(activeUntil)}. ` : ''}Nakon evidentirane uplate isti link ostaje aktivan godinu dana.`}
+          : order.kind==='installation' ? 'Ugradnju dogovaramo nakon potvrde uplate. Ova usluga ne produljuje pretplatu.' : `${activeUntil && Date.parse(activeUntil)>Date.now() ? `Link ostaje aktivan do ${untilLabel(activeUntil)}. ` : ''}Tek nakon potvrde bankovne uplate aktiviramo ili obnavljamo isti link.`}
       </p>
+      {reported ? <p className="app-status" role="status">Uplata je prijavljena — čeka potvrdu. Ne trebate ponovno uplatiti.</p> : <button className="app-button app-button-primary" type="button" disabled={reporting} onClick={() => void reportPayment()}>{reporting ? 'Spremamo prijavu…' : 'Uplatio sam'}</button>}
+      {reportError && <p className="app-error" role="alert">{reportError}</p>}
     </section>
   )
 }
@@ -111,13 +126,15 @@ export function OrderForm({
   onPlaced,
   onCancel,
   previous,
+  initialInstallation = false,
 }: {
-  kind: 'web_link' | 'publisher_upgrade'
+  kind: 'web_link' | 'publisher' | 'publisher_upgrade'
   defaultEmail: string
   defaultName: string
   onPlaced: () => void
   onCancel?: () => void
   previous?: OrderPayment | null
+  initialInstallation?: boolean
 }) {
   const [customerType, setCustomerType] = useState<'company' | 'person'>(previous?.customerType ?? 'company')
   const [billingName, setBillingName] = useState(previous?.billingName ?? defaultName)
@@ -125,7 +142,7 @@ export function OrderForm({
   const [address, setAddress] = useState(previous?.address ?? '')
   const [postalCity, setPostalCity] = useState(previous?.postalCity ?? '')
   const [email, setEmail] = useState(previous?.email ?? defaultEmail)
-  const [installation, setInstallation] = useState(previous?.installation ?? false)
+  const [installation, setInstallation] = useState(previous?.installation ?? initialInstallation)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const total = formatCents(orderAmountCents(kind, installation))
@@ -164,7 +181,7 @@ export function OrderForm({
       <label>Adresa<input value={address} onChange={(event) => setAddress(event.target.value)} required minLength={3} maxLength={120} autoComplete="street-address" placeholder="Ulica i kućni broj" /></label>
       <label>Poštanski broj i grad<input value={postalCity} onChange={(event) => setPostalCity(event.target.value)} required minLength={3} maxLength={80} placeholder="10000 Zagreb" /></label>
       <label>E-mail za račun<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} autoComplete="email" /></label>
-      {kind === 'web_link' && (
+      {(kind === 'web_link' || kind === 'publisher') && (
         <label className="order-installation"><input type="checkbox" checked={installation} onChange={(event) => setInstallation(event.target.checked)} /> Dodajte pomoć s ugradnjom na web (+{formatEur(INSTALLATION.price)} jednokratno)</label>
       )}
       <p className="order-total">Ukupno za uplatu: <strong>{total}</strong></p>
@@ -178,30 +195,33 @@ export function OrderForm({
 }
 
 /** Order form or, once ordered, the payment step. Shared by the welcome screen and the dashboard card. */
-export function KeepLinkFlow({ licence, email, name, startOpen = false, onChanged }: { licence: Licence; email: string; name: string; startOpen?: boolean; onChanged: () => void }) {
+export function KeepLinkFlow({ licence, email, name, startOpen = false, onChanged, initialInstallation = false, kind = 'web_link' }: { licence: Licence; email: string; name: string; startOpen?: boolean; onChanged: () => void; initialInstallation?: boolean; kind?: 'web_link' | 'publisher' }) {
   const [open, setOpen] = useState(startOpen)
   const [editing, setEditing] = useState(false)
-  const order = licence.order?.kind === 'web_link' ? licence.order : null
+  const order = licence.order?.kind === kind ? licence.order : null
   if (order && !editing) {
     return (
       <>
         <PaymentStep order={order} activeUntil={licence.entitlement?.periodEnd ?? null} />
-        <button className="app-link-button" type="button" onClick={() => setEditing(true)}>Izmijeni podatke za račun</button>
+        {!order.paymentReportedAt&&order.status!=='paid'&&<button className="app-link-button" type="button" onClick={() => setEditing(true)}>Izmijeni podatke za račun</button>}
       </>
     )
   }
   if (!open && !editing) {
-    return <div className="publisher-upgrade-actions"><button className="app-button app-button-primary" type="button" onClick={() => setOpen(true)}>Zadrži ovaj link trajno — {formatEur(WEB_LINK.price, true)} →</button></div>
+    return <div className="publisher-upgrade-actions"><button className="app-button app-button-primary" type="button" onClick={() => setOpen(true)}>{kind==='publisher'?'Obnovi Publisher':'Zadrži ovaj link trajno'} — {formatEur(PLANS[kind==='publisher'?1:0].price, true)} →</button></div>
   }
-  return <OrderForm kind="web_link" defaultEmail={email} defaultName={name} previous={order} onCancel={() => { setOpen(false); setEditing(false) }} onPlaced={() => { setOpen(false); setEditing(false); onChanged() }} />
+  return <OrderForm kind={kind} initialInstallation={initialInstallation} defaultEmail={email} defaultName={name} previous={order} onCancel={() => { setOpen(false); setEditing(false) }} onPlaced={() => { setOpen(false); setEditing(false); onChanged() }} />
 }
 
 export function LicenceCard({ licence, email, name, onChanged }: { licence: Licence; email: string; name: string; onChanged: () => void }) {
   const [upgradeOpen, setUpgradeOpen] = useState(false)
   const [helpSent, setHelpSent] = useState(false)
+  const [renewOpen,setRenewOpen] = useState(new URLSearchParams(window.location.search).get('renew') === '1')
   const state = licenceState(licence)
   const periodEnd = licence.entitlement?.periodEnd ?? null
   if (state === 'none') return null
+  const annualKind = licence.entitlement?.plan === 'publisher_self_service' || (licence.entitlement?.status==='trial'&&licence.order?.kind==='publisher') ? 'publisher' : 'web_link'
+  if (state === 'grace' || state === 'suspended') return <section className="licence-card publisher-upgrade-banner"><h2>{state === 'suspended' ? 'Pristup je suspendiran' : licence.order?.paymentReportedAt ? 'Uplata je prijavljena — čeka potvrdu' : 'Obnova čeka uplatu'}</h2><p>Plaćeno razdoblje završilo je {periodEnd ? untilLabel(periodEnd) : '—'}.{state === 'grace' && licence.entitlement?.graceUntil ? ` Cjenik ostaje aktivan do ${untilLabel(licence.entitlement.graceUntil)}.` : ''}</p>{licence.entitlement?.plan === 'managed' ? <a href="mailto:nepar@nepar.hr">Dogovori obnovu Web + Publishera — {formatEur(PLANS[2].price,true)}</a> : <KeepLinkFlow licence={licence} email={email} name={name} kind={annualKind} startOpen onChanged={onChanged}/>}</section>
 
   async function askForHelp() {
     const response = await fetch('/api/publisher/upgrade', {
@@ -231,9 +251,11 @@ export function LicenceCard({ licence, email, name, onChanged }: { licence: Lice
         <p>
           {state === 'free' ? `Zadržite isti link za ${formatEur(WEB_LINK.price, true)}. Uplata 2D barkodom, bez automatske obnove.` : null}
           {state === 'awaiting_payment' && periodEnd ? `Link ostaje aktivan do ${untilLabel(periodEnd)}.` : null}
-          {state === 'expired' ? `Uplatite ${formatEur(WEB_LINK.price)} i isti link se vraća.` : null}
+          {state === 'expired' ? licence.entitlement?.plan==='managed'?'Obnovu Web + Publishera dogovorite s NEPAR-om.':`Uplatite ${formatEur(PLANS[annualKind==='publisher'?1:0].price)} i isti link se vraća.` : null}
         </p>
-        <KeepLinkFlow licence={licence} email={email} name={name} onChanged={onChanged} />
+        {licence.entitlement?.plan==='managed'?<a href="mailto:nepar@nepar.hr">Dogovori obnovu</a>:<KeepLinkFlow licence={licence} email={email} name={name} kind={annualKind} onChanged={onChanged} />}
+        {state === 'free' && <button className="app-link-button" type="button" onClick={() => setUpgradeOpen(!upgradeOpen)}>Želim uređivati stavke — Publisher {formatEur(PLANS[1].price,true)}</button>}
+        {state === 'free' && upgradeOpen && <OrderForm kind="publisher" defaultEmail={email} defaultName={name} onPlaced={onChanged}/>}
         {help}
       </section>
     )
@@ -244,6 +266,8 @@ export function LicenceCard({ licence, email, name, onChanged }: { licence: Lice
     <section className={`publisher-upgrade-banner licence-card licence-${state}`}>
       <span className="app-label">{state === 'publisher' ? 'PUBLISHER' : WEB_LINK.name.toLocaleUpperCase('hr-HR')}</span>
       <h2>{periodEnd ? `Aktivno do ${untilLabel(periodEnd)}` : 'Aktivno'}</h2>
+      {licence.order && licence.order.kind !== 'publisher_upgrade' && <PaymentStep order={licence.order} activeUntil={licence.access?.accessUntil ?? periodEnd}/>}
+      {licence.entitlement?.plan === 'managed' ? <a href="mailto:nepar@nepar.hr">Obnova Web + Publishera po ponudi — {formatEur(PLANS[2].price,true)}</a> : <><button className="app-link-button" type="button" onClick={() => setRenewOpen(!renewOpen)}>Obnovi {orderLabel(annualKind)} — {formatEur(PLANS[annualKind === 'publisher' ? 1 : 0].price,true)}</button>{renewOpen && (!licence.order || licence.order.status==='paid') && <OrderForm kind={annualKind} defaultEmail={email} defaultName={name} onPlaced={() => {setRenewOpen(false);onChanged()}}/>}</>}
       {state === 'web_link' && (pendingUpgrade
         ? <PaymentStep order={pendingUpgrade} activeUntil={periodEnd} publisherUntil={periodEnd} />
         : licence.upgradeAvailable

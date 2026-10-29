@@ -17,10 +17,10 @@ describe('advanceMonitorState', () => {
   it('ok → fail → warn → ok: alert on fail, no recovery on warn, recovery on the final ok', () => {
     expect(replay([['ok', 1], ['fail', 2], ['warn', 3], ['ok', 4]])).toEqual([null, 'fail', null, 'recovery'])
   })
-  it('dedupes a persisting fail for 24 h, then repeats', () => {
+  it('deduplicates a continuous incident, including after 24 hours', () => {
     expect(replay([['fail', 1], ['fail', 2], ['fail', 3]])).toEqual(['fail', null, null])
     const state = { ...emptyMonitorState('t1'), alertOpen: true, lastAlertAt: at(0).toISOString() }
-    expect(advanceMonitorState(state, 'fail', new Date(at(0).getTime() + 25 * 3600_000)).alert).toBe('persistent_fail')
+    expect(advanceMonitorState(state, 'fail', new Date(at(0).getTime() + 25 * 3600_000)).alert).toBeNull()
   })
   it('warn alone never alerts and ok without an open alert sends nothing', () => {
     expect(replay([['warn', 1], ['ok', 2]])).toEqual([null, null])

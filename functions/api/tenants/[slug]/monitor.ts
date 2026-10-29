@@ -4,7 +4,7 @@ import { claimManualRun, readLatestRun, readRunHistory, readState } from '../../
 import type { MonitorRunRecord } from '../../../../shared/compliance/types'
 import type { AuthEnv } from '../../../_auth'
 import type { RuntimeEnv } from '../../../_repository'
-import { accessErrorResponse, requireOwnerOrOperator } from '../../../_write-auth'
+import { accessErrorResponse, requireOwnerOrOperator, requirePlanFeature } from '../../../_write-auth'
 
 type MonitorBinding = { fetch: (input: Request | string, init?: RequestInit) => Promise<Response> }
 type MonitorApiEnv = RuntimeEnv & AuthEnv & { MONITOR?: MonitorBinding; MONITOR_SECRET?: string }
@@ -18,6 +18,7 @@ const compact = (run: MonitorRunRecord) => ({ id: run.id, checkedAt: run.checked
 export const onRequestGet = async ({ request, params, env }: { request: Request; params: Record<string, string>; env: MonitorApiEnv }) => {
   try {
     const tenant = await requireOwnerOrOperator({ request, env, slug: params.slug })
+    await requirePlanFeature(env, tenant.id, 'monitoring')
     const db = env.DB!
     const [latest, history, state, metadata, job] = await Promise.all([
       readLatestRun(db, tenant.id),
@@ -50,6 +51,7 @@ export const onRequestGet = async ({ request, params, env }: { request: Request;
 export const onRequestPost = async ({ request, params, env }: { request: Request; params: Record<string, string>; env: MonitorApiEnv }) => {
   try {
     const tenant = await requireOwnerOrOperator({ request, env, slug: params.slug })
+    await requirePlanFeature(env, tenant.id, 'monitoring')
     if (!env.MONITOR || !env.MONITOR_SECRET) {
       return Response.json({ error: 'Nadzor nije konfiguriran.', code: 'monitor_unavailable' }, { status: 503, headers: noStore })
     }

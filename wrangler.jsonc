@@ -24,6 +24,10 @@
     "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
     "EMAIL_FROM": "publisher@nepar.hr",
     "EMAIL_TO": "nepar@nepar.hr",
+    "ADMIN_EMAILS": "nepar@nepar.hr",
+    "PUBLIC_APP_URL": "https://digitalnicjenik.nepar.hr",
+    "LIFECYCLE_EMAILS_ENABLED": "false",
+    "DAILY_PUBLICATION_ENABLED": "false",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAE81Y0hv6uzetB4O"
   },
   "env": {
@@ -52,6 +56,10 @@
         "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
         "EMAIL_FROM": "publisher@nepar.hr",
         "EMAIL_TO": "nepar@nepar.hr",
+        "ADMIN_EMAILS": "nepar@nepar.hr",
+        "PUBLIC_APP_URL": "https://digitalnicjenik.nepar.hr",
+        "LIFECYCLE_EMAILS_ENABLED": "false",
+        "DAILY_PUBLICATION_ENABLED": "false",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAE81Y0hv6uzetB4O"
       }
     },
@@ -88,6 +96,10 @@
         "CF_ACCOUNT_ID": "a0ec5e0ddb36f340bf00d1520dfa7f2b",
         "EMAIL_FROM": "publisher@nepar.hr",
         "EMAIL_TO": "nepar@nepar.hr",
+        "ADMIN_EMAILS": "nepar@nepar.hr",
+        "PUBLIC_APP_URL": "https://digitalnicjenik.nepar.hr",
+        "LIFECYCLE_EMAILS_ENABLED": "false",
+        "DAILY_PUBLICATION_ENABLED": "false",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAE81Y0hv6uzetB4O"
       }
     }

@@ -1,10 +1,13 @@
 import { enqueueMonitorCheck, type MonitorQueue } from '../../../shared/compliance/jobs'
 import { failMonitorJob, MonitorLeaseBusy, processMonitorJob, type QueueBatchLike } from './queue'
 import { runTenantCheck, type MonitorEnv } from '../../../shared/compliance/run-check'
-import { listMonitorTargets, selectRetryTargets, readState, writeState, type MonitorTarget } from '../../../shared/compliance/store'
+import { listMonitorTargets, selectRetryTargets, type MonitorTarget } from '../../../shared/compliance/store'
 import type { MonitorTrigger } from '../../../shared/compliance/types'
 import { sendAlert, type AlertEnv } from './alert'
 import { cleanupExpiredDrafts, type DraftCleanupEnv } from '../../../shared/draft-cleanup'
+import { dailyPublication } from '../../../shared/daily-publication'
+import { scheduleLifecycle, dispatchLifecycle } from '../../../shared/lifecycle'
+import { recordMonitorNotifications } from '../../../shared/monitor-notifications'
 
 export type Env = MonitorEnv & AlertEnv & DraftCleanupEnv & { MONITOR_SECRET?: string; MONITOR_QUEUE?: MonitorQueue }
 
@@ -25,20 +28,10 @@ function timingSafeEqual(left: string, right: string) {
 
 /** One check + alert delivery. The same function serves cron, retry and manual runs. */
 export async function checkAndAlert(env: Env, slug: string, trigger: MonitorTrigger, now = new Date(), fetcher?: typeof fetch) {
-  const target = await env.DB.prepare('SELECT id FROM tenants WHERE slug = ?').bind(slug).first<{ id: string }>()
-  const previous = target ? await readState(env.DB, target.id) : null
   const result = await runTenantCheck(env, { slug, trigger, now, fetcher })
-  if (result.status === 'checked' && result.alert) {
-    let delivered = false
-    try {
-      const delivery = await sendAlert(env, result.alert, result.run, result.tenant)
-      delivered = delivery.failed.length === 0 && delivery.sent.length > 0
-    } finally {
-      if (previous && !delivered) {
-        // A partially delivered batch may repeat; an owner alert must not be lost for 24 hours.
-        await writeState(env.DB, { ...result.state, lastAlertAt: previous.lastAlertAt, lastAlertKind: previous.lastAlertKind, alertOpen: previous.alertOpen })
-      }
-    }
+  if (result.status === 'checked') {
+    await recordMonitorNotifications(env,result.run,result.tenant)
+    await dispatchLifecycle(env)
   }
   return result
 }
@@ -50,7 +43,12 @@ export async function runScheduled(env: Env, cron: string, now = new Date(), aft
   const all = await listMonitorTargets(env.DB, afterSlug, 10)
   const targets: MonitorTarget[] = retry ? await selectRetryTargets(env.DB, all, new Date(now.getTime() - RETRY_LOOKBACK_MS).toISOString()) : all
   const trigger: MonitorTrigger = retry ? 'retry' : 'cron'
-  for (const target of targets) await enqueueMonitorCheck(env.DB, env.MONITOR_QUEUE, target.slug, trigger, now)
+  const watchdog = cron === '15 5 * * *' || cron === '15 6 * * *'
+  if (env.DAILY_PUBLICATION_ENABLED === 'true') {
+    for (const target of all) await env.MONITOR_QUEUE.send({ dailySlug: target.slug, watchdog, now: now.toISOString(), trigger })
+  } else if (!watchdog) {
+    for (const target of targets) await enqueueMonitorCheck(env.DB, env.MONITOR_QUEUE, target.slug, trigger, now)
+  }
   if (all.length === 10) await env.MONITOR_QUEUE.send({ cron, now: now.toISOString(), afterSlug: all[all.length - 1].slug })
   return { trigger, tenants: targets.length, queued: targets.length }
 }
@@ -58,7 +56,11 @@ export async function runScheduled(env: Env, cron: string, now = new Date(), aft
 export default {
   async scheduled(event: ScheduledEventLike, env: Env, ctx: ExecutionContextLike) {
     if (!env.MONITOR_QUEUE) throw new Error('monitor_queue_unavailable')
-    ctx.waitUntil(Promise.all([env.MONITOR_QUEUE.send({ cron: event.cron, now: new Date(event.scheduledTime ?? Date.now()).toISOString(), afterSlug: '' }), cleanupExpiredDrafts(env)]))
+    const stamp = new Date(event.scheduledTime ?? Date.now())
+    if (event.cron === '0 * * * *') {
+      ctx.waitUntil((async () => { await scheduleLifecycle(env,stamp); await dispatchLifecycle(env,stamp) })())
+    } else ctx.waitUntil(env.MONITOR_QUEUE.send({ cron: event.cron, now: stamp.toISOString(), afterSlug: '' }))
+    ctx.waitUntil(cleanupExpiredDrafts(env))
   },
 
   async queue(batch: QueueBatchLike, env: Env) {
@@ -67,7 +69,15 @@ export default {
     for (const deferred of extra) deferred.retry({ delaySeconds: 1 })
     if (!message) return
     try {
-      if ('jobId' in message.body && typeof message.body.jobId === 'string') {
+      if ('dailySlug' in message.body) {
+        if (batch.queue === 'digitalnicjenik-monitor-dlq') {
+          await dailyPublication(env,message.body.dailySlug,new Date(),'force')
+        } else {
+          await dailyPublication(env,message.body.dailySlug,new Date(),message.body.watchdog)
+          if (!message.body.watchdog) await enqueueMonitorCheck(env.DB,env.MONITOR_QUEUE!,message.body.dailySlug,message.body.trigger)
+        }
+        await dispatchLifecycle(env)
+      } else if ('jobId' in message.body && typeof message.body.jobId === 'string') {
         if (batch.queue === 'digitalnicjenik-monitor-dlq') await failMonitorJob(env, message.body.jobId)
         else await processMonitorJob(env, message.body.jobId)
       } else if ('cron' in message.body && batch.queue !== 'digitalnicjenik-monitor-dlq') {

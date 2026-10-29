@@ -100,7 +100,7 @@ test('one supported format does not reduce the score and context reaches Web Lin
   await expect(page.locator('.acq-status-missing')).toHaveCount(0)
   await expect(page.locator('.acq-plans')).toContainText('19,90 €')
   await expect(page.locator('.acq-plans')).toContainText('49,90 €')
-  await expect(page.locator('.acq-plans')).toContainText('79,90 €')
+  await expect(page.locator('.acq-plans')).toContainText('99,00 €')
   const resolve = page.getByRole('link', { name: 'Riješite digitalni cjenik' })
   await expect(resolve).toHaveCSS('background-color', 'rgb(6, 96, 255)')
   expect((await resolve.boundingBox())!.height).toBeGreaterThanOrEqual(56)
@@ -169,7 +169,7 @@ test('existing-web landing explains link-only setup with FAQ, plans and extra se
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/digitalni-cjenik-za-wordpress-webshop/')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Digitalni cjenik za WordPress, webshop i bilo koji postojeći web')
-    await expect(page.locator('.ew-platforms dt')).toHaveText(['WordPress', 'WooCommerce', 'Shopify', 'Wix, Webflow i vlastiti web'])
+    await expect(page.locator('.ew-platforms dt')).toHaveText(['WordPress', 'WooCommerce', 'Shopify', 'Wix, Webflow i vlastiti web', 'Google Sites', 'Custom HTML / React'])
     await expect(page.locator('#cesta-pitanja .site-faq-item')).toHaveCount(8)
     await expect(page.locator('.acq-plan').first()).toContainText('Do 5.000 stavki')
     await expect(page.locator('.acq-extra')).toHaveCount(2)
@@ -186,7 +186,7 @@ test('pricing page shares plans and query handoff opens the selected annual offe
   await expect(page.locator('.acq-plans')).toContainText('19,90 €')
   await page.getByRole('link', { name: 'Zatraži Web + Publisher' }).click()
   await expect(page.getByRole('heading', { name: 'Zatražite paket Web + Publisher' })).toBeVisible()
-  await expect(page.locator('.lead-price')).toContainText('79,90 €/god')
+  await expect(page.locator('.lead-price')).toContainText('99,00 €/god')
 })
 
 test('mobile FAQ disclosures and resource navigation remain usable below the validator', async ({ page }) => {

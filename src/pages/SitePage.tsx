@@ -7,8 +7,10 @@ import { SpecPage } from './SpecPage'
 import { InstallationPage, AutoGubicReferencePage } from './InstallationPage'
 import { ExistingWebPage } from './ExistingWebPage'
 import type { SitePageMeta } from './registry'
+import { WebPublisherPage } from './WebPublisherPage'
 
 const COMPONENTS: Record<string, () => ReactElement> = {
+  '/web-publisher/': WebPublisherPage,
   '/digitalni-cjenik-za-wordpress-webshop/': ExistingWebPage,
   '/objava-digitalnog-cjenika/': InstallationPage,
   '/reference/auto-gubic/': AutoGubicReferencePage,

@@ -29,10 +29,11 @@ export const onRequestGet = async ({ request, params, env }: { request: Request;
       priceList: publication?.payload ?? null,
       publication,
       metadata: await readMetadataForSlug(env, params.slug),
-      publications: await readPublications(env, params.slug, !isOwner),
+      publications: (await readPublications(env, params.slug, !isOwner)).map(({payload,...metadata})=>metadata),
       entitlement: await readEntitlement(env, params.slug),
       access: liveAccess,
       ownerView: isOwner,
+      draft: isOwner ? await env.DB?.prepare("SELECT id,source_filename,normalized_payload_json,validation_issues_json,status,updated_at FROM price_uploads WHERE tenant_id=? AND status != 'published' AND source_type != 'daily-publication' ORDER BY updated_at DESC,rowid DESC LIMIT 1").bind(access.tenant?.id).first() : undefined,
     }), { status: 200, headers })
   } catch { return Response.json({ error: 'Cjenik nije pronađen ili D1 nije spreman.' }, { status: 404 }) }
 }

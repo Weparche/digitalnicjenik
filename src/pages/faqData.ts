@@ -182,7 +182,15 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Što se događa nakon 24 sata ako ne platim?',
         answer:
-          'Kad ispunite podatke za račun, link ostaje aktivan još 48 sati da uplata stigne. Bez uplate se aktualni javni URL gasi (HTTP 410). Ranije zamijenjene verzije ostaju u javnoj arhivi do isteka svojeg roka dostupnosti, osim u slučaju suspenzije. Podaci ostaju spremljeni; nakon evidentirane uplate isti URL ponovno radi.',
+          'Besplatna objava traje 24 sata bez novog gracea. Narudžba ili klik „Uplatio sam” ne produžuju besplatni rok. Nakon njega aktualni izlazi vraćaju 410; podaci i zadržana arhiva ostaju. Potvrđena uplata ponovno aktivira isti URL. Već ranije dodijeljeni rokovi ne skraćuju se.',
+      },
+      {
+        question:'Što ako godišnja pretplata istekne dok čekam potvrdu uplate?',
+        answer:'Potvrđeno plaćeni godišnji paketi imaju 7 dana gracea nakon isteka. Javni HTML, CSV/XML, embed i funkcije paketa ostaju aktivni do tog roka. „Uplatio sam” obavještava administratora, ali ne potvrđuje uplatu niti produžuje grace. Tek nakon gracea aktualni izlazi prelaze na 410 ako obnova nije potvrđena. Suspenzija ima prednost.',
+      },
+      {
+        question:'Mogu li preuzeti svoje verzije i otići drugom pružatelju?',
+        answer:'Zadržavate svoj izvorni Excel/CSV/XML. Objavljene verzije koje sustav čuva možete pojedinačno preuzeti iz prijavljenog dashboarda. Javna arhiva čuva prethodne verzije najmanje 30 dana od zamjene i posljednju najmanje 30 dana od objave, uključujući obični istek. ZIP export nije dio ove isporuke.',
       },
       {
         question: 'Kako se plaća?',

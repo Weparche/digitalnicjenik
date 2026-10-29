@@ -118,9 +118,9 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
 
   const isDemo = tenant.slug === (env.DEMO_WRITE_TENANT || 'nepar')
   if (!isDemo) {
-    const row = await db.prepare('SELECT id, tenant_id, plan, status, period_start, period_end FROM entitlements WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1')
-      .bind(tenant.id).first<{ id: string; tenant_id: string; plan: Entitlement['plan']; status: Entitlement['status']; period_start: string | null; period_end: string | null }>()
-    const entitlement: Entitlement | null = row ? { id: row.id, tenantId: row.tenant_id, plan: row.plan, status: row.status, periodStart: row.period_start, periodEnd: row.period_end } : null
+    const row = await db.prepare('SELECT id, tenant_id, plan, status, period_start, period_end, paid_confirmed_at, grace_until FROM entitlements WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1')
+      .bind(tenant.id).first<{ id: string; tenant_id: string; plan: Entitlement['plan']; status: Entitlement['status']; period_start: string | null; period_end: string | null; paid_confirmed_at: string | null; grace_until: string | null }>()
+    const entitlement: Entitlement | null = row ? { id: row.id, tenantId: row.tenant_id, plan: row.plan, status: row.status, periodStart: row.period_start, periodEnd: row.period_end, paidConfirmedAt: row.paid_confirmed_at, graceUntil: row.grace_until } : null
     // Expired/suspended tenants intentionally serve HTTP 410: that is expected, not an incident.
     if (!entitlementIsLive(entitlement, now.getTime())) return { status: 'skipped', reason: 'not_live' }
     // Daily monitoring and alerts belong to Publisher; a Web Link is published but not watched.
@@ -149,6 +149,9 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
     ? `${new URL(env.PUBLIC_APP_URL || 'https://digitalnicjenik.nepar.hr').origin}/c/${encodeURIComponent(tenant.slug)}`
     : `https://${publication.hostname}`
 
+  const publicStatus = await statusOf(fetcher,base)
+  if(publicStatus===null) issues.push({code:'PUBLIC_PAGE_UNCONFIRMED',severity:'warn',message:'Monitoring nije mogao potvrditi dostupnost javnog cjenika.'})
+  else if(publicStatus<200||publicStatus>=300) issues.push({code:'PUBLIC_PAGE_UNAVAILABLE',severity:'fail',message:`Javni cjenik vraća HTTP ${publicStatus}.`})
   const [csv, xml] = await Promise.all([
     probe(fetcher, `${base}/cjenik.csv`, 'csv', publication.filename_stem, ruleset),
     probe(fetcher, `${base}/cjenik.xml`, 'xml', publication.filename_stem, ruleset),
@@ -270,7 +273,7 @@ export async function checkArchiveRow(fetcher: typeof fetch, prepared: PreparedC
   if (csvStatus !== 200 || xmlStatus !== 200) {
     const requiredUntil = new Date(row.superseded_at ?? row.published_at).getTime() + prepared.archive.days * 86_400_000
     if (Date.parse(row.public_until!) >= requiredUntil) prepared.run.archiveAvailable = Math.max(0, (prepared.run.archiveAvailable ?? 0) - 1)
-    prepared.run.issues.push({ code: 'ARCHIVE_UNREACHABLE', severity: 'fail', message: `Arhiva ${row.filename_stem}: CSV HTTP ${csvStatus ?? 'gre?ka'}, XML HTTP ${xmlStatus ?? 'gre?ka'}.` })
+    prepared.run.issues.push({ code: 'ARCHIVE_UNREACHABLE', severity: 'fail', message: `Arhiva ${row.filename_stem}: CSV HTTP ${csvStatus ?? 'greška'}, XML HTTP ${xmlStatus ?? 'greška'}.` })
   }
   prepared.run.overall = overallFromIssues(prepared.run.issues, prepared.run.freshnessStatus)
 }

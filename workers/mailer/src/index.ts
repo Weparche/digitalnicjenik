@@ -46,7 +46,7 @@ export default {
       return Response.json({ ok: false, code: 'invalid_input' }, { status: 400 })
     }
     try {
-      await env.EMAIL.send({
+      const receipt = await env.EMAIL.send({
         to: payload.to,
         from: { email: payload.from.email, name: payload.from.name },
         subject: payload.subject,
@@ -60,7 +60,7 @@ export default {
           disposition: 'attachment' as const,
         })),
       })
-      return Response.json({ ok: true })
+      return Response.json({ ok: true, ...(receipt && typeof receipt === 'object' && 'messageId' in receipt ? { messageId: receipt.messageId } : {}) })
     } catch {
       return Response.json({ ok: false, code: 'send_failed' }, { status: 502 })
     }

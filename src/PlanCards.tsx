@@ -19,7 +19,7 @@ export function PlanCards({ onSelect, onExtra }: { onSelect?: (plan: PlanId) => 
       {plan.highlight && <p className="acq-plan-highlight">{plan.highlight}</p>}
       <ul>{plan.features.map((feature) => <li key={feature}><IconCheck size={18}/>{feature}</li>)}</ul>
       {onSelect ? <button type="button" className={plan.id === 'publisher' ? 'acq-primary' : 'acq-secondary'} onClick={() => onSelect(plan.id)}>Odaberi {plan.name}<IconArrowRight size={19}/></button> : <a className="acq-secondary" href={`/?paket=${plan.id}#posaljite-cjenik`}>Zatraži {plan.name}<IconArrowRight size={19}/></a>}
-      {plan.id === 'web' && <small>Za složenije web stranice zatražite posebnu ponudu.</small>}
+      {plan.id === 'web' && <small>Novi statički web hostamo mi. Redizajn postojećeg WordPress/Wix weba i custom razvoj nisu uključeni. <a href="/web-publisher/">Opseg web paketa</a></small>}
     </article>)}</div>
     <div className="acq-extras">{EXTRA_SERVICES.map((service) => <article key={service.id} className="acq-extra" id={service.id === 'integration' ? 'integracija' : 'ugradnja'}>
       <div><h3>{service.title}</h3><p className="acq-extra-price">{service.price}</p><p>{service.text}</p></div>

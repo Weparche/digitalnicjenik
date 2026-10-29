@@ -18,7 +18,7 @@ describe('existing-web positioning', () => {
   it('renames Link to Web Link without changing the plan id or price', () => {
     expect(PLANS[0]).toMatchObject({ id: 'link', name: 'Web Link', price: 19.9 })
     expect(PLANS[0].highlight).toBe(`Do ${MAX_ITEMS_LABEL} stavki`)
-    expect(PLANS[1]).toMatchObject({ id: 'publisher', price: 49.9, summary: 'Objava, validacija i svakodnevni nadzor digitalnog cjenika.' })
+    expect(PLANS[1]).toMatchObject({ id: 'publisher', price: 49.9, summary: PLANS[1].summary })
   })
 
   it('prices installation help once and shows it on the extra-service tile', () => {

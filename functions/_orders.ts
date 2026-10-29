@@ -1,13 +1,11 @@
+import { lifecycleStatement } from '../shared/lifecycle'
 import { normalizeEmail, validEmail } from './_auth'
-import { emailConfigured, sendTransactionalEmail } from './_email'
-import { escapeHtml } from './_lead'
 import { readEntitlement, type D1DatabaseLike, type RuntimeEnv } from './_repository'
 import { AccessDeniedError } from './_write-auth'
 import type { TrialEnv } from './_trial'
 import {
   PAYEE,
   formatCents,
-  graceEnd,
   hub3Payload,
   orderAmountCents,
   orderDescription,
@@ -23,6 +21,9 @@ export type OrderRow = {
   reference: string | null
   tenant_id: string
   kind: OrderKind
+  payment_reported_at: string | null
+  confirmed_period_end: string | null
+  confirmed_plan: string | null
   installation: number
   amount_cents: number
   customer_type: CustomerType
@@ -51,7 +52,7 @@ export type OrderInput = {
 
 type OrderTenant = { id: string; slug: string; name: string }
 
-const ORDER_COLUMNS = `number, reference, tenant_id, kind, installation, amount_cents, customer_type, billing_name, oib, address, postal_city, email, status, created_at, updated_at, paid_at, grace_granted_at`
+const ORDER_COLUMNS = `number, reference, tenant_id, kind, installation, amount_cents, customer_type, billing_name, oib, address, postal_city, email, status, created_at, updated_at, paid_at, grace_granted_at, payment_reported_at, confirmed_period_end, confirmed_plan`
 
 function requireDb(env: RuntimeEnv): D1DatabaseLike {
   if (!env.DB) throw new AccessDeniedError(503, 'db_unavailable', 'D1 binding DB nije konfiguriran.')
@@ -65,7 +66,7 @@ export function formatZagreb(iso: string) {
 }
 
 export function parseOrderInput(input: OrderInput) {
-  const kind: OrderKind | null = input.kind === 'publisher_upgrade' ? 'publisher_upgrade' : input.kind === 'web_link' ? 'web_link' : null
+  const kind: OrderKind | null = input.kind === 'publisher_upgrade' ? 'publisher_upgrade' : input.kind === 'web_link' ? 'web_link' : input.kind === 'publisher' ? 'publisher' : null
   if (!kind) throw new AccessDeniedError(400, 'invalid_input', 'Odaberite paket.')
   const customerType: CustomerType = input.customerType === 'person' ? 'person' : 'company'
   const billingName = text(input.billingName, 120)
@@ -81,7 +82,7 @@ export function parseOrderInput(input: OrderInput) {
   if (!validEmail(email)) throw new AccessDeniedError(400, 'invalid_input', 'Unesite valjanu e-mail adresu.')
   return {
     kind,
-    installation: kind === 'web_link' && input.installation === true,
+    installation: (kind === 'web_link' || kind === 'publisher') && input.installation === true,
     customerType,
     billingName,
     oib: oib || null,
@@ -106,6 +107,8 @@ export function paymentView(order: OrderRow, slug: string) {
   return {
     reference,
     kind: order.kind,
+    paymentReportedAt: order.payment_reported_at,
+    status: order.status,
     installation: order.installation === 1,
     amountCents: order.amount_cents,
     amountLabel: formatCents(order.amount_cents),
@@ -132,16 +135,12 @@ export function paymentView(order: OrderRow, slug: string) {
 export type PaymentView = ReturnType<typeof paymentView>
 
 async function insertOrder(db: D1DatabaseLike, tenantId: string, fields: ReturnType<typeof parseOrderInput>, amountCents: number, stamp: string) {
-  // AUTOINCREMENT assigns the number inside SQLite, so concurrent orders can never share it.
-  const inserted = await db.prepare(
-    `INSERT INTO payment_orders
-      (tenant_id, kind, installation, amount_cents, customer_type, billing_name, oib, address, postal_city, email, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-     RETURNING number`,
-  ).bind(tenantId, fields.kind, fields.installation ? 1 : 0, amountCents, fields.customerType, fields.billingName, fields.oib, fields.address, fields.postalCity, fields.email, stamp, stamp)
-    .first<{ number: number }>()
-  if (!inserted) throw new Error('order_insert_failed')
-  await db.prepare('UPDATE payment_orders SET reference = ? WHERE number = ?').bind(orderReference(inserted.number, stamp), inserted.number).run()
+  await db.batch([
+    db.prepare(`INSERT INTO payment_orders (tenant_id,kind,installation,amount_cents,customer_type,billing_name,oib,address,postal_city,email,status,created_at,updated_at)
+      SELECT ?,?,?,?,?,?,?,?,?,?,'pending',?,? WHERE NOT EXISTS (SELECT 1 FROM payment_orders WHERE tenant_id=? AND status='pending' AND kind!='installation')`).bind(tenantId,fields.kind,fields.installation?1:0,amountCents,fields.customerType,fields.billingName,fields.oib,fields.address,fields.postalCity,fields.email,stamp,stamp,tenantId),
+    db.prepare("UPDATE payment_orders SET reference=strftime('%Y',created_at)||'-'||number WHERE tenant_id=? AND kind=? AND reference IS NULL").bind(tenantId,fields.kind),
+    db.prepare("INSERT OR IGNORE INTO lifecycle_events(id,tenant_id,event_type,entity_id,audience,payload_json,scheduled_at,created_at,updated_at) SELECT 'order:'||reference||':received',tenant_id,'order_received',reference,'owner','{}',?,?,? FROM payment_orders WHERE tenant_id=? AND kind=? AND status='pending'").bind(stamp,stamp,stamp,tenantId,fields.kind),
+  ])
 }
 
 async function updateOrder(db: D1DatabaseLike, number: number, fields: ReturnType<typeof parseOrderInput>, amountCents: number, stamp: string) {
@@ -153,7 +152,7 @@ async function updateOrder(db: D1DatabaseLike, number: number, fields: ReturnTyp
 
 /**
  * Creates or refreshes the tenant's pending order (one per kind; the reference never changes).
- * The first order of a free publication extends it once to MAX(period_end, now + 48 h).
+ * Ordering and reporting a payment never extend access.
  */
 export async function placeOrder(env: RuntimeEnv, tenant: OrderTenant, input: OrderInput, now = new Date()) {
   const db = requireDb(env)
@@ -165,6 +164,7 @@ export async function placeOrder(env: RuntimeEnv, tenant: OrderTenant, input: Or
   const amountCents = orderAmountCents(fields.kind, fields.installation)
   const stamp = now.toISOString()
   const existing = await readPendingOrder(env, tenant.id, fields.kind)
+  if (existing?.payment_reported_at) return {order:existing,activeUntil:entitlement?.periodEnd??null,created:false}
   if (existing) await updateOrder(db, existing.number, fields, amountCents, stamp)
   else {
     try {
@@ -177,74 +177,18 @@ export async function placeOrder(env: RuntimeEnv, tenant: OrderTenant, input: Or
     }
   }
   const order = await readPendingOrder(env, tenant.id, fields.kind)
-  if (!order) throw new Error('order_missing')
+  if (!order) throw new AccessDeniedError(409,'pending_order_conflict','Već imate otvorenu narudžbu za drugi paket. Najprije je razriješite s NEPAR-om.')
 
-  let activeUntil = entitlement?.periodEnd ?? null
-  if (entitlement?.status === 'trial') {
-    const granted = await db.prepare('SELECT 1 AS granted FROM payment_orders WHERE tenant_id = ? AND grace_granted_at IS NOT NULL LIMIT 1')
-      .bind(tenant.id).first<{ granted: number }>()
-    if (!granted) {
-      activeUntil = graceEnd(entitlement.periodEnd, now.getTime())
-      await db.batch([
-        db.prepare(`UPDATE entitlements SET period_end = ?, updated_at = ? WHERE id = ? AND status = 'trial'`).bind(activeUntil, stamp, entitlement.id),
-        db.prepare('UPDATE payment_orders SET grace_granted_at = ? WHERE number = ?').bind(stamp, order.number),
-      ])
-    }
-  }
+  const activeUntil = entitlement?.periodEnd ?? null
+  await lifecycleStatement(db, { id: `order:${order.reference}:received`, tenantId: tenant.id, type: 'order_received', entityId: order.reference }).run()
+
   return { order, activeUntil, created: !existing }
 }
 
-export async function sendOrderEmails(env: TrialEnv, tenant: OrderTenant, payment: PaymentView, activeUntil: string | null, origin: string, fetcher: typeof fetch = fetch) {
-  if (!emailConfigured(env)) return
-  const what = payment.kind === 'publisher_upgrade' ? 'Nadogradnja na Publisher' : `Web Link${payment.installation ? ' + pomoć s ugradnjom' : ''}`
-  const until = activeUntil ? formatZagreb(activeUntil) : null
-  const details = [
-    `Primatelj: ${payment.payee.name}`,
-    `IBAN: ${payment.payee.iban}`,
-    `Iznos: ${payment.amountLabel}`,
-    `Model i poziv na broj: ${payment.payee.model} ${payment.reference}`,
-    `Opis plaćanja: ${payment.description}`,
-  ]
-  const customerText = [
-    `${what} — ${payment.amountLabel}`,
-    '',
-    ...details,
-    '',
-    until && payment.kind === 'web_link' ? `Vaš link ${origin}/c/${tenant.slug} ostaje aktivan do ${until}. Nakon evidentirane uplate isti link ostaje aktivan godinu dana.` : 'Nakon evidentirane uplate aktiviramo nadogradnju i javimo vam e-mailom.',
-    '',
-    `2D barkod i podatke za uplatu uvijek imate na ${origin}/app`,
-  ].join('\n')
-  const customerHtml = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><p><strong>${escapeHtml(what)} — ${escapeHtml(payment.amountLabel)}</strong></p><p>${details.map(escapeHtml).join('<br>')}</p>${until && payment.kind === 'web_link' ? `<p>Vaš link <strong>${escapeHtml(origin)}/c/${escapeHtml(tenant.slug)}</strong> ostaje aktivan do <strong>${escapeHtml(until)}</strong>. Nakon evidentirane uplate isti link ostaje aktivan godinu dana.</p>` : ''}<p><a href="${escapeHtml(origin)}/app">Otvori 2D barkod za uplatu</a></p></body></html>`
-  const opsText = [
-    `Nova narudžba ${payment.reference} — ${what}`,
-    '',
-    `Iznos: ${payment.amountLabel}`,
-    `Tenant: ${tenant.slug} (${tenant.name})`,
-    `Link aktivan do: ${until ?? '—'}`,
-    '',
-    'Podaci za račun:',
-    `${payment.customerType === 'company' ? 'Tvrtka/obrt' : 'Fizička osoba'}: ${payment.billingName}`,
-    `OIB: ${payment.oib ?? '—'}`,
-    `Adresa: ${payment.address}, ${payment.postalCity}`,
-    `E-mail: ${payment.email}`,
-    `Pomoć s ugradnjom: ${payment.installation ? 'DA' : 'ne'}`,
-    '',
-    `Aktivacija nakon uplate: ${origin}/admin`,
-  ].join('\n')
-  const sends: Promise<unknown>[] = [
-    sendTransactionalEmail(env, { to: payment.email, subject: `Podaci za uplatu ${payment.reference} — NEPAR digitalni cjenik`, text: customerText, html: customerHtml }, fetcher),
-  ]
-  if (env.EMAIL_TO) sends.push(sendTransactionalEmail(env, { to: env.EMAIL_TO, subject: `Narudžba ${payment.reference} — ${tenant.slug} — ${payment.amountLabel}`, text: opsText, replyTo: { email: payment.email, name: payment.billingName } }, fetcher))
-  await Promise.allSettled(sends)
+export async function sendOrderEmails(_env: TrialEnv, _tenant: OrderTenant, _payment: PaymentView, _activeUntil: string | null, _origin: string, _fetcher: typeof fetch = fetch) {
+  // Kept for legacy callers. placeOrder records the durable event; no direct send.
 }
 
-export async function sendPaymentConfirmedEmail(env: TrialEnv, input: { email: string; slug: string; plan: string; periodEnd: string; origin: string }, fetcher: typeof fetch = fetch) {
-  if (!emailConfigured(env)) return
-  const until = formatZagreb(input.periodEnd)
-  const publisher = input.plan === 'publisher_self_service'
-  const subject = publisher ? 'Uplata je zaprimljena — Publisher je aktivan' : 'Uplata je zaprimljena — digitalni cjenik je aktivan'
-  const body = publisher
-    ? `Publisher je aktivan do ${until}. Uređivanje stavki, svakodnevni nadzor i upozorenja uključeni su u dashboardu: ${input.origin}/app`
-    : `Vaš digitalni cjenik ${input.origin}/c/${input.slug} aktivan je do ${until}. Link ostaje isti.`
-  await sendTransactionalEmail(env, { to: input.email, subject, text: `${subject}\n\n${body}` }, fetcher).catch(() => undefined)
+export async function sendPaymentConfirmedEmail(_env: TrialEnv, _input: { email: string; slug: string; plan: string; periodEnd: string; origin: string }, _fetcher: typeof fetch = fetch) {
+  // Confirmation is enqueued atomically with its concrete order in _operations.ts.
 }

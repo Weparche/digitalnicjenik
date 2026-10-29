@@ -34,7 +34,7 @@ describe('ops tenants overview', () => {
   })
 
   it('renew activates a lapsed tenant for a year from now and requires the key', async () => {
-    const call = (auth?: string) => renew({ request: new Request('https://x.test/api/ops/renew', { method: 'POST', headers: auth ? { authorization: auth } : {}, body: JSON.stringify({ slug: 'acme' }) }), env: { ...env, OPERATOR_WRITE_KEY: KEY } as never })
+    const call = (auth?: string) => renew({ request: new Request('https://x.test/api/ops/renew', { method: 'POST', headers: auth ? { authorization: auth } : {}, body: JSON.stringify({ slug: 'acme', action:'activate', reason:'Manual demonstration', requestKey:'ops-activate-test' }) }), env: { ...env, OPERATOR_WRITE_KEY: KEY } as never })
     expect((await call()).status).toBe(401)
     const before = Date.now()
     const result = await (await call(`Bearer ${KEY}`)).json() as { ok: boolean; periodEnd: string }

@@ -7,6 +7,7 @@ import {
   type AuthEnv,
 } from './_auth'
 import { emailConfigured, sendTransactionalEmail } from './_email'
+import { lifecycleStatement, periodLifecycleStatements } from '../shared/lifecycle'
 import { escapeHtml, hmacIp, verifyTurnstile } from './_lead'
 import { entitlementCanPublish } from './_public-access'
 import { createDraft, publishDraft, readEntitlement, resolveTenant, type D1DatabaseLike, type RuntimeEnv } from './_repository'
@@ -110,41 +111,33 @@ export function nextPeriodEnd(periodEnd: string | null | undefined, now = new Da
  * - `publisher_upgrade`: the plan becomes Publisher for the period already paid (no extension).
  * The same URL stays live throughout; the order is marked paid in the same batch.
  */
-export async function renewEntitlement(env: RuntimeEnv, tenantId: string, now = new Date()) {
+export async function renewEntitlement(env: RuntimeEnv, tenantId: string, now = new Date(), reference?: string) {
   if (!env.DB) throw new Error('db_unavailable')
-  const row = await env.DB.prepare(
-    'SELECT id, plan, status, period_start, period_end FROM entitlements WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1',
-  ).bind(tenantId).first<{ id: string; plan: string; status: string; period_start: string | null; period_end: string | null }>()
-  if (!row) throw new Error('entitlement_missing')
-  const order = await env.DB.prepare(
-    `SELECT number, reference, kind, email FROM payment_orders WHERE tenant_id = ? AND status = 'pending' ORDER BY created_at ASC LIMIT 1`,
-  ).bind(tenantId).first<{ number: number; reference: string | null; kind: 'web_link' | 'publisher_upgrade'; email: string }>()
-  const stamp = now.toISOString()
-  const upgrade = order?.kind === 'publisher_upgrade'
-  const plan = upgrade ? 'publisher_self_service' : order ? 'web_link' : row.plan
-  const periodStart = upgrade ? row.period_start : stamp
-  const periodEnd = upgrade && row.period_end ? row.period_end : nextPeriodEnd(row.status === 'trial' ? null : row.period_end, now)
-  const statements = [
-    env.DB.prepare(`UPDATE entitlements SET plan = ?, status = 'active', period_start = ?, period_end = ?, updated_at = ? WHERE id = ?`).bind(plan, periodStart, periodEnd, stamp, row.id),
-    env.DB.prepare(`UPDATE upgrade_requests SET status = 'done', handled_at = ? WHERE tenant_id = ? AND status = 'open'`).bind(stamp, tenantId),
-  ]
-  if (order) statements.push(env.DB.prepare(`UPDATE payment_orders SET status = 'paid', paid_at = ?, updated_at = ? WHERE number = ? AND status = 'pending'`).bind(stamp, stamp, order.number))
-  await env.DB.batch(statements)
-  return { periodEnd, plan, order: order ?? null }
+  if (!reference) throw new AccessDeniedError(400, 'reference_required', 'Potvrda uplate zahtijeva konkretnu referencu narudžbe.')
+  const tenant = await env.DB.prepare('SELECT id,slug,name FROM tenants WHERE id=?').bind(tenantId).first<{id:string;slug:string;name:string}>()
+  if (!tenant) throw new Error('tenant_missing')
+  const { applyOperation } = await import('./_operations')
+  return applyOperation(env.DB, {id:'operator-service',email:null,type:'service'}, tenant, {action:'confirm_payment',reference}, now)
 }
 
 /** Keeps at most one open request per tenant+intent; a repeated click refreshes it instead of duplicating. */
 export async function recordUpgradeRequest(
   env: RuntimeEnv,
-  input: { tenantId: string; intent: 'self_service' | 'implementation' | 'consultation'; email: string; message?: string },
+  input: { tenantId: string; intent: 'self_service' | 'implementation' | 'consultation'; email: string; message?: string; service?: string; templateId?: string | null },
 ) {
   if (!env.DB) throw new Error('db_unavailable')
-  await env.DB.prepare(
+  const requestId=crypto.randomUUID()
+  const stamp=nowIso()
+  await env.DB.batch([env.DB.prepare(
     `INSERT INTO upgrade_requests (id, tenant_id, intent, requester_email, message, status, created_at)
      VALUES (?, ?, ?, ?, ?, 'open', ?)
      ON CONFLICT(tenant_id, intent) WHERE status = 'open'
      DO UPDATE SET requester_email = excluded.requester_email, message = excluded.message, created_at = excluded.created_at`,
-  ).bind(crypto.randomUUID(), input.tenantId, input.intent, input.email, input.message?.slice(0, 2000) ?? null, nowIso()).run()
+  ).bind(requestId, input.tenantId, input.intent, input.email, input.message?.slice(0, 2000) ?? null, stamp),
+  env.DB.prepare("UPDATE upgrade_requests SET service=?,template_id=? WHERE tenant_id=? AND intent=? AND status='open'").bind(input.service??null,input.templateId??null,input.tenantId,input.intent),
+  env.DB.prepare("INSERT OR IGNORE INTO lifecycle_events(id,tenant_id,event_type,entity_id,audience,payload_json,scheduled_at,created_at,updated_at) SELECT 'inquiry:'||id||':received',tenant_id,'inquiry_received',id,'owner','{}',?,?,? FROM upgrade_requests WHERE tenant_id=? AND intent=? AND status='open'").bind(stamp,stamp,stamp,input.tenantId,input.intent),
+  ...(input.intent==='implementation'||input.service==='installation'?[env.DB.prepare("INSERT OR IGNORE INTO lifecycle_events(id,tenant_id,event_type,entity_id,audience,payload_json,scheduled_at,created_at,updated_at) SELECT 'inquiry:'||id||':ops',tenant_id,'inquiry_ops',id,'ops',?, ?,?,? FROM upgrade_requests WHERE tenant_id=? AND intent=? AND status='open'").bind(JSON.stringify({message:input.service==='installation'?'Novi zahtjev za standardnu ugradnju.': 'Novi Web + Publisher upit.'}),stamp,stamp,stamp,input.tenantId,input.intent)]:[]),
+  ])
 }
 
 async function consumeTrialClaimBudget(env: TrialEnv, request: Request, email: string) {
@@ -470,10 +463,12 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
     const periodEnd = freePublicationEnd(stamp)
 
     // The free 24 h publication is a Web Link: link, CSV/XML and archive, without monitoring.
-    await db.prepare(
+    await db.batch([db.prepare(
       `INSERT INTO entitlements (id, tenant_id, plan, status, period_start, period_end, created_at, updated_at)
        VALUES (?, ?, 'web_link', 'trial', ?, ?, ?, ?)`,
-    ).bind(`entitlement-${tenantId}`, tenantId, stamp, periodEnd, stamp, stamp).run()
+    ).bind(`entitlement-${tenantId}`, tenantId, stamp, periodEnd, stamp, stamp),
+      ...periodLifecycleStatements(db,{id:`entitlement-${tenantId}`,tenant_id:tenantId,plan:'web_link',status:'trial',period_start:stamp,period_end:periodEnd,paid_confirmed_at:null,grace_until:null},new Date(stamp)),
+    ])
 
     await ensureTenantOwner(env, tenantId, claim.email)
 
@@ -510,6 +505,7 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
     ])
 
     const owner = await ensureTenantOwner(env, tenantId, claim.email)
+    await db.prepare('UPDATE auth_users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?').bind(stamp, owner.userId).run()
     await recordTrialAttribution(env, claim.id, tenantId, owner.userId)
     const session = await createSessionForUser(env, owner.userId)
     return {

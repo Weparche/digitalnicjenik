@@ -24,8 +24,6 @@ export function advanceMonitorState(previous: MonitorState, overall: MonitorOver
     if (!previous.alertOpen) {
       alert = 'fail'
       state.alertOpen = true
-    } else if (!previous.lastAlertAt || now.getTime() - new Date(previous.lastAlertAt).getTime() >= PERSISTENT_FAIL_REPEAT_MS) {
-      alert = 'persistent_fail'
     }
   } else if (overall === 'ok') {
     state.consecutiveFailures = 0
