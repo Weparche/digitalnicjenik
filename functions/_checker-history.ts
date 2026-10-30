@@ -2,7 +2,6 @@ import { technicalReport,TECHNICAL_CHECKS,STATUS_LABELS,type TechnicalStatus,typ
 import { sanitizeAttribution } from '../shared/acquisition'
 import type { D1DatabaseLike } from './_repository'
 import { zagrebTime } from '../shared/zagreb-time'
-import { lifecycleStatement,zagrebDay } from '../shared/lifecycle'
 
 export type CheckerMailRun={url:string;hostname:string;score:number|null;unknown_count:number;checks_json:string;discovered_urls_json:string;checked_at?:string}
 export function checkerMailSummary(run:CheckerMailRun){
@@ -10,7 +9,6 @@ export function checkerMailSummary(run:CheckerMailRun){
   const urls=JSON.parse(run.discovered_urls_json) as string[]
   return [`Provjereni web: ${run.url}`,...(run.checked_at?[`Vrijeme provjere: ${new Intl.DateTimeFormat('hr-HR',{timeZone:'Europe/Zagreb',dateStyle:'short',timeStyle:'short'}).format(new Date(run.checked_at))}`]:[]),`Rezultat: ${run.score===null||run.unknown_count===9?'nije potvrđen':`${run.score}/9`}`,`Nepotvrđenih provjera: ${run.unknown_count}`,...checks.map(check=>`${TECHNICAL_CHECKS.find(item=>item.id===check.id)?.label??check.id}: ${STATUS_LABELS[check.status]} — ${check.evidence}`),...(urls.length?['Pronađene poveznice:',...urls]:[])].join('\n')
 }
-export const checkerOpsEventId=(url:string,now=new Date())=>`checker-attention:${new URL(url).hostname}:${zagrebDay(now)}`
 
 export async function checkerRunCounts(db:D1DatabaseLike){
   const now=new Date(),parts=new Intl.DateTimeFormat('en',{timeZone:'Europe/Zagreb',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now)
@@ -41,10 +39,7 @@ export async function recordCheckerRun(db:D1DatabaseLike|undefined,url:string,re
   const id=crypto.randomUUID()
   try{
     const hostname=new URL(clean).hostname,checksJson=JSON.stringify(checks),urlsJson=JSON.stringify(discovered)
-    await db.batch([
-      db.prepare('INSERT INTO checker_runs(id,checked_at,url,hostname,status,score,unknown_count,checks_json,discovered_urls_json,acquisition_json,source) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(id,now.toISOString(),clean,hostname,result.status,report.score,report.unknown,checksJson,urlsJson,touch?JSON.stringify(touch):null,source==='landing'?'landing':'dashboard'),
-      ...(report.score<9?[lifecycleStatement(db,{id:checkerOpsEventId(clean,now),type:'inquiry_checker_attention',entityId:id,audience:'ops',due:now.toISOString(),payload:{hostname,score:report.unknown===9?'nepotvrđeno':`${report.score}/9`,message:checkerMailSummary({url:clean,hostname,score:report.score,unknown_count:report.unknown,checks_json:checksJson,discovered_urls_json:urlsJson,checked_at:now.toISOString()})+'\n\nAnonimna provjera — e-mail posjetitelja nije prikupljen.'}})]:[]),
-    ])
+    await db.prepare('INSERT INTO checker_runs(id,checked_at,url,hostname,status,score,unknown_count,checks_json,discovered_urls_json,acquisition_json,source) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(id,now.toISOString(),clean,hostname,result.status,report.score,report.unknown,checksJson,urlsJson,touch?JSON.stringify(touch):null,source==='landing'?'landing':'dashboard').run()
     return id
   }catch{
     // A missing migration/storage outage must not break the registration-free checker.

@@ -14,9 +14,9 @@ Isporuka: 30. listopada 2026.
 
 - Akcije su iznad detaljnih devet provjera. Kada nije pronađen ni cjenik ni CSV/XML, primarni korak je **Učitaj cjenik i objavi link** u **Moj cjenik**, uz postojeće Excel/CSV/XML parsere i besplatnu objavu na 24 sata. Za ostale nepotpune rezultate prvo se ističe **Trebam pomoć s ovim rezultatom**. Nepotvrđen dohvat ne predstavlja se kao dokaz da cjenik ne postoji.
 - **Kontakt** je zaseban tab neposredno ispod **Paketi i cijene**. Adresa i aktualna analiza prenose se automatski, a uneseni kontakt ostaje sačuvan pri prebacivanju tabova. Poveznice sa starog landinga i upiti za Web + Publisher otvaraju kontakt u dashboardu; landing više ne prikazuje obrazac.
-- Na izričit zahtjev vlasnika proizvoda checker sada automatski zapisuje ops obavijest za rezultat ispod 9/9. Zapis provjere i događaj nastaju atomski. Ključ domena/dan prema Europe/Zagreb sprječava duplikate, a slanje nakon commita koristi postojeći outbox i transport. Rezultat 9/9 i stari uvezeni zapisi ne stvaraju takve obavijesti.
-- Ops poruka na konfigurirani `EMAIL_TO` (NEPAR) sadrži provjereni URL, vrijeme, devet statusa i pronađene poveznice. Anonimna provjera nema izmišljeni e-mail posjetitelja. Kontaktni upit šalje dodatnu ops poruku s dobrovoljno upisanim e-mailom i analizom učitanom iz stvarnog spremljenog zapisa, uz provjeru podudarnog URL-a. Korisnički poslani score ne zamjenjuje rezultat iz baze.
-- Nema nove migracije ni konfiguracijske varijable za ovu doradu. Riječ je o neposrednim operativnim događajima; prekidač zakazanih lifecycle podsjetnika ostaje odvojen. Postojeće ponašanje za neodređen transportni ishod i zabrana slijepog ponavljanja prihvaćene poruke ostaju.
+- Checker ne stvara i ne šalje e-mailove nakon obične provjere, bez obzira na rezultat. Klik na pomoć otvara Kontakt; ops poruka s analizom i dobrovoljno unesenim e-mailom nastaje tek nakon izričitog slanja obrasca. Provjere se i dalje bilježe u admin povijesti.
+- Poslani Kontakt upit šalje jednu ops poruku na konfigurirani `EMAIL_TO` (NEPAR), s dobrovoljno unesenim e-mailom i stvarnom spremljenom analizom provjerenog URL-a. Korisnički poslani score ne zamjenjuje rezultat iz baze. Bez poslanog upita nema ops e-maila; anonimne provjere dostupne su samo u admin povijesti.
+- Migracija `0015_disable_scan_notifications.sql` blokira raniji tip automatske checker obavijesti i otkazuje njegove neposlane događaje. Kontaktni upiti, potvrde i ostale operativne poruke ostaju aktivni. Guard u dispatcheru dodatno sprječava ponovno slanje starih scan-only događaja.
 
 ## Baza i prethodni zapisi
 
@@ -26,8 +26,10 @@ Iz dostupnog KV zapisa `checks:recent` starog NEPAR servisa uvezeno je **48 zapi
 
 ## Provjere
 
-Prolaze puni typecheck, build/prerender, **366 unit/integration testova** u 60 datoteka i **54 browser testa**. Novi testovi obuhvaćaju spremanje stvarnog checker rezultata, privatnost, admin ovlasti, `no-store`, lokalne datume kroz promjenu sata, straničenje, dobrovoljno povezivanje upita, nekvarenje checkera pri grešci pohrane te stare zapise bez rezultata /9. Dopuna kontakta provjerava ispravan prioritet akcija, čuvanje obrasca, povezivanje analize, ops slanje nakon commita, deduplikaciju po domeni/danu te izostanak ops poruke za 9/9.
+Prolaze puni typecheck, build/prerender, **366 unit/integration testova** u 60 datoteka i **54 browser testa**. Novi testovi obuhvaćaju spremanje stvarnog checker rezultata, privatnost, admin ovlasti, `no-store`, lokalne datume kroz promjenu sata, straničenje, dobrovoljno povezivanje upita, nekvarenje checkera pri grešci pohrane te stare zapise bez rezultata /9. Dopuna kontakta provjerava ispravan prioritet akcija, čuvanje obrasca, povezivanje analize, ops slanje samo nakon poslanog upita te izostanak e-maila nakon bilo koje obične provjere.
 
 Browser provjere obuhvaćaju izravan landing → dashboard prijelaz bez registracije, samo jedno automatsko pokretanje, očuvanje rezultata, izvor sljedeće ručne provjere i admin filtre pri polling osvježavanju. Prikazi za pregled koriste demonstracijske podatke, ne produkcijske domene korisnika.
 
 P1 ostaje 90-dnevna agregacija/čišćenje; ne uvodi se CRM ni praćenje identiteta anonimnih posjetitelja.
+
+Dopuna na izričit zahtjev za pomoć: prolaze puni typecheck/build te 21 ciljani unit/integration test i tri browser scenarija. Provjereni su obična provjera bez e-maila, blokiranje starog automatskog događaja i idempotentno slanje kontakta s analizom.

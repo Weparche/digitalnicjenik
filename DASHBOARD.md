@@ -18,7 +18,7 @@ Isporuka koda: 30. listopada 2026. Produkcijski prolaz sa stvarnim e-mailovima p
 - Nakon prve objave oba puta (`created` i e-mail `welcome`) pokazuju potvrdu, stvarni kraj besplatne objave i gumb za kopiranje javnog URL-a.
 - Prijava uplate odmah osvježava podatke. „Moj cjenik” pokazuje da uplata čeka potvrdu i uklanja ponovljeni poziv na plaćanje. Admin potvrda osvježava aktivni paket i rok. Odabrani cjenik ostaje povezan s narudžbom i kada vlasnik ima više cjenika.
 - Nadogradnja +30 € označena je kao jednokratna razlika za preostalo plaćeno razdoblje, uz očuvanje kraja razdoblja.
-- Kontakt je zaseban tab ispod paketa, uz automatski prenesenu analizu. Prioritet rezultata je upload i objava kada cjenik nije pronađen, odnosno pomoć kod ostalih nepotpunih nalaza. Novi ops mailovi za checker i kontakt opisani su u [CHECKER_HISTORY.md](CHECKER_HISTORY.md).
+- Kontakt je zaseban tab ispod paketa, uz automatski prenesenu analizu. Prioritet rezultata je upload i objava kada cjenik nije pronađen, odnosno pomoć kod ostalih nepotpunih nalaza. Ops mailovi tek nakon poslanog kontakta opisani su u [CHECKER_HISTORY.md](CHECKER_HISTORY.md).
 
 ## Administrator
 

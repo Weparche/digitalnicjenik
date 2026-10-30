@@ -94,6 +94,8 @@ const isScheduledEvent = (type: string) => SCHEDULED_EVENTS.includes(type) || ty
 const SCHEDULED_EVENT_SQL = `(event_type IN (${SCHEDULED_EVENTS.map(type => `'${type}'`).join(',')}) OR event_type LIKE 'renewal_%')`
 
 async function eligible(env: LifecycleEnv, event: EventRow, now: Date) {
+  // A scan is not a request for help. Suppress retired scan-only notifications.
+  if(event.event_type==='inquiry_checker_attention')return false
   // A reminder that missed its moment (switch was off, outage) is dropped, never sent late.
   if (isScheduledEvent(event.event_type) && now.getTime() - Date.parse(event.scheduled_at) >= DAY) return false
   const row = event.tenant_id ? await env.DB.prepare('SELECT * FROM entitlements WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1').bind(event.tenant_id).first<EntitlementRow>() : null
