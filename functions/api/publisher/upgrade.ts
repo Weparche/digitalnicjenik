@@ -12,11 +12,12 @@ export const onRequestPost = async ({ request, env, waitUntil }: { request: Requ
     if (!session || !session.tenants[0]) {
       return Response.json({ ok: false, error: 'unauthorized' }, { status: 401 })
     }
-    const body = await request.json() as { intent?: 'self_service' | 'implementation' | 'consultation'; message?: string; attribution?: unknown; service?:string; templateId?:string }
+    const body = await request.json() as { tenant?:string; intent?: 'self_service' | 'implementation' | 'consultation'; message?: string; attribution?: unknown; service?:string; templateId?:string }
     if (!body.intent || !['self_service', 'implementation', 'consultation'].includes(body.intent)) {
       return Response.json({ ok: false, error: 'invalid_input' }, { status: 400 })
     }
-    const tenant = session.tenants[0]
+    const tenant=body.tenant?session.tenants.find(t=>t.slug===body.tenant):session.tenants[0]
+    if(!tenant)return Response.json({ok:false,error:'unauthorized'},{status:401})
     await recordUpgradeRequest(env, { tenantId: tenant.id, intent: body.intent, email: session.user.email, message: body.message, service:body.service==='installation'?'installation':undefined,templateId:templateId(body.templateId) })
     const openRequest = await env.DB?.prepare(
       `SELECT id FROM upgrade_requests WHERE tenant_id = ? AND intent = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1`,

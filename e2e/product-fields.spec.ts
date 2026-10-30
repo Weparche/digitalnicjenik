@@ -7,8 +7,8 @@ const productCsv = [
 ].join('\n')
 
 test('product list: Odluka fields are grouped, editable, and clear the blocker count', async ({ page }) => {
-  await page.goto('/#csv-validator')
-  await page.locator('#csv-validator label.upload-action input[accept*=".csv"]').setInputFiles({ name: 'proizvodi.csv', mimeType: 'text/csv', buffer: Buffer.from(productCsv, 'utf8') })
+  await page.goto('/app?new=1')
+  await page.locator('label.upload-action input[accept*=".csv"]').setInputFiles({ name: 'proizvodi.csv', mimeType: 'text/csv', buffer: Buffer.from(productCsv, 'utf8') })
 
   const panel = page.locator('.validation-app-panel')
   await expect(panel).toBeVisible()

@@ -245,26 +245,33 @@ export async function startTrialClaim(
   env: TrialEnv,
   input: { draftId: string; email: string; businessName: string; slug: string; turnstileToken?: string; attribution?: unknown },
   fetcher: typeof fetch = fetch,
+  verifiedOwner?: {id:string;email:string},
 ) {
   const db = requireDb(env)
-  if (!emailConfigured(env)) {
+  if (!verifiedOwner&&!emailConfigured(env)) {
     throw new AccessDeniedError(503, 'email_misconfigured', 'Email Sending nije konfiguriran.')
   }
-  if (!env.TURNSTILE_SECRET_KEY) {
+  if (!verifiedOwner&&!env.TURNSTILE_SECRET_KEY) {
     throw new AccessDeniedError(503, 'turnstile_misconfigured', 'Turnstile nije konfiguriran.')
   }
-  const email = normalizeEmail(input.email)
+  const email = normalizeEmail(verifiedOwner?.email??input.email)
   if (!validEmail(email)) throw new AccessDeniedError(400, 'invalid_input', 'Unesite valjanu e-mail adresu.')
   const businessName = input.businessName.trim().slice(0, 120)
   if (businessName.length < 2) throw new AccessDeniedError(400, 'invalid_input', 'Unesite naziv poslovanja.')
   const slug = input.slug.trim().toLocaleLowerCase('en-US')
   if (!validSlug(slug)) throw new AccessDeniedError(400, 'invalid_slug', 'Slug nije valjan.')
 
-  const turnstileOk = await verifyTurnstile(
+  if(verifiedOwner){
+    const owner=await db.prepare('SELECT id FROM auth_users WHERE id=? AND email=? AND email_verified_at IS NOT NULL').bind(verifiedOwner.id,email).first()
+    if(!owner)throw new AccessDeniedError(403,'verification_required','Potvrdite svoju e-mail adresu prije objave.')
+    const completed=await db.prepare("SELECT c.id,c.requested_slug,e.period_end FROM pending_trial_claims c JOIN tenant_members m ON m.tenant_id=c.tenant_id AND m.user_id=? LEFT JOIN entitlements e ON e.tenant_id=c.tenant_id WHERE c.draft_id=? AND c.email=? AND c.status='completed' LIMIT 1").bind(verifiedOwner.id,input.draftId,email).first<{id:string;requested_slug:string;period_end:string}>()
+    if(completed)return {claimId:completed.id,slug:completed.requested_slug,email,expiresAt:null,published:true,trialEndsAt:completed.period_end,session:null}
+  }
+  const turnstileOk = verifiedOwner||await verifyTurnstile(
     input.turnstileToken || '',
     clientIp(request),
     new URL(request.url),
-    env.TURNSTILE_SECRET_KEY,
+    env.TURNSTILE_SECRET_KEY!,
     fetcher,
   )
   if (!turnstileOk) throw new AccessDeniedError(403, 'turnstile_failed', 'Sigurnosna provjera nije uspjela.')
@@ -302,6 +309,11 @@ export async function startTrialClaim(
     ).bind(slug, claimId, expiresAt, stamp),
   ])
 
+  if(verifiedOwner){
+    const publication=await provisionTrialFromToken(env,rawToken)
+    return {claimId,slug:publication.slug,email,expiresAt,published:true,trialEndsAt:publication.trialEndsAt,session:publication.session}
+  }
+
   const origin = new URL(request.url).origin
   const link = `${origin}/api/trials/callback?token=${encodeURIComponent(rawToken)}`
   const text = `Potvrdite e-mail i objavite cjenik na ${origin}/c/${slug}. Objava je besplatna 24 sata:\n\n${link}\n\nLink vrijedi 30 minuta i može se iskoristiti jednom.`
@@ -318,7 +330,7 @@ export async function startTrialClaim(
     throw new AccessDeniedError(502, 'send_failed', 'Potvrdni link trenutačno nije moguće poslati.')
   }
 
-  return { claimId, slug, email, expiresAt }
+  return { claimId, slug, email, expiresAt,published:false,session:null }
 }
 
 async function recordTrialAttribution(env: TrialEnv, claimId: string, tenantId: string, userId: string) {

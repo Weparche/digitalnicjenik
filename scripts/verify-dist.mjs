@@ -38,9 +38,9 @@ expect('index.html', /<meta name="description" content="[^"]{20,}" \/>/, 'meta d
 expect('index.html', 'application/ld+json', 'JSON-LD is missing')
 expect('index.html', 'https://digitalnicjenik.nepar.hr/#app', 'SoftwareApplication @id is missing from JSON-LD')
 expect('index.html', 'https://nepar.hr/digitalni-cjenik#price-engine', 'reused NEPAR Price Engine Service @id is missing')
-expect('index.html', 'nepar.hr/digitalni-cjenik/sidrena-cijena', 'inlink to the sidrena-cijena guide is missing')
-expect('index.html', 'nepar.hr/digitalni-cjenik/xml-csv', 'inlink to the xml-csv guide is missing')
-expect('index.html', 'nepar.hr/digitalni-cjenik/automatizacija', 'inlink to the automatizacija guide is missing')
+expect('index.html', '/vodici/sidrena-cijena/', 'inlink to the sidrena-cijena guide is missing')
+expect('index.html', '/specifikacija-csv-xml/', 'inlink to the xml-csv guide is missing')
+expect('index.html', '/vodici/automatizacija-digitalnog-cjenika/', 'inlink to the automatizacija guide is missing')
 expect('index.html', '<meta property="og:url" content="https://digitalnicjenik.nepar.hr/" />', 'og:url is missing')
 function assertCleanCampaignCanonical(rel, expected) {
   const html = read(rel)

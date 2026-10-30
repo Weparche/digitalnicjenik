@@ -17,13 +17,15 @@ export const onRequestGet = async ({ request, env }: { request: Request; env: En
     const session = await resolveSession(env, request)
     const reference = new URL(request.url).searchParams.get('order')
     const selected = reference && env.DB ? await env.DB.prepare('SELECT * FROM payment_orders WHERE reference=?').bind(reference).first<OrderRow>() : null
-    const tenant = selected ? session?.tenants.find(t => t.id === selected.tenant_id) : session?.tenants[0]
+    const slug=new URL(request.url).searchParams.get('tenant')
+    const tenant = selected ? session?.tenants.find(t => t.id === selected.tenant_id) : slug?session?.tenants.find(t=>t.slug===slug):session?.tenants[0]
     if (!tenant) return Response.json({ ok: false, error: 'unauthorized' }, { status: 401, headers: noStore })
     const entitlement = await readEntitlement(env, tenant.slug)
     const order = reference ? selected?.tenant_id === tenant.id ? selected : null : await readPendingOrder(env, tenant.id)
     if (reference && !order) return Response.json({ ok:false,error:'order_missing' },{status:404,headers:noStore})
     return Response.json({
       ok: true,
+      tenant:{id:tenant.id,slug:tenant.slug,name:tenant.name},
       entitlement,
       access: entitlementAccess(entitlement),
       features: featuresForPlan(entitlement?.plan),
@@ -39,9 +41,9 @@ export const onRequestPost = async ({ request, env, waitUntil }: { request: Requ
   try {
     if (request.headers.get('origin') !== new URL(request.url).origin) return Response.json({ok:false,error:'invalid_origin'},{status:403,headers:noStore})
     const session = await resolveSession(env, request)
-    const tenant = session?.tenants[0]
-    if (!tenant) return Response.json({ ok: false, error: 'unauthorized' }, { status: 401, headers: noStore })
     const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const tenant=body.tenant?session?.tenants.find(t=>t.slug===body.tenant):session?.tenants[0]
+    if (!tenant) return Response.json({ ok: false, error: 'unauthorized' }, { status: 401, headers: noStore })
     const result = await placeOrder(env, tenant, body)
     const payment = paymentView(result.order, tenant.slug)
     if (env.DB) waitUntil?.(dispatchLifecycle({...env,DB:env.DB}))

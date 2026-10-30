@@ -24,6 +24,7 @@ export type OrderPayment = {
 }
 
 export type Licence = {
+  tenant?:{id:string;slug:string;name:string}
   entitlement: (Pick<Entitlement,'plan'|'status'|'periodStart'|'periodEnd'|'paidConfirmedAt'|'graceUntil'>) | null
   features: PlanFeatures
   upgradeAvailable: boolean

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect,useMemo, useState } from 'react'
 import {
   EXCEL_MAX_BYTES,
   excelRowsToPriceList,
@@ -33,7 +33,7 @@ const fieldLabels: Array<{ field: ExcelField; label: string; required?: boolean 
   { field: 'isNewSinceReferenceDate', label: 'Nova usluga' },
 ]
 
-export function ExcelConverter({ onConverted }: { onConverted: (list: NormalizedPriceList, sourceFile: File, importIssues?: ValidationIssue[]) => void }) {
+export function ExcelConverter({ onConverted,file }: { file?:File; onConverted: (list: NormalizedPriceList, sourceFile: File, importIssues?: ValidationIssue[]) => void }) {
   const [sourceFile, setSourceFile] = useState<File | null>(null)
   const [workbook, setWorkbook] = useState<ExcelWorkbook | null>(null)
   const [sheetIndex, setSheetIndex] = useState(0)
@@ -41,6 +41,7 @@ export function ExcelConverter({ onConverted }: { onConverted: (list: Normalized
   const [mapping, setMapping] = useState<ExcelMapping>({})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  useEffect(()=>{if(file)void loadExcel(file)},[file])
 
   const sheet = workbook?.sheets[sheetIndex]
   const headers = useMemo(() => sheet ? headersForSheet(sheet, headerRow) : [], [sheet, headerRow])

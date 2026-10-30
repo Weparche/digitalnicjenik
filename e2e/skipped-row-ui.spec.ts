@@ -7,9 +7,9 @@ const skipCsv = [
 ].join('\n')
 
 test('shows skipped-row import issue and keeps Publish disabled', async ({ page }) => {
-  await page.goto('/#csv-validator')
+  await page.goto('/app?new=1')
 
-  await page.locator('#csv-validator label.upload-action input[accept*=".csv"]').setInputFiles({
+  await page.locator('label.upload-action input[accept*=".csv"]').setInputFiles({
     name: 'skip-rows.csv',
     mimeType: 'text/csv',
     buffer: Buffer.from(skipCsv, 'utf8'),

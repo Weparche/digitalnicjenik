@@ -17,7 +17,7 @@ const authErrorCopy: Record<string, string> = {
 }
 
 function Logo() {
-  return <a className="logo" href="/" aria-label="NEPAR Publisher početna"><img src="/assets/nepar-logo.png" alt="NEPAR Solutions" /><span>Publisher</span></a>
+  return <a className="logo" href="/" aria-label="NEPAR početna"><img src="/assets/nepar-logo.png" alt="NEPAR Solutions" /><span>Digitalni cjenik</span></a>
 }
 
 export function PublisherLogin({ initialError, admin = false }: { initialError?: string; admin?: boolean }) {
@@ -55,12 +55,12 @@ export function PublisherLogin({ initialError, admin = false }: { initialError?:
       </header>
       <main className="publisher-auth">
         <section className="publisher-auth-panel" aria-labelledby="publisher-login-title">
-          <h1 id="publisher-login-title">{admin ? 'Prijava u administraciju' : 'Prijava u Publisher'}</h1>
-          <p>{admin ? 'Unesite dopušteni administratorski e-mail. Poslat ćemo jednokratni link za prijavu.' : 'Unesite e-mail na koji ste aktivirali Publisher. Poslat ćemo jednokratni link za prijavu — bez lozinke.'}</p>
+          <h1 id="publisher-login-title">{admin ? 'Prijava u administraciju' : 'Prijava u NEPAR'}</h1>
+          <p>{admin ? 'Unesite dopušteni administratorski e-mail. Poslat ćemo jednokratni link za prijavu.' : 'Unesite e-mail kojim ste objavili svoj cjenik. Poslat ćemo jednokratni link za prijavu — bez lozinke.'}</p>
           {status === 'sent' ? (
             <div className="publisher-auth-sent" role="status">
               <strong>Provjerite e-mail</strong>
-              <p>Ako postoji aktivan Publisher račun za tu adresu, link je poslan. Otvorite ga u ovom pregledniku unutar 15 minuta.</p>
+              <p>Ako je adresa povezana s vašim cjenikom ili ima administratorski pristup, prijavni link je poslan. Link vrijedi 15 minuta.</p>
             </div>
           ) : (
             <form className="publisher-auth-form" onSubmit={(event) => void submit(event)}>
@@ -83,6 +83,7 @@ export function PublisherLogin({ initialError, admin = false }: { initialError?:
               </button>
             </form>
           )}
+          {!admin&&<p>Još nemate cjenik? <a href="/app?new=1">Pripremite prvu besplatnu objavu.</a></p>}
         </section>
       </main>
     </div>

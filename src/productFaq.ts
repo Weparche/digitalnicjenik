@@ -46,3 +46,6 @@ export const productFaq: ProductFaqEntry[] = [
     answer: 'Učitajte Excel/CSV/XML besplatno ili provjerite svoj web — zatim objavite cjenik besplatno na 24 sata, bez registracije unaprijed.',
   },
 ]
+
+/** Short homepage block; the full guide remains available on /faq/. */
+export const landingFaq=[productFaq[0],productFaq[4],productFaq[5],productFaq[6]]

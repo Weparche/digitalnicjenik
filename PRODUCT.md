@@ -38,6 +38,8 @@ Success means a non-technical owner can preview data, publish their own `/c/{slu
 
 ## Operating Context
 
+**Workspace update (2026-10-30):** the hero upload opens `/app?new=1`. Visitors review and correct their file in the workspace without signing up first. `/app` still provides magic-link login for returning users. A signed-in account without a price list gets first-publication onboarding; the current verified owner can publish via an explicit same-origin POST without receiving another verification e-mail. Object type, code and URL get sensible editable defaults; required business identity, address and actual price data are still validated. Admin payment confirmation acts directly on its order reference and activates the public link; manual exceptions are progressively disclosed. No new CRM, billing model or permissions are introduced.
+
 Anonymous users upload into a private draft (≈24 h, R2 + D1 metadata). The free publication requires all blocking validation issues resolved plus business name, e-mail, slug, actual object type/address/code and working calendar; the tenant is created only after magic-link verification. Owners use `/app` to edit, re-upload, and publish while entitlement is live. Expired tenants keep the dashboard (edit/upload). Current public HTML and stable CSV/XML aliases return 410 until renewed. The archive and immutable retained files survive ordinary expiry: the last version for 30 days from publication and previous versions until 30 days from replacement. Suspension blocks public access.
 
 ## Capabilities and Constraints

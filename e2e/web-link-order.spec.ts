@@ -34,9 +34,8 @@ test('free publication: keep the link, fill billing details, pay by HUB-3 2D bar
     : { entitlement: { plan: 'web_link', status: 'trial', periodStart: '2026-10-28T09:00:00Z', periodEnd: '2026-10-29T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: false, order: null },
   (body) => { placed = body })
 
-  await page.goto('/app?welcome=1&slug=salon&name=Salon%20Lana')
-  await expect(page.getByRole('heading', { name: 'Vaš digitalni cjenik je objavljen!' })).toBeVisible()
-  await expect(page.getByText('Besplatna objava aktivna je do')).toContainText('29. 10. 2026. u 10:00')
+  await page.goto('/app?tab=pretplata')
+  await expect(page.locator('.licence-card')).toContainText('29. 10. 2026. u 10:00')
   await expect(page.locator('body')).not.toContainText(/probn/i)
 
   await page.getByRole('button', { name: 'Zadrži ovaj link trajno — 19,90 €/god →' }).click()
@@ -63,7 +62,7 @@ test('free publication: keep the link, fill billing details, pay by HUB-3 2D bar
 
 test('a pending order on the dashboard says until when the link stays live', async ({ page }) => {
   await mockApi(page, () => ({ entitlement: { plan: 'web_link', status: 'trial', periodStart: '2026-10-28T09:00:00Z', periodEnd: '2026-10-29T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: false, order }))
-  await page.goto('/app')
+  await page.goto('/app?tab=pretplata')
   await expect(page.getByRole('heading', { name: 'Čekamo uplatu' })).toBeVisible()
   await expect(page.locator('.licence-card')).toContainText('Link ostaje aktivan do 29. 10. 2026. u 10:00.')
   await expect(page.locator('.hub3-barcode-image svg')).toBeVisible()
@@ -71,17 +70,19 @@ test('a pending order on the dashboard says until when the link stays live', asy
 
 test('active Web Link: no item editing or monitoring, Publisher upsell for +30 € within 30 days', async ({ page }) => {
   await mockApi(page, () => ({ entitlement: { plan: 'web_link', status: 'active', periodStart: '2026-10-20T09:00:00Z', periodEnd: '2027-10-20T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: true, order: null }))
-  await page.goto('/app')
+  await page.goto('/app?tab=pretplata')
   await expect(page.getByRole('heading', { name: 'Aktivno do 20. 10. 2027. u 11:00' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Nadogradi na Publisher +30,00 €/god' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Vaš digitalni cjenik je aktivan', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Nadogradi na Publisher +30,00 € jednokratno' })).toBeVisible()
+  await expect(page.getByText('Nadogradnja vrijedi za preostalo plaćeno razdoblje. Kraj razdoblja ostaje isti.')).toBeVisible()
+  await page.getByRole('button',{name:'Moj cjenik',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Vaša posljednja objava'})).toBeVisible()
   await expect(page.getByRole('button', { name: 'Uredi postojeći cjenik' })).toHaveCount(0)
   await expect(page.locator('.monitor-panel')).toHaveCount(0)
 })
 
 test('after the 30-day window Publisher is offered at renewal', async ({ page }) => {
   await mockApi(page, () => ({ entitlement: { plan: 'web_link', status: 'active', periodStart: '2026-08-01T09:00:00Z', periodEnd: '2027-08-01T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: false, order: null }))
-  await page.goto('/app')
+  await page.goto('/app?tab=pretplata')
   await expect(page.getByText('Publisher možete odabrati kod obnove.')).toBeVisible()
   await expect(page.getByRole('button', { name: /Nadogradi na Publisher/ })).toHaveCount(0)
 })

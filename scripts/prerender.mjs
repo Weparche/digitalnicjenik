@@ -502,7 +502,7 @@ function applyHomeMeta(html) {
 
 async function main() {
   const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
-  const [{ Landing }, { productFaq }, { NEWS_POSTS }, { NewsIndex }, { NewsArticle }, seo, registry, faq, sitePageModule, pricing] =
+  const [{ Landing }, { landingFaq: productFaq }, { NEWS_POSTS }, { NewsIndex }, { NewsArticle }, seo, registry, faq, sitePageModule, pricing] =
     await Promise.all([
       vite.ssrLoadModule('/src/App.tsx'),
       vite.ssrLoadModule('/src/productFaq.ts'),

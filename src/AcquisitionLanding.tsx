@@ -1,17 +1,16 @@
 import { PlanCards } from './PlanCards'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { IconArrowRight, IconUpload, IconWorld, IconLock, IconLink, IconFileDescription, IconCode, IconExternalLink, IconDatabase, IconClock, IconList, IconCircleCheckFilled, IconAlertCircle, IconCalendar, IconShieldCheck, IconBolt, IconEye, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
-import { normalizeWebsiteInput, STATUS_LABELS, TECHNICAL_CHECKS, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckResult } from '../shared/website-check'
+import { useEffect, useRef, useState } from 'react'
+import { IconArrowRight, IconUpload, IconWorld, IconExternalLink, IconCircleCheckFilled, IconAlertCircle, IconCalendar, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
+import { normalizeWebsiteInput, STATUS_LABELS, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckResult } from '../shared/website-check'
 import { PLANS, formatEur, type PlanId } from './publisherPricing'
-import { ExistingWebSection, LargeListSection, NoPluginSection, PlatformPills } from './ExistingWebSections'
+import { PlatformPills } from './ExistingWebSections'
 import { installationPriceLabel } from '../shared/pricing'
 import { LeadForm, type LeadContext, type LeadIntent } from './LeadForm'
-import { EducationSection } from './EducationSection'
-import { RegulatoryNewsWidget } from './news/RegulatoryNewsWidget'
 import '@fontsource-variable/inter/wght.css'
 import './acquisition.css'
+import { landingFaq } from './productFaq'
+import { getLatestPosts,newsArticlePath } from './news/posts'
 
-const icons = { globe: IconWorld, lock: IconLock, link: IconLink, file: IconFileDescription, code: IconCode, external: IconExternalLink, database: IconDatabase, clock: IconClock, list: IconList }
 const loadingCopy = ['Otvaramo vašu web stranicu…', 'Tražimo javni digitalni cjenik…', 'Provjeravamo dostupne CSV/XML datoteke…', 'Analiziramo javno dostupne podatke…']
 
 function Wordmark() {
@@ -19,7 +18,7 @@ function Wordmark() {
 }
 
 function UploadPath({ onUpload }: { onUpload: () => void }) {
-  return <div className="acq-upload"><div><h2>Imate Excel, CSV ili XML cjenik?</h2><p>Učitajte datoteku za detaljniju provjeru strukture podataka.</p></div><div className="acq-upload-action"><button className="acq-secondary" type="button" onClick={onUpload}><IconUpload size={21}/>Učitaj datoteku</button><small>XLSX · CSV · XML</small></div></div>
+  return <div className="acq-upload"><div><h2>Imate Excel, CSV ili XML cjenik?</h2><p>Otvorite svoj radni prostor za provjeru, objavu i upravljanje cjenikom.</p></div><div className="acq-upload-action"><button className="acq-secondary" type="button" onClick={onUpload}><IconUpload size={21}/>Učitaj cjenik</button><small>Bez registracije za pregled</small></div></div>
 }
 
 function InstallationHelp({ onHelp }: { onHelp: () => void }) {
@@ -61,14 +60,14 @@ function ResultPanel({ result, onUpload, onRetry, website }: { result: WebsiteCh
     {(result.details?.publicationFindings?.length ?? 0) > 0 && <section className="acq-publication-notes" aria-label="Napomene o objavi"><h3>Objava i naziv datoteke</h3><ul className="acq-document-findings">{result.details!.publicationFindings!.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.message}</li>)}</ul></section>}
     <div className="acq-result-footer">
       <p>Ova provjera nije potvrda pravne usklađenosti. Arhiva ne potvrđuje potpunost ni trajanje povijesti objava.</p>
-      <a className="acq-primary acq-resolve-cta" href="#rjesenja">Riješite digitalni cjenik<IconArrowRight size={24}/></a>
+      <a className="acq-primary acq-resolve-cta" href="/app?new=1">Objavi svoj cjenik<IconArrowRight size={24}/></a>
       <button type="button" className="acq-secondary" onClick={onUpload}>Učitajte cjenik za detaljnu provjeru<IconUpload size={19}/></button>
       {!unconfirmed && (report.unknown > 0 || result.status === 'unavailable') && <button type="button" className="acq-cancel" onClick={onRetry}>Pokušaj ponovno<IconArrowRight size={19}/></button>}
     </div>
   </section>
 }
 
-export function AcquisitionLanding({ renderValidator }: { renderValidator: (onContext: (context: LeadContext) => void, onLead: (intent: LeadIntent) => void) => ReactNode }) {
+export function AcquisitionLanding() {
   const [url, setUrl] = useState('')
   const [error, setError] = useState('')
   const [result, setResult] = useState<WebsiteCheckResult | null>(null)
@@ -80,18 +79,11 @@ export function AcquisitionLanding({ renderValidator }: { renderValidator: (onCo
   const [intent, setIntent] = useState<LeadIntent>('consultation')
   const [plan, setPlan] = useState<PlanId | undefined>()
   const [leadOpen, setLeadOpen] = useState(false)
-  const [validatorVisible, setValidatorVisible] = useState(false)
   const [cancelled, setCancelled] = useState(false)
   const cancelledRef = useRef(false)
-  const validatorRef = useRef<HTMLDivElement>(null)
   const resultRef = useRef<HTMLDivElement>(null)
   const inFlight = useRef(false)
   const requestRef = useRef<AbortController | null>(null)
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { setValidatorVisible(true); observer.disconnect() } }, { rootMargin: '400px' })
-    if (validatorRef.current) observer.observe(validatorRef.current)
-    return () => observer.disconnect()
-  }, [])
   useEffect(() => () => requestRef.current?.abort(), [])
   useEffect(() => {
     if (!menuOpen) return
@@ -108,8 +100,9 @@ export function AcquisitionLanding({ renderValidator }: { renderValidator: (onCo
     target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
     target?.focus({ preventScroll: true })
   }
-  function onUpload() { setValidatorVisible(true); focus(validatorRef.current) }
+  function onUpload() { window.location.assign('/app?new=1') }
   function onLead(next: LeadIntent, selected?: PlanId) {
+    if(selected==='link'||selected==='publisher'){window.location.assign('/app?new=1&plan='+selected);return}
     const selectedTemplate = new URLSearchParams(window.location.search).get('template')
     if (selectedTemplate) setContext(current=>({...current,templateId:selectedTemplate}))
     setIntent(next); setPlan(selected ?? (next === 'implementation' ? 'web' : next === 'plugin' ? 'publisher' : undefined)); setLeadOpen(true)
@@ -145,7 +138,7 @@ export function AcquisitionLanding({ renderValidator }: { renderValidator: (onCo
   const leadContext: LeadContext = { ...context, website: checkedUrl || undefined, checkerStatus: result?.status === 'unavailable' ? 'unavailable' : report?.tone, discoveredUrls: [result?.details?.csvUrl, result?.details?.xmlUrl].filter((u): u is string => Boolean(u)), selectedPlan: plan, checkerScore: report?.score }
   return <div className="premium-entry acquisition">
     <a className="acq-skip" href="#checker">Preskoči na provjeru</a>
-    <div className="acq-header-bar"><header className="acq-header"><Wordmark/><nav className={menuOpen ? 'acq-nav is-open' : 'acq-nav'} aria-label="Glavna navigacija"><a className="is-active" href="#checker" onClick={() => setMenuOpen(false)}>Provjera weba</a><a href="/digitalni-cjenik-za-wordpress-webshop/">Postojeći web</a><a href="/cijene/">Cijene</a><a href="#pomoc" onClick={() => setMenuOpen(false)}>Pomoć</a></nav><div className="acq-deadline"><IconCalendar size={24}/><span>Rok primjene<strong>17.11.2026.</strong></span></div><button className="acq-menu" type="button" aria-label={menuOpen ? 'Zatvori navigaciju' : 'Otvori navigaciju'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <IconX/> : <IconMenu2/>}</button></header></div>
+    <div className="acq-header-bar"><header className="acq-header"><Wordmark/><nav className={menuOpen ? 'acq-nav is-open' : 'acq-nav'} aria-label="Glavna navigacija"><a className="is-active" href="#checker" onClick={() => setMenuOpen(false)}>Provjera weba</a><a href="/app?new=1">Moj cjenik</a><a href="/cijene/">Cijene</a><a href="/vodici/">Vodiči</a><a href="/app?login=1">Prijava</a></nav><div className="acq-deadline"><IconCalendar size={24}/><span>Rok primjene<strong>17.11.2026.</strong></span></div><button className="acq-menu" type="button" aria-label={menuOpen ? 'Zatvori navigaciju' : 'Otvori navigaciju'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <IconX/> : <IconMenu2/>}</button></header></div>
     <main>
     <div className="acq-top">
 
@@ -166,21 +159,14 @@ export function AcquisitionLanding({ renderValidator }: { renderValidator: (onCo
       </div>
     </div>
     <div className="acq-content">
-      <section className="acq-checks" aria-labelledby="checks-title"><h2 id="checks-title">Što provjeravamo?</h2><p>Brza i jednostavna provjera ključnih tehničkih stavki digitalnog cjenika.</p><ol>{TECHNICAL_CHECKS.map((check, index) => { const Icon = icons[check.icon]; return <li key={check.id}><Icon size={25}/><span className="acq-check-number">{index + 1}</span><span>{check.label}</span></li> })}</ol></section>
-      <div className="acq-reassurance">{[[IconShieldCheck, 'Sigurno i anonimno', 'Bez registracije za provjeru'], [IconBolt, 'Brza provjera', 'Vrijeme ovisi o vašoj stranici'], [IconEye, 'Samo javno dostupni podaci', 'Ne zahtijevaju prijavu'], [IconCircleCheckFilled, 'Jasan tehnički rezultat', 'Uz objašnjenje svake provjere']].map(([Icon, title, text]) => { const I = Icon as typeof IconEye; return <div key={String(title)}><I size={29}/><p><strong>{String(title)}</strong><span>{String(text)}</span></p></div> })}</div>
       <div className="acq-result-anchor" ref={resultRef} tabIndex={-1} aria-label="Rezultat provjere"><div role="status" className="sr-only" aria-live="polite">{report && `Rezultat: ${report.score} potvrđenih od 9 tehničkih provjera; ${report.unknown} nije moguće potvrditi.`}</div>{result && <ResultPanel result={result} website={checkedUrl} onRetry={() => void check()} onUpload={onUpload}/>}</div>
-      <ExistingWebSection/>
-      <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title"><h2 id="solutions-title">Trebate riješiti digitalni cjenik?</h2><p>{!result ? 'Web Link je za web koji već imate. Publisher dodaje validaciju i svakodnevni nadzor. Napredna integracija je zasebna individualna ponuda.' : report?.attention ? 'Pronašli smo stavke koje treba riješiti. Možete sami objaviti cjenik ili prepustiti NEPAR-u više posla.' : report?.unknown ? 'Za dio stavki potrebna je detaljna provjera. Učitajte datoteku ili odaberite pomoć pri objavi.' : 'Tehničke provjere prolaze. Ako želite jednostavnije održavanje i objavu, odaberite rješenje za svoj cjenik.'}</p><PlanCards onSelect={(p) => onLead(p === 'web' ? 'implementation' : 'plugin', p)} onExtra={() => onLead('consultation')}/><p className="acq-domain-note">Vaša postojeća web stranica i domena ostaju vaše. NEPAR objavljuje cjenik i priprema link koji možete ugraditi.</p><p><a href="/objava-digitalnog-cjenika/">Kako izgleda objava i ugradnja →</a></p></section>
-      <LargeListSection/>
+      <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title"><h2 id="solutions-title">Trebate riješiti digitalni cjenik?</h2><p>{!result ? 'Web Link je za web koji već imate. Publisher dodaje uređivanje stavki i svakodnevni nadzor. Napredna integracija je zasebna individualna ponuda.' : report?.attention ? 'Pronašli smo stavke koje treba riješiti. Možete sami objaviti cjenik ili prepustiti NEPAR-u više posla.' : report?.unknown ? 'Za dio stavki potrebna je detaljna provjera. Učitajte datoteku ili odaberite pomoć pri objavi.' : 'Tehničke provjere prolaze. Ako želite jednostavnije održavanje i objavu, odaberite rješenje za svoj cjenik.'}</p><PlanCards onSelect={(p) => onLead(p === 'web' ? 'implementation' : 'plugin', p)} onExtra={() => onLead('consultation')}/><p className="acq-domain-note">Vaša postojeća web stranica i domena ostaju vaše. NEPAR objavljuje cjenik i priprema link koji možete ugraditi.</p><p><a href="/objava-digitalnog-cjenika/">Kako izgleda objava i ugradnja →</a></p></section>
       <section className="acq-help acq-reference" aria-labelledby="reference-title"><div><span className="acq-preview-label">Stvarna NEPAR implementacija</span><h2 id="reference-title">Digitalni cjenik za Auto Gubić</h2><p>Javni cjenik na webu autoservisa, s aktualnom i sidrenom cijenom, CSV/XML poveznicama i podacima o objavi.</p></div><a className="acq-secondary" href="/reference/auto-gubic/">Pogledajte primjer<IconArrowRight size={19}/></a></section>
       {result && <InstallationHelp onHelp={() => onLead('consultation')}/>}
-      <section className="acq-how" id="kako-radi"><h2>Od web adrese do jasnog odgovora.</h2><ol><li><strong>Unesite web adresu</strong><p>Provjera je besplatna i ne traži registraciju.</p></li><li><strong>Pogledajte što je pronađeno</strong><p>Svaki status ima objašnjenje i dostupne dokaze.</p></li><li><strong>Odaberite sljedeći korak</strong><p>Učitajte datoteku, sami objavite cjenik ili zatražite pomoć.</p></li></ol></section>
-      <div id="csv-validator" ref={validatorRef} className="premium-validator-anchor" tabIndex={-1} aria-labelledby="csv-validator-title"><div className="premium-validator-heading"><h2 id="csv-validator-title">Detaljna provjera datoteke</h2><p>Učitajte Excel, CSV ili XML. Pregledajte nalaze i, ako želite, objavite cjenik besplatno na 24 sata.</p></div>{leadContext.discoveredUrls!.length > 0 && <div className="premium-handoff"><p>Pronađene datoteke nisu automatski preuzete. Preuzmite ih i učitajte za detaljnu provjeru.</p>{leadContext.discoveredUrls!.map((u) => <a href={u} key={u} target="_blank" rel="noreferrer">{u}</a>)}</div>}{validatorVisible ? renderValidator(setContext, onLead) : <button type="button" className="acq-secondary" onClick={onUpload}>Otvori validator<IconUpload size={19}/></button>}</div>
       {!result && <InstallationHelp onHelp={() => onLead('consultation')}/>}
       {leadOpen && <LeadForm intent={intent} context={leadContext} onIntentChange={(value) => { setIntent(value); setPlan(undefined) }} onPlanChange={(p) => { setPlan(p); setIntent(p === 'web' ? 'implementation' : p ? 'plugin' : 'consultation') }}/ >}
-      <NoPluginSection/>
-      <EducationSection onLead={onLead} showOffer={Boolean(result)}/><RegulatoryNewsWidget/>
-      <footer className="acq-footer"><Wordmark/><nav aria-label="Dodatne informacije"><a href="/digitalni-cjenik-za-wordpress-webshop/">Digitalni cjenik za WordPress i webshop</a><a href="/objava-digitalnog-cjenika/">Objava i ugradnja</a><a href="/reference/auto-gubic/">Auto Gubić referenca</a><a href="/faq/">Česta pitanja</a><a href="/vodici/">Vodiči</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/vijesti/">Aktualne informacije</a><a href="/app">Publisher prijava</a><a href="/privatnost.html">Privatnost</a><a href="/uvjeti.html">Uvjeti i podaci o pružatelju</a></nav><p>Tehnička provjera i objava digitalnog cjenika. Bez jamstva pravne usklađenosti.</p></footer>
+      <section className="acq-compact-faq" aria-labelledby="landing-faq-title"><h2 id="landing-faq-title">Česta pitanja</h2>{landingFaq.map(entry=><details key={entry.question}><summary>{entry.question}<IconChevronDown size={18}/></summary><p>{entry.answer}</p></details>)}<a href="/faq/">Sva pitanja i odgovori<IconArrowRight size={17}/></a></section>
+      <footer className="acq-footer"><Wordmark/><nav aria-label="Dodatne informacije"><a href="/digitalni-cjenik-za-wordpress-webshop/">Za postojeći web</a><a href="/objava-digitalnog-cjenika/">Objava i ugradnja</a><a href="/faq/">Česta pitanja</a><a href="/vodici/">Vodiči</a><a href="/usporedba/">Usporedba mogućnosti</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/app?login=1">Prijava u dashboard</a><a href="/privatnost.html">Privatnost</a><a href="/uvjeti.html">Uvjeti usluge</a></nav><details className="acq-resources"><summary>Vodiči i aktualne informacije</summary><nav aria-label="Vodiči i novosti"><a href="/vodici/sidrena-cijena/">Sidrena cijena</a><a href="/specifikacija-csv-xml/">CSV i XML formati</a><a href="/vodici/automatizacija-digitalnog-cjenika/">Automatizacija objave</a>{getLatestPosts(3).map(post=><a key={post.slug} href={newsArticlePath(post.slug)}>{post.widgetHeadline??post.title}</a>)}<a href="/vijesti/">Sve vijesti</a></nav></details><p>Tehnička provjera i objava digitalnog cjenika. Bez jamstva pravne usklađenosti.</p></footer>
     </div></main>
   </div>
 }

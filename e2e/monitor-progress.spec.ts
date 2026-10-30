@@ -17,7 +17,7 @@ for (const width of [390, 1440]) test(`monitor shows progress and replaces it wi
     if (path === '/api/tenants/shop') return route.fulfill({ json: { priceList: { tenant: { id: 't-shop', slug: 'shop', name: 'Shop' }, source: 'nepar', currency: 'EUR', updatedAt: latest.checkedAt, items: [{ name: 'Test', type: 'Usluga', price: 10, anchorPrice: 10, specialSaleApplied: false }] } } })
     return route.fulfill({ status: 404, json: {} })
   })
-  await page.goto('/app')
+  await page.goto('/app?tab=nadzor')
   const panel = page.locator('.monitor-panel')
   await panel.getByRole('button', { name: 'Provjeri sada', exact: true }).click()
   await expect(panel.getByRole('heading', { name: 'Provjera je u tijeku' })).toBeVisible()

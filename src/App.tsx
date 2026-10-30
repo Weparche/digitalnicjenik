@@ -1,16 +1,14 @@
-import { PublicationOverview, UploadReview, InstallationChoice, OwnedArchive } from './PublicationOverview'
-import { entitlementIsLive } from '../shared/entitlements'
+import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
+import { IconUpload } from '@tabler/icons-react'
+import { PublicationOverview, UploadReview } from './PublicationOverview'
 import { validRequiredPrice } from './price-engine/normalize'
 import { PlanCards } from './PlanCards'
-import { PublicationSettings } from './PublicationSettings'
 import { AcquisitionLanding } from './AcquisitionLanding'
 import { AdminPanel } from './AdminPanel'
 import { findSitePage } from './pages/registry'
 import { SitePage } from './pages/SitePage'
-import { MonitorPanel } from './MonitorPanel'
 import { QrCode } from './QrCode'
 import { ShareAndPrintCard } from './ShareAndPrintCard'
-import { PublisherLogin, usePublisherSession } from './PublisherAuth'
 import { Fragment, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type Availability, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 import { ExcelConverter } from './ExcelConverter'
@@ -21,8 +19,7 @@ import {
   implementationFirstYearLabel,
   selfServicePriceLabel,
 } from './publisherPricing'
-import { fetchLicence, KeepLinkFlow, LicenceCard } from './PaymentOrder'
-import { licenceState, untilLabel, type Licence } from './licenceView'
+import { untilLabel } from './licenceView'
 import { useTurnstileSiteKey } from './turnstileConfig'
 import { Logo } from './Logo'
 import { readAcquisitionTouch } from './acquisition'
@@ -819,13 +816,15 @@ function TrialClaimForm({
   list,
   sourceFilename,
   onCancel,
+  accountEmail,
 }: {
   list: NormalizedPriceList
   sourceFilename: string
   onCancel: () => void
+  accountEmail?:string
 }) {
   const [businessName, setBusinessName] = useState(list.tenant.name && list.tenant.name !== 'Draft' ? list.tenant.name : '')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(accountEmail??'')
   const [slug, setSlug] = useState('')
   const [slugHint, setSlugHint] = useState('')
   const [objectAddress, setObjectAddress] = useState('')
@@ -872,7 +871,7 @@ function TrialClaimForm({
     event.preventDefault()
     setBusy(true)
     setError('')
-    if (!turnstileToken) {
+    if (!accountEmail&&!turnstileToken) {
       setError('Dovršite sigurnosnu provjeru prije slanja.')
       setBusy(false)
       return
@@ -902,13 +901,14 @@ function TrialClaimForm({
           attribution: readAcquisitionTouch(),
         }),
       })
-      const claimPayload = await claimResponse.json() as { ok?: boolean; error?: string; code?: string }
+      const claimPayload = await claimResponse.json() as { ok?: boolean; error?: string; code?: string;published?:boolean;slug?:string }
       if (!claimResponse.ok || !claimPayload.ok) {
         if (claimPayload.code === 'turnstile_failed' || claimResponse.status === 403) {
           throw new Error('Sigurnosna provjera nije uspjela. Osvježite provjeru i pokušajte ponovno.')
         }
         throw new Error(claimPayload.error || 'Potvrdni link nije moguće poslati.')
       }
+      if(claimPayload.published){window.location.assign('/app?created=1&tenant='+encodeURIComponent(claimPayload.slug??slug));return}
       setSent(true)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Zahtjev nije uspio.')
@@ -932,24 +932,20 @@ function TrialClaimForm({
 
   return (
     <section className="trial-claim-panel">
-      <span className="app-label">BESPLATNA OBJAVA 24 H</span>
-      <h2>Odaberite adresu svog cjenika</h2>
-      <p>Nakon potvrde e-maila cjenik je javno dostupan 24 sata. Isti link zadržite za 19,90 €/god — uplata 2D barkodom.</p>
+      <h2>Još podaci o vašem poslovanju</h2>
+      <p>{accountEmail?'E-mail je potvrđen. Cjenik možete odmah objaviti.':'Potvrdite e-mail i vaš će cjenik biti objavljen.'} Besplatna objava traje 24 sata.</p>
       <form className="trial-claim-form" onSubmit={(event) => void submit(event)}>
         <label>Naziv poslovanja<input value={businessName} onChange={(event) => setBusinessName(event.target.value)} required maxLength={120} placeholder="Auto Gubić" /></label>
-        <label>E-mail<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required maxLength={254} placeholder="info@primjer.hr" autoComplete="email" /></label>
-        <label>Adresa vašeg cjenika<input value={slug} onChange={(event) => setSlug(event.target.value.toLocaleLowerCase('en-US').replace(/[^a-z0-9-]/g, ''))} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={48} /></label>
-        <label>Vrsta objekta<select value={objectType} onChange={event => setObjectType(event.target.value)}><option value="usluzni-objekt">Uslužni objekt</option><option value="prodavaonica">Prodavaonica</option><option value="internetska-trgovina">Internetska trgovina</option></select></label>
         <label>Puna adresa objekta<input value={objectAddress} onChange={event => setObjectAddress(event.target.value)} required minLength={5} maxLength={240} placeholder="Ulica i broj, poštanski broj i mjesto" autoComplete="street-address" /></label>
-        <label>Oznaka objekta<input value={objectCode} onChange={event => setObjectCode(event.target.value)} required maxLength={80} /></label>
-        {!list.items.every(isServiceItem) && <fieldset><legend>Radni dani objekta za provjeru ažuriranja</legend>{['Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota'].map((label, day) => <label key={day}><input type="checkbox" checked={workingDays.includes(day)} onChange={event => setWorkingDays(event.target.checked ? [...workingDays, day] : workingDays.filter(value => value !== day))} />{label}</label>)}</fieldset>}
+        {accountEmail?<p>Prijavljeni ste kao <strong>{accountEmail}</strong>.</p>:<label>E-mail<input type="email" value={email} onChange={event=>setEmail(event.target.value)} required maxLength={254} placeholder="info@primjer.hr" autoComplete="email"/></label>}
+        <details><summary>Uredi adresu cjenika i podatke objekta</summary><label>Adresa vašeg cjenika<input value={slug} onChange={event=>setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={48}/></label><label>Vrsta objekta<select value={objectType} onChange={event=>setObjectType(event.target.value)}><option value="usluzni-objekt">Uslužni objekt</option><option value="prodavaonica">Prodavaonica</option><option value="internetska-trgovina">Internetska trgovina</option></select></label><label>Oznaka objekta<input value={objectCode} onChange={event=>setObjectCode(event.target.value)} maxLength={80}/></label>{!list.items.every(isServiceItem)&&<fieldset><legend>Radni dani objekta</legend>{['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'].map((label,day)=><label key={day}><input type="checkbox" checked={workingDays.includes(day)} onChange={event=>setWorkingDays(event.target.checked?[...workingDays,day]:workingDays.filter(value=>value!==day))}/>{label}</label>)}</fieldset>}</details>
         <p>Podatke koristimo za račun, potvrdu e-maila i javnu objavu cjenika. Provjerite točnost adrese i cijena. <a href="/privatnost.html" target="_blank" rel="noreferrer">Obrada podataka</a> · <a href="/uvjeti.html" target="_blank" rel="noreferrer">Uvjeti objave</a></p>
         <p className="trial-slug-preview">Vaš cjenik bit će dostupan na <strong>{typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'}/c/{slug || '…'}</strong></p>
         {slugHint && <p className="premium-inline-error">{slugHint}</p>}
-        <TurnstileField onToken={setTurnstileToken} />
+        {!accountEmail&&<TurnstileField onToken={setTurnstileToken} />}
         {error && <p className="app-error" role="alert">{error}</p>}
         <div className="trial-claim-actions">
-          <button className="app-button app-button-primary" type="submit" disabled={busy || turnstileLoading || !siteKey}>{busy ? 'Šaljemo…' : 'Pošalji potvrdni link →'}</button>
+          <button className="app-button app-button-primary" type="submit" disabled={busy || (!accountEmail&&(turnstileLoading || !siteKey))}>{busy ? accountEmail?'Objavljujemo…':'Šaljemo…' : accountEmail?'Objavi moj cjenik':'Pošalji potvrdni link →'}</button>
           <button className="app-button app-button-light" type="button" onClick={onCancel} disabled={busy}>Odustani</button>
         </div>
       </form>
@@ -969,6 +965,8 @@ function ValidatorApp({
   entitlementStatus,
   trialEndsAt,
   canEditItems = true,
+  onboarding = false,
+  accountEmail,
 }: {
   onContextChange?: (context: LeadContext) => void
   onLead?: (intent: LeadIntent) => void
@@ -981,12 +979,15 @@ function ValidatorApp({
   entitlementStatus?: string
   trialEndsAt?: string | null
   canEditItems?: boolean
+  onboarding?: boolean
+  accountEmail?: string
 }) {
   const [list, setList] = useState<NormalizedPriceList | null>(null)
   const [draftId, setDraftId] = useState('')
   const [issues, setIssues] = useState<ValidationIssue[]>([])
   const [sourceFilename, setSourceFilename] = useState('')
   const [sourceFile, setSourceFile] = useState<File | null>(null)
+  const [excelFile,setExcelFile] = useState<File | undefined>()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -1041,6 +1042,7 @@ function ValidatorApp({
     setList(scoped)
     setSourceFilename(file.name)
     setSourceFile(file)
+    setExcelFile(undefined)
     setIssues(mergeValidationIssues(validatePriceList(scoped), importIssues).issues)
     setPublished(false)
     setDraftId('')
@@ -1053,6 +1055,8 @@ function ValidatorApp({
 
   async function loadFile(file?: File) {
     if (!file) return
+    if (/\.(xlsx|xls)$/i.test(file.name)) {setExcelFile(file);setError('');return}
+    setExcelFile(undefined)
     setBusy(true); setError(''); setMessage(''); setPublished(false); setDraftId(''); setPublication(null); setClaimOpen(false)
     try {
       if (file.size > 2_000_000) throw new Error('Datoteka je prevelika. Maksimalna veličina je 2 MB.')
@@ -1169,12 +1173,17 @@ function ValidatorApp({
     ? <section className="validator-app-intro"><h1>Dashboard<br /><em>{tenantName}</em></h1><p>{canEditItems ? 'Učitajte novi CSV/XML, pretvorite Excel ili ručno uredite stavke.' : 'Učitajte novi CSV/XML ili pretvorite Excel; nova datoteka zamjenjuje cijeli cjenik.'} Stalni linkovi se ažuriraju tek nakon Objavi.{entitlementStatus === 'trial' && trialEndsAt ? ` Besplatna objava aktivna do ${untilLabel(trialEndsAt)}.` : ''}</p></section>
     : <section className="validator-app-intro">{embedded ? null : <span className="app-label">NEPAR PUBLISHER / BESPLATNA PROVJERA</span>}{embedded ? <h2>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h2> : <h1>Učitajte cjenik.<br /><em>Provjerite što nedostaje.</em></h1>}{embedded ? null : <p>Učitajte CSV ili XML. Pregledajte podatke, zatim objavite cjenik na vlastitom URL-u — besplatno 24 sata.</p>}</section>
 
-  const tool = <>
-    {mode === 'publisher' && <details><summary>Podaci objekta i radni dani</summary><PublicationSettings slug={tenantSlug} onSaved={() => setPublished(false)} /></details>}
-    {mode === 'publisher' && canEditItems && published && list && <button className="app-button app-button-light" type="button" onClick={() => { setPublished(false); setMessage('') }}>Uredi postojeći cjenik</button>}
-    <section className="validator-tool" aria-label={mode === 'publisher' ? 'Publisher cjenik' : 'Validator cjenika'}><div className="upload-card"><div className="upload-card-heading"><div><h2>CSV ili XML cjenik</h2><p>{mode === 'publisher' ? 'Nova datoteka zamjenjuje draft. Ručne izmjene u tablici ostaju dok ne objavite.' : 'Za besplatni pregled nije potrebna registracija.'}</p></div><span className="upload-icon" aria-hidden="true">↥</span></div><div className="upload-actions"><label className="upload-action"><input type="file" accept=".csv,text/csv" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj CSV</strong><span>Najčešći format za izvoz cijena</span></label><label className="upload-action"><input type="file" accept=".xml,text/xml,application/xml" onChange={(event) => void loadFile(event.target.files?.[0])} /><strong>Učitaj XML</strong><span>Ako već imate XML cjenik</span></label></div><p className="upload-note">Maksimalno 2 MB · CSV ili XML · dobit ćete oba izlaza</p>{busy && <p className="app-status" role="status">Provjeravamo datoteku…</p>}{error && <p className="app-error" role="alert">{error}</p>}</div><aside className="checks-card"><span className="app-label">{mode === 'publisher' ? 'PRIJE OBJAVE' : '2 / ŠTO PROVJERAVAMO'}</span><h2>Podaci koji često nedostaju</h2><ul><li><span>01</span>Naziv, vrsta i pozitivna maloprodajna cijena</li><li><span>02</span>Sidrena cijena i mjerodavni datum</li><li><span>03</span>Posebna prodaja i prethodna najniža cijena kod akcije</li><li><span>04</span>Datum prvog uvrštenja za nove stavke</li></ul><p>Provjera je tehnički i podatkovni pregled. Ne zamjenjuje pravni savjet.</p></aside></section>
+  const importer = <>
+    <section className="workspace-upload" aria-label={mode === 'publisher' ? 'Zamjena cjenika' : 'Uvoz cjenika'}>
+      <label className="upload-action workspace-dropzone"><input type="file" aria-label="Učitaj cjenik" accept=".csv,.xml,.xlsx,.xls,text/csv,application/xml" onChange={event=>void loadFile(event.target.files?.[0])}/><IconUpload size={28} stroke={1.5}/><strong>{sourceFilename||'Odaberite svoj Excel, CSV ili XML'}</strong><span>Kliknite za odabir datoteke. Provjera i pregled su besplatni.</span></label>
+      <p className="workspace-upload-note">CSV / XML do 2 MB · Excel do 5 MB · izvorna datoteka ostaje kod vas</p>
+      {busy&&<p className="app-status" role="status">Provjeravamo datoteku…</p>}{error&&<p className="app-error" role="alert">{error}</p>}
+    </section>
+    {excelFile&&<ExcelConverter file={excelFile} onConverted={applyNormalizedList}/>}
+  </>
+  const review = <>
     {list && claimOpen && mode === 'sandbox' && (
-      <TrialClaimForm list={list} sourceFilename={sourceFilename} onCancel={() => setClaimOpen(false)} />
+      <TrialClaimForm list={list} accountEmail={accountEmail} sourceFilename={sourceFilename} onCancel={() => setClaimOpen(false)} />
     )}
     {list && !(claimOpen && mode === 'sandbox') && (
       mode === 'publisher' && !canEditItems ? <UploadReview list={list} issues={validation.issues} busy={busy} blocked={publishBlocked} onPublish={() => void publish()} onCancel={() => setReplacing(false)} /> : <ValidationResultPanel
@@ -1199,17 +1208,17 @@ function ValidatorApp({
         publishBlocked={publishBlocked}
       />
     )}
-    <ExcelConverter onConverted={applyNormalizedList} />
     {mode === 'sandbox' && <p className="validator-footnote">Želite prvo vidjeti primjer? <a href="/c/nepar">Otvori demo podatke →</a></p>}
   </>
+  const tool = <>{importer}{review}</>
 
   if (embedded) {
-    return <div className="validator-app validator-app-embedded">{intro}{tool}</div>
+    return <div className="validator-app validator-app-embedded">{!onboarding&&intro}{tool}</div>
   }
 
-  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}}/>{replacing && tool}{message && <p role="status">{message}</p>}{!replacing && <InstallationChoice slug={tenantSlug}/>}</div>
+  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}}/>{replacing && tool}{message && <p role="status">{message}</p>}</div>
   if (mode === 'publisher') {
-    return <div className="validator-app">{intro}{tool}</div>
+    return <div className="validator-app">{list ? <><details className="workspace-import"><summary>Zamijeni cjenik datotekom</summary>{importer}</details>{published&&<button className="app-button app-button-light" type="button" onClick={()=>setPublished(false)}>Uredi postojeći cjenik</button>}{review}</> : tool}</div>
   }
 
   return <div className="validator-app-shell"><header className="app-header"><Logo /><a href="#posaljite-cjenik" onClick={(event) => { if (onLead) { event.preventDefault(); onLead('implementation') } }}>Trebate pomoć? <strong>NEPAR postavljanje →</strong></a></header><main className="validator-app">
@@ -1219,163 +1228,14 @@ function ValidatorApp({
 }
 
 export function Landing() {
-  return <AcquisitionLanding renderValidator={(onContextChange, onLead) => <ValidatorApp embedded onContextChange={onContextChange} onLead={onLead} />} />
-}
-
-function PublisherWelcome({
-  slug,
-  licence,
-  email,
-  name,
-  onLicenceChanged,
-  onContinue,
-}: {
-  slug: string
-  licence: Licence | null
-  email: string
-  name: string
-  onLicenceChanged: () => void
-  onContinue: () => void
-}) {
-  const [copied, setCopied] = useState(false)
-  const [installation,setInstallation] = useState<boolean | null>(null)
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'
-  const publicUrl = `${origin}/c/${slug}`
-  const periodEnd = licence?.entitlement?.periodEnd ?? null
-  const state = licenceState(licence)
-  return (
-    <section className="publisher-welcome" role="status">
-      <span className="app-label">CJENIK JE OBJAVLJEN</span>
-      <h1>Vaš digitalni cjenik je objavljen!</h1>
-      {periodEnd && (state === 'free' || state === 'awaiting_payment') && <p>{state === 'free' ? 'Besplatna objava aktivna je do' : 'Link ostaje aktivan do'} <strong>{untilLabel(periodEnd)}</strong>.</p>}
-      <div className="publisher-welcome-link">
-        <a className="publisher-welcome-url" href={publicUrl} target="_blank" rel="noreferrer">{publicUrl}</a>
-        <button className="app-link-button" type="button" onClick={() => void navigator.clipboard?.writeText(publicUrl).then(() => setCopied(true))}>{copied ? 'Kopirano' : 'Kopiraj link'}</button>
-      </div>
-      <p>Ovaj link možete odmah staviti na svoju web stranicu. Isti link ostaje aktivan ako ga zadržite.</p>
-      <InstallationChoice slug={slug} onChoice={setInstallation}/>
-      {licence && (state === 'free' || state === 'awaiting_payment' || state === 'expired') && <KeepLinkFlow key={String(installation)} initialInstallation={installation === true} startOpen={installation === true} licence={licence} email={email} name={name} onChanged={onLicenceChanged} />}
-      <div className="publisher-welcome-actions">
-        <a className="app-button app-button-light" href={`${publicUrl}/cjenik.csv`}>Preuzmi CSV</a>
-        <a className="app-button app-button-light" href={`${publicUrl}/cjenik.xml`}>Preuzmi XML</a>
-        <button className="app-button app-button-light" type="button" onClick={onContinue}>Otvori dashboard</button>
-      </div>
-    </section>
-  )
+  return <AcquisitionLanding />
 }
 
 function PublisherEntry() {
-  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
-  const authError = params.get('authError') || undefined
-  const welcome = params.get('welcome') === '1'
-  const welcomeSlug = params.get('slug') || ''
-  const welcomeName = params.get('name') || ''
-  const welcomeTrialEndsAt = params.get('trialEndsAt')
-  const { session, error, logout } = usePublisherSession()
-  const [showWelcome, setShowWelcome] = useState(welcome)
-  const [licence, setLicence] = useState<Licence | null>(null)
-  const [licenceVersion, setLicenceVersion] = useState(0)
-
-  const tenant = session?.tenants[0]
-
-  useEffect(() => {
-    if (!tenant) return
-    let cancelled = false
-    void fetchLicence()
-      .then((next) => { if (!cancelled && next) setLicence(next) })
-      .catch(() => undefined)
-    return () => { cancelled = true }
-  }, [tenant, licenceVersion])
-  const reloadLicence = () => setLicenceVersion((value) => value + 1)
-
-  if (session === undefined) {
-    return (
-      <div className="validator-app-shell premium-entry publisher-shell">
-        <header className="app-header"><Logo /></header>
-        <main className="publisher-auth"><p className="app-status" role="status">Provjeravamo prijavu…</p></main>
-      </div>
-    )
-  }
-
-  if (!session) return <PublisherLogin initialError={authError} />
-
-  if (!tenant) {
-    return (
-      <div className="validator-app-shell premium-entry publisher-shell">
-        <header className="app-header"><Logo /><button className="header-lead" type="button" onClick={() => void logout()}>Odjava</button></header>
-        <main className="publisher-auth">
-          <section className="publisher-auth-panel">
-            <h1>Nema aktivnog tenanta</h1>
-            <p>Vaš e-mail je prijavljen, ali još nema povezanog Publisher tenanta. Javite se na nepar@nepar.hr.</p>
-            {error && <p className="app-error" role="alert">{error}</p>}
-          </section>
-        </main>
-      </div>
-    )
-  }
-
-  const entitlement = licence?.entitlement ?? null
-  const features = licence?.features
-  const status = entitlement?.status || 'trial'
-  const periodEnd = entitlement?.periodEnd ?? welcomeTrialEndsAt
-  const publishBlocked = !entitlement || !entitlementIsLive({id:'view',tenantId:tenant.id,...entitlement})
-
-  if (showWelcome) {
-    return (
-      <div className="validator-app-shell premium-entry publisher-shell">
-        <header className="app-header">
-          <Logo />
-          <button className="header-lead" type="button" onClick={() => void logout()}>Odjava</button>
-        </header>
-        <main className="validator-app premium-entry-main publisher-dashboard">
-          <PublisherWelcome
-            slug={welcomeSlug || tenant.slug}
-            licence={licence}
-            email={session.user.email}
-            name={welcomeName || tenant.name}
-            onLicenceChanged={reloadLicence}
-            onContinue={() => {
-              setShowWelcome(false)
-              const url = new URL(window.location.href)
-              url.searchParams.delete('welcome')
-              url.searchParams.delete('trialEndsAt')
-              url.searchParams.delete('name')
-              url.searchParams.delete('slug')
-              window.history.replaceState({}, '', url.pathname)
-            }}
-          />
-        </main>
-      </div>
-    )
-  }
-
-  return (
-    <div className="validator-app-shell premium-entry publisher-shell">
-      <header className="app-header">
-        <Logo />
-        <div className="publisher-header-meta">
-          <span>{session.user.email}</span>
-          <strong>{tenant.name}</strong>
-          <button className="header-lead" type="button" onClick={() => void logout()}>Odjava</button>
-        </div>
-      </header>
-      <main className="validator-app premium-entry-main publisher-dashboard">
-        {licence && <LicenceCard licence={licence} email={session.user.email} name={tenant.name} onChanged={reloadLicence} />}
-        <OwnedArchive slug={tenant.slug}/>
-        {features?.monitoring && <MonitorPanel slug={tenant.slug} />}
-        <ValidatorApp
-          mode="publisher"
-          tenantSlug={tenant.slug}
-          tenantId={tenant.id}
-          tenantName={tenant.name}
-          publishBlocked={publishBlocked}
-          entitlementStatus={status}
-          trialEndsAt={periodEnd}
-          canEditItems={features?.editItems ?? false}
-        />
-      </main>
-    </div>
-  )
+  return <UserWorkspace
+    renderEditor={props=><ValidatorApp mode="publisher" {...props}/>}
+    renderOnboarding={email=><ValidatorApp embedded onboarding accountEmail={email} tenantName="Draft" tenantSlug="draft"/>}
+  />
 }
 
 export default function App() {

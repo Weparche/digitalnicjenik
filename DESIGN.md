@@ -1,5 +1,19 @@
 # NEPAR Digitalni Cjenik — visual direction
 
+## Radni prostor i administracija (2026-10-30)
+
+`/app` and `/admin` are Operate surfaces. They share a light Inter workspace: a 224px white sidebar, a quiet account bar, a pale canvas, compact page headings and one blue primary action. Controls use plain Croatian, 44px targets, visible focus and the same Tabler icons. Status uses text as well as color. Marketing display typography and monospace labels do not enter these surfaces.
+
+The owner opens **Moj cjenik** first. Web Link shows the current URL, last publication, item count and version, with **Zamijeni cjenik** as the main action. Publisher opens the editor. Secondary work lives under **Objava i ugradnja**, **Pretplata**, and **Nadzor** where the package supports it. Moving between views keeps the editor mounted; subscription polling preserves local changes.
+
+A signed-in account without a price list opens working onboarding, never a dead-end tenant error. An administrator without a personal price list also gets an explicit administration link. New visitors enter `/app?new=1` directly from the hero upload. File review remains anonymous; publication verifies a new e-mail address. A current verified session publishes without a second verification message.
+
+Admin opens a short queue of payments needing attention, followed by operational counts. **Potvrdi uplatu** applies the concrete order immediately and shows the resulting public link. Normal payment handling never enters the manual activation form. Exceptional duration, plan and suspension changes live inside **Napredne radnje i ručne izmjene**, with the existing authorization, confirmation and audit requirements.
+
+At 390px the sidebar becomes a horizontal navigation strip and payment rows become labeled records. At 768px data tables scroll inside their section. No page-level horizontal overflow is allowed. Fonts are fixed sizes: page heading 30px / 26px on mobile, section heading 19–22px, controls and prose 13–14px. Cards use a single fine border and 12px corners; no decorative imagery is needed for these task surfaces.
+
+The shortened landing keeps the URL checker, an upload handoff to the workspace, packages, a real reference, four compact FAQ disclosures and footer resources. The full validator, editor, duplicate explanations and expanded education sections no longer sit on `/`. The older landing composition below is historical where it conflicts with this update.
+
 > Active direction (2026-10-26): the acquisition route follows the supplied NEPAR checker reference. Historical public-list styling remains scoped to its existing routes.
 
 ## Active root surface

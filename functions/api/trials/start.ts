@@ -1,8 +1,11 @@
 import { checkSlugAvailability, previewSlugFromBusinessName, startTrialClaim, type TrialEnv } from '../../_trial'
 import { accessErrorResponse } from '../../_write-auth'
+import { resolveSession,sessionCookieHeader } from '../../_auth'
 
 export const onRequestPost = async ({ request, env }: { request: Request; env: TrialEnv }) => {
   try {
+    if(request.headers.get('origin')!==new URL(request.url).origin)return Response.json({ok:false,error:'invalid_origin'},{status:403,headers:{'cache-control':'no-store'}})
+    const session=await resolveSession(env,request)
     const body = await request.json() as {
       draftId?: string
       email?: string
@@ -12,19 +15,22 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: T
       'cf-turnstile-response'?: string
       attribution?: unknown
     }
-    if (!body.draftId || !body.email || !body.businessName) {
+    if (!body.draftId || !(session?.user.email||body.email) || !body.businessName) {
       return Response.json({ ok: false, error: 'invalid_input' }, { status: 400 })
     }
     const slug = (body.slug || previewSlugFromBusinessName(body.businessName)).trim().toLocaleLowerCase('en-US')
     const result = await startTrialClaim(request, env, {
       draftId: body.draftId,
-      email: body.email,
+      email: session?.user.email||body.email!,
       businessName: body.businessName,
       slug,
       turnstileToken: body.turnstileToken || body['cf-turnstile-response'] || '',
       attribution: body.attribution,
-    })
-    return Response.json({ ok: true, ...result })
+    },fetch,session?.user)
+    const {session:nextSession,...publicResult}=result
+    const headers=new Headers({'cache-control':'no-store'})
+    if(nextSession)headers.set('set-cookie',sessionCookieHeader(nextSession.sessionToken,nextSession.maxAgeSeconds,new URL(request.url).protocol==='https:'))
+    return Response.json({ ok: true, ...publicResult },{headers})
   } catch (error) {
     const denied = accessErrorResponse(error)
     if (denied) return denied

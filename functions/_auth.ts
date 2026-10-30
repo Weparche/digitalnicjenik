@@ -184,13 +184,13 @@ export async function requestMagicLink(
 
   const origin = new URL(request.url).origin
   const link = `${origin}/api/auth/callback?token=${encodeURIComponent(rawToken)}`
-  const text = `Prijavite se u NEPAR Publisher:\n\n${link}\n\nLink vrijedi 15 minuta i može se iskoristiti jednom.\nAko niste zatražili prijavu, zanemarite ovu poruku.`
-  const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><p>Prijavite se u NEPAR Publisher.</p><p><a href="${escapeHtml(link)}">Otvori prijavu</a></p><p style="color:#64748b;font-size:13px">Link vrijedi 15 minuta i može se iskoristiti jednom.</p></body></html>`
+  const text = `Prijavite se u NEPAR:\n\n${link}\n\nLink vrijedi 15 minuta i može se iskoristiti jednom.\nAko niste zatražili prijavu, zanemarite ovu poruku.`
+  const html = `<html lang="hr"><body style="font-family:Arial,sans-serif;color:#0f172a"><p>Prijavite se u NEPAR.</p><p><a href="${escapeHtml(link)}">Otvori prijavu</a></p><p style="color:#64748b;font-size:13px">Link vrijedi 15 minuta i može se iskoristiti jednom.</p></body></html>`
 
   try {
     await sendTransactionalEmail(env, {
       to: email,
-      subject: 'Prijava u NEPAR Publisher',
+      subject: 'Prijava u NEPAR',
       text,
       html,
     }, fetcher)

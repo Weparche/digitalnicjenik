@@ -8,6 +8,7 @@ import './styles.css'
 startPageAnalytics()
 captureFirstTouch()
 import './share-print.css'
+import './workspace.css'
 
 const container = document.getElementById('root')!
 const app = <StrictMode><App /></StrictMode>
