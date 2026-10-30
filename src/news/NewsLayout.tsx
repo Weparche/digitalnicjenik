@@ -20,7 +20,7 @@ export function NewsLayout({
         </a>
       </header>
       <main className="validator-app news-main">
-        <SiteNav current={navCurrent} />
+        <details className="public-navigation"><summary>Vodiči, cijene i informacije</summary><SiteNav current={navCurrent} /></details>
         <nav className="news-breadcrumb" aria-label="Navigacija">
           {breadcrumb}
         </nav>

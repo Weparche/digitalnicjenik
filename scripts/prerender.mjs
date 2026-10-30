@@ -16,7 +16,7 @@ const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
 const INDEXABLE_ROBOTS = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
 const FEED_URL = `${SITE_URL}/feed.xml`
 
-export const HOME_TITLE = 'Digitalni cjenik: besplatna provjera CSV/XML | NEPAR'
+export const HOME_TITLE = 'Digitalni cjenik 2026. – besplatna provjera CSV/XML | NEPAR'
 const DESCRIPTION =
   'Imate web stranicu? Besplatno provjerite digitalni cjenik, CSV/XML i javne linkove. Objava za bilo koji postojeći web od 19,90 €/god, bez plugina.'
 const TWITTER_DESCRIPTION = DESCRIPTION
@@ -49,6 +49,8 @@ function buildHomeSchema(productFaq, pricing) {
         legalName: 'Nepar, obrt za digitalna rješenja i usluge',
         url: `${NEPAR_URL}/`,
         email: 'nepar@nepar.hr',
+        logo: `${SITE_URL}/assets/nepar-logo.png`,
+        contactPoint: { '@type': 'ContactPoint', email: 'nepar@nepar.hr', contactType: 'customer support', availableLanguage: 'hr' },
       },
       {
         '@type': 'WebSite',
@@ -121,7 +123,7 @@ function buildSitePageSchema(page, extras) {
   }
   crumbs.push({ name: page.label, url: pageUrl })
   const graph = [
-    { '@type': 'Organization', '@id': ORGANIZATION_ID, name: 'Nepar Solutions', url: `${NEPAR_URL}/` },
+    { '@type': 'Organization', '@id': ORGANIZATION_ID, name: 'Nepar Solutions', url: `${NEPAR_URL}/`, logo: `${SITE_URL}/assets/nepar-logo.png`, email: 'nepar@nepar.hr', contactPoint: { '@type': 'ContactPoint', email: 'nepar@nepar.hr', contactType: 'customer support', availableLanguage: 'hr' } },
     { '@type': 'WebSite', '@id': WEBSITE_ID, name: 'NEPAR Publisher', url: `${SITE_URL}/`, inLanguage: 'hr-HR', publisher: { '@id': ORGANIZATION_ID } },
     {
       '@type': page.kind === 'faq' ? 'FAQPage' : 'WebPage',
@@ -149,6 +151,16 @@ function buildSitePageSchema(page, extras) {
       itemListElement: crumbs.map((crumb, index) => ({ '@type': 'ListItem', position: index + 1, name: crumb.name, item: crumb.url })),
     },
   ]
+  if (page.kind === 'guide') {
+    graph.push({
+      '@type': 'Article', '@id': `${pageUrl}#article`, headline: page.title,
+      description: page.description, inLanguage: 'hr-HR', url: pageUrl,
+      mainEntityOfPage: { '@id': `${pageUrl}#page` },
+      author: { '@id': ORGANIZATION_ID }, publisher: { '@id': ORGANIZATION_ID },
+      dateModified: page.updatedAt,
+      image: OG_IMAGE,
+    })
+  }
   if (page.kind === 'pricing') {
     graph.push({
       '@type': 'SoftwareApplication',

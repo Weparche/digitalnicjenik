@@ -8,8 +8,15 @@ import { InstallationPage, AutoGubicReferencePage } from './InstallationPage'
 import { ExistingWebPage } from './ExistingWebPage'
 import type { SitePageMeta } from './registry'
 import { WebPublisherPage } from './WebPublisherPage'
+import { DigitalPricelistPage, AnchorPricePage, LaunchGuidePage, ServicesPricelistPage, WebshopPricelistPage, WooCommercePricelistPage } from './TopicPages'
 
 const COMPONENTS: Record<string, () => ReactElement> = {
+  '/digitalni-cjenik/': DigitalPricelistPage,
+  '/sidrena-cijena/': AnchorPricePage,
+  '/digitalni-cjenik-2026/': LaunchGuidePage,
+  '/digitalni-cjenik-za-usluge/': ServicesPricelistPage,
+  '/digitalni-cjenik-za-webshop/': WebshopPricelistPage,
+  '/digitalni-cjenik-woocommerce/': WooCommercePricelistPage,
   '/web-publisher/': WebPublisherPage,
   '/digitalni-cjenik-za-wordpress-webshop/': ExistingWebPage,
   '/objava-digitalnog-cjenika/': InstallationPage,

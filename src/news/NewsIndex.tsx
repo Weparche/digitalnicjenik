@@ -1,5 +1,6 @@
 import { formatNewsDate, NEWS_POSTS, newsArticlePath } from './posts'
 import { NewsLayout } from './NewsLayout'
+import { WebsiteCheckEntry } from '../WebsiteCheckEntry'
 
 export function NewsIndex() {
   const sorted = [...NEWS_POSTS].sort(
@@ -17,12 +18,12 @@ export function NewsIndex() {
       }
     >
       <header className="news-index-header">
-        <p className="news-kicker">Vijesti · regulativa</p>
         <h1>Vijesti o digitalnom cjeniku</h1>
         <p className="news-index-intro">
           Sažeci i vodiči usklađeni sa službenim izvorima — fokus na objavu CSV/XML cjenika i dodatnu
           (sidrenu) cijenu, uz privremenu odgodu primjene do 17.11.2026.
         </p>
+        <WebsiteCheckEntry source="/vijesti/"/>
       </header>
       <ul className="news-index-list">
         {sorted.map((post) => (

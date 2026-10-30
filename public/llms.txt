@@ -14,6 +14,12 @@ Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — https:/
 ## Stranice
 
 - [Početna](https://digitalnicjenik.nepar.hr/): digitalni cjenik za bilo koji postojeći web — objava, besplatna provjera weba i validator cjenika.
+- [Digitalni cjenik](https://digitalnicjenik.nepar.hr/digitalni-cjenik/): Što je digitalni cjenik, kako provjeriti javni CSV/XML i kako objaviti svoj Excel. Besplatna provjera weba, objava 24 sata i isti link od 19,90 €/god.
+- [Sidrena cijena](https://digitalnicjenik.nepar.hr/sidrena-cijena/): Razlika između aktualne, dodatne (sidrene) i bazne cijene. Referentni datumi, kome se mjera primjenjuje i što provjera weba može potvrditi.
+- [Vodič za 2026.](https://digitalnicjenik.nepar.hr/digitalni-cjenik-2026/): Praktičan vodič za digitalni cjenik: na koga se odnosi, podaci za usluge i proizvode, nazivi datoteka, ažuriranje, 30 dana arhive i stvarni CSV/XML primjeri.
+- [Cjenik za usluge](https://digitalnicjenik.nepar.hr/digitalni-cjenik-za-usluge/): Kako pružatelj usluga objavljuje naziv, maloprodajnu i sidrenu cijenu te posebni oblik prodaje. Excel predložak, CSV/XML i objava bez promjene postojećeg weba.
+- [Cjenik za webshop](https://digitalnicjenik.nepar.hr/digitalni-cjenik-za-webshop/): Podaci proizvoda, dnevna objava, stabilni feedovi i arhiva za webshop. Provjerite što vaš postojeći sustav već objavljuje prije kupnje dodatnog rješenja.
+- [Cjenik za WooCommerce](https://digitalnicjenik.nepar.hr/digitalni-cjenik-woocommerce/): Provjerite WooCommerce web, izvezite podatke i objavite CSV/XML. Što standardni izvoz prenosi, što treba dopuniti i kada dogovoriti zasebnu integraciju.
 - [Web + Publisher](https://digitalnicjenik.nepar.hr/web-publisher/): Novi jednostavni statički web na NEPAR hostingu i Publisher za 99,00 €/god. Upit i ponuda; bez redizajna postojećeg WordPress/Wix weba.
 - [WordPress i webshop](https://digitalnicjenik.nepar.hr/digitalni-cjenik-za-wordpress-webshop/): Digitalni cjenik za WordPress, WooCommerce, Shopify, Wix ili vlastiti web od 19,90 €/god: bez plugina, s CSV/XML objavom i 30 dana arhive.
 - [Sidrena cijena](https://digitalnicjenik.nepar.hr/vodici/sidrena-cijena/): Sidrena odnosno dodatna cijena: referentni datumi, odnos prema digitalnom CSV/XML cjeniku i prikaz uz aktualnu cijenu. Vodič sa službenim izvorima.

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { formatNewsDate } from '../news/posts'
 import { NewsLayout } from '../news/NewsLayout'
 import { getSitePage, type SitePageMeta } from './registry'
+import { WebsiteCheckEntry } from '../WebsiteCheckEntry'
 
 export function Breadcrumb({ page }: { page: SitePageMeta }) {
   const parent = page.parent ? getSitePage(page.parent) : null
@@ -36,9 +37,9 @@ export function SitePageLayout({
     <NewsLayout breadcrumb={<Breadcrumb page={page} />} navCurrent={page.path}>
       <article className="site-page">
         <header className="site-page-header">
-          <p className="news-kicker">NEPAR Publisher</p>
           <h1>{page.title}</h1>
           <p className="site-page-lead">{lead}</p>
+          <WebsiteCheckEntry source={page.path}/>
           <p className="news-article-meta">
             Ažurirano: <time dateTime={page.updatedAt}>{formatNewsDate(page.updatedAt)}</time>
           </p>
@@ -49,7 +50,7 @@ export function SitePageLayout({
             <strong>Provjerite svoj cjenik besplatno</strong>
             <span>Učitajte Excel, CSV ili XML i odmah vidite što nedostaje. Objava je besplatna 24 sata.</span>
           </div>
-          <a className="app-button app-button-primary" href="/#csv-validator">Učitaj cjenik →</a>
+          <a className="app-button app-button-primary" href="/app?new=1">Učitaj cjenik →</a>
         </aside>
         {related && related.length > 0 && (
           <nav className="site-related" aria-label="Povezane stranice">

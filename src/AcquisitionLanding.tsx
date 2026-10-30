@@ -1,7 +1,7 @@
 import { PlanCards } from './PlanCards'
 import { useEffect, useState } from 'react'
-import { IconArrowRight, IconUpload, IconWorld, IconCircleCheckFilled, IconAlertCircle,IconCalendar, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
-import { normalizeWebsiteInput } from '../shared/website-check'
+import { IconArrowRight, IconUpload, IconCircleCheckFilled, IconAlertCircle,IconCalendar, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
+import { WebsiteCheckEntry } from './WebsiteCheckEntry'
 import { PLANS, formatEur, type PlanId } from './publisherPricing'
 import { PlatformPills } from './ExistingWebSections'
 import { installationPriceLabel } from '../shared/pricing'
@@ -25,8 +25,6 @@ function InstallationHelp({ onHelp }: { onHelp: () => void }) {
 
 
 export function AcquisitionLanding() {
-  const [url, setUrl] = useState('')
-  const [error, setError] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   useEffect(() => {
     if (!menuOpen) return
@@ -35,26 +33,20 @@ export function AcquisitionLanding() {
     return () => document.removeEventListener('keydown', close)
   }, [menuOpen])
   function onUpload() { window.location.assign('/app?new=1') }
-  function onLead(next:LeadIntent,selected?:PlanId){
-    if(selected==='link'||selected==='publisher'){window.location.assign('/app?new=1&plan='+selected);return}
+  function onLead(next:LeadIntent,selected?:PlanId,cleanCampaign=false){
+    if(selected==='link'||selected==='publisher'){if(cleanCampaign)window.history.replaceState(window.history.state,'','/');window.location.assign('/app?new=1&plan='+selected);return}
     const current=new URLSearchParams(window.location.search),params=new URLSearchParams({new:'1',tab:'kontakt'})
     if(selected)params.set('plan',selected);else if(next==='implementation')params.set('plan','web')
     for(const key of ['template','checkerRun','website']){const value=current.get(key);if(value)params.set(key,value)}
+    if(cleanCampaign)window.history.replaceState(window.history.state,'','/')
     window.location.assign('/app?'+params)
   }
   useEffect(()=>{
     const selected=new URLSearchParams(window.location.search).get('paket')
-    if(selected&&PLANS.some(plan=>plan.id===selected))onLead(selected==='web'?'implementation':'plugin',selected as PlanId)
+    if(selected&&PLANS.some(plan=>plan.id===selected))onLead(selected==='web'?'implementation':'plugin',selected as PlanId,true)
     else if(window.location.hash==='#posaljite-cjenik')onLead('consultation')
     if(window.location.hash==='#csv-validator')window.setTimeout(onUpload,50)
   },[])
-  function check(event?: React.FormEvent) {
-    event?.preventDefault()
-    let normalized: string
-    try { normalized = normalizeWebsiteInput(url) } catch { setError('Unesite ispravnu adresu, primjerice vasweb.hr.'); document.getElementById('acq-url')?.focus(); return }
-    const params=new URLSearchParams({new:'1',tab:'provjera',url:normalized,check:'1',from:'landing'})
-    window.location.assign('/app?'+params)
-  }
   return <div className="premium-entry acquisition">
     <a className="acq-skip" href="#checker">Preskoči na provjeru</a>
     <div className="acq-header-bar"><header className="acq-header"><Wordmark/><nav className={menuOpen ? 'acq-nav is-open' : 'acq-nav'} aria-label="Glavna navigacija"><a className="is-active" href="#checker" onClick={() => setMenuOpen(false)}>Provjera weba</a><a href="/app?new=1">Moj cjenik</a><a href="/cijene/">Cijene</a><a href="/vodici/">Vodiči</a><a href="/app?login=1">Prijava</a></nav><div className="acq-deadline"><IconCalendar size={24}/><span>Rok primjene<strong>17.11.2026.</strong></span></div><button className="acq-menu" type="button" aria-label={menuOpen ? 'Zatvori navigaciju' : 'Otvori navigaciju'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <IconX/> : <IconMenu2/>}</button></header></div>
@@ -63,9 +55,8 @@ export function AcquisitionLanding() {
 
 
       <div>
-        <section className="acq-hero" aria-labelledby="acq-title"><div className="acq-hero-copy"><h1 id="acq-title">Imate web<br/>stranicu?<br/>Provjerite<br className="acq-desktop-break"/> digitalni cjenik <br className="acq-final-break"/><em>besplatno.</em></h1><p className="acq-intro">Unesite adresu svoje web stranice. Provjerit ćemo javno dostupni digitalni cjenik, CSV/XML datoteke, linkove i osnovnu tehničku strukturu.</p>
-          <form id="checker" className="acq-form" onSubmit={check} noValidate><label className="sr-only" htmlFor="acq-url">Adresa web stranice</label><div className="acq-input"><IconWorld size={23}/><input id="acq-url" name="website" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={2048} value={url} onChange={(e) => { setUrl(e.target.value); setError('') }} aria-invalid={Boolean(error)} aria-describedby={error ? 'acq-url-error' : undefined} placeholder="https://vasweb.hr"/></div><button type="submit" className="acq-primary">Provjeri besplatno<IconArrowRight size={24}/></button></form>
-          {error && <p id="acq-url-error" className="acq-error" role="alert">{error}</p>}
+        <section className="acq-hero" aria-labelledby="acq-title"><div className="acq-hero-copy"><h1 id="acq-title">Provjerite digitalni cjenik svoje web stranice <em>besplatno.</em></h1><p className="acq-intro">Unesite adresu svoje web stranice. Provjerit ćemo javno dostupni digitalni cjenik, CSV/XML datoteke, linkove i osnovnu tehničku strukturu.</p>
+          <WebsiteCheckEntry source="landing" landing/>
           <ul className="acq-trust">{['Bez registracije', 'Rezultat odmah', 'Potpuno besplatno'].map((text) => <li key={text}><IconCircleCheckFilled size={20}/>{text}</li>)}</ul>
           <div className="acq-hero-platforms"><p>Objava za bilo koji postojeći web od {formatEur(PLANS[0].price, true)} — bez plugina:</p><PlatformPills/></div>
           <UploadPath onUpload={onUpload}/>

@@ -29,7 +29,7 @@ const indexHtml = read('index.html')
 const h1Count = (indexHtml.match(/<h1\b/gi) || []).length
 if (h1Count !== 1) failures.push(`index.html: expected exactly one <h1>, found ${h1Count}`)
 expect('index.html', /<h1[^>]*>/, 'prerendered H1 is missing')
-expect('index.html', 'Provjerite<br class="acq-desktop-break"/> digitalni cjenik', 'prerendered checker-first hero H1 is missing')
+expect('index.html', 'Provjerite digitalni cjenik svoje web stranice', 'prerendered checker-first hero H1 is missing')
 expect('index.html', 'id="checker"', 'the URL checker must be in the prerendered hero')
 expect('index.html', 'nego provjerava da je ispravna', 'prerendered Publisher FAQ copy is missing')
 expect('index.html', '<link rel="canonical" href="https://digitalnicjenik.nepar.hr/" />', 'self-canonical is missing')
@@ -201,9 +201,9 @@ function verifyArticle(relPath, canonical, expectedHeadline, extraChecks) {
   expect(relPath, 'NewsArticle', `${relPath}: JSON-LD must include NewsArticle`)
   expect(relPath, 'datePublished', `${relPath}: JSON-LD must include datePublished`)
   expect(relPath, 'dateModified', `${relPath}: JSON-LD must include dateModified`)
-  expect(relPath, 'Provjerite digitalni cjenik svoje web stranice', `${relPath}: article website checker is missing`)
-  expect(relPath, 'https://digitalnicjenik.nepar.hr/#csv-validator', `${relPath}: article checker must link to Publisher`)
-  expect(relPath, 'mailto:nepar@nepar.hr', `${relPath}: article checker must include email inquiry CTA`)
+  expect(relPath, 'aria-label="Besplatna provjera weba"', `${relPath}: shared hero website checker is missing`)
+  expect(relPath, 'Rezultat se otvara u vašem radnom prostoru.', `${relPath}: checker must hand off to the workspace`)
+  expect(relPath, '/digitalni-cjenik-2026/', `${relPath}: article must link to the current guide`)
   if (/noindex/i.test(articleHtml)) failures.push(`${relPath}: must not be noindex`)
   expect(relPath, '<meta property="og:type" content="article" />', `${relPath}: og:type must be article`)
   expect(relPath, 'article:published_time', `${relPath}: article published time is missing`)
@@ -335,6 +335,12 @@ if (!existsSync(resolve(distDir, 'og/vijesti-digitalni-cjenik-2026.png'))) {
 // --- Evergreen content pages: unique title/H1/canonical, structured data, interlinking, sitemap ---
 const SITE = 'https://digitalnicjenik.nepar.hr'
 const EVERGREEN = [
+  { path: 'digitalni-cjenik', must: ['/digitalni-cjenik-2026/', '/digitalni-cjenik-za-usluge/', '/digitalni-cjenik-za-webshop/', '/digitalni-cjenik-woocommerce/', '24 sata'] },
+  { path: 'sidrena-cijena', must: ['"@type":"Article"', '2. svibnja 2025.', '/vodici/sidrena-cijena/', '1212'] },
+  { path: 'digitalni-cjenik-2026', must: ['"@type":"Article"', '/assets/provjera-cjenika-dashboard.png', '/reference/auto-gubic/', 'NN 110/2026-1310', '/examples/nepar-format-primjer-usluge.csv'] },
+  { path: 'digitalni-cjenik-za-usluge', must: ['"@type":"Service"', '/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/', '/app?new=1'] },
+  { path: 'digitalni-cjenik-za-webshop', must: ['"@type":"Service"', 'dnevno', 'dostupnost', '/specifikacija-csv-xml/'] },
+  { path: 'digitalni-cjenik-woocommerce', must: ['"@type":"Service"', 'nije WooCommerce plugin', '/vodici/woocommerce-wordpress-digitalni-cjenik/'] },
   { path: 'digitalni-cjenik-za-wordpress-webshop', must: ['"@type":"FAQPage"', '"@type":"Service"', '"@type":"Offer"', '/cijene/', '/specifikacija-csv-xml/', '/objava-digitalnog-cjenika/', '/faq/', '/#csv-validator', '19,90', 'Do 5.000 stavki'] },
   { path: 'objava-digitalnog-cjenika', must: ['19,90', '/reference/auto-gubic/', 'id="odgovornosti"', 'NN 110/2026-1310'] },
   { path: 'reference/auto-gubic', must: ['https://autogubic.hr/cjenik', 'aktualni.csv', 'aktualni.xml', '/objava-digitalnog-cjenika/'] },
@@ -357,6 +363,7 @@ for (const page of EVERGREEN) {
   expect(rel, 'content="index,follow', 'page must be indexable')
   expect(rel, 'data-nepar-prerendered="true"', 'page must be prerendered')
   expect(rel, '"@type":"BreadcrumbList"', 'BreadcrumbList is missing')
+  expect(rel, 'aria-label="Besplatna provjera weba"', 'shared hero website check is missing')
   const h1Count = (html.match(/<h1\b/gi) || []).length
   if (h1Count !== 1) failures.push(`${rel}: expected exactly one <h1>, found ${h1Count}`)
   const title = (/<title>([^<]*)<\/title>/.exec(html) || [])[1]

@@ -73,7 +73,7 @@ export function staticSitemapUrls(posts: NewsPost[] = NEWS_POSTS): SitemapUrl[] 
   const newestDate = newest ? isoDate(newest) : undefined
   const articles = [...posts].sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
   return [
-    { loc: `${SITE_URL}/`, lastmod: newestDate, priority: '1.0' },
+    { loc: `${SITE_URL}/`, lastmod: newestDate && newestDate > '2026-10-30' ? newestDate : '2026-10-30', priority: '1.0' },
     ...SITE_PAGES.map((page) => ({
       loc: pageUrl(page),
       lastmod: isoDate(page.updatedAt),

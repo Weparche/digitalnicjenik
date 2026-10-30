@@ -1,5 +1,11 @@
 # NEPAR Digitalni Cjenik — visual direction
 
+## Javne stranice i SEO ulaz (2026-10-30)
+
+Nove tematske stranice proširuju postojeći svijet; ne uvode novi vizualni identitet. Informativne stranice su Read, a početna i prodajne stranice Persuade. Zajednički URL obrazac je neposredno uz naslov i uvod, prije sadržaja. Koristi isti plavi primarni gumb, vidljivu oznaku polja i fokus, bijelo polje i čitljiv tekst. Na mobitelu gumb ide ispod polja. Sažeta navigacija otvara se native disclosure kontrolom, da dugi izbornik ne potisne primarnu radnju iz prvog ekrana.
+
+Sve javne provjere vode u postojeći dashboard; članci nemaju zaseban checker ni kontakt obrazac. Fotografija početne ostaje postojeća. Vodič koristi stvarni snimljeni prazan prikaz alata i izlazne datoteke iz aplikacijskih renderera, bez generiranih rezultata ili izmišljenih referenci.
+
 ## Radni prostor i administracija (2026-10-30)
 
 `/app` and `/admin` are Operate surfaces. They share a light Inter workspace: a 224px white sidebar, a quiet account bar, a pale canvas, compact page headings and one blue primary action. Controls use plain Croatian, 44px targets, visible focus and the same Tabler icons. Status uses text as well as color. Marketing display typography and monospace labels do not enter these surfaces.

@@ -189,6 +189,7 @@ export function GuidesHubPage() {
     >
       <section className="site-section" aria-labelledby="popis">
         <h2 id="popis">Vodiči</h2>
+        <p>Prvi put pripremate objavu? Krenite od <a href="/digitalni-cjenik-2026/">cjelovitog vodiča za 2026.</a> Za svoje poslovanje odaberite <a href="/digitalni-cjenik-za-usluge/">usluge</a>, <a href="/digitalni-cjenik-za-webshop/">webshop</a> ili <a href="/digitalni-cjenik-woocommerce/">WooCommerce</a>.</p>
         <ul className="site-card-list">
           {guides.map((guide) => (
             <li key={guide.path}>
@@ -204,6 +205,7 @@ export function GuidesHubPage() {
 
 export function AnchorGuidePage() {
   return <SitePageLayout page={getSitePage('/vodici/sidrena-cijena/')} lead={anchorGuide.lead} related={[
+    { href: '/sidrena-cijena/', label: 'Sidrena cijena: sažetak pojmova i obveza' },
     { href: '/specifikacija-csv-xml/', label: 'Specifikacija CSV/XML' },
     { href: '/vodici/automatizacija-digitalnog-cjenika/', label: 'Automatizacija i nadzor' },
     { href: '/vodici/', label: 'Svi vodiči' },

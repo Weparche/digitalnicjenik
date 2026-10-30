@@ -31,7 +31,7 @@ for (const width of [1440, 768, 390]) {
   test(`checker, trust and platforms fit first viewport at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Imate web\s*stranicu\?\s*Provjerite\s*digitalni cjenik\s*besplatno\./)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Provjerite digitalni cjenik svoje web stranice\s*besplatno\./)
     const button = page.getByRole('button', { name: 'Provjeri besplatno' })
     await expect(button).toBeVisible()
     expect((await button.boundingBox())!.y + (await button.boundingBox())!.height).toBeLessThan(900)

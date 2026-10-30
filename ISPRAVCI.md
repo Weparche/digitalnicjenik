@@ -1,5 +1,11 @@
 # Ispravci nakon analize digitalnog cjenika
 
+## SEO i zajednički ulaz u provjeru — 30.10.2026.
+
+Dodano šest sadržajno različitih tematskih stranica s hero provjerom, službenim izvorima, internim poveznicama, stvarnim primjerima CSV/XML i snimkom postojećeg alata. Zajednički obrazac zamjenjuje staru zasebnu provjeru u člancima; rezultat, pomoć i objava ostaju u dashboardu. Samo izričito poslani kontakt upit šalje mail.
+
+Prerender uključuje nove stranice, canonical, BreadcrumbList i Article za vodiče te Organization logo/kontakt. Sitemap i llms.txt koriste registar stranica. Parametrizirana početna ostaje canonical na `/`, a poznati izbor paketa prenosi se u dashboard uz čišćenje povijesti i očuvanje konteksta upita. Javne korisničke objave i arhiva zadržavaju postojeća pravila indeksiranja. Nema novih migracija ni konfiguracije.
+
 Datum: 27. listopada 2026. Osnova: `c2be6f05247084ac07f707912267f22c3e547402`. Izmjene su pripremljene za pregled i GitHub; produkcijska baza, hosting i dostava e-mailova nisu mijenjani.
 
 ## Što se mijenja za korisnika
