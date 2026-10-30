@@ -15,6 +15,10 @@ Snimljeno lokalno 30. 10. 2026. Svi računi, iznosi i cjenici na ovim prikazima 
 - [Prva objava potvrđena — mobitel](first-published-mobile.png)
 - [Prijava uplate čeka potvrdu — mobitel](payment-reported-mobile.png)
 - [Prijava u NEPAR](login.png)
+- [Provjera weba — desktop](user-checker-desktop.png)
+- [Provjera weba — mobitel](user-checker-mobile.png)
+- [Admin povijest provjera — desktop](admin-checks-desktop.png)
+- [Admin povijest provjera — mobitel](admin-checks-mobile.png)
 - [Hero — desktop](landing-desktop.png)
 - [Hero — mobitel](landing-mobile.png)
 

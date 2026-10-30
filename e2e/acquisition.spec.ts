@@ -22,6 +22,7 @@ for (const width of [390, 1440]) {
   })
 }
 async function stub(page: Page, result: WebsiteCheckResult) {
+  await page.route('**/api/auth/me',r=>r.fulfill({status:401,json:{authenticated:false}}))
   await page.route('**/api/public-config', (r) => r.fulfill({ json: { turnstileSiteKey: '' } }))
   await page.route('**/api/digitalni-cjenik/check', (r) => r.fulfill({ json: result }))
 }
@@ -71,7 +72,9 @@ test('invalid input focuses field; bare domain normalizes; result has nine evide
   await page.getByLabel('Adresa web stranice', { exact: true }).fill('salon.hr')
   const request = page.waitForRequest('**/api/digitalni-cjenik/check')
   await page.getByLabel('Adresa web stranice', { exact: true }).press('Enter')
-  expect((await request).postDataJSON()).toEqual({ url: 'https://salon.hr/' })
+  expect((await request).postDataJSON()).toMatchObject({ url: 'https://salon.hr/',source:'landing' })
+  await expect(page).toHaveURL(/\/app\?/)
+  await expect(page.getByRole('heading',{name:'Provjera weba',exact:true})).toBeVisible()
   await expect(page.locator('.acq-result-summary')).toHaveText('9/9 tehničkih provjera prolazi')
   await expect(page.locator('.acq-tone-green')).toBeVisible()
   await expect(page.locator('.acq-result-anchor')).toBeFocused()
@@ -98,13 +101,7 @@ test('one supported format does not reduce the score and context reaches Web Lin
   // Content and the archive are unconfirmed; an archive that cannot be confirmed is not reported as missing.
   await expect(page.locator('.acq-status-unknown')).toHaveCount(2)
   await expect(page.locator('.acq-status-missing')).toHaveCount(0)
-  await expect(page.locator('.acq-plans')).toContainText('19,90 €')
-  await expect(page.locator('.acq-plans')).toContainText('49,90 €')
-  await expect(page.locator('.acq-plans')).toContainText('99,00 €')
-  const resolve=page.getByRole('link',{name:'Objavi svoj cjenik'})
-  await expect(resolve).toHaveAttribute('href','/app?new=1')
-  await resolve.click()
-  await expect(page).toHaveURL(/\/app\?new=1$/)
+  await page.getByRole('button',{name:'Otvori moj cjenik',exact:true}).click()
   await expect(page.getByLabel('Učitaj cjenik',{exact:true})).toBeVisible()
 
 })
@@ -131,7 +128,7 @@ test('verified missing signals render red and file CTA focuses existing validato
   await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
   await expect(page.locator('.acq-tone-red')).toBeVisible()
   await page.getByRole('button', { name: 'Učitajte cjenik za detaljnu provjeru' }).click()
-  await expect(page).toHaveURL(/\/app\?new=1$/)
+  await expect(page).toHaveURL(/\/app\?.*tab=cjenik/)
   await expect(page.getByLabel('Učitaj cjenik',{exact:true})).toBeVisible()
 })
 

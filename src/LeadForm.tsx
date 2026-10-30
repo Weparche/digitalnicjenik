@@ -12,6 +12,7 @@ import { WEB_TEMPLATES } from '../shared/web-templates'
 
 export type LeadIntent = 'implementation' | 'consultation' | 'plugin'
 export type LeadContext = {
+  checkerRunId?:string
   website?: string
   checkerStatus?: string
   discoveredUrls?: string[]
@@ -117,6 +118,7 @@ export function LeadForm({ intent, context, onIntentChange, onPlanChange }: { in
     const attribution = readAcquisitionTouch()
     if (attribution) form.set('attribution', JSON.stringify(attribution))
     form.set('context', JSON.stringify({
+      checkerRunId:context.checkerRunId,
       website: context.website,
       checkerStatus: context.checkerStatus,
       discoveredUrls: context.discoveredUrls?.slice(0, 2),

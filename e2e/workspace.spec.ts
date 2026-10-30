@@ -35,7 +35,7 @@ test('a verified user without a tenant has a complete first-publication flow',as
   await page.route('**/api/trials/start?**',route=>route.fulfill({json:{suggested:'salon-lana',available:true}}))
   await page.route('**/api/drafts',route=>route.fulfill({json:{ok:true,draftId:'private-draft'}}))
   await page.route('**/api/trials/start',route=>{claim=route.request().postDataJSON();created=true;return route.fulfill({json:{ok:true,published:true,slug:'salon'}})})
-  await page.goto('/app')
+  await page.goto('/app?tab=cjenik')
   await expect(page.getByText('Nema aktivnog tenanta')).toHaveCount(0)
   await page.getByLabel('Učitaj cjenik',{exact:true}).setInputFiles({name:'salon.csv',mimeType:'text/csv',buffer:Buffer.from(csv)})
   await page.getByRole('button',{name:/Objavi besplatno na 24 h/}).click()
@@ -49,7 +49,7 @@ test('a verified user without a tenant has a complete first-publication flow',as
 })
 for(const width of [390,768,1440])test(`Web Link dashboard focuses on the current link and replacement at ${width}px`,async({page})=>{
   await page.setViewportSize({width,height:1000});await api(page)
-  await page.goto('/app')
+  await page.goto('/app?tab=cjenik')
   await expect(page.getByRole('heading',{name:'Moj cjenik',exact:true})).toBeVisible()
   await expect(page.getByRole('button',{name:'Zamijeni cjenik',exact:true})).toBeVisible()
   await expect(page.getByText('Javni link je aktivan',{exact:true})).toBeVisible()
@@ -66,7 +66,7 @@ for(const width of [390,768,1440])test(`Web Link dashboard focuses on the curren
   await expect(page.getByRole('link',{name:/127.0.0.1.*salon/})).toBeVisible()
 })
 test('Publisher keeps unsaved edits when subscription data refreshes',async({page})=>{
-  await page.clock.install();await api(page,true);await page.goto('/app')
+  await page.clock.install();await api(page,true);await page.goto('/app?tab=cjenik')
   await page.getByLabel('Sidrena cijena za Šišanje',{exact:true}).fill('12')
   const refresh=page.waitForRequest('**/api/orders*')
   await page.clock.fastForward(31_000);await refresh
@@ -88,7 +88,7 @@ test('first-publication guidance and package prices stay inside the dashboard wi
   await expect(offer).toContainText('19,90 € za cijelu godinu')
   await page.getByLabel('Učitaj cjenik',{exact:true}).setInputFiles({name:'salon.csv',mimeType:'text/csv',buffer:Buffer.from(csv)})
   const nav=page.getByRole('navigation',{name:'Radni prostor'})
-  await expect(nav.getByRole('button').nth(1)).toHaveText('Upute')
+  await expect(nav.getByRole('button').nth(2)).toHaveText('Upute')
   await nav.getByRole('button',{name:'Upute',exact:true}).click()
   await expect(page.getByRole('link',{name:'Otvori HOK Excel predloške'})).toHaveAttribute('href',/^https:\/\/www.hok.hr\//)
   await expect(page.getByText('Ovo nije preslika službenog HOK predloška.',{exact:false})).toBeVisible()
@@ -107,7 +107,7 @@ test('first-publication guidance and package prices stay inside the dashboard wi
 test('a free published price list explains the annual cost and opens its payment view',async({page})=>{
   await api(page)
   await page.route('**/api/orders*',route=>route.fulfill({json:{entitlement:{plan:'web_link',status:'trial',periodStart:new Date().toISOString(),periodEnd:new Date(Date.now()+86_400_000).toISOString()},features,order:null,upgradeAvailable:false}}))
-  await page.goto('/app')
+  await page.goto('/app?tab=cjenik')
   const offer=page.getByRole('region',{name:'Besplatna objava i cijena'})
   await expect(offer).toContainText('19,90 € za cijelu godinu')
   await offer.getByRole('button',{name:'Kako zadržati link?'}).click()
@@ -116,7 +116,7 @@ test('a free published price list explains the annual cost and opens its payment
 })
 test('an admin without a personal price list gets an explicit administration shortcut',async({page})=>{
   await page.route('**/api/auth/me',route=>route.fulfill({json:{...owner,isAdmin:true,user:{id:'admin',email:'nepar@nepar.hr'},tenants:[]}}))
-  await page.goto('/app')
+  await page.goto('/app?tab=cjenik')
   await expect(page.getByRole('link',{name:'Otvori administraciju',exact:true})).toHaveAttribute('href','/admin')
   await expect(page.getByLabel('Učitaj cjenik',{exact:true})).toBeVisible()
 })

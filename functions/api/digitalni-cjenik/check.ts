@@ -6,6 +6,7 @@ import { isServiceItem } from '../../../src/price-engine/profile';
 import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engine/types';
 import { ruleFor } from '../../../shared/compliance/legal-profile';
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckDetails } from '../../../shared/website-check';
+import { recordCheckerRun } from '../../_checker-history';
 
 type Resolver = {
   resolve4: (hostname: string) => Promise<string[]>;
@@ -730,14 +731,14 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
   }
 }
 
-function parseBody(request: Request): Promise<{ url?: unknown } | null> {
+function parseBody(request: Request): Promise<{ url?: unknown;attribution?:unknown;source?:unknown } | null> {
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) return Promise.resolve(null);
   return request.text().then((value) => {
     if (new TextEncoder().encode(value).byteLength > MAX_REQUEST_BYTES) return null;
     try {
       const parsed = JSON.parse(value);
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { url?: unknown } : null;
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { url?: unknown;attribution?:unknown;source?:unknown } : null;
     } catch { return null; }
   }).catch(() => null);
 }
@@ -905,8 +906,10 @@ export const onRequestPost = async ({ request, env, waitUntil }: { request: Requ
   const body = await parseBody(request);
   if (!body || body.url === undefined) return Response.json(result("red", "Unesite ispravnu adresu web stranice."), { status: 400 });
   const checked = await runDigitalPriceListCheck(body.url, env);
+  let checkerRunId:string|null=null;
+  try {checkerRunId=await recordCheckerRun(env.DB,normalizeDigitalPriceListUrl(body.url).href,checked,body.attribution,body.source)}catch{/* Invalid addresses are not checker runs. */}
   waitUntil?.(reportCheckToNepar(body.url, checked.status));
-  return Response.json({ ...checked, report: technicalReport(checked) }, { headers: { 'cache-control': 'no-store' } });
+  return Response.json({ ...checked,checkerRunId, report: technicalReport(checked) }, { headers: { 'cache-control': 'no-store' } });
 };
 
 const CHECKER_LIMIT_PER_HOUR = 30;

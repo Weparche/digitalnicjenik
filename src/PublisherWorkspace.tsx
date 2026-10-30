@@ -1,5 +1,5 @@
 import { useCallback,useEffect,useRef,useState,type ReactNode } from 'react'
-import { IconArrowRight,IconArrowUpRight,IconBook,IconCheck,IconClock,IconCreditCard,IconFileText,IconLink,IconRefresh,IconShieldCheck } from '@tabler/icons-react'
+import { IconArrowRight,IconArrowUpRight,IconBook,IconCheck,IconClock,IconCreditCard,IconFileSearch,IconFileText,IconLink,IconRefresh,IconShieldCheck } from '@tabler/icons-react'
 import { WorkspaceShell } from './WorkspaceShell'
 import { usePublisherSession,PublisherLogin } from './PublisherAuth'
 import { fetchLicence,LicenceCard } from './PaymentOrder'
@@ -11,14 +11,15 @@ import { OwnedArchive,InstallationChoice } from './PublicationOverview'
 import { PublicationSettings } from './PublicationSettings'
 import { MonitorPanel } from './MonitorPanel'
 import { FirstPublicationNotice,TrialOffer,WorkspaceInstructions,WorkspacePackages } from './WorkspaceResources'
+import { WebsiteChecker } from './WebsiteChecker'
 
 export type WorkspaceEditorProps={tenantSlug:string;tenantId:string;tenantName:string;publishBlocked:boolean;canEditItems:boolean;entitlementStatus?:string;trialEndsAt?:string|null}
-const navigation=[{id:'cjenik',label:'Moj cjenik',icon:IconFileText},{id:'upute',label:'Upute',icon:IconBook},{id:'objava',label:'Objava i ugradnja',icon:IconLink},{id:'pretplata',label:'Paketi i cijene',icon:IconCreditCard}]
-const titles:Record<string,string>={cjenik:'Moj cjenik',upute:'Upute',objava:'Objava i ugradnja',pretplata:'Paketi i cijene',nadzor:'Nadzor cjenika'}
+const navigation=[{id:'provjera',label:'Provjera weba',icon:IconFileSearch},{id:'cjenik',label:'Moj cjenik',icon:IconFileText},{id:'upute',label:'Upute',icon:IconBook},{id:'objava',label:'Objava i ugradnja',icon:IconLink},{id:'pretplata',label:'Paketi i cijene',icon:IconCreditCard}]
+const titles:Record<string,string>={provjera:'Provjera weba',cjenik:'Moj cjenik',upute:'Upute',objava:'Objava i ugradnja',pretplata:'Paketi i cijene',nadzor:'Nadzor cjenika'}
 export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor:(props:WorkspaceEditorProps)=>ReactNode;renderOnboarding:(email?:string)=>ReactNode}){
   const {session,error:authError,logout}=usePublisherSession()
   const [params]=useState(()=>new URLSearchParams(window.location.search))
-  const [tab,setTab]=useState(()=>params.has('order')||params.has('renew')?'pretplata':titles[params.get('tab')??'']?params.get('tab')!:'cjenik')
+  const [tab,setTab]=useState(()=>params.has('order')||params.has('renew')?'pretplata':titles[params.get('tab')??'']?params.get('tab')!:params.has('created')||params.has('welcome')||params.get('new')==='1'||params.get('upload')==='1'?'cjenik':'provjera')
   const [licence,setLicence]=useState<Licence|null>(null)
   const [error,setError]=useState('')
   const [loaded,setLoaded]=useState(false)
@@ -45,8 +46,10 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
   const newWorkspace=params.get('new')==='1'||params.get('upload')==='1'
   if(session===undefined)return <WorkspaceShell title="Učitavamo radni prostor" items={navigation} active="cjenik" onNavigate={()=>{}}><div className="workspace-skeleton" role="status" aria-label="Učitavanje"><span/><span/><span/></div></WorkspaceShell>
   if(!session&&!newWorkspace)return <PublisherLogin initialError={params.get('authError')??authError}/>
-  if(!tenant)return <WorkspaceShell title={tab==='upute'||tab==='pretplata'?titles[tab]:'Pripremite svoj prvi cjenik'} subtitle={tab==='cjenik'?'Učitajte datoteku, provjerite podatke i objavite svoj javni link.':undefined} items={navigation.filter(item=>item.id!=='objava')} active={tab==='upute'||tab==='pretplata'?tab:'cjenik'} onNavigate={navigate} email={session?.user.email} isAdmin={session?.isAdmin} onLogout={session?()=>void logout():undefined}>
-    <div hidden={tab==='upute'||tab==='pretplata'}>
+  const checker=<div hidden={tab!=='provjera'}><WebsiteChecker initialUrl={params.get('url')??''} autoRun={params.get('check')==='1'} fromLanding={params.get('from')==='landing'} onUpload={()=>navigate('cjenik')}/></div>
+  if(!tenant)return <WorkspaceShell title={tab==='upute'||tab==='pretplata'||tab==='provjera'?titles[tab]:'Pripremite svoj prvi cjenik'} subtitle={tab==='cjenik'?'Učitajte datoteku, provjerite podatke i objavite svoj javni link.':undefined} items={navigation.filter(item=>item.id!=='objava')} active={tab==='upute'||tab==='pretplata'||tab==='provjera'?tab:'cjenik'} onNavigate={navigate} email={session?.user.email} isAdmin={session?.isAdmin} onLogout={session?()=>void logout():undefined}>
+    {checker}
+    <div hidden={tab!=='cjenik'}>
     {session?.isAdmin&&<div className="workspace-notice"><IconShieldCheck size={21}/><div><strong>Prijavljeni ste kao administrator.</strong><p>Za korisnike i uplate otvorite administraciju. Ovdje možete pripremiti vlastiti cjenik.</p></div><a className="workspace-button" href="/admin">Otvori administraciju<IconArrowUpRight size={17}/></a></div>}
     <TrialOffer onHelp={()=>navigate('upute')}/>
     <div className="workspace-setup"><div className="workspace-steps" aria-label="Koraci objave"><span aria-current="step">Učitajte cjenik</span><IconArrowRight size={16}/><span>Provjerite podatke</span><IconArrowRight size={16}/><span>Objavite link</span></div>{renderOnboarding(session?.user.email)}</div>
@@ -64,6 +67,7 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
   const status=state==='none'?'Objava još nije aktivirana':state==='grace'?'Obnova čeka uplatu':state==='suspended'?'Pristup je suspendiran':state==='expired'?'Javni link nije aktivan':state==='free'||state==='awaiting_payment'?'Besplatna objava 24 h':'Javni link je aktivan'
   return <WorkspaceShell title={titles[tab]??titles.cjenik} subtitle={tenant.name} email={session?.user.email} isAdmin={session?.isAdmin} items={items} active={tab} onNavigate={navigate} onLogout={()=>void logout()} tools={<><span className="workspace-plan">{plan.name}</span>{session&&session.tenants.length>1&&<select aria-label="Odaberi cjenik" value={tenant.id} onChange={event=>{setTenantId(event.target.value);setLicence(null);const url=new URL(window.location.href);const next=session?.tenants.find(t=>t.id===event.target.value);if(next)url.searchParams.set('tenant',next.slug);url.searchParams.delete('order');window.history.replaceState({},'',url.pathname+url.search)}}>{session.tenants.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>}<a className="workspace-button" href={publicUrl} target="_blank" rel="noreferrer">Otvori javni cjenik<IconArrowUpRight size={17}/></a></>}>
     {(error||authError)&&<div className="workspace-notice workspace-notice-error" role="alert"><p>{error||authError}</p><button type="button" onClick={()=>void reload()}><IconRefresh size={17}/>Pokušaj ponovno</button></div>}
+    {checker}
     {!loaded?<div className="workspace-skeleton" role="status" aria-label="Učitavanje cjenika"><span/><span/><span/></div>:<>
       {tab==='cjenik'&&firstPublication&&licence?.entitlement?.periodEnd&&<FirstPublicationNotice publicUrl={publicUrl} expiresAt={licence.entitlement.periodEnd}/>}
       {tab==='cjenik'&&paymentReported&&<section className="workspace-notice" aria-label="Status prijavljene uplate"><IconClock size={23}/><div><h2>{licence?.order?.kind==='installation'?'Uplata za ugradnju je prijavljena — čeka potvrdu':'Uplata je prijavljena — čeka potvrdu'}</h2><p>Prijava za narudžbu {licence?.order?.reference} je spremljena. Ne trebate ponovno uplatiti. {licence?.order?.kind==='installation'?'Ugradnju dogovaramo nakon provjere uplate.':'Aktivacija ili obnova slijedi nakon provjere bankovne uplate.'}</p></div><button className="workspace-button" type="button" onClick={()=>navigate('pretplata')}>Pogledaj status uplate<IconArrowRight size={17}/></button></section>}

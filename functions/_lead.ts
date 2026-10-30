@@ -6,6 +6,7 @@ import { implementationIntentLabel, selfServiceIntentLabel } from './_pricing'
 import { PLANS, formatEur } from '../shared/pricing'
 import { sanitizeAttribution } from '../shared/acquisition'
 import { recordAttribution } from './_acquisition'
+import { checkerHistoryUrl } from './_checker-history'
 
 export const MAX_ATTACHMENT_BYTES = 4_000_000
 export const MAX_REQUEST_BYTES = 4_600_000
@@ -139,6 +140,7 @@ function normalizeContext(raw: string) {
   try {
     const value = JSON.parse(raw) as Record<string, unknown>
     return {
+      checkerRunId:typeof value.checkerRunId==='string'&&/^[a-f0-9-]{36}$/i.test(value.checkerRunId)?value.checkerRunId:undefined,
       website: String(value.website ?? '').slice(0, 500),
       checkerStatus: String(value.checkerStatus ?? '').slice(0, 40),
       selectedPlan: PLANS.find((p) => p.id === value.selectedPlan)?.id,
@@ -252,6 +254,7 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   const kind = context?.service === 'installation' ? 'installation' : selectedPlan?.id === 'web' ? 'web_publisher' : selectedPlan?.id ?? intent
   await env.DB.batch([
     env.DB.prepare("INSERT OR IGNORE INTO lead_inquiries(id,kind,name,email,website,message,context_json,selected_plan,template_id,attachment_key,attachment_name,attachment_type,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(inquiryId,kind,name,email,website,message,JSON.stringify({phone,platform,materials,context}),selectedPlan?.id??null,context?.templateId??null,attachmentKey,attachment?.filename??null,attachment?.type??null,stamp,stamp),
+    ...(context?.checkerRunId&&checkerHistoryUrl(website)?[env.DB.prepare('UPDATE checker_runs SET lead_id=? WHERE id=? AND url=? AND lead_id IS NULL').bind(inquiryId,context.checkerRunId,checkerHistoryUrl(website))]:[]),
     lifecycleStatement(env.DB,{id:`lead:${inquiryId}:received`,type:'inquiry_received',entityId:inquiryId,audience:'email',email}),
     ...(['web_publisher','installation','implementation'].includes(kind)?[lifecycleStatement(env.DB,{id:`lead:${inquiryId}:ops`,type:'inquiry_ops',entityId:inquiryId,audience:'ops',payload:{message:text}})]:[]),
   ])

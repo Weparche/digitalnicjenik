@@ -55,6 +55,7 @@ export type WebsiteCheckDetails = {
   contentReasons?: string[]
 }
 export type WebsiteCheckResult = {
+  checkerRunId?:string|null
   status: 'green' | 'yellow' | 'red' | 'unavailable'
   message: string
   details?: WebsiteCheckDetails

@@ -11,6 +11,7 @@ Isporuka koda: 30. listopada 2026. Produkcijski prolaz sa stvarnim e-mailovima p
 - Nova priprema jasno ističe besplatnu objavu na 24 h i Web Link od 19,90 € za godinu dana, bez automatske naplate. Plaćeni korisnik ne dobiva poruku o besplatnom početku.
 - Upute vode na službenu HOK stranicu s Excel predlošcima proizvoda i usluga. Popunjena tablica i CSV preuzimanja zasebno su označeni kao NEPAR primjeri; ne predstavljaju se kao službeni HOK predložak.
 - Hero **Učitaj cjenik** otvara `/app?new=1`. Jedan odabir datoteke prihvaća CSV, XML i Excel; Excel zadržava postojeće mapiranje stupaca.
+- **Provjeri besplatno** s landinga odmah otvara prvi dashboard tab **Provjera weba** i prenosi adresu. Checker je dostupan bez registracije. Admin povijest i uvoz prethodnih zapisa opisani su u [CHECKER_HISTORY.md](CHECKER_HISTORY.md).
 - Poruka „Nema aktivnog tenanta” zamijenjena je funkcionalnom pripremom prve objave. Administrator bez vlastitog cjenika vidi jasan ulaz u administraciju.
 - Za novog posjetitelja potvrda e-maila ostaje dio prve objave. Već verificiran korisnik objavljuje izravno, bez drugog potvrdnog e-maila. Serverski se provjerava identitet, verificirana adresa, origin i ispravnost nacrta.
 - Prijava i prijavni e-mail koriste naziv NEPAR za sve pakete. Povratak iz prijave čuva kontekst narudžbe.
@@ -49,6 +50,6 @@ Prikazi su u [artifacts/dashboard](artifacts/dashboard/README.md): [korisnik](ar
 
 ## Puštanje
 
-Ova dorada ne dodaje migraciju, binding ili novu varijablu. Potrebni su postojeća launch migracija `0013_launch_operations`, D1/R2, magic-link konfiguracija i `ADMIN_EMAILS`. Za objavu treba isporučiti ažurirane Pages izvore i build; monitor Worker nije mijenjan u ovoj doradi. Produkcijska provjera pristupa i e-mail transporta ostaje dio deploy smoke testa.
+Osnovna UX dorada nije dodala binding ili novu varijablu. Dopuna checker povijesti dodaje migraciju `0014_checker_history.sql`, koja je primijenjena na produkcijski D1. Potrebni su postojeći D1/R2, magic-link konfiguracija i `ADMIN_EMAILS`. Za objavu treba isporučiti ažurirane Pages izvore i build; monitor Worker nije mijenjan. Produkcijska provjera e-mail transporta ostaje zaseban smoke test.
 
-Prethodno dogovoreni P1 ostaje izvan ove UX dorade: potpuna checker povijest, napredna audit administracija, šest statičkih tema i bogatiji tijek obrade upita.
+Prethodno dogovoreni P1 ostaje: 90-dnevna checker agregacija/čišćenje, napredna audit administracija, šest statičkih tema i bogatiji tijek obrade upita.

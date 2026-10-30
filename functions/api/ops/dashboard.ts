@@ -3,6 +3,7 @@ import { requireAdmin,opsError,OPS_HEADERS } from '../../_admin-auth'
 import { entitlementAccess } from '../../../shared/entitlements'
 import { mapEntitlement,type EntitlementRow } from '../../../shared/lifecycle'
 import { AccessDeniedError } from '../../_write-auth'
+import { checkerRunCounts } from '../../_checker-history'
 
 export const onRequestGet=async({request,env}:{request:Request;env:AuthEnv})=>{
   try {
@@ -44,6 +45,8 @@ export const onRequestGet=async({request,env}:{request:Request;env:AuthEnv})=>{
     summary.pending=paymentCounts?.pending??0;summary.reported=paymentCounts?.reported??0
     const problems=await db.prepare("SELECT COUNT(*) AS n FROM monitor_state WHERE last_overall IN ('warn','fail')").first<{n:number}>()
     summary.monitorProblems=problems?.n??0
+    const checker=await checkerRunCounts(db)
+    summary.checksToday=checker?.today??0;summary.checks7days=checker?.last7days??0;summary.checksTotal=checker?.total??0
     const requests=await db.prepare(`SELECT id,'tenant' AS source,tenant_id,intent AS kind,requester_email AS email,message,service,template_id,workflow_status AS state,created_at FROM upgrade_requests ORDER BY created_at DESC LIMIT 50`).all()
     const leads=await db.prepare('SELECT *,\'lead\' AS source,status AS state FROM lead_inquiries ORDER BY created_at DESC LIMIT 50').all()
     let detail:Record<string,unknown>|null=null
