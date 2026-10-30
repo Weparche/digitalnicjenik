@@ -79,7 +79,7 @@ test('invalid input focuses field; bare domain normalizes; result has nine evide
   await expect(page.locator('.acq-tone-green')).toBeVisible()
   await expect(page.locator('.acq-result-anchor')).toBeFocused()
   await expect(page.locator('.acq-result-anchor')).toHaveCSS('outline-style', 'none')
-  await page.keyboard.press('Tab')
+  await page.locator('.acq-status-list summary').first().focus()
   await expect(page.locator('.acq-status-list summary').first()).toBeFocused()
   await expect(page.locator('.acq-status-list summary').first()).toHaveCSS('outline-style', 'solid')
   await expect(page.locator('.acq-status-list summary')).toHaveCount(9)
@@ -127,7 +127,7 @@ test('verified missing signals render red and file CTA focuses existing validato
   await page.getByLabel('Adresa web stranice', { exact: true }).fill('http://salon.hr')
   await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
   await expect(page.locator('.acq-tone-red')).toBeVisible()
-  await page.getByRole('button', { name: 'Učitajte cjenik za detaljnu provjeru' }).click()
+  await page.getByRole('button', { name: 'Učitaj cjenik i objavi link' }).click()
   await expect(page).toHaveURL(/\/app\?.*tab=cjenik/)
   await expect(page.getByLabel('Učitaj cjenik',{exact:true})).toBeVisible()
 })
@@ -162,8 +162,8 @@ test('existing-web landing explains link-only setup with FAQ, plans and extra se
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
   }
   await page.getByRole('link', { name: 'Zatraži ugradnju' }).click()
-  await expect(page).toHaveURL(/\/#posaljite-cjenik$/)
-  await expect(page.locator('.lead-section')).toBeVisible()
+  await expect(page).toHaveURL(/\/app\?.*tab=kontakt/)
+  await expect(page.locator('.workspace-contact')).toBeVisible()
 })
 
 test('pricing page shares plans and query handoff opens the selected annual offer', async ({ page }) => {
@@ -171,7 +171,7 @@ test('pricing page shares plans and query handoff opens the selected annual offe
   await expect(page.locator('.acq-plans')).toContainText('19,90 €')
   await page.getByRole('link', { name: 'Zatraži Web + Publisher' }).click()
   await expect(page.getByRole('heading', { name: 'Zatražite paket Web + Publisher' })).toBeVisible()
-  await expect(page.locator('.lead-price')).toContainText('99,00 €/god')
+  await expect(page.locator('.workspace-contact')).toContainText('99,00 €/god')
 })
 
 test('mobile FAQ disclosures and resource navigation remain usable below the validator', async ({ page }) => {

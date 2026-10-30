@@ -19,6 +19,8 @@ Snimljeno lokalno 30. 10. 2026. Svi računi, iznosi i cjenici na ovim prikazima 
 - [Provjera weba — mobitel](user-checker-mobile.png)
 - [Admin povijest provjera — desktop](admin-checks-desktop.png)
 - [Admin povijest provjera — mobitel](admin-checks-mobile.png)
+- [Kontakt s povezanom analizom — desktop](contact-desktop.png)
+- [Kontakt s povezanom analizom — mobitel](contact-mobile.png)
 - [Hero — desktop](landing-desktop.png)
 - [Hero — mobitel](landing-mobile.png)
 

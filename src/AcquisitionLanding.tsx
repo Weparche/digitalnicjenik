@@ -5,7 +5,7 @@ import { normalizeWebsiteInput } from '../shared/website-check'
 import { PLANS, formatEur, type PlanId } from './publisherPricing'
 import { PlatformPills } from './ExistingWebSections'
 import { installationPriceLabel } from '../shared/pricing'
-import { LeadForm, type LeadContext, type LeadIntent } from './LeadForm'
+import type { LeadIntent } from './LeadForm'
 import '@fontsource-variable/inter/wght.css'
 import './acquisition.css'
 import { landingFaq } from './productFaq'
@@ -28,34 +28,26 @@ export function AcquisitionLanding() {
   const [url, setUrl] = useState('')
   const [error, setError] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
-  const [context, setContext] = useState<LeadContext>(()=>{const params=new URLSearchParams(typeof window==='undefined'?'':window.location.search);return {checkerRunId:params.get('checkerRun')??undefined,website:params.get('website')??undefined}})
-  const [intent, setIntent] = useState<LeadIntent>('consultation')
-  const [plan, setPlan] = useState<PlanId | undefined>()
-  const [leadOpen, setLeadOpen] = useState(false)
   useEffect(() => {
     if (!menuOpen) return
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMenuOpen(false); document.querySelector<HTMLButtonElement>('.acq-menu')?.focus() } }
     document.addEventListener('keydown', close)
     return () => document.removeEventListener('keydown', close)
   }, [menuOpen])
-  function focus(target: HTMLElement | null) {
-    target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
-    target?.focus({ preventScroll: true })
-  }
   function onUpload() { window.location.assign('/app?new=1') }
-  function onLead(next: LeadIntent, selected?: PlanId) {
+  function onLead(next:LeadIntent,selected?:PlanId){
     if(selected==='link'||selected==='publisher'){window.location.assign('/app?new=1&plan='+selected);return}
-    const selectedTemplate = new URLSearchParams(window.location.search).get('template')
-    if (selectedTemplate) setContext(current=>({...current,templateId:selectedTemplate}))
-    setIntent(next); setPlan(selected ?? (next === 'implementation' ? 'web' : next === 'plugin' ? 'publisher' : undefined)); setLeadOpen(true)
-    window.setTimeout(() => focus(document.getElementById('posaljite-cjenik')), 0)
+    const current=new URLSearchParams(window.location.search),params=new URLSearchParams({new:'1',tab:'kontakt'})
+    if(selected)params.set('plan',selected);else if(next==='implementation')params.set('plan','web')
+    for(const key of ['template','checkerRun','website']){const value=current.get(key);if(value)params.set(key,value)}
+    window.location.assign('/app?'+params)
   }
-  useEffect(() => {
-    const selected = new URLSearchParams(window.location.search).get('paket')
-    if (selected && PLANS.some((p) => p.id === selected)) onLead(selected === 'web' ? 'implementation' : 'plugin', selected as PlanId)
-    if (window.location.hash === '#posaljite-cjenik') { setLeadOpen(true); window.setTimeout(() => focus(document.getElementById('posaljite-cjenik')), 50) }
-    if (window.location.hash === '#csv-validator') window.setTimeout(onUpload, 50)
-  }, [])
+  useEffect(()=>{
+    const selected=new URLSearchParams(window.location.search).get('paket')
+    if(selected&&PLANS.some(plan=>plan.id===selected))onLead(selected==='web'?'implementation':'plugin',selected as PlanId)
+    else if(window.location.hash==='#posaljite-cjenik')onLead('consultation')
+    if(window.location.hash==='#csv-validator')window.setTimeout(onUpload,50)
+  },[])
   function check(event?: React.FormEvent) {
     event?.preventDefault()
     let normalized: string
@@ -63,7 +55,6 @@ export function AcquisitionLanding() {
     const params=new URLSearchParams({new:'1',tab:'provjera',url:normalized,check:'1',from:'landing'})
     window.location.assign('/app?'+params)
   }
-  const leadContext: LeadContext = { ...context,selectedPlan:plan }
   return <div className="premium-entry acquisition">
     <a className="acq-skip" href="#checker">Preskoči na provjeru</a>
     <div className="acq-header-bar"><header className="acq-header"><Wordmark/><nav className={menuOpen ? 'acq-nav is-open' : 'acq-nav'} aria-label="Glavna navigacija"><a className="is-active" href="#checker" onClick={() => setMenuOpen(false)}>Provjera weba</a><a href="/app?new=1">Moj cjenik</a><a href="/cijene/">Cijene</a><a href="/vodici/">Vodiči</a><a href="/app?login=1">Prijava</a></nav><div className="acq-deadline"><IconCalendar size={24}/><span>Rok primjene<strong>17.11.2026.</strong></span></div><button className="acq-menu" type="button" aria-label={menuOpen ? 'Zatvori navigaciju' : 'Otvori navigaciju'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <IconX/> : <IconMenu2/>}</button></header></div>
@@ -89,7 +80,6 @@ export function AcquisitionLanding() {
       <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title"><h2 id="solutions-title">Trebate riješiti digitalni cjenik?</h2><p>Web Link je za web koji već imate. Publisher dodaje uređivanje stavki i svakodnevni nadzor. Napredna integracija je zasebna individualna ponuda.</p><PlanCards onSelect={(p) => onLead(p === 'web' ? 'implementation' : 'plugin', p)} onExtra={() => onLead('consultation')}/><p className="acq-domain-note">Vaša postojeća web stranica i domena ostaju vaše. NEPAR objavljuje cjenik i priprema link koji možete ugraditi.</p><p><a href="/objava-digitalnog-cjenika/">Kako izgleda objava i ugradnja →</a></p></section>
       <section className="acq-help acq-reference" aria-labelledby="reference-title"><div><span className="acq-preview-label">Stvarna NEPAR implementacija</span><h2 id="reference-title">Digitalni cjenik za Auto Gubić</h2><p>Javni cjenik na webu autoservisa, s aktualnom i sidrenom cijenom, CSV/XML poveznicama i podacima o objavi.</p></div><a className="acq-secondary" href="/reference/auto-gubic/">Pogledajte primjer<IconArrowRight size={19}/></a></section>
       <InstallationHelp onHelp={() => onLead('consultation')}/>
-      {leadOpen && <LeadForm intent={intent} context={leadContext} onIntentChange={(value) => { setIntent(value); setPlan(undefined) }} onPlanChange={(p) => { setPlan(p); setIntent(p === 'web' ? 'implementation' : p ? 'plugin' : 'consultation') }}/ >}
       <section className="acq-compact-faq" aria-labelledby="landing-faq-title"><h2 id="landing-faq-title">Česta pitanja</h2>{landingFaq.map(entry=><details key={entry.question}><summary>{entry.question}<IconChevronDown size={18}/></summary><p>{entry.answer}</p></details>)}<a href="/faq/">Sva pitanja i odgovori<IconArrowRight size={17}/></a></section>
       <footer className="acq-footer"><Wordmark/><nav aria-label="Dodatne informacije"><a href="/digitalni-cjenik-za-wordpress-webshop/">Za postojeći web</a><a href="/objava-digitalnog-cjenika/">Objava i ugradnja</a><a href="/faq/">Česta pitanja</a><a href="/vodici/">Vodiči</a><a href="/usporedba/">Usporedba mogućnosti</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/app?login=1">Prijava u dashboard</a><a href="/privatnost.html">Privatnost</a><a href="/uvjeti.html">Uvjeti usluge</a></nav><details className="acq-resources"><summary>Vodiči i aktualne informacije</summary><nav aria-label="Vodiči i novosti"><a href="/vodici/sidrena-cijena/">Sidrena cijena</a><a href="/specifikacija-csv-xml/">CSV i XML formati</a><a href="/vodici/automatizacija-digitalnog-cjenika/">Automatizacija objave</a>{getLatestPosts(3).map(post=><a key={post.slug} href={newsArticlePath(post.slug)}>{post.widgetHeadline??post.title}</a>)}<a href="/vijesti/">Sve vijesti</a></nav></details><p>Tehnička provjera i objava digitalnog cjenika. Bez jamstva pravne usklađenosti.</p></footer>
     </div></main>

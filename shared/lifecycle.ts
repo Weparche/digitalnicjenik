@@ -184,8 +184,10 @@ export async function lifecycleMessage(env: LifecycleEnv, event: EventRow) {
   if (event.event_type.startsWith('monitor_') || event.event_type === 'daily_publish_failed') lines.push(payload.message ?? 'Provjerite stanje objave u dashboardu.')
   if (event.audience === 'ops' && !order) { url = `${origin}/admin?tab=cjenici&tenant=${encodeURIComponent(tenant?.slug ?? '')}`; cta = 'Otvori admin' }
   if (event.event_type.startsWith('inquiry_')) lines.push(payload.message ?? 'Javit ćemo vam se nakon pregleda upita.')
+  if(event.audience==='ops'&&event.event_type.startsWith('inquiry_')){url=`${origin}/admin?tab=upiti`;cta='Otvori upite u adminu'}
+  if(event.event_type==='inquiry_checker_attention'){subject=`Provjera cjenika: ${payload.hostname} — ${payload.score}`;url=`${origin}/admin?tab=provjere&q=${encodeURIComponent(payload.hostname)}`;cta='Otvori provjeru u adminu'}
   const text = [subject, '', ...lines, '', `${cta}: ${url}`, ...(event.event_type === 'payment_confirmed' && order?.kind !== 'installation' && tenant ? [`Otvori cjenik: ${publicUrl}`] : [])].join('\n')
-  return { subject, text, html: `<html lang="hr"><body style="font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#17212b"><h1 style="font-size:23px">${escape(subject)}</h1>${lines.map(line => `<p>${escape(line)}</p>`).join('')}<p><a href="${escape(url)}">${escape(cta)}</a></p>${event.event_type === 'payment_confirmed' && order?.kind !== 'installation' && tenant ? `<p><a href="${escape(publicUrl)}">Otvori cjenik</a></p>` : ''}<p>Odgovorite na ovu poruku za pomoć: nepar@nepar.hr.</p></body></html>` }
+  return { subject, text, html: `<html lang="hr"><body style="font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#17212b"><h1 style="font-size:23px">${escape(subject)}</h1>${lines.map(line => `<p style="white-space:pre-wrap">${escape(line)}</p>`).join('')}<p><a href="${escape(url)}">${escape(cta)}</a></p>${event.event_type === 'payment_confirmed' && order?.kind !== 'installation' && tenant ? `<p><a href="${escape(publicUrl)}">Otvori cjenik</a></p>` : ''}<p>Odgovorite na ovu poruku za pomoć: nepar@nepar.hr.</p></body></html>` }
 }
 
 export async function dispatchLifecycle(env: LifecycleEnv, now = new Date(), eventId?: string) {

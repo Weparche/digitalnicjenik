@@ -1,0 +1,42 @@
+import { expect,test,type Page } from '@playwright/test'
+const complete={reachable:true,homepageReadable:true,https:true,pricePageFound:true,csvFound:true,xmlFound:true,csvUrl:'https://salon.hr/cjenik.csv',xmlUrl:'https://salon.hr/cjenik.xml',publicLinkUrl:'https://salon.hr/cjenik.csv',archiveFound:true,structureStatus:'pass',contentStatus:'pass',publicationFindings:[]}
+async function stub(page:Page,details:Record<string,unknown>){
+  await page.route('**/api/auth/me',route=>route.fulfill({status:401,json:{authenticated:false}}))
+  await page.route('**/api/public-config',route=>route.fulfill({json:{turnstileSiteKey:'test-key'}}))
+  await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**',route=>route.fulfill({contentType:'application/javascript',body:`window.turnstile={render:(el,options)=>{options.callback('valid-token');return 'widget'},remove:()=>{},reset:()=>{}};`}))
+  await page.route('**/api/digitalni-cjenik/check',route=>route.fulfill({json:{checkerRunId:'11111111-1111-4111-8111-111111111111',status:'yellow',message:'Rezultat provjere.',details}}))
+}
+for(const width of [390,1440])test(`missing price list leads to upload and contact stays in workspace at ${width}px`,async({page})=>{
+  await page.setViewportSize({width,height:1000});await stub(page,{reachable:true,homepageReadable:true,https:true})
+  await page.goto('/app?new=1&tab=provjera&url=https%3A%2F%2Fsalon.hr%2F&check=1')
+  const next=page.getByRole('region',{name:'Rezultat provjere',exact:true}).locator('.workspace-check-next')
+  await expect(next.getByRole('button').first()).toHaveText('Učitaj cjenik i objavi link')
+  await page.evaluate(()=>{(document.activeElement as HTMLElement)?.blur();window.scrollTo({top:0,behavior:'instant'})});await page.screenshot({path:`.tmp-review/dashboard/checker-upload-next-${width}.png`,fullPage:true})
+  await next.getByRole('button',{name:'Učitaj cjenik i objavi link'}).click()
+  await expect(page.getByLabel('Učitaj cjenik',{exact:true})).toBeVisible()
+  await page.getByRole('navigation',{name:'Radni prostor'}).getByRole('button',{name:'Provjera weba',exact:true}).click()
+  await next.getByRole('button',{name:'Trebam pomoć s ovim rezultatom'}).click()
+  await expect(page.getByRole('heading',{name:'Kontakt',exact:true})).toBeVisible()
+  await expect(page.getByLabel('Web stranica',{exact:true})).toHaveValue('https://salon.hr/')
+  await page.getByLabel('Ime ili naziv tvrtke').fill('Salon Test');await page.getByLabel('E-mail',{exact:true}).fill('owner@salon.hr');await page.getByLabel('Poruka',{exact:true}).fill('Trebam pomoć.')
+  const nav=page.getByRole('navigation',{name:'Radni prostor'}),labels=await nav.getByRole('button').allTextContents();expect(labels.indexOf('Kontakt')).toBe(labels.indexOf('Paketi i cijene')+1)
+  await nav.getByRole('button',{name:'Paketi i cijene',exact:true}).click();await nav.getByRole('button',{name:'Kontakt',exact:true}).click();await expect(page.getByLabel('Poruka',{exact:true})).toHaveValue('Trebam pomoć.')
+  await page.getByLabel(/Dopuštam obradu podataka/).check()
+  let form: string|undefined
+  await page.route('**/api/leads/digitalni-cjenik',route=>{form=route.request().postData();return route.fulfill({json:{ok:true}})})
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width)
+  await page.evaluate(()=>{(document.activeElement as HTMLElement)?.blur();window.scrollTo({top:0,behavior:'instant'})});await page.screenshot({path:`.tmp-review/dashboard/contact-${width}.png`,fullPage:true})
+  await page.getByRole('button',{name:'Pošalji upit s analizom'}).click()
+  await expect(page.getByRole('heading',{name:'Upit je poslan',exact:true})).toBeVisible();expect(form).toContain('owner@salon.hr');expect(form).toContain('11111111-1111-4111-8111-111111111111');expect(form).toContain('workspaceContact')
+  await expect(page).toHaveURL(/\/app\?.*tab=kontakt/)
+})
+test('an incomplete found price list puts help before the nine checks; 9/9 has no urgent help',async({page})=>{
+  await stub(page,{...complete,contentStatus:'warning'})
+  await page.goto('/app?new=1&tab=provjera&url=https%3A%2F%2Fsalon.hr%2F&check=1')
+  await expect(page.locator('.workspace-check-next').getByRole('button').first()).toHaveText('Trebam pomoć s ovim rezultatom')
+  expect((await page.locator('.workspace-check-next').boundingBox())!.y).toBeLessThan((await page.locator('.acq-status-list').boundingBox())!.y)
+  await page.route('**/api/digitalni-cjenik/check',route=>route.fulfill({json:{status:'green',message:'Sve prolazi.',details:complete}}))
+  await page.getByRole('button',{name:'Provjeri besplatno',exact:true}).click()
+  await expect(page.locator('.acq-result-summary')).toContainText('9/9')
+  await expect(page.getByRole('button',{name:'Trebam pomoć s ovim rezultatom'})).toHaveCount(0)
+})

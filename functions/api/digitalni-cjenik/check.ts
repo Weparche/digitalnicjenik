@@ -6,14 +6,18 @@ import { isServiceItem } from '../../../src/price-engine/profile';
 import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engine/types';
 import { ruleFor } from '../../../shared/compliance/legal-profile';
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckDetails } from '../../../shared/website-check';
-import { recordCheckerRun } from '../../_checker-history';
+import { checkerOpsEventId,recordCheckerRun } from '../../_checker-history';
+import { dispatchLifecycle } from '../../../shared/lifecycle';
+import type { EmailEnv } from '../../../shared/email';
 
 type Resolver = {
   resolve4: (hostname: string) => Promise<string[]>;
   resolve6: (hostname: string) => Promise<string[]>;
 };
 
-type CheckerEnv = {
+type CheckerEnv = EmailEnv & {
+  PUBLIC_APP_URL?:string;
+  LIFECYCLE_EMAILS_ENABLED?:string;
   DIGITAL_PRICE_LIST_DNS_RESOLVER?: Resolver;
   DB?: import('../../_repository').D1DatabaseLike;
   CHECKER_RATE_LIMIT_SECRET?: string;
@@ -907,7 +911,8 @@ export const onRequestPost = async ({ request, env, waitUntil }: { request: Requ
   if (!body || body.url === undefined) return Response.json(result("red", "Unesite ispravnu adresu web stranice."), { status: 400 });
   const checked = await runDigitalPriceListCheck(body.url, env);
   let checkerRunId:string|null=null;
-  try {checkerRunId=await recordCheckerRun(env.DB,normalizeDigitalPriceListUrl(body.url).href,checked,body.attribution,body.source)}catch{/* Invalid addresses are not checker runs. */}
+  const checkedAt=new Date();
+  try {const normalized=normalizeDigitalPriceListUrl(body.url).href;checkerRunId=await recordCheckerRun(env.DB,normalized,checked,body.attribution,body.source,checkedAt);if(checkerRunId&&env.DB&&technicalReport(checked).score<9)waitUntil?.(dispatchLifecycle({...env,DB:env.DB},checkedAt,checkerOpsEventId(normalized,checkedAt)))}catch{/* Invalid addresses are not checker runs. */}
   waitUntil?.(reportCheckToNepar(body.url, checked.status));
   return Response.json({ ...checked,checkerRunId, report: technicalReport(checked) }, { headers: { 'cache-control': 'no-store' } });
 };

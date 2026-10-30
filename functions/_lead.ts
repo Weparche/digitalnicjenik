@@ -6,7 +6,7 @@ import { implementationIntentLabel, selfServiceIntentLabel } from './_pricing'
 import { PLANS, formatEur } from '../shared/pricing'
 import { sanitizeAttribution } from '../shared/acquisition'
 import { recordAttribution } from './_acquisition'
-import { checkerHistoryUrl } from './_checker-history'
+import { checkerHistoryUrl,checkerMailSummary,type CheckerMailRun } from './_checker-history'
 
 export const MAX_ATTACHMENT_BYTES = 4_000_000
 export const MAX_REQUEST_BYTES = 4_600_000
@@ -141,6 +141,7 @@ function normalizeContext(raw: string) {
     const value = JSON.parse(raw) as Record<string, unknown>
     return {
       checkerRunId:typeof value.checkerRunId==='string'&&/^[a-f0-9-]{36}$/i.test(value.checkerRunId)?value.checkerRunId:undefined,
+      workspaceContact:value.workspaceContact===true,
       website: String(value.website ?? '').slice(0, 500),
       checkerStatus: String(value.checkerStatus ?? '').slice(0, 40),
       selectedPlan: PLANS.find((p) => p.id === value.selectedPlan)?.id,
@@ -226,11 +227,13 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
   }
   const touch = sanitizeAttribution(attribution)
   const selectedPlan = PLANS.find((p) => p.id === context?.selectedPlan)
+  const savedCheck=context?.checkerRunId&&checkerHistoryUrl(website)?await env.DB.prepare('SELECT url,hostname,score,unknown_count,checks_json,discovered_urls_json,checked_at FROM checker_runs WHERE id=? AND url=?').bind(context.checkerRunId,checkerHistoryUrl(website)).first<CheckerMailRun>():null
   if (selectedPlan) intentLabel = `${selectedPlan.name} — ${formatEur(selectedPlan.price, true)}`
   const rows = [
     ['Namjera', intentLabel],
     ['Odabrani paket', selectedPlan ? `${selectedPlan.name} · ${formatEur(selectedPlan.price, true)}` : 'Pomoć / konzultacija'],
-    ['Tehnički score', context?.checkerScore != null ? `${context.checkerScore}/9 (korisnički kontekst, nije neovisna potvrda)` : '—'],
+    ['Tehnički score', savedCheck?savedCheck.unknown_count===9?'Nepotvrđeno':`${savedCheck.score}/9 (spremljeni rezultat)`:context?.checkerScore != null ? `${context.checkerScore}/9 (korisnički kontekst, nije neovisna potvrda)` : '—'],
+    ...(savedCheck?[['Spremljena analiza',checkerMailSummary(savedCheck)]]:[]),
     ['Ime / tvrtka', name], ['E-mail', email], ['Telefon', phone || '—'], ['Web', website || '—'],
     ['Platforma', platform || '—'], ['Materijali', materials || '—'], ['Poruka', message || '—'],
     ['Checker', context?.checkerStatus || '—'], ['Pronađeni URL-ovi', context?.discoveredUrls.join('\n') || '—'],
@@ -256,7 +259,7 @@ export async function handleLeadRequest(request: Request, env: LeadEnv, fetcher:
     env.DB.prepare("INSERT OR IGNORE INTO lead_inquiries(id,kind,name,email,website,message,context_json,selected_plan,template_id,attachment_key,attachment_name,attachment_type,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(inquiryId,kind,name,email,website,message,JSON.stringify({phone,platform,materials,context}),selectedPlan?.id??null,context?.templateId??null,attachmentKey,attachment?.filename??null,attachment?.type??null,stamp,stamp),
     ...(context?.checkerRunId&&checkerHistoryUrl(website)?[env.DB.prepare('UPDATE checker_runs SET lead_id=? WHERE id=? AND url=? AND lead_id IS NULL').bind(inquiryId,context.checkerRunId,checkerHistoryUrl(website))]:[]),
     lifecycleStatement(env.DB,{id:`lead:${inquiryId}:received`,type:'inquiry_received',entityId:inquiryId,audience:'email',email}),
-    ...(['web_publisher','installation','implementation'].includes(kind)?[lifecycleStatement(env.DB,{id:`lead:${inquiryId}:ops`,type:'inquiry_ops',entityId:inquiryId,audience:'ops',payload:{message:text}})]:[]),
+    ...(['web_publisher','installation','implementation'].includes(kind)||context?.workspaceContact?[lifecycleStatement(env.DB,{id:`lead:${inquiryId}:ops`,type:'inquiry_ops',entityId:inquiryId,audience:'ops',payload:{message:text}})]:[]),
   ])
   await updateAttempt(env,attemptId,'stored')
   await recordAttribution(env.DB,'lead',inquiryId,attribution)
