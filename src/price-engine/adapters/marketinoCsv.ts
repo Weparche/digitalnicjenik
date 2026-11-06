@@ -26,6 +26,12 @@ const findColumn = (headers: string[], ...names: string[]) => {
   }
   return -1
 }
+/** Header such as "SIDRENA CIJENA NA 2.5.2025" (Konzum and other retail exports): the date is part of the name. */
+const datedAnchorColumn = (headers: string[]) => headers.map(cleanHeader).findIndex((header) => /^(sidrena|dodatna) cijena\b.*\d{1,2}\.\s*\d{1,2}\.\s*\d{4}/.test(header))
+const headerDate = (header: string | undefined) => {
+  const match = header && /(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/.exec(header)
+  return match ? `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}` : ''
+}
 const booleanValue = (value: string | undefined): boolean | null => {
   const normalized = value?.trim().toLocaleLowerCase('hr-HR')
   if (!normalized) return null
@@ -40,22 +46,23 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const rows = splitCsv(csv.replace(/^\uFEFF/, ''), delimiter)
   if (!rows.length) throw new Error('CSV je prazan. Izvezite cjenik s barem jednim artiklom.')
   const headers = rows[0]
-  const groupIndex = findColumn(headers, 'grupa*', 'grupa', 'kategorija', 'category', 'categories')
+  const groupIndex = findColumn(headers, 'grupa*', 'grupa', 'kategorija', 'kategorija proizvoda', 'category', 'categories')
   const nameIndex = findColumn(headers, 'naziv*', 'naziv', 'naziv proizvoda', 'naziv usluge', 'name', 'service name', 'product name', 'usluga')
   const typeIndex = findColumn(headers, 'vrsta*', 'vrsta', 'type')
   const idIndex = findColumn(headers, 'interna šifra', 'interna sifra', 'sku', 'šifra', 'šifra proizvoda', 'sifra', 'sifra proizvoda', 'id')
   const priceIndex = findColumn(headers, 'cijena*', 'cijena', 'maloprodajna cijena', 'mpc', 'cena', 'price', 'retail price', 'regular price')
-  const saleIndex = findColumn(headers, 'akcijska cijena', 'akcijska cijena*', 'akcija', 'sale price')
-  const anchorIndex = findColumn(headers, 'sidrena cijena', 'sidrena cijena*', 'dodatna cijena', 'anchor price', 'reference price', 'additional price', 'sidrena cijena 10.9.2026.', 'sidrena cijena 10. 9. 2026.', 'dodatna cijena 10.9.2026.')
+  const saleIndex = findColumn(headers, 'akcijska cijena', 'akcijska cijena*', 'akcija', 'mpc za vrijeme posebnog oblika prodaje', 'maloprodajna cijena za vrijeme posebnog oblika prodaje', 'sale price')
+  const namedAnchorIndex = findColumn(headers, 'sidrena cijena', 'sidrena cijena*', 'dodatna cijena', 'anchor price', 'reference price', 'additional price', 'sidrena cijena 10.9.2026.', 'sidrena cijena 10. 9. 2026.', 'dodatna cijena 10.9.2026.')
+  const anchorIndex = namedAnchorIndex >= 0 ? namedAnchorIndex : datedAnchorColumn(headers)
   const specialSaleAppliedIndex = findColumn(headers, 'poseban oblik prodaje', 'posebni oblik prodaje', 'special sale', 'special sale applied', 'poseban oblik prodaje (da/ne)', 'posebni oblik prodaje (da/ne)')
   const specialSaleNameIndex = findColumn(headers, 'naziv posebnog oblika prodaje', 'poseban oblik prodaje naziv', 'special sale name')
   const unitIndex = findColumn(headers, 'jedinica', 'jedinica mjere', 'unit')
   const unitPriceIndex = findColumn(headers, 'cijena za jedinicu mjere', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price')
-  const brandIndex = findColumn(headers, 'marka', 'brend', 'brand', 'brands')
+  const brandIndex = findColumn(headers, 'marka', 'marka proizvoda', 'brend', 'brand', 'brands')
   const barcodeIndex = findColumn(headers, 'barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn')
   const availabilityIndex = findColumn(headers, 'dostupnost', 'dostupno', 'availability', 'dostupno/nedostupno', 'in stock?')
   const referenceDateIndex = findColumn(headers, 'datum referentne cijene', 'datum sidrene cijene', 'referentni datum', 'anchor reference date', 'anchor date', 'reference date')
-  const lowestIndex = findColumn(headers, 'najniža cijena u 30 dana', 'najniza cijena u 30 dana', 'lowest 30 day price')
+  const lowestIndex = findColumn(headers, 'najniža cijena u 30 dana', 'najniza cijena u 30 dana', 'najniža cijena u posljednjih 30 dana', 'najniza cijena u posljednjih 30 dana', 'lowest 30 day price')
   const newIndex = findColumn(headers, 'nova stavka', 'nova usluga', 'new item', 'new service')
   const exemptionIndex = findColumn(headers, 'razlog izuzeća cijene po jedinici')
   if (nameIndex < 0 || priceIndex < 0) throw new Error('Nisu pronađeni obavezni stupci “Naziv*” i “Cijena*”. Provjerite da je ovo CSV izvoz cjenika.')
@@ -70,7 +77,9 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
         row: index + 2,
         field: !name ? 'name' : 'price',
         itemName: name || undefined,
-        message: !name ? 'nedostaje naziv.' : !row[priceIndex]?.trim() ? 'nedostaje maloprodajna cijena.' : 'cijena nije broj.',
+        message: !name ? 'nedostaje naziv.' : !row[priceIndex]?.trim()
+          ? (saleIndex >= 0 && normalizeNumber(row[saleIndex]) != null ? 'nedostaje maloprodajna cijena (popunjena je samo cijena za vrijeme posebnog oblika prodaje).' : 'nedostaje maloprodajna cijena.')
+          : 'cijena nije broj.',
       })
       return []
     }
@@ -81,7 +90,7 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
     const rawType = row[typeIndex]?.trim() || (['naziv usluge', 'service name'].includes(cleanHeader(headers[nameIndex])) ? 'Usluga' : '')
     // WooCommerce exports use the product kind (simple, variable, ...) as "Type"; those are all goods.
     const type = rawType === '2' ? 'Usluga' : /^(simple|variable|variation|grouped|external)$/i.test(rawType) ? 'Proizvod' : rawType || undefined
-    const dateRaw = referenceDateIndex >= 0 ? row[referenceDateIndex]?.trim() : headers.some(header => /sidrena cijena.*10\.\s*9\.\s*2026/i.test(cleanHeader(header))) ? '2026-09-10' : ''
+    const dateRaw = referenceDateIndex >= 0 ? row[referenceDateIndex]?.trim() : anchorIndex >= 0 ? headerDate(cleanHeader(headers[anchorIndex])) : ''
     const date = normalizeReferenceDate(dateRaw)
     if (dateRaw && !date) throw new Error(`CSV redak ${index + 2}: datum referentne cijene nije valjan.`)
     const lowest = lowestIndex >= 0 ? normalizeNumber(row[lowestIndex]) : null

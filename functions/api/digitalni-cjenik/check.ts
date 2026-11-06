@@ -387,13 +387,19 @@ export function pageLooksLikePriceList(response: Response, body: string): boolea
   if (text.length < 40) return false;
   if (/(stranica nije pronađena|page not found|\b404\b|nema rezultata)/i.test(text) && text.length < 400) return false;
 
+  // Currency and amount signals are counted in visible text only. On raw HTML, "eur" matches inside
+  // "sourceURL"/"neurologija" and decimal pairs match SVG paths, CSS and opening hours (08.00).
+  const visible = stripTags(body);
+  const currency = /€|\beur\b/gi;
+  const amount = /\b\d{1,6}[.,]\d{2}\s?(?:€|\beur\b)|€\s?\d{1,6}[.,]\d{2}\b/gi;
   let score = 0;
-  if (/<(table|tbody)[\s>]/i.test(body) && /(cijena|price|€|eur)/i.test(body) && /(naziv|name|usluga|artikl)/i.test(body)) score += 2;
+  if (/<(table|tbody)[\s>]/i.test(body) && /(cijena|price|€|\beur\b)/i.test(visible) && /(naziv|name|usluga|artikl)/i.test(visible)) score += 2;
   if (/itemtype=["'][^"']*(product|offer)/i.test(body) || /"@type"\s*:\s*"(product|offer)"/i.test(body)) score += 2;
   if (/<(h1|h2|h3)[^>]*>[^<]*(cjenik|cijene|price list)/i.test(body)) score += 1;
-  if ((body.match(/€|eur/gi) || []).length >= 3) score += 1;
-  if ((body.match(/\b\d+[.,]\d{2}\b/g) || []).length >= 3) score += 1;
-  if (/\.csv|\.xml|application\/(csv|xml)/i.test(body)) score += 1;
+  if ((visible.match(currency) || []).length >= 3) score += 1;
+  if ((visible.match(amount) || []).length >= 3) score += 1;
+  // Only a linked document counts; WordPress pages always reference sitemap/wlwmanifest/oEmbed XML.
+  if (/href=["'][^"']*\.(csv|xml)(?:[?#][^"']*)?["']/i.test(body.replace(/href=["'][^"']*(?:sitemap|wlwmanifest|oembed|feed|rss|xmlrpc)[^"']*["']/gi, ''))) score += 1;
   if (/(cjenik|cijene)/i.test(text) && score === 0) return false;
   return score >= 2;
 }
@@ -493,6 +499,13 @@ async function findDocument(
       const fetched = await safeDigitalPriceListFetch(candidate, env);
       if (fetched.response.status >= 500) {
         network.failed = true;
+        continue;
+      }
+      // A guessed /cjenik.xml often answers 200 with the site's HTML 404 page ("soft 404"). That is not a
+      // document and not an incomplete fetch, so it must not become a "fetched" analysis or a network failure.
+      if (fetched.response.ok && /text\/html/i.test(fetched.response.headers.get("content-type") || "")) {
+        await fetched.response.body?.cancel().catch(() => undefined);
+        network.checked = true;
         continue;
       }
       let body = "";

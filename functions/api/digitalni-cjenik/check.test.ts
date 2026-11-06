@@ -262,3 +262,37 @@ describe('digital price list checker hardening', () => {
     expect(checked.details.reachable).toBe(true)
   })
 })
+
+describe('price page and document false positives', () => {
+  const html = (body: string) => new Response(body, { status: 200, headers: { 'content-type': 'text/html' } })
+
+  it('does not treat an ordinary homepage as a price page (sourceURL, SVG paths, opening hours)', async () => {
+    const { pageLooksLikePriceList } = await import('./check')
+    const homepage = '<!doctype html><html><head><style>/*# sourceURL=a.css */ /*# sourceURL=b.css */ /*# sourceURL=c.css */</style>'
+      + '<link rel="wlwmanifest" href="/wlwmanifest.xml"><link rel="alternate" href="/wp-json/oembed/1.0/embed?format=xml"></head>'
+      + '<body><h2>Neurologija i neurokirurgija</h2><svg><path d="M90,90 L155,81 207,46 238,44"/></svg>'
+      + '<p>Radno vrijeme 08.00 – 20.00, subotom 09.00 – 13.00</p></body></html>'
+    expect(pageLooksLikePriceList(html(homepage), homepage)).toBe(false)
+  })
+
+  it('still recognizes a visible price table', async () => {
+    const { pageLooksLikePriceList } = await import('./check')
+    const page = '<!doctype html><html><body><table><tr><th>Usluga</th><th>Cijena</th></tr><tr><td>Pregled</td><td>35,00 €</td></tr><tr><td>Cijepljenje</td><td>25,00 €</td></tr><tr><td>Čipiranje</td><td>20,00 €</td></tr></table></body></html>'
+    expect(pageLooksLikePriceList(html(page), page)).toBe(true)
+  })
+
+  it('skips a guessed /cjenik.xml that answers 200 with a large HTML 404 page', async () => {
+    const big404 = '<!doctype html><html><head><title>404 - Trgovina</title></head><body>' + 'x'.repeat(200 * 1024) + '</body></html>'
+    const fetch = routeFetch({
+      '/': () => html('<!doctype html><html><body><a href="/cjenik.csv">Cjenik CSV</a></body></html>'),
+      '/cjenik.csv': () => new Response('Naziv,Cijena,Sidrena cijena,Vrsta\nPregled,35.00,35.00,Usluga\n', { status: 200, headers: { 'content-type': 'text/csv' } }),
+      '/cjenik.xml': () => html(big404),
+    })
+    vi.stubGlobal('fetch', fetch)
+    const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+    expect(checked.details.xmlFound).toBe(false)
+    expect(checked.details.xmlAnalysis?.fetched).toBe(false)
+    expect(checked.details.networkIncomplete).toBe(false)
+    expect(checked.details.csvFound).toBe(true)
+  })
+})

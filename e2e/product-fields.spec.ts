@@ -36,3 +36,18 @@ test('product list: Odluka fields are grouped, editable, and clear the blocker c
   await expect(counter).toContainText('bez blokera')
   await expect(panel.getByText(/1 stavka nema valjan barkod/)).toHaveCount(0)
 })
+
+test('list without a Vrsta column asks once for services or products before product fields', async ({ page }) => {
+  const salonCsv = ['Grupa,Naziv,Cijena,Sidrena cijena', 'Šišanje,Žensko šišanje,25.00,25.00', 'Njega,Feniranje,15.00,15.00'].join('\n')
+  await page.goto('/app?new=1')
+  await page.locator('label.upload-action input[accept*=".csv"]').setInputFiles({ name: 'salon.csv', mimeType: 'text/csv', buffer: Buffer.from(salonCsv, 'utf8') })
+
+  const panel = page.locator('.validation-app-panel')
+  await expect(panel.getByText('Što je u ovom cjeniku?')).toBeVisible()
+  await expect(panel.getByText('Cjenik proizvoda: podaci koje Odluka traži')).toHaveCount(0)
+
+  await panel.getByRole('button', { name: 'Sve su usluge' }).click()
+  await expect(panel.getByText('Što je u ovom cjeniku?')).toHaveCount(0)
+  await expect(panel.getByText('Cjenik proizvoda: podaci koje Odluka traži')).toHaveCount(0)
+  await expect(panel.getByText(/nema šifru/)).toHaveCount(0)
+})

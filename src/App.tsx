@@ -219,6 +219,7 @@ function ValidationResultPanel({
   onConfirmAnchorsFromRetail,
   onConfirmNoSpecialSale,
   onBulkAvailability,
+  onBulkType,
   onSaveDraft,
   onPublish,
   onStartTrial,
@@ -239,6 +240,7 @@ function ValidationResultPanel({
   onConfirmAnchorsFromRetail: () => void
   onConfirmNoSpecialSale: () => void
   onBulkAvailability: (value: Availability) => void
+  onBulkType?: (type: 'Usluga' | 'Proizvod') => void
   onSaveDraft: () => void
   onPublish: () => void
   onStartTrial?: () => void
@@ -246,7 +248,14 @@ function ValidationResultPanel({
   mode?: 'sandbox' | 'publisher'
   publishBlocked?: boolean
 }) {
-  const { missingAnchorCount, productGroups, otherIssues } = summarizeValidationIssues(validation.issues)
+  const summary = summarizeValidationIssues(validation.issues)
+  const { missingAnchorCount } = summary
+  // Without a "Vrsta" column every row defaults to product rules (šifra, marka, barkod...). Ask once for the
+  // whole list before showing product requirements a salon or servis does not have.
+  const untypedCount = list.items.filter((item) => !item.type?.trim()).length
+  const askType = Boolean(onBulkType) && untypedCount > 0
+  const productGroups = askType && untypedCount === list.items.length ? [] : summary.productGroups
+  const otherIssues = askType ? summary.otherIssues.filter((issue) => issue.rule !== 'item.type.unclear') : summary.otherIssues
   const needsAnchors = missingAnchorCount > 0
   const serviceAnchorsPending = missingAnchorItems(list).length > 0
   const hasProducts = list.items.some((item) => !isServiceItem(item))
@@ -298,6 +307,17 @@ function ValidationResultPanel({
         <strong>{incomplete ? 'Pronašli smo podatke koje treba dopuniti.' : 'Svi obavezni podaci su popunjeni.'}</strong>
         {!incomplete && mode === 'sandbox' && <span className="validation-ready-formats">CSV ✓ · XML ✓</span>}
         {validation.warningCount > 0 && <span>{validation.warningCount} upozorenja</span>}
+
+        {askType && (
+          <div className="validation-group-callout" role="status">
+            <p><strong>Što je u ovom cjeniku?</strong></p>
+            <p>{untypedCount === list.items.length ? 'Nijedna stavka nema oznaku vrste.' : `${untypedCount} ${untypedCount === 1 ? 'stavka nema' : 'stavki nema'} oznaku vrste.`} Usluge (frizer, servis, veterinar, salon) ne trebaju šifru, marku, barkod ni dostupnost; proizvodi trebaju.</p>
+            <div className="anchor-bulk-actions">
+              <button className="app-button app-button-light" type="button" onClick={() => onBulkType?.('Usluga')}>Sve su usluge</button>
+              <button className="app-button app-button-light" type="button" onClick={() => onBulkType?.('Proizvod')}>Sve su proizvodi</button>
+            </div>
+          </div>
+        )}
 
         {needsAnchors && (
           <div className="validation-group-callout" role="status">
@@ -580,6 +600,8 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
   const currentPublication = publications.find((publication) => publication.isCurrent)
   const publicUrl = customHost ? `${window.location.origin}/` : `${window.location.origin}/c/${slug}`
   const showChrome = mode === 'normal'
+  // On the shared host every tenant lives under /c/<slug>; root /cjenik.csv belongs to the host's own tenant.
+  const fileBase = customHost ? '' : `/c/${slug}`
   return <main className={`public-shell${mode === 'normal' ? '' : ` public-shell--${mode}`}`}>
     {mode === 'print' && <div className="print-toolbar"><button className="app-button app-button-primary" type="button" onClick={() => window.print()}>Ispis / Spremi kao PDF</button><a href={customHost ? '/' : '/c/' + slug}>← Natrag na cjenik</a></div>}
     {showChrome && <div className="public-top"><Logo /><span className="public-badge">{demo ? 'DEMO PODACI' : isArchive ? 'JAVNA ARHIVA' : 'AKTUALNI CJENIK'}</span></div>}
@@ -598,7 +620,7 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
       <div className="public-list-title"><span>Aktualni digitalni cjenik</span><span className="item-count">{list.items.length} stavki</span></div>
       {mode === 'print' ? <PrintPriceTable groups={grouped} /> : grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{productDisplayDetails(item)}{productDisplayDetails(item) ? ' · ' : ''}{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + anchorLabel(item) + ': ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.specialSaleApplied === true && item.lowest30DayPrice != null && <del title="Prethodna najniža cijena u 30 dana">{money(item.lowest30DayPrice)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
     </section>}
-    {showChrome && !isArchive && <section className="public-links"><div><strong>Aktualni digitalni cjenik</strong><span><a href={currentPublication ? '/' + currentPublication.filenameStem + '.csv' : '/cjenik.csv'}>{currentPublication ? currentPublication.filenameStem + '.csv' : 'Preuzmi CSV'}</a>{currentPublication && <a href={'/' + currentPublication.filenameStem + '.xml'}>{currentPublication.filenameStem + '.xml'}</a>}</span></div><div><strong>Stable URL za automatizirani dohvat</strong><span><a href="/cjenik.csv">cjenik.csv</a><a href="/cjenik.xml">cjenik.xml</a></span></div></section>}
+    {showChrome && !isArchive && <section className="public-links"><div><strong>Aktualni digitalni cjenik</strong><span><a href={currentPublication ? fileBase + '/' + currentPublication.filenameStem + '.csv' : fileBase + '/cjenik.csv'}>{currentPublication ? currentPublication.filenameStem + '.csv' : 'Preuzmi CSV'}</a>{currentPublication && <a href={fileBase + '/' + currentPublication.filenameStem + '.xml'}>{currentPublication.filenameStem + '.xml'}</a>}</span></div><div><strong>Stable URL za automatizirani dohvat</strong><span><a href={fileBase + '/cjenik.csv'}>cjenik.csv</a><a href={fileBase + '/cjenik.xml'}>cjenik.xml</a></span></div></section>}
     <footer className="public-footer"><span>Pokreće NEPAR Publisher</span>{!isArchive && <a href={(customHost ? '/arhiva/' : '/c/' + slug + '/arhiva')}>Arhiva</a>}<a href={customHost ? '/cjenik.csv' : '/c/' + slug + '/cjenik.csv'}>CSV</a><a href={customHost ? '/cjenik.xml' : '/c/' + slug + '/cjenik.xml'}>XML</a><a href="https://digitalnicjenik.nepar.hr/">Provjeri CSV/XML na webu</a></footer>
   </main>
 }
@@ -1146,6 +1168,13 @@ function ValidatorApp({
     setList({ ...list, items: list.items.map((item) => item.specialSaleApplied == null && item.salePrice == null ? { ...item, specialSaleApplied: false, specialSaleName: null } : item) })
   }
 
+  function bulkType(type: 'Usluga' | 'Proizvod') {
+    if (!list) return
+    setPublished(false)
+    setList({ ...list, items: list.items.map((item) => (item.type?.trim() ? item : { ...item, type })) })
+    setMessage(type === 'Usluga' ? 'Stavke bez oznake vrste označene su kao usluge.' : 'Stavke bez oznake vrste označene su kao proizvodi.')
+  }
+
   function bulkAvailability(value: Availability) {
     if (!list) return
     setPublished(false)
@@ -1200,6 +1229,7 @@ function ValidatorApp({
         onConfirmAnchorsFromRetail={confirmAnchorsFromRetail}
         onConfirmNoSpecialSale={confirmNoSpecialSale}
         onBulkAvailability={bulkAvailability}
+        onBulkType={bulkType}
         onSaveDraft={() => void saveDraft()}
         onPublish={() => void publish()}
         onStartTrial={() => setClaimOpen(true)}
