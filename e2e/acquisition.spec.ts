@@ -185,3 +185,25 @@ test('mobile FAQ disclosures and resource navigation remain usable below the val
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390)
 
 })
+
+test('unknown host shows a plain address message without the 0/9 table or sales CTA', async ({ page }) => {
+  await stub(page, { status: 'red', message: 'Web stranica nije pronađena. Provjerite adresu.', details: { reachable: false } })
+  await page.goto('/')
+  await page.getByLabel('Adresa web stranice', { exact: true }).fill('nepostojeci-salon-xyz.hr')
+  await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
+  await expect(page.getByRole('heading', { name: 'Adresa nije pronađena' })).toBeVisible()
+  await expect(page.locator('.acq-status-list')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Trebam pomoć s ovim rezultatom/ })).toHaveCount(0)
+})
+
+test('a CSV that was never fetched is not linked as if it were found', async ({ page }) => {
+  const missing = { format: 'csv' as const, url: 'https://salon.hr/cjenik.csv', fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown' as const, structureStatus: 'unknown' as const, contentStatus: 'unknown' as const, structureReasons: ['CSV nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 }
+  await stub(page, { status: 'red', message: 'Strojni cjenik nije pronađen.', details: { reachable: true, homepageReadable: true, https: true, csvAnalysis: missing, xmlAnalysis: { ...missing, format: 'xml', url: 'https://salon.hr/cjenik.xml' } } })
+  await page.goto('/')
+  await page.getByLabel('Adresa web stranice', { exact: true }).fill('salon.hr')
+  await page.getByRole('button', { name: 'Provjeri besplatno' }).click()
+  const csvPanel = page.getByRole('article', { name: 'CSV analiza' })
+  await expect(csvPanel).toContainText('CSV nije pronađen')
+  await expect(csvPanel.locator('a')).toHaveCount(0)
+  await expect(page.getByText(/obveza se primjenjuje od 17\. 11\. 2026\./)).toBeVisible()
+})

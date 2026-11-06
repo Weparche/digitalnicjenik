@@ -1,4 +1,5 @@
 import { IconArrowRight,IconUpload,IconExternalLink,IconCircleCheckFilled,IconAlertCircle,IconChevronDown } from '@tabler/icons-react'
+import { stavke } from '../shared/plural'
 import { STATUS_LABELS,technicalReport,type DocumentAnalysis,type DocumentFinding,type WebsiteCheckResult } from '../shared/website-check'
 
 const LEVEL_LABELS = { error: 'Obvezni podatak', warning: 'Provjeriti', info: 'Preporuka' } as const
@@ -12,8 +13,9 @@ function DocumentResult({ analysis }: { analysis: DocumentAnalysis }) {
   const recommendations = analysis.recommendations ?? []
   return <article className="acq-document" aria-label={`${analysis.format.toUpperCase()} analiza`}>
     <header><h3>{analysis.format.toUpperCase()}</h3><span className={`acq-document-status acq-status-${analysis.status}`}>{STATUS_LABELS[analysis.status]}</span></header>
-    {analysis.url && /^https?:\/\//.test(analysis.url) && <a className="acq-document-url" href={analysis.url} target="_blank" rel="noreferrer">{analysis.url}<IconExternalLink size={15}/></a>}
-    <p>{analysis.fetched ? 'Dokument dohvaćen' : 'Dokument nije potvrđen'} · {analysis.itemCount} stavki</p>
+    {/* An unfetched analysis carries a guessed address (/cjenik.csv); linking it reads as "found". */}
+    {analysis.fetched && analysis.url && /^https?:\/\//.test(analysis.url) && <a className="acq-document-url" href={analysis.url} target="_blank" rel="noreferrer">{analysis.url}<IconExternalLink size={15}/></a>}
+    <p>{analysis.fetched ? `Dokument dohvaćen · ${stavke(analysis.itemCount)}` : `${analysis.format.toUpperCase()} nije pronađen na webu ni na uobičajenim adresama.`}</p>
     <h4>Struktura</h4>{analysis.structureReasons.map((reason, i) => <p key={i}>{reason}</p>)}
     <h4>Sadržaj</h4>
     {analysis.totalFindings > 0 ? <><p className="acq-finding-count">Prikazano {findings.length} od {analysis.totalFindings} nalaza u ovoj datoteci.</p><ol className="acq-document-findings">{findings.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.itemName && <strong>„{finding.itemName}”: </strong>}{finding.message}{finding.row != null && <small>Izvorni redak / stavka {finding.row}</small>}</li>)}</ol></> : <p>{analysis.contentStatus === 'pass' ? 'Nema nalaza u podržanim poljima.' : 'Sadržaj nije moguće potvrditi ovom provjerom.'}</p>}
@@ -22,6 +24,12 @@ function DocumentResult({ analysis }: { analysis: DocumentAnalysis }) {
 }
 
 export function WebsiteCheckResultPanel({ result, onUpload, onRetry,onHelp, website }: { result: WebsiteCheckResult; onUpload: () => void; onRetry: () => void;onHelp:()=>void; website: string }) {
+  // Unknown host or malformed address: there is nothing to score, so no 0/9 table and no sales CTA.
+  if (result.status === 'red' && result.details?.reachable !== true) return <section className="acq-result acq-tone-red" id="rezultat" aria-labelledby="result-title">
+    <div className="acq-result-top"><div><h2 id="result-title">Adresa nije pronađena</h2><p>{website}</p></div></div>
+    <p className="acq-result-message">{result.message} Provjerite upis (npr. vasweb.hr) i pokušajte ponovno.</p>
+    <div className="acq-result-footer"><button type="button" className="acq-cancel" onClick={onRetry}>Pokušaj ponovno<IconArrowRight size={19}/></button></div>
+  </section>
   const report = technicalReport(result)
   const unconfirmed = report.unknown === 9
   const noPriceList=report.checks.find(check=>check.id==='price')?.status==='missing'&&report.checks.find(check=>check.id==='machine')?.status==='missing'
@@ -32,7 +40,7 @@ export function WebsiteCheckResultPanel({ result, onUpload, onRetry,onHelp, webs
     {!unconfirmed && <progress max={9} value={report.score} aria-label={`${report.score} od 9 tehničkih provjera prolazi`}/>}
     <p className="acq-result-message">{website}<br/>{result.message}</p>
     <div className="workspace-check-next" aria-label="Sljedeći korak nakon provjere">
-      {noPriceList?<><h3>Objavite svoj prvi digitalni cjenik</h3><p>Javni cjenik nije pronađen. Učitajte Excel, CSV ili XML u „Moj cjenik” i objavite besplatni link na 24 sata.</p></>:needsHelp?<><h3>Riješimo što nedostaje</h3><p>Pošaljite nam upit s ovom analizom. Adresa weba i rezultat već su pripremljeni u kontaktu.</p></>:<p>Sve tehničke provjere prolaze. Za objavu ili zamjenu vlastitog cjenika otvorite svoj radni prostor.</p>}
+      {noPriceList?<><h3>Objavite svoj prvi digitalni cjenik</h3><p>Na webu nismo pronašli strojno čitljiv cjenik (CSV ili XML), a obveza se primjenjuje od 17. 11. 2026. Učitajte Excel, CSV ili XML u „Moj cjenik” i objavite besplatni link na 24 sata.</p></>:needsHelp?<><h3>Riješimo što nedostaje</h3><p>Pošaljite nam upit s ovom analizom. Adresa weba i rezultat već su pripremljeni u kontaktu.</p></>:<p>Sve tehničke provjere prolaze. Za objavu ili zamjenu vlastitog cjenika otvorite svoj radni prostor.</p>}
       <div className="workspace-check-actions">{noPriceList?<><button type="button" className="acq-primary" onClick={onUpload}><IconUpload size={21}/>Učitaj cjenik i objavi link</button><button type="button" className="workspace-button" onClick={onHelp}>Trebam pomoć s ovim rezultatom<IconArrowRight size={18}/></button></>:needsHelp?<><button type="button" className="acq-primary" onClick={onHelp}>Trebam pomoć s ovim rezultatom<IconArrowRight size={21}/></button><button type="button" className="workspace-button" onClick={unconfirmed?onRetry:onUpload}>{unconfirmed?'Pokušaj ponovno':'Otvori moj cjenik'}<IconArrowRight size={18}/></button></>:<button type="button" className="workspace-button" onClick={onUpload}>Otvori moj cjenik<IconArrowRight size={18}/></button>}</div>
     </div>
     <ol className="acq-status-list">{report.checks.map((check) => <li key={check.id} className={`acq-status-${check.status}`}><details><summary><span className="acq-status-icon" aria-hidden="true">{(check.status === 'pass' || check.status === 'not_applicable') ? <IconCircleCheckFilled size={21}/> : <IconAlertCircle size={21}/>}</span><strong>{check.label}</strong><span className="acq-status-label">{STATUS_LABELS[check.status]}</span><IconChevronDown className="acq-disclosure" size={17} aria-hidden="true"/></summary><div className="acq-evidence"><p>{check.evidence}</p>{check.url && /^https?:\/\//.test(check.url) && <a href={check.url} target="_blank" rel="noreferrer">{check.url}<IconExternalLink size={15}/></a>}</div></details></li>)}</ol>

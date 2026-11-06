@@ -4,7 +4,6 @@ import { IconArrowRight, IconUpload, IconCircleCheckFilled, IconAlertCircle,Icon
 import { WebsiteCheckEntry } from './WebsiteCheckEntry'
 import { PLANS, formatEur, type PlanId } from './publisherPricing'
 import { PlatformPills } from './ExistingWebSections'
-import { installationPriceLabel } from '../shared/pricing'
 import type { LeadIntent } from './LeadForm'
 import '@fontsource-variable/inter/wght.css'
 import './acquisition.css'
@@ -16,12 +15,9 @@ function Wordmark() {
 }
 
 function UploadPath({ onUpload }: { onUpload: () => void }) {
-  return <div className="acq-upload"><div><h2>Imate Excel, CSV ili XML cjenik?</h2><p>Otvorite svoj radni prostor za provjeru, objavu i upravljanje cjenikom.</p></div><div className="acq-upload-action"><button className="acq-secondary" type="button" onClick={onUpload}><IconUpload size={21}/>Učitaj cjenik</button><small>Bez registracije za pregled</small></div></div>
+  return <div className="acq-upload"><div><h2>Imate Excel, CSV ili XML cjenik?</h2><p>Otvorite svoj radni prostor za provjeru i objavu. Prvu objavu imate besplatno 24 sata.</p></div><div className="acq-upload-action"><button className="acq-secondary" type="button" onClick={onUpload}><IconUpload size={21}/>Učitaj cjenik</button><small>Bez registracije za pregled</small></div></div>
 }
 
-function InstallationHelp({ onHelp }: { onHelp: () => void }) {
-  return <section className="acq-help" id="pomoc"><div><h2>Već imate web i samo trebate pomoć?</h2><p>Postavimo poveznicu ili gumb za digitalni cjenik na vašu postojeću web stranicu — {installationPriceLabel()}.</p></div><button type="button" className="acq-secondary" onClick={onHelp}>Trebam pomoć s ugradnjom<IconArrowRight size={20}/></button></section>
-}
 
 
 export function AcquisitionLanding() {
@@ -68,9 +64,8 @@ export function AcquisitionLanding() {
       </div>
     </div>
     <div className="acq-content">
-      <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title"><h2 id="solutions-title">Trebate riješiti digitalni cjenik?</h2><p>Web Link je za web koji već imate. Publisher dodaje uređivanje stavki i svakodnevni nadzor. Napredna integracija je zasebna individualna ponuda.</p><PlanCards onSelect={(p) => onLead(p === 'web' ? 'implementation' : 'plugin', p)} onExtra={() => onLead('consultation')}/><p className="acq-domain-note">Vaša postojeća web stranica i domena ostaju vaše. NEPAR objavljuje cjenik i priprema link koji možete ugraditi.</p><p><a href="/objava-digitalnog-cjenika/">Kako izgleda objava i ugradnja →</a></p></section>
+      <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title"><h2 id="solutions-title">Trebate riješiti digitalni cjenik?</h2><p className="acq-trial-note"><strong>Isprobajte besplatno 24 sata.</strong> Učitajte cjenik i dobijte stvarni javni link s CSV/XML datotekama. Isti link zadržavate uz godišnji paket, bez kartice i bez automatske naplate.</p><p>Web Link je za web koji već imate. Publisher dodaje uređivanje stavki i svakodnevni nadzor. Napredna integracija je zasebna individualna ponuda.</p><PlanCards onSelect={(p) => onLead(p === 'web' ? 'implementation' : 'plugin', p)} onExtra={() => onLead('consultation')}/><p className="acq-domain-note">Vaša postojeća web stranica i domena ostaju vaše. NEPAR objavljuje cjenik i priprema link koji možete ugraditi.</p><p><a href="/objava-digitalnog-cjenika/">Kako izgleda objava i ugradnja →</a></p></section>
       <section className="acq-help acq-reference" aria-labelledby="reference-title"><div><span className="acq-preview-label">Stvarna NEPAR implementacija</span><h2 id="reference-title">Digitalni cjenik za Auto Gubić</h2><p>Javni cjenik na webu autoservisa, s aktualnom i sidrenom cijenom, CSV/XML poveznicama i podacima o objavi.</p></div><a className="acq-secondary" href="/reference/auto-gubic/">Pogledajte primjer<IconArrowRight size={19}/></a></section>
-      <InstallationHelp onHelp={() => onLead('consultation')}/>
       <section className="acq-compact-faq" aria-labelledby="landing-faq-title"><h2 id="landing-faq-title">Česta pitanja</h2>{landingFaq.map(entry=><details key={entry.question}><summary>{entry.question}<IconChevronDown size={18}/></summary><p>{entry.answer}</p></details>)}<a href="/faq/">Sva pitanja i odgovori<IconArrowRight size={17}/></a></section>
       <footer className="acq-footer"><Wordmark/><nav aria-label="Dodatne informacije"><a href="/digitalni-cjenik-za-wordpress-webshop/">Za postojeći web</a><a href="/objava-digitalnog-cjenika/">Objava i ugradnja</a><a href="/faq/">Česta pitanja</a><a href="/vodici/">Vodiči</a><a href="/usporedba/">Usporedba mogućnosti</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/app?login=1">Prijava u dashboard</a><a href="/privatnost.html">Privatnost</a><a href="/uvjeti.html">Uvjeti usluge</a></nav><details className="acq-resources"><summary>Vodiči i aktualne informacije</summary><nav aria-label="Vodiči i novosti"><a href="/vodici/sidrena-cijena/">Sidrena cijena</a><a href="/specifikacija-csv-xml/">CSV i XML formati</a><a href="/vodici/automatizacija-digitalnog-cjenika/">Automatizacija objave</a>{getLatestPosts(3).map(post=><a key={post.slug} href={newsArticlePath(post.slug)}>{post.widgetHeadline??post.title}</a>)}<a href="/vijesti/">Sve vijesti</a></nav></details><p>Tehnička provjera i objava digitalnog cjenika. Bez jamstva pravne usklađenosti.</p></footer>
     </div></main>

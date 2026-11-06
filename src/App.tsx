@@ -1,4 +1,5 @@
 import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
+import { stavke, stavkeNema } from '../shared/plural'
 import { IconUpload } from '@tabler/icons-react'
 import { PublicationOverview, UploadReview } from './PublicationOverview'
 import { validRequiredPrice } from './price-engine/normalize'
@@ -253,6 +254,8 @@ function ValidationResultPanel({
   // Without a "Vrsta" column every row defaults to product rules (šifra, marka, barkod...). Ask once for the
   // whole list before showing product requirements a salon or servis does not have.
   const untypedCount = list.items.filter((item) => !item.type?.trim()).length
+  // Same key as validatePriceList, so each message can name its row instead of repeating a bare sentence.
+  const itemNames = new Map(list.items.map((item) => [item.externalId || `${item.category ?? ''}:${item.name}`, item.name]))
   const askType = Boolean(onBulkType) && untypedCount > 0
   const productGroups = askType && untypedCount === list.items.length ? [] : summary.productGroups
   const otherIssues = askType ? summary.otherIssues.filter((issue) => issue.rule !== 'item.type.unclear') : summary.otherIssues
@@ -285,7 +288,7 @@ function ValidationResultPanel({
         <div>
           <span className="app-label">3 / REZULTAT</span>
           <h2>{published ? 'Cjenik je objavljen' : mode === 'sandbox' ? 'Pregledajte podatke, zatim objavite' : incomplete ? 'Još nekoliko stvari treba dopuniti' : 'Cjenik je spreman za objavu'}</h2>
-          <p>{list.items.length} stavki učitano · {sourceFilename || 'učitana datoteka'}{publication ? ` · verzija ${publication.sequence}` : ''}</p>
+          <p>Učitano: {stavke(list.items.length)} · {sourceFilename || 'učitana datoteka'}{publication ? ` · verzija ${publication.sequence}` : ''}</p>
         </div>
         <div className={'validation-app-count ' + (published ? 'ready' : incomplete ? 'needs-attention' : 'ready')}>
           <strong>{published ? (publication?.sequence ?? '✓') : incomplete ? validation.blockingCount : 0}</strong>
@@ -311,7 +314,7 @@ function ValidationResultPanel({
         {askType && (
           <div className="validation-group-callout" role="status">
             <p><strong>Što je u ovom cjeniku?</strong></p>
-            <p>{untypedCount === list.items.length ? 'Nijedna stavka nema oznaku vrste.' : `${untypedCount} ${untypedCount === 1 ? 'stavka nema' : 'stavki nema'} oznaku vrste.`} Usluge (frizer, servis, veterinar, salon) ne trebaju šifru, marku, barkod ni dostupnost; proizvodi trebaju.</p>
+            <p>{untypedCount === list.items.length ? 'Nijedna stavka nema oznaku vrste.' : `${stavkeNema(untypedCount)} oznaku vrste.`} Usluge (frizer, servis, veterinar, salon) ne trebaju šifru, marku, barkod ni dostupnost; proizvodi trebaju.</p>
             <div className="anchor-bulk-actions">
               <button className="app-button app-button-light" type="button" onClick={() => onBulkType?.('Usluga')}>Sve su usluge</button>
               <button className="app-button app-button-light" type="button" onClick={() => onBulkType?.('Proizvod')}>Sve su proizvodi</button>
@@ -321,7 +324,7 @@ function ValidationResultPanel({
 
         {needsAnchors && (
           <div className="validation-group-callout" role="status">
-            <p><strong>{missingAnchorCount} {missingAnchorCount === 1 ? 'stavka nema' : 'stavki nema'} sidrenu cijenu</strong></p>
+            <p><strong>{stavkeNema(missingAnchorCount)} sidrenu cijenu</strong></p>
             <p>Unesite cijenu koja je za pojedinu stavku vrijedila na referentni datum (10. rujna 2026.; za ranije obuhvaćene skupine proizvoda 2. svibnja 2025.), bez posebnog oblika prodaje.</p>
             <button className="app-button app-button-light" type="button" onClick={focusAnchorTable}>Dopuni sidrene cijene</button>
           </div>
@@ -332,7 +335,7 @@ function ValidationResultPanel({
             <p><strong>Cjenik proizvoda: podaci koje Odluka traži</strong></p>
             <ul className="product-field-summary">
               {productGroups.map((group) => (
-                <li key={group.field}><b>{group.blocking ? 'RUČNI PREGLED' : 'UPOZORENJE'}</b>{group.count} {group.count === 1 ? 'stavka nema' : 'stavki nema'} {group.label}</li>
+                <li key={group.field}><b>{group.blocking ? 'RUČNI PREGLED' : 'UPOZORENJE'}</b>{stavkeNema(group.count)} {group.label}</li>
               ))}
             </ul>
             {missingAvailability > 0 && (
@@ -347,7 +350,7 @@ function ValidationResultPanel({
             {otherIssues.slice(0, 8).map((issue) => (
               <li key={issue.row + '-' + issue.field + '-' + issue.itemKey}>
                 <b>{issue.severity === 'manual_review' ? 'RUČNI PREGLED' : issue.severity === 'error' ? 'GREŠKA' : 'UPOZORENJE'}</b>
-                {issue.message}
+                {itemNames.get(issue.itemKey) && <strong>„{itemNames.get(issue.itemKey)}”: </strong>}{issue.message}
               </li>
             ))}
           </ul>
@@ -617,7 +620,7 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
       </aside>
     )}
     {isArchive ? <section className="public-list public-archive" aria-label="Javna arhiva cjenika"><div className="public-list-title"><span>Arhiva objavljenih verzija</span><span className="item-count">{publications.length} verzija</span></div>{publications.map((publication) => <div className="public-archive-item" key={publication.id}><div><strong>{publication.isCurrent ? 'Aktualno · ' : ''}{dateTime(publication.publishedAt)}</strong><small>{publication.filenameStem}</small></div><div className="archive-links"><a href={(customHost ? '/' : '/c/' + slug + '/') + publication.filenameStem + '.csv'}>CSV</a><a href={(customHost ? '/' : '/c/' + slug + '/') + publication.filenameStem + '.xml'}>XML</a></div></div>)}<p className="public-archive-note">Prethodne objavljene verzije ostaju javno dostupne najmanje 30 dana od trenutka zamjene.</p></section> : <section className="public-list" aria-label="Aktualni digitalni cjenik">
-      <div className="public-list-title"><span>Aktualni digitalni cjenik</span><span className="item-count">{list.items.length} stavki</span></div>
+      <div className="public-list-title"><span>Aktualni digitalni cjenik</span><span className="item-count">{stavke(list.items.length)}</span></div>
       {mode === 'print' ? <PrintPriceTable groups={grouped} /> : grouped.map(([category, items]) => <section className="price-group" key={category}><h2>{category}</h2>{items.map((item) => <div className="public-row" key={item.externalId || item.name}><div><strong>{item.name}</strong><small>{productDisplayDetails(item)}{productDisplayDetails(item) ? ' · ' : ''}{item.specialSaleApplied === true ? 'Poseban oblik prodaje: ' + (item.specialSaleName || 'potvrđeno') : ''}{item.anchorPrice != null ? (item.specialSaleApplied === true ? ' · ' : '') + anchorLabel(item) + ': ' + money(item.anchorPrice) : ''}</small></div><div className="public-price">{item.specialSaleApplied === true && item.lowest30DayPrice != null && <del title="Prethodna najniža cijena u 30 dana">{money(item.lowest30DayPrice)}</del>}<strong>{money(item.salePrice ?? item.price)}</strong></div></div>)}</section>)}
     </section>}
     {showChrome && !isArchive && <section className="public-links"><div><strong>Aktualni digitalni cjenik</strong><span><a href={currentPublication ? fileBase + '/' + currentPublication.filenameStem + '.csv' : fileBase + '/cjenik.csv'}>{currentPublication ? currentPublication.filenameStem + '.csv' : 'Preuzmi CSV'}</a>{currentPublication && <a href={fileBase + '/' + currentPublication.filenameStem + '.xml'}>{currentPublication.filenameStem + '.xml'}</a>}</span></div><div><strong>Stable URL za automatizirani dohvat</strong><span><a href={fileBase + '/cjenik.csv'}>cjenik.csv</a><a href={fileBase + '/cjenik.xml'}>cjenik.xml</a></span></div></section>}
@@ -628,7 +631,7 @@ function PublicPriceList({ slug, customHost = false }: { slug?: string; customHo
 function ValidationSummary({ issues, itemCount }: { issues: ValidationIssue[]; itemCount: number }) {
   const blockers = issues.filter((issue) => issue.severity !== 'warning').length
   const warnings = issues.filter((issue) => issue.severity === 'warning').length
-  return <div className="validation-summary" role="status"><strong>{itemCount} stavki učitano</strong><span className={blockers ? 'has-issue' : 'is-good'}>{blockers ? '⚠ ' + blockers + ' za dopunu' : '✓ Sve spremno'}</span>{warnings > 0 && <span>⚠ {warnings} upozorenja</span>}{issues.length > 0 && <ul className="validation-issue-list">{issues.slice(0, 6).map((issue) => <li key={issue.row + '-' + issue.field + '-' + issue.itemKey}><b>{issue.severity === 'manual_review' ? 'RUČNI PREGLED' : issue.severity === 'error' ? 'GREŠKA' : 'UPOZORENJE'}</b>{issue.message}</li>)}</ul>}{issues.some((issue) => issue.field === 'specialSaleApplied') && <button className="text-button validation-group-button" type="button" onClick={() => window.dispatchEvent(new Event('nepar:confirm-no-special-sale'))}>Grupno potvrdi: nije poseban oblik prodaje <span>→</span></button>}</div>
+  return <div className="validation-summary" role="status"><strong>Učitano: {stavke(itemCount)}</strong><span className={blockers ? 'has-issue' : 'is-good'}>{blockers ? '⚠ ' + blockers + ' za dopunu' : '✓ Sve spremno'}</span>{warnings > 0 && <span>⚠ {warnings} upozorenja</span>}{issues.length > 0 && <ul className="validation-issue-list">{issues.slice(0, 6).map((issue) => <li key={issue.row + '-' + issue.field + '-' + issue.itemKey}><b>{issue.severity === 'manual_review' ? 'RUČNI PREGLED' : issue.severity === 'error' ? 'GREŠKA' : 'UPOZORENJE'}</b>{issue.message}</li>)}</ul>}{issues.some((issue) => issue.field === 'specialSaleApplied') && <button className="text-button validation-group-button" type="button" onClick={() => window.dispatchEvent(new Event('nepar:confirm-no-special-sale'))}>Grupno potvrdi: nije poseban oblik prodaje <span>→</span></button>}</div>
 }
 
 function Pricing() {
@@ -1075,6 +1078,15 @@ function ValidatorApp({
     requestAnimationFrame(() => document.querySelector('.validation-app-panel')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }))
   }
 
+  // The demo runs the real upload → review flow on a sample salon list instead of opening NEPAR's own public page.
+  async function loadExample() {
+    try {
+      const response = await fetch('/examples/primjer-digitalni-cjenik-usluge-2026.csv')
+      if (!response.ok) throw new Error()
+      await loadFile(new File([await response.text()], 'primjer-digitalni-cjenik-usluge-2026.csv', { type: 'text/csv' }))
+    } catch { setError('Primjer trenutačno nije moguće učitati.') }
+  }
+
   async function loadFile(file?: File) {
     if (!file) return
     if (/\.(xlsx|xls)$/i.test(file.name)) {setExcelFile(file);setError('');return}
@@ -1238,7 +1250,7 @@ function ValidatorApp({
         publishBlocked={publishBlocked}
       />
     )}
-    {mode === 'sandbox' && <p className="validator-footnote">Želite prvo vidjeti primjer? <a href="/c/nepar">Otvori demo podatke →</a></p>}
+    {mode === 'sandbox' && <p className="validator-footnote">Želite prvo vidjeti primjer? <button className="app-link-button" type="button" onClick={() => void loadExample()}>Učitaj primjer cjenika usluga →</button></p>}
   </>
   const tool = <>{importer}{review}</>
 
