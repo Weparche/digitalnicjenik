@@ -31,6 +31,9 @@ export const RULES: Record<string, RuleDefinition> = {
   'item.row.unreadable': { level: 'error', source: 'binding', basis: `${ODLUKA}: podaci moraju biti strojno čitljivi` },
   'item.name.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: naziv usluge ili proizvoda` },
   'item.price.invalid': { level: 'error', source: 'binding', basis: `${ODLUKA}: maloprodajna cijena` },
+  // The Odluka prescribes the data (final price, including special sales), not a column. A valid price in the
+  // special-sale column with MPC left empty is a format deviation to verify, not a proven missing price.
+  'item.price.alternative-column': { level: 'warning', source: 'binding', basis: `${ODLUKA}: maloprodajna cijena kao konačna cijena, uključivo posebne oblike prodaje` },
   'service.anchor.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena` },
   'service.anchor.invalid': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena` },
   'product.anchor.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena` },

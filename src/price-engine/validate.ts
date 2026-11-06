@@ -64,7 +64,15 @@ function validateProductFields(item: NormalizedPriceList['items'][number], row: 
 }
 
 export function importIssuesFromParseWarnings(warnings: ParseWarning[], source: 'csv' | 'xlsx' | 'xml'): ValidationIssue[] {
-  return warnings.map((warning) => ({
+  return warnings.map((warning) => warning.imported ? {
+    row: warning.row,
+    itemKey: `import:${warning.row}`,
+    field: warning.field || 'import',
+    severity: 'warning' as const,
+    rule: warning.rule,
+    message: `Redak ${warning.row}: ${warning.message}`,
+    source,
+  } : ({
     row: warning.row,
     itemKey: `import:${warning.row}`,
     field: warning.field || 'import',

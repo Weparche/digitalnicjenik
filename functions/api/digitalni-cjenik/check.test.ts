@@ -296,3 +296,21 @@ describe('price page and document false positives', () => {
     expect(checked.details.csvFound).toBe(true)
   })
 })
+
+describe('retail list with MPC empty during a special sale', () => {
+  it('reports the alternative price column as a warning, never as a missing-price error', async () => {
+    const csv = 'NAZIV PROIZVODA,ŠIFRA PROIZVODA,MARKA PROIZVODA,NETO KOLIČINA,JEDINICA MJERE,MALOPRODAJNA CIJENA,CIJENA ZA JEDINICU MJERE,MPC ZA VRIJEME POSEBNOG OBLIKA PRODAJE,NAJNIŽA CIJENA U POSLJEDNJIH 30 DANA,SIDRENA CIJENA NA 2.5.2025,BARKOD,KATEGORIJA PROIZVODA\n'
+      + 'SIR MOZZARELLA 3x100 g,91015079,K PLUS,0.30 kg,ko,,7.63,2.29,2.27,2.99,3850334456533,HRANA\n'
+      + 'KROASAN 225 g,91022305,BELINO,0.23 kg,ko,1.95,8.67,,,1.95,5301000235412,HRANA\n'
+    const fetch = routeFetch({
+      '/': () => new Response('<!doctype html><html><body><a href="/cjenik.csv">Cjenik CSV</a></body></html>', { status: 200, headers: { 'content-type': 'text/html' } }),
+      '/cjenik.csv': () => new Response(csv, { status: 200, headers: { 'content-type': 'text/csv' } }),
+    })
+    vi.stubGlobal('fetch', fetch)
+    const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+    const findings = checked.details.csvAnalysis?.findings ?? []
+    expect(checked.details.csvAnalysis?.itemCount).toBe(2)
+    expect(findings.some((f) => f.rule === 'item.price.invalid')).toBe(false)
+    expect(findings.find((f) => f.rule === 'item.price.alternative-column')).toMatchObject({ level: 'warning', itemName: 'SIR MOZZARELLA 3x100 g' })
+  })
+})

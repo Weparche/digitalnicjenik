@@ -65,25 +65,37 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const lowestIndex = findColumn(headers, 'najniža cijena u 30 dana', 'najniza cijena u 30 dana', 'najniža cijena u posljednjih 30 dana', 'najniza cijena u posljednjih 30 dana', 'lowest 30 day price')
   const newIndex = findColumn(headers, 'nova stavka', 'nova usluga', 'new item', 'new service')
   const exemptionIndex = findColumn(headers, 'razlog izuzeća cijene po jedinici')
+  // Retail exports carry the price charged during a special sale in its own column and may leave MPC empty.
+  const saleIsSpecialSaleColumn = saleIndex >= 0 && /posebnog oblika prodaje/.test(cleanHeader(headers[saleIndex]))
   if (nameIndex < 0 || priceIndex < 0) throw new Error('Nisu pronađeni obavezni stupci “Naziv*” i “Cijena*”. Provjerite da je ovo CSV izvoz cjenika.')
   const warnings: ParseResult['warnings'] = []
   const sourceRows: number[] = []
   const items = rows.slice(1).flatMap((row, index) => {
     try {
-    const name = row[nameIndex]?.trim() ?? ''; const price = normalizeNumber(row[priceIndex]);
+    const name = row[nameIndex]?.trim() ?? ''
+    const regularPrice = normalizeNumber(row[priceIndex])
+    const specialPrice = saleIndex >= 0 ? normalizeNumber(row[saleIndex]) : null
+    // Effective price: the special-sale price when valid, otherwise MPC. Missing only when neither is valid.
+    const regularEmpty = !row[priceIndex]?.trim()
+    const priceInAlternativeColumn = regularEmpty && specialPrice != null && specialPrice > 0
+    const price = priceInAlternativeColumn ? specialPrice : regularPrice
     if (!name && !row.some(Boolean)) return []
+    if (name && priceInAlternativeColumn) {
+      warnings.push({ row: index + 2, field: 'price', itemName: name, imported: true, rule: 'item.price.alternative-column', message: `važeća cijena pronađena je u stupcu „${headers[saleIndex].trim()}”; stupac maloprodajne cijene je prazan.` })
+    }
     if (!name || price == null) {
       warnings.push({
         row: index + 2,
         field: !name ? 'name' : 'price',
         itemName: name || undefined,
         message: !name ? 'nedostaje naziv.' : !row[priceIndex]?.trim()
-          ? (saleIndex >= 0 && normalizeNumber(row[saleIndex]) != null ? 'nedostaje maloprodajna cijena (popunjena je samo cijena za vrijeme posebnog oblika prodaje).' : 'nedostaje maloprodajna cijena.')
+          ? 'nedostaje važeća cijena (ni maloprodajna ni cijena posebnog oblika prodaje).'
           : 'cijena nije broj.',
       })
       return []
     }
-    const salePrice = saleIndex >= 0 ? normalizeNumber(row[saleIndex]) : null
+    // When the effective price came from the special-sale column it is the price, not a second (sale) price.
+    const salePrice = priceInAlternativeColumn ? null : specialPrice
     for (const [label, column] of [['Akcijska cijena', saleIndex], ['Sidrena cijena', anchorIndex], ['Cijena za jedinicu mjere', unitPriceIndex]] as const) {
       if (column >= 0 && row[column]?.trim() && normalizeNumber(row[column]) == null) throw new Error(`CSV redak ${index + 2}: ${label} nije broj. Provjerite izvorni podatak.`)
     }
@@ -97,7 +109,7 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
     if (lowestIndex >= 0 && row[lowestIndex]?.trim() && lowest == null) throw new Error(`CSV redak ${index + 2}: najniža cijena nije broj.`)
     const historical = { ...(date ? { anchorReferenceDate: date } : {}), ...(lowest != null ? { lowest30DayPrice: lowest } : {}), ...(newIndex >= 0 ? { isNewSinceReferenceDate: booleanValue(row[newIndex]) === true } : {}), ...(exemptionIndex >= 0 ? { unitPricingExemption: row[exemptionIndex]?.trim() || null } : {}) }
     sourceRows.push(index + 2)
-    return [{ ...historical, externalId: row[idIndex]?.trim() || undefined, category: row[groupIndex]?.trim() || undefined, name, type, price, salePrice, anchorPrice: anchorIndex >= 0 ? normalizeNumber(row[anchorIndex]) : null, specialSaleApplied: specialSaleAppliedIndex >= 0 ? booleanValue(row[specialSaleAppliedIndex]) : null, specialSaleName: specialSaleNameIndex >= 0 ? row[specialSaleNameIndex]?.trim() || null : null, ...(unitIndex >= 0 ? { unit: row[unitIndex]?.trim() || null } : {}), ...(unitPriceIndex >= 0 ? { unitPrice: normalizeNumber(row[unitPriceIndex]) } : {}), ...(brandIndex >= 0 ? { brand: row[brandIndex]?.trim() || null } : {}), ...(barcodeIndex >= 0 ? { barcode: normalizeBarcode(row[barcodeIndex]) || null } : {}), ...(availabilityIndex >= 0 ? { availability: parseAvailability(row[availabilityIndex]) } : {}) }]
+    return [{ ...historical, externalId: row[idIndex]?.trim() || undefined, category: row[groupIndex]?.trim() || undefined, name, type, price, salePrice, anchorPrice: anchorIndex >= 0 ? normalizeNumber(row[anchorIndex]) : null, specialSaleApplied: specialSaleAppliedIndex >= 0 ? booleanValue(row[specialSaleAppliedIndex]) : saleIsSpecialSaleColumn ? specialPrice != null : null, specialSaleName: specialSaleNameIndex >= 0 ? row[specialSaleNameIndex]?.trim() || null : null, ...(unitIndex >= 0 ? { unit: row[unitIndex]?.trim() || null } : {}), ...(unitPriceIndex >= 0 ? { unitPrice: normalizeNumber(row[unitPriceIndex]) } : {}), ...(brandIndex >= 0 ? { brand: row[brandIndex]?.trim() || null } : {}), ...(barcodeIndex >= 0 ? { barcode: normalizeBarcode(row[barcodeIndex]) || null } : {}), ...(availabilityIndex >= 0 ? { availability: parseAvailability(row[availabilityIndex]) } : {}) }]
     } catch (caught) {
       if (!options.inspection) throw caught
       warnings.push({ row: index + 2, itemName: row[nameIndex]?.trim(), message: caught instanceof Error ? caught.message : 'Neispravan redak.' })

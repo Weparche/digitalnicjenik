@@ -639,7 +639,7 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
     if (new TextEncoder().encode(body).byteLength > MAX_DOCUMENT_BYTES) throw new Error('analysis_limit');
     const parsed = kind === 'csv' ? parseMarketinoCsv(body, undefined, { inspection: true }) : inspectXmlPriceList(body);
     const rawCount = parsed.rowCount ?? parsed.priceList.items.length;
-    const findings: DocumentFinding[] = parsed.warnings.map(w => withLevel({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }, parseWarningRule(w.field)));
+    const findings: DocumentFinding[] = parsed.warnings.map(w => withLevel({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }, w.rule ?? parseWarningRule(w.field)));
     if (parsed.priceList.items.length) {
       for (const issue of validatePriceList(parsed.priceList).issues) {
         const index = issue.row - 2;

@@ -42,7 +42,8 @@ export type NormalizedPriceList = {
   items: NormalizedPriceItem[]
 }
 
-export type ParseWarning = { row: number; message: string; field?: ValidationField; itemName?: string }
+/** `imported: true` means the row was kept and the note is a warning, not "Redak N nije uvezen". */
+export type ParseWarning = { row: number; message: string; field?: ValidationField; itemName?: string; rule?: string; imported?: boolean }
 /** Canonical field → source column/element name as it appears in the file (e.g. name → "service_name"). */
 export type FieldSources = Partial<Record<'name' | 'price' | 'specialSaleApplied' | 'specialSaleName' | 'anchorPrice' | 'anchorReferenceDate' | 'isNewSinceReferenceDate', string>>
 export type ParseResult = { priceList: NormalizedPriceList; warnings: ParseWarning[]; sourceRows?: number[]; rowCount?: number; fieldSources?: FieldSources }
