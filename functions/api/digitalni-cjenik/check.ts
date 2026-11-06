@@ -4,7 +4,7 @@ import { validatePriceList } from '../../../src/price-engine/validate';
 import { normalizeHeader } from '../../../src/price-engine/normalize';
 import { isServiceItem } from '../../../src/price-engine/profile';
 import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engine/types';
-import { ruleFor } from '../../../shared/compliance/legal-profile';
+import { deferredNote, ruleFor } from '../../../shared/compliance/legal-profile';
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckDetails } from '../../../shared/website-check';
 import { recordCheckerRun } from '../../_checker-history';
 
@@ -582,7 +582,8 @@ function parseWarningRule(field: string | undefined) {
 
 function withLevel(finding: DocumentFinding, rule: string): DocumentFinding {
   const definition = ruleFor(rule)
-  return { ...finding, rule, level: definition.level, source: definition.source }
+  const message = definition.deferredUntil ? finding.message + deferredNote(definition.deferredUntil) : finding.message
+  return { ...finding, message, rule, level: definition.level, source: definition.source }
 }
 
 const explicitProductPattern = /proiz|product|roba|artikl/i;

@@ -1,10 +1,14 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import csvFixture from '../../../test/fixtures/nepar-2026-10-27.csv?raw'
 import xmlFixture from '../../../test/fixtures/nepar-2026-10-27.xml?raw'
 import autogubicCsv from '../../../test/fixtures/autogubic-v1-en.csv?raw'
 import autogubicXml from '../../../test/fixtures/autogubic-v1-en.xml?raw'
 import { RULES, ruleFor } from '../../../shared/compliance/legal-profile'
 import { analyzeDocument, parsePublicationName, runDigitalPriceListCheck } from './check'
+
+// These cases describe the legal levels once NN 101/2026 applies (17. 11. 2026.); the period before it has its own tests.
+beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-11-17T09:00:00+01:00')) })
+afterEach(() => { vi.useRealTimers() })
 import { parseMarketinoCsv } from '../../../src/price-engine/adapters/marketinoCsv'
 import { parseXmlPriceList } from '../../../src/price-engine/xml'
 import { validatePriceList } from '../../../src/price-engine/validate'
@@ -245,5 +249,34 @@ describe('publication file names and archive evidence', () => {
       expect(result.details).toMatchObject({ archiveFound: false, archiveRemoved: true })
       expect(technicalReport(result).checks.find((check) => check.id === 'archive')?.status).toBe('missing')
     } finally { vi.useRealTimers() }
+  })
+})
+
+describe('obligations that start with NN 101/2026 on 17. 11. 2026.', () => {
+  const services = 'service_name,retail_price,special_sale,special_sale_name\nRadni sat,75.00,false,'
+
+  it('shows them as warnings with the start date before 17. 11. 2026.', () => {
+    vi.setSystemTime(new Date('2026-11-16T23:30:00+01:00'))
+    const analysis = analyzeDocument('csv', services)
+    expect(analysis.findings).toEqual([expect.objectContaining({ rule: 'service.anchor.missing', level: 'warning', source: 'binding' })])
+    expect(analysis.findings[0]?.message).toContain('Obveza se primjenjuje od 17. 11. 2026.')
+    expect(analysis.contentStatus).toBe('warning')
+  })
+
+  it('makes them errors from 17. 11. 2026. (Zagreb time)', () => {
+    vi.setSystemTime(new Date('2026-11-16T23:30:00Z'))
+    const analysis = analyzeDocument('csv', services)
+    expect(analysis.findings[0]).toMatchObject({ rule: 'service.anchor.missing', level: 'error' })
+    expect(analysis.findings[0]?.message).not.toContain('primjenjuje se od')
+  })
+
+  it('never defers data retail already owed under NN 75/2025', () => {
+    const before = new Date('2026-11-06T12:00:00+01:00')
+    for (const rule of ['item.price.invalid', 'item.name.missing', 'product.barcode.missing', 'product.brand.missing', 'product.externalId.missing', 'product.anchor.missing']) {
+      expect(ruleFor(rule, RULES, before)).toMatchObject({ level: 'error' })
+    }
+    for (const rule of ['sale.flag.missing', 'sale.name.missing', 'product.availability.missing', 'service.anchor.missing', 'service.anchor.invalid']) {
+      expect(ruleFor(rule, RULES, before)).toMatchObject({ level: 'warning', deferredUntil: '2026-11-17' })
+    }
   })
 })

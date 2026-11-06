@@ -18,12 +18,22 @@
  */
 export type RuleSource = 'binding' | 'official-clarification' | 'draft' | 'recommendation'
 export type FindingLevel = 'error' | 'warning' | 'info'
-export type RuleDefinition = { level: FindingLevel; source: RuleSource; basis: string }
+/** effectiveFrom: Zagreb calendar day the obligation starts to apply; before it an error is shown as a warning. */
+export type RuleDefinition = { level: FindingLevel; source: RuleSource; basis: string; effectiveFrom?: string }
 
 const ODLUKA = 'Odluka NN 101/2026-1213 (izmjena NN 110/2026)'
 const MINGO = 'Službeno pojašnjenje Ministarstva gospodarstva'
 
 export const CURRENT_PROFILE_ID = 'nn-101-2026+nn-110-2026'
+
+/**
+ * NN 110/2026 postponed the start of NN 101/2026 to 17. 11. 2026. Data elements that exist only in the new
+ * Odluka (special-sale flag and name, product availability, the service price list as such) are therefore
+ * not yet an obligation. Data that retail already owed under NN 75/2025 (naziv, šifra, marka, MPC, barkod,
+ * dodatna cijena) keeps its level.
+ */
+export const NN_101_2026_EFFECTIVE_FROM = '2026-11-17'
+const NEW_IN_2026 = { effectiveFrom: NN_101_2026_EFFECTIVE_FROM }
 
 export const RULES: Record<string, RuleDefinition> = {
   'document.unreadable': { level: 'error', source: 'binding', basis: `${ODLUKA}: CSV ili XML pogodan za automatsku obradu` },
@@ -34,17 +44,17 @@ export const RULES: Record<string, RuleDefinition> = {
   // The Odluka prescribes the data (final price, including special sales), not a column. A valid price in the
   // special-sale column with MPC left empty is a format deviation to verify, not a proven missing price.
   'item.price.alternative-column': { level: 'warning', source: 'binding', basis: `${ODLUKA}: maloprodajna cijena kao konačna cijena, uključivo posebne oblike prodaje` },
-  'service.anchor.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena` },
-  'service.anchor.invalid': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena` },
+  'service.anchor.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena`, ...NEW_IN_2026 },
+  'service.anchor.invalid': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena`, ...NEW_IN_2026 },
   'product.anchor.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena` },
-  'sale.flag.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: podatak o posebnom obliku prodaje` },
-  'sale.name.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: naziv posebnog oblika prodaje` },
+  'sale.flag.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: podatak o posebnom obliku prodaje`, ...NEW_IN_2026 },
+  'sale.name.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: naziv posebnog oblika prodaje`, ...NEW_IN_2026 },
   'sale.price.invalid': { level: 'error', source: 'binding', basis: ODLUKA },
   'product.unitPrice.invalid': { level: 'error', source: 'binding', basis: ODLUKA },
   'product.externalId.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: podaci o proizvodu` },
   'product.brand.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: podaci o proizvodu` },
   'product.barcode.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: podaci o proizvodu` },
-  'product.availability.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: podaci o proizvodu` },
+  'product.availability.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: podaci o proizvodu`, ...NEW_IN_2026 },
   'product.unit.missing': { level: 'warning', source: 'binding', basis: `${ODLUKA}: jedinica mjere gdje je primjenjivo` },
   'product.unitPrice.missing': { level: 'warning', source: 'binding', basis: `${ODLUKA}: cijena za jedinicu mjere gdje je primjenjivo` },
   'product.barcode.invalid': { level: 'warning', source: 'binding', basis: ODLUKA },
@@ -69,10 +79,22 @@ export const RULES: Record<string, RuleDefinition> = {
 
 const UNKNOWN_RULE: RuleDefinition = { level: 'warning', source: 'recommendation', basis: 'Potrebna je ručna provjera.' }
 
-/** Only binding law and official clarifications may produce an error; a draft is at most information. */
-export function ruleFor(rule: string | undefined, profile: Record<string, RuleDefinition> = RULES): RuleDefinition {
+const zagrebDay = (now: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zagreb', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
+
+/** "17. 11. 2026." */
+export const formatHrDay = (day: string) => { const [y, m, d] = day.split('-'); return `${Number(d)}. ${Number(m)}. ${y}.` }
+
+/**
+ * Only binding law and official clarifications may produce an error; a draft is at most information, and a
+ * binding rule is an error only from the day it applies (`deferredUntil` marks a not-yet-applicable error).
+ */
+export function ruleFor(rule: string | undefined, profile: Record<string, RuleDefinition> = RULES, now: Date = new Date()): RuleDefinition & { deferredUntil?: string } {
   const definition = (rule && profile[rule]) || UNKNOWN_RULE
   if (definition.source === 'draft') return { ...definition, level: 'info' }
   if (definition.level === 'error' && definition.source === 'recommendation') return { ...definition, level: 'warning' }
+  if (definition.level === 'error' && definition.effectiveFrom && zagrebDay(now) < definition.effectiveFrom) return { ...definition, level: 'warning', deferredUntil: definition.effectiveFrom }
   return definition
 }
+
+/** Note appended to a finding whose obligation has not started yet. */
+export const deferredNote = (day: string) => ` Obveza se primjenjuje od ${formatHrDay(day)}`
