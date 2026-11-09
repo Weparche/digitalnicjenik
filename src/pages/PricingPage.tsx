@@ -9,7 +9,7 @@ export const PRICING_INCLUDED = [
   'Arhiva prethodnih objava (najmanje 30 dana od zamjene)',
   'Svakodnevni nadzor usklađenosti i e-mail upozorenje kad nešto nije u redu',
   'QR kod, prikaz za ispis na A4 (spremanje u PDF iz preglednika) i skripta za ugradnju na vaš web',
-  'Pravila verzionirana prema važećem propisu, pa se prilagođavaju novom pravilniku',
+  'Provjere se temelje na objavljenim propisima; nova pravila uključuju se nakon objave i provjere konačnog teksta',
 ]
 
 export function PricingPage() {
