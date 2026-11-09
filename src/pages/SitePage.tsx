@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { ComparePage } from './ComparePage'
+import { AccountantsPage } from './AccountantsPage'
 import { FaqPage } from './FaqPage'
 import { AnchorGuidePage, AutomationGuidePage, ExcelGuidePage, GuidesHubPage, MikroGuidePage, WooGuidePage } from './GuidePages'
 import { PricingPage } from './PricingPage'
@@ -22,6 +23,7 @@ const COMPONENTS: Record<string, () => ReactElement> = {
   '/objava-digitalnog-cjenika/': InstallationPage,
   '/reference/auto-gubic/': AutoGubicReferencePage,
   '/cijene/': PricingPage,
+  '/digitalni-cjenik-za-knjigovode/': AccountantsPage,
   '/faq/': FaqPage,
   '/usporedba/': ComparePage,
   '/specifikacija-csv-xml/': SpecPage,
