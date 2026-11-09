@@ -53,9 +53,19 @@ export type WebsiteCheckDetails = {
   xmlAnalysis?: DocumentAnalysis
   structureReasons?: string[]
   contentReasons?: string[]
+  /** CMS fingerprint is advisory only; absence does not imply a custom stack. */
+  platform?: 'wordpress' | 'shopify' | 'wix' | 'unknown'
+  /** Whether the public price-list link appears in the homepage HTML or only on a linked inner page. */
+  publicLinkLocation?: 'homepage' | 'inner'
+  /** robots.txt is only an indication of bot restrictions, not a legal compliance conclusion. */
+  robotsStatus?: 'clear' | 'restricted' | 'unknown'
+  robotsEvidence?: string
 }
 export type WebsiteCheckResult = {
   checkerRunId?:string|null
+  /** Stored shareable report with redacted, per-check evidence; no customer or attribution data. */
+  savedReport?: { checkedAt: string; checks: Array<{ id: string; status: TechnicalStatus; evidence: string }> }
+  website?: string
   status: 'green' | 'yellow' | 'red' | 'unavailable'
   message: string
   details?: WebsiteCheckDetails
@@ -77,6 +87,16 @@ export const STATUS_LABELS: Record<TechnicalStatus, string> = {
   not_applicable: 'Nije potrebno',
 }
 export function technicalReport(result: WebsiteCheckResult) {
+  if (result.savedReport) {
+    const checks = TECHNICAL_CHECKS.map((entry) => {
+      const stored = result.savedReport!.checks.find((item) => item.id === entry.id)
+      return { ...entry, status: stored?.status ?? 'unknown' as TechnicalStatus, evidence: stored?.evidence ?? 'Za ovu provjeru nema pohranjenog dokaza.', url: undefined as string | undefined }
+    })
+    const score = checks.filter((check) => check.status === 'pass' || check.status === 'not_applicable').length
+    const unknown = checks.filter((check) => check.status === 'unknown').length
+    const attention = checks.filter((check) => ['missing','warning','fail'].includes(check.status)).length
+    return { checks, score, unknown, attention, tone: attention ? (score <= 2 ? 'red' : 'yellow') : unknown ? 'yellow' : 'green' }
+  }
   const d = result.details ?? {}
   const uncertain = result.status === 'unavailable' || Boolean(d.fetchBlocked || d.networkIncomplete) || d.reachable !== true
   const unknownReason = d.fetchBlocked ? 'Zaštita weba ograničava automatski dohvat.' : d.reachable === false && result.status !== 'unavailable' ? 'Web nije dostupan pa ovu stavku nije moguće potvrditi.' : 'Dohvat nije dovršen. Pokušajte ponovno ili učitajte datoteku.'
@@ -110,7 +130,9 @@ export function technicalReport(result: WebsiteCheckResult) {
     d.reachable ? { status: d.https ? 'pass' : 'warning', evidence: d.https ? 'Dohvaćena adresa koristi HTTPS.' : 'Dohvaćena adresa ne koristi HTTPS.' } : { status: 'unknown', evidence: unknownReason },
     { ...found(d.pricePageFound || d.csvFound || d.xmlFound, 'Pretražene su javne poveznice i uobičajene adrese cjenika.'), url: d.pricePageUrl || d.csvUrl || d.xmlUrl },
     machineState,
-    { ...found(Boolean(d.publicLinkUrl), 'Poveznica mora biti pročitana iz javnog HTML-a; pretpostavljena adresa nije dokaz poveznice.'), url: d.publicLinkUrl },
+    d.publicLinkLocation === 'inner'
+      ? { status: 'warning', evidence: 'Poveznica je pronađena na unutarnjoj stranici, ali ne i na naslovnici. Dodajte vidljiv link „Cjenik” na početnu stranicu ili u footer. To je preporuka za lakši pristup, ne samostalno utvrđena povreda.', url: d.publicLinkUrl }
+      : { ...found(Boolean(d.publicLinkUrl), d.publicLinkLocation === 'homepage' ? 'Poveznica je potvrđena u HTML-u početne stranice (uključujući moguće poveznice u footeru).' : 'Poveznica mora biti pročitana iz javnog HTML-a; pretpostavljena adresa nije dokaz poveznice.'), url: d.publicLinkUrl },
     { status: d.structureStatus ?? 'unknown', evidence: d.structureReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera prepoznate strukture datoteke.' },
     publicationState,
     // Odluka traži dostupnost objava 30 dana, ne određenu stranicu ili adresu arhive.
