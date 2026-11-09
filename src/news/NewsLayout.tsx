@@ -29,6 +29,7 @@ export function NewsLayout({
           NEPAR pruža tehničku i podatkovnu provjeru objave cjenika, ne individualni pravni savjet.
           Za obvezujuće tumačenje koristite službene propise i nadležna tijela.
         </p>
+        <nav aria-label="Pravne informacije" className="news-legal-links"><a href="/impressum.html">Impressum</a> · <a href="/privatnost.html">Privatnost</a> · <a href="/uvjeti.html">Uvjeti usluge</a></nav>
       </main>
     </div>
   )
