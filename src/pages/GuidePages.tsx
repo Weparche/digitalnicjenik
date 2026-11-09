@@ -1,5 +1,6 @@
 import { OFFICIAL_SOURCES, SitePageLayout, SourceList } from './PageLayout'
 import { anchorGuide } from './anchorGuide'
+import { PLANS, formatEur } from '../../shared/pricing'
 import { getSitePage, SITE_PAGES } from './registry'
 
 export function ExcelGuidePage() {
@@ -49,7 +50,7 @@ export function ExcelGuidePage() {
 
       <section className="site-section" aria-labelledby="step5">
         <h2 id="step5">5. Povežite s webom i aktivirajte</h2>
-        <p>Na svoju stranicu stavite poveznicu na cjenik ili ugradite cjenik jednom linijom koda (dobivate je u nadzornoj ploči, zajedno s QR kodom i prikazom za ispis). Isti link zadržite za 19,90 €/god uplatom putem 2D barkoda; bez uplate se javni URL gasi, a podaci ostaju.</p>
+        <p>Na svoju stranicu stavite poveznicu na cjenik ili ugradite cjenik jednom linijom koda (dobivate je u nadzornoj ploči, zajedno s QR kodom i prikazom za ispis). Isti link zadržite za {formatEur(PLANS[0].price, true)} uplatom putem 2D barkoda; bez uplate se javni URL gasi, a podaci ostaju.</p>
         <p>Kad se cijene promijene, učitajte novu verziju: stari cjenik ostaje u arhivi. S paketom Publisher nadzor svaki dan provjerava da je objava ispravna.</p>
         <p><a className="app-button app-button-primary" href="/#csv-validator">Učitaj Excel ili CSV →</a></p>
       </section>

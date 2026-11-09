@@ -6,7 +6,7 @@ import { WebsiteCheckResultPanel } from './WebsiteCheckResult'
 
 const loadingCopy=['Otvaramo vašu web stranicu…','Tražimo javni digitalni cjenik…','Provjeravamo dostupne CSV/XML datoteke…','Analiziramo javno dostupne podatke…']
 export type CheckerContactContext={website:string;result:WebsiteCheckResult}
-export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,onUpload,onHelp,onResult}:{initialUrl?:string;autoRun?:boolean;fromLanding?:boolean;onUpload:()=>void;onHelp:(context:CheckerContactContext)=>void;onResult:(context:CheckerContactContext)=>void}){
+export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,reportId='',onUpload,onHelp,onResult}:{initialUrl?:string;autoRun?:boolean;fromLanding?:boolean;reportId?:string;onUpload:()=>void;onHelp:(context:CheckerContactContext)=>void;onResult:(context:CheckerContactContext)=>void}){
   const [url,setUrl]=useState(initialUrl),[checkedUrl,setCheckedUrl]=useState(''),[error,setError]=useState('')
   const [result,setResult]=useState<WebsiteCheckResult|null>(null),[checking,setChecking]=useState(false),[phase,setPhase]=useState(0),[cancelled,setCancelled]=useState(false)
   const request=useRef<AbortController|null>(null),anchor=useRef<HTMLDivElement|null>(null),input=useRef<HTMLInputElement|null>(null),stop=useRef(false)
@@ -32,11 +32,30 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,on
     const timer=autoRun&&initialUrl?setTimeout(()=>void check(),0):null
     return()=>{if(timer)clearTimeout(timer);stop.current=true;request.current?.abort()}
   },[])
+  useEffect(()=>{
+    if (!reportId) return
+    const controller = new AbortController()
+    setChecking(true)
+    setResult(null)
+    setError('')
+    fetch('/api/digitalni-cjenik/report/' + encodeURIComponent(reportId), { signal: controller.signal, cache: 'no-store' })
+      .then(async response => { if (!response.ok) throw new Error('Izvještaj nije dostupan.'); return await response.json() as WebsiteCheckResult })
+      .then(data => {
+        if (controller.signal.aborted || !data.savedReport || !data.website) throw new Error('invalid_report')
+        setResult(data)
+        setCheckedUrl(data.website)
+        setUrl(data.website)
+        onResult({ website: data.website, result: data })
+      })
+      .catch(() => { if (!controller.signal.aborted) setError('Dijeljeni rezultat nije dostupan. Pokrenite novu provjeru.') })
+      .finally(() => { if (!controller.signal.aborted) setChecking(false) })
+    return () => controller.abort()
+  }, [reportId])
   useEffect(()=>{if(!checking)return;const timer=setInterval(()=>setPhase(value=>(value+1)%loadingCopy.length),2400);return()=>clearInterval(timer)},[checking])
   useEffect(()=>{if(result){anchor.current?.scrollIntoView({block:'start',behavior:'instant'});anchor.current?.focus({preventScroll:true})}},[result])
   const report=result?technicalReport(result):null
   return <div className="workspace-checker acquisition">
-    <section className="workspace-surface"><h2>Provjerite digitalni cjenik na svojem webu</h2><p>Unesite web adresu ili izravni CSV/XML link. Dobit ćete istih devet tehničkih provjera kao na početnoj stranici.</p>
+    <section className="workspace-surface"><h2>Provjerite digitalni cjenik na svojem webu</h2><p>Unesite web adresu ili izravni CSV/XML link. Dobit ćete devet tehničkih provjera, dokaze i preporuke za sljedeći korak.</p>
       <form className="acq-form" onSubmit={check} noValidate aria-busy={checking}><label className="sr-only" htmlFor="workspace-check-url">Adresa web stranice</label><div className="acq-input"><IconWorld size={23}/><input ref={input} id="workspace-check-url" inputMode="url" autoComplete="url" autoCapitalize="none" spellCheck={false} maxLength={2048} value={url} onChange={event=>{setUrl(event.target.value);setError('')}} aria-invalid={Boolean(error)} aria-describedby={error?'workspace-check-error':undefined} placeholder="https://vasweb.hr"/></div><button className="acq-primary" type="submit" disabled={checking}>{checking?'Provjeravamo…':'Provjeri besplatno'}<IconArrowRight size={22}/></button></form>
       {error&&<p id="workspace-check-error" role="alert" className="acq-error">{error}</p>}
       <div className="acq-loading" role="status" aria-live="polite">{checking?<><span className="acq-spinner" aria-hidden="true"/>{loadingCopy[phase]}<small>Provjera je u tijeku. Rezultate prikazujemo po završetku dohvata.</small><button className="acq-cancel" type="button" onClick={()=>{stop.current=true;request.current?.abort();setCancelled(true);input.current?.focus()}}>Odustani od provjere</button></>:cancelled?'Provjera je zaustavljena. Možete pokušati ponovno.':null}</div>

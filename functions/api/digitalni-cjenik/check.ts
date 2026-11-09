@@ -86,6 +86,8 @@ const emptyDetails = (): CheckDetails => ({
   xmlLinkDiscovered: false,
   archiveLinkDiscovered: false,
   fetchBlocked: false,
+  platform: 'unknown',
+  robotsStatus: 'unknown',
   priceListKind: 'unknown',
   priceListKindEvidence: 'Nije pronađeno dovoljno podataka za klasifikaciju cjenika.',
 });
@@ -360,6 +362,48 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
   return results;
 }
 
+
+/** CMS hints are only used for instructions, never for scoring or legal conclusions. */
+export function identifyWebsitePlatform(html: string): 'wordpress' | 'shopify' | 'wix' | 'unknown' {
+  if (/(?:wp-content\/|wp-includes\/|<meta[^>]+generator[^>]+wordpress|woocommerce)/i.test(html)) return 'wordpress';
+  if (/(?:cdn\.shopify\.com|shopify\.theme|Shopify\.shop|myshopify\.com)/i.test(html)) return 'shopify';
+  if (/(?:static\.wixstatic\.com|wix\.com\/website|wix-site-id|wix-code)/i.test(html)) return 'wix';
+  return 'unknown';
+}
+
+/** A broad robots.txt disallow is a diagnostic clue, not proof that a fetch is technically blocked. */
+export function robotsRestrictionHint(robots: string): string | null {
+  let allAgents = false;
+  for (const rawLine of robots.split(/\r?\n/)) {
+    const line = rawLine.replace(/#.*$/, '').trim();
+    if (!line) continue;
+    const agent = line.match(/^user-agent\s*:\s*(.*)$/i);
+    if (agent) { allAgents = agent[1].trim() === '*'; continue; }
+    const directive = line.match(/^disallow\s*:\s*(\S+)/i);
+    if (allAgents && directive) {
+      const path = directive[1].toLowerCase();
+      if (path === '/' || /(?:cjenik|cijene|price|\.csv|\.xml)/i.test(path))
+        return `robots.txt sadrži "Disallow: ${directive[1]}" za opće botove. Provjerite smeta li to automatskom preuzimanju cjenika.`;
+    }
+  }
+  return null;
+}
+
+async function inspectRobots(url: URL, env: CheckerEnv): Promise<{ status: 'clear' | 'restricted' | 'unknown'; evidence: string }> {
+  try {
+    const checked = await safeDigitalPriceListFetch(new URL('/robots.txt', url.origin), env);
+    if (checked.response.status === 404) return { status: 'unknown', evidence: 'robots.txt nije pronađen; to samo po sebi nije problem.' };
+    if (!checked.response.ok) return { status: 'unknown', evidence: `robots.txt nije automatski dostupan (HTTP ${checked.response.status}).` };
+    const text = await readLimited(checked.response, 32 * 1024);
+    const hint = robotsRestrictionHint(text);
+    return hint
+      ? { status: 'restricted', evidence: hint }
+      : { status: 'clear', evidence: 'U robots.txt nije pronađena opća zabrana preuzimanja cjenika; stvarni pristup botova još treba potvrditi.' };
+  } catch {
+    return { status: 'unknown', evidence: 'robots.txt nije bilo moguće pouzdano provjeriti.' };
+  }
+}
+
 function appendUnique(list: URL[], value: URL, limit: number) {
   if (list.length < limit && !list.some((item) => item.href === value.href)) list.push(value);
 }
@@ -531,6 +575,7 @@ async function findDocument(
       if (!fetched.response.ok) continue;
       if (documentLooksValid(kind, fetched.response, body)) {
         const analysis = analyzeDocument(kind, body, fetched.url.href);
+        analysis.contentType = fetched.response.headers.get('content-type');
         if (sampled) {
           const contentStatus = analysis.contentStatus === 'pass' ? 'unknown' : analysis.contentStatus;
           remember({
@@ -793,7 +838,10 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     https: homepage.url.protocol === "https:",
     fetchBlocked: homepageChallenge,
     homepageReadable,
+    platform: homepageReadable && isHtml(homepage.response, html) ? identifyWebsitePlatform(html) : 'unknown',
   };
+  // Parallel with bounded document checks so robots inspection does not block link discovery.
+  const robotsPromise = homepageReadable && isHtml(homepage.response, html) ? inspectRobots(homepage.url, env) : Promise.resolve(null);
   if (homepageReadable && pageLooksLikePriceList(homepage.response, html)) {
     details.pricePageFound = true;
     details.pricePageUrl = homepage.url.href;
@@ -809,7 +857,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const archive: URL[] = [];
   const documentLinks: URL[] = [];
   for (const candidate of links) {
-    if (candidate.kind === 'price' || candidate.kind === 'csv' || candidate.kind === 'xml') details.publicLinkUrl ||= candidate.url.href;
+    if (candidate.kind === 'price' || candidate.kind === 'csv' || candidate.kind === 'xml') { details.publicLinkUrl ||= candidate.url.href; details.publicLinkLocation = 'homepage'; }
     if (candidate.kind === "price") appendUnique(secondary, candidate.url, MAX_SECONDARY_PAGES);
     if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
     if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
@@ -834,7 +882,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
         details.pricePageUrl ||= fetched.url.href;
       }
       for (const candidate of extractLinks(secondaryHtml, fetched.url)) {
-        if (candidate.kind === 'csv' || candidate.kind === 'xml') details.publicLinkUrl ||= candidate.url.href;
+        if (candidate.kind === 'csv' || candidate.kind === 'xml') { details.publicLinkUrl ||= candidate.url.href; details.publicLinkLocation ||= 'inner'; }
         if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
         if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
         if (candidate.kind === "csv" || candidate.kind === "xml") appendUnique(documentLinks, candidate.url, MAX_PUBLICATION_LINKS);
@@ -868,6 +916,8 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     details.archiveUrl = archivePageUrl;
     details.archiveEvidence = 'Pronađena je javna stranica s prethodnim objavama cjenika.';
   }
+  const robots = await robotsPromise;
+  if (robots) { details.robotsStatus = robots.status; details.robotsEvidence = robots.evidence; }
   details.networkIncomplete = network.failed;
   details.csvAnalysis = analyses.find(a => a.format === 'csv') ?? { format: 'csv', url: csv[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['CSV nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
   details.xmlAnalysis = analyses.find(a => a.format === 'xml') ?? { format: 'xml', url: xml[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['XML nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
