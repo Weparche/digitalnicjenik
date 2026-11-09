@@ -21,3 +21,25 @@
 @media(max-width:760px){.workspace .workspace-check-next{padding:18px;gap:10px}.workspace .workspace-check-next h3{font-size:18px}.workspace .workspace-check-next>button{width:100%;white-space:normal;min-height:46px}.workspace-contact-form{grid-template-columns:minmax(0,1fr)}.workspace-contact-form>label{grid-column:1/-1}.workspace .workspace-contact-submit{width:100%}}
 .workspace-check-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-basis:100%}.workspace-check-actions>button{min-height:46px}
 @media(max-width:760px){.workspace .workspace-check-actions>button{width:100%;white-space:normal}}
+
+
+/* Public checker evidence, platform hint and share/print actions */
+.workspace-check-meta{display:grid;gap:6px;margin:12px 0 18px;color:#52627c;font-size:12px;line-height:1.55}
+.workspace-check-meta p{margin:4px 0 0}
+.workspace-platform-tip{padding:16px 18px;margin:16px 0;border:1px solid #cddcf3;background:#f5f9ff;border-radius:12px;color:#172339}
+.workspace-platform-tip strong{font-size:14px}
+.workspace-platform-tip p{font-size:13px;line-height:1.6;margin:6px 0 0}
+.workspace-check-pricing{font-size:13px;line-height:1.65;color:#43516b;margin:20px 0}
+.workspace-report-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.workspace-report-actions button{min-height:42px}
+.workspace-share-fallback{font-size:13px;overflow-wrap:anywhere}
+.news-legal-links{margin:18px 0 12px;font-size:13px;color:#52627c}
+@media(max-width:760px){.workspace-report-actions{width:100%}.workspace-report-actions button{flex:1 1 100%}}
+@media print{
+  body *{visibility:hidden!important}
+  #rezultat,#rezultat *{visibility:visible!important}
+  #rezultat{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:none!important;box-shadow:none!important;border:0!important;background:#fff!important;color:#111!important}
+  #rezultat .workspace-check-actions,#rezultat .workspace-report-actions,#rezultat .acq-result-footer button{display:none!important}
+  #rezultat details{break-inside:avoid;page-break-inside:avoid}
+  #rezultat details .acq-evidence{display:block!important;visibility:visible!important}
+}
