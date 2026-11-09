@@ -67,6 +67,13 @@ export const SITE_PAGES: SitePageMeta[] = [
     updatedAt: OFFER_UPDATED,
   },
   {
+    path: '/digitalni-cjenik-za-knjigovode/', kind: 'guide', label: 'Za knjigovođe',
+    title: 'Provjera digitalnog cjenika za knjigovođe i njihove klijente',
+    seoTitle: 'Digitalni cjenik za knjigovođe: besplatna provjera weba | NEPAR',
+    description: 'Provjerite tehničku dostupnost CSV/XML digitalnog cjenika svojih klijenata i podijelite rezultate s webmasterom ili poduzetnikom.',
+    updatedAt: '2026-11-09T21:00:00+01:00',
+  },
+  {
     path: '/cijene/',
     kind: 'pricing',
     label: 'Cijene',
