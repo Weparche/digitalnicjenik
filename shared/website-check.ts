@@ -8,6 +8,8 @@ export type DocumentAnalysis = {
   fetched: boolean
   structureRecognized: boolean
   itemCount: number
+  /** Actual response MIME header, advisory only (some servers omit or mislabel it). */
+  contentType?: string | null
   status: DocumentAnalysisStatus
   structureStatus: DocumentAnalysisStatus
   contentStatus: DocumentAnalysisStatus
