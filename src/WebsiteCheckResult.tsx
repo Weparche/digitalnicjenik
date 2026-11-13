@@ -13,6 +13,7 @@ function FindingLevel({ finding }: { finding: DocumentFinding }) {
 
 function DocumentResult({ analysis }: { analysis: DocumentAnalysis }) {
   const findings = analysis.findings.slice(0, 20)
+  const groups=analysis.findingGroups ?? []
   const recommendations = analysis.recommendations ?? []
   return <article className="acq-document" aria-label={`${analysis.format.toUpperCase()} analiza`}>
     <header><h3>{analysis.format.toUpperCase()}</h3><span className={`acq-document-status acq-status-${analysis.status}`}>{STATUS_LABELS[analysis.status]}</span></header>
@@ -21,9 +22,10 @@ function DocumentResult({ analysis }: { analysis: DocumentAnalysis }) {
     <p>{analysis.fetched ? `Dokument dohvaćen · ${stavke(analysis.itemCount)}` : `${analysis.format.toUpperCase()} nije pronađen na webu ni na uobičajenim adresama.`}</p>
     {analysis.fetched && analysis.contentType && <p><small>Poslužitelj vraća Content-Type: <code>{analysis.contentType}</code>. Pogrešno označen tip zahtijeva ručnu provjeru, ne znači automatski povredu.</small></p>}
     {analysis.publicationFilename && <p><small>Naziv preuzete datoteke: {analysis.publicationFilename}</small></p>}
+    {analysis.archiveEntry && <p><strong>Datoteka u ZIP-u:</strong> {analysis.archiveEntry}</p>}
     <h4>Struktura</h4>{analysis.structureReasons.map((reason, i) => <p key={i}>{reason}</p>)}
     <h4>Sadržaj</h4>
-    {analysis.totalFindings > 0 ? <><p className="acq-finding-count">Prikazano {findings.length} od {analysis.totalFindings} nalaza u ovoj datoteci.</p><ol className="acq-document-findings">{findings.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.itemName && <strong>„{finding.itemName}”: </strong>}{finding.message}{finding.row != null && <small>Izvorni redak / stavka {finding.row}</small>}</li>)}</ol></> : <p>{analysis.contentStatus === 'pass' ? 'Nema nalaza u podržanim poljima.' : 'Sadržaj nije moguće potvrditi ovom provjerom.'}</p>}
+    {groups.length > 0 ? <><p className="acq-finding-count">{analysis.affectedRows ?? 0} stavki s nalazima · {analysis.totalFindings} nalaza · {groups.length} vrsta problema.</p><div className="acq-grouped-findings">{groups.map(group=><details key={group.rule+'|'+group.level}><summary><FindingLevel finding={{message:group.message,level:group.level}}/><strong>{group.affectedRows} stavki</strong> · {group.message}</summary><ul className="acq-document-findings">{group.examples.map((finding,i)=><li key={i}>{finding.itemName && <strong>„{finding.itemName}”: </strong>}{finding.message}{finding.row!=null&&<small>Redak {finding.row}</small>}</li>)}</ul></details>)}</div></> : analysis.totalFindings > 0 ? <><p className="acq-finding-count">Prikazano {findings.length} od {analysis.totalFindings} nalaza u ovoj datoteci.</p><ol className="acq-document-findings">{findings.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.itemName && <strong>„{finding.itemName}”: </strong>}{finding.message}{finding.row != null && <small>Izvorni redak / stavka {finding.row}</small>}</li>)}</ol></> : <p>{analysis.contentStatus === 'pass' ? 'Nema nalaza u podržanim poljima.' : 'Sadržaj nije moguće potvrditi ovom provjerom.'}</p>}
     {recommendations.length > 0 && <div className="acq-recommendations"><h4>Preporuke (nije zakonska obveza)</h4><ul className="acq-document-findings">{recommendations.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.message}</li>)}</ul></div>}
   </article>
 }
@@ -34,7 +36,7 @@ const platformInstructions = {
   wix: { name: 'Wix', tip: 'U uređivaču stranice dodajte gumb ili tekstualni link „Cjenik” na početnu stranicu ili u footer i zatim objavite promjene.' },
 } as const
 
-export function WebsiteCheckResultPanel({ result, onUpload, onRetry,onHelp, website }: { result: WebsiteCheckResult; onUpload: () => void; onRetry: () => void;onHelp:()=>void; website: string }) {
+export function WebsiteCheckResultPanel({ result, onUpload, onRetry,onHelp, website,onSelectDocument }: { result: WebsiteCheckResult; onUpload: () => void; onRetry: () => void;onHelp:()=>void; website: string;onSelectDocument?:(url:string,entry?:string)=>void }) {
   const [shareState,setShareState]=useState<'idle'|'copied'|'manual'>('idle')
   const [shareUrl,setShareUrl]=useState('')
   async function copyShareLink() {
@@ -80,7 +82,9 @@ export function WebsiteCheckResultPanel({ result, onUpload, onRetry,onHelp, webs
     </div>
     <ol className="acq-status-list">{report.checks.map((check) => <li key={check.id} className={`acq-status-${check.status}`}><details><summary><span className="acq-status-icon" aria-hidden="true">{(check.status === 'pass' || check.status === 'not_applicable') ? <IconCircleCheckFilled size={21}/> : <IconAlertCircle size={21}/>}</span><strong>{check.label}</strong><span className="acq-status-label">{STATUS_LABELS[check.status]}</span><IconChevronDown className="acq-disclosure" size={17} aria-hidden="true"/></summary><div className="acq-evidence"><p>{check.evidence}</p>{check.url && /^https?:\/\//.test(check.url) && <a href={check.url} target="_blank" rel="noreferrer">{check.url}<IconExternalLink size={15}/></a>}</div></details></li>)}</ol>
     {!result.savedReport && <p className="workspace-check-pricing">Za objavu vlastitog cjenika možete isprobati besplatnu 24-satnu objavu ili odabrati <a href="/cijene/">Web Link od {formatEur(PLANS[0].price,true)}</a>. Nije potvrda pravne usklađenosti.</p>}
-    {!!result.details?.otherDocumentUrls?.length && <section className="acq-publication-notes"><h3>Pronađene druge datoteke</h3><p>Ovo su moguće poveznice na PDF, Excel ili ZIP cjenike. Sadržaj datoteka nije provjeren. ZIP može sadržavati CSV/XML, ali to ovom provjerom nije potvrđeno.</p><ul>{result.details.otherDocumentUrls.map(url=><li key={url}><a href={url} target="_blank" rel="noreferrer">{url}<IconExternalLink size={15}/></a></li>)}</ul></section>}
+    {result.details?.zipEvidence && <p className="acq-publication-notes">{result.details.zipEvidence}</p>}
+    {!!result.details?.documentChoices?.length && onSelectDocument && <section className="acq-publication-notes"><h3>Pronađene datoteke / poslovnice</h3><p>{result.details.discoveredObjectCount? 'Najmanje '+result.details.discoveredObjectCount+' prepoznatih objekata. ':''}Prikazane su otkrivene datoteke; nisu sve analizirane. Odaberite konkretnu datoteku za novu provjeru.</p><label>Datoteka<select aria-label="Odaberi datoteku cjenika" defaultValue="" onChange={event=>{const choice=result.details?.documentChoices?.[Number(event.target.value)];if(choice)onSelectDocument(choice.url,choice.entry)}}><option value="" disabled>Odaberite cjenik…</option>{result.details.documentChoices.map((choice,index)=><option key={index} value={index}>{choice.label} · {choice.format.toUpperCase()}</option>)}</select></label></section>}
+    {!!result.details?.otherDocumentUrls?.length && <section className="acq-publication-notes"><h3>Pronađene druge datoteke</h3><p>Ovo su moguće poveznice na PDF, Excel ili ZIP cjenike. Sadržaj ovih poveznica nije potpuno provjeren. Rezultat odabranog člana ZIP-a prikazan je zasebno ako je dostupan.</p><ul>{result.details.otherDocumentUrls.map(url=><li key={url}><a href={url} target="_blank" rel="noreferrer">{url}<IconExternalLink size={15}/></a></li>)}</ul></section>}
     {(result.details?.csvAnalysis || result.details?.xmlAnalysis) && <div className="acq-document-grid">{[result.details.csvAnalysis, result.details.xmlAnalysis].map((analysis) => analysis && <DocumentResult key={analysis.format} analysis={analysis}/>)}</div>}
     {(result.details?.publicationFindings?.length ?? 0) > 0 && <section className="acq-publication-notes" aria-label="Napomene o objavi"><h3>Objava i naziv datoteke</h3><ul className="acq-document-findings">{result.details!.publicationFindings!.map((finding, i) => <li key={i}><FindingLevel finding={finding}/>{finding.message}</li>)}</ul></section>}
     <div className="acq-result-footer">

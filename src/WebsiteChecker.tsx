@@ -11,16 +11,16 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,re
   const [result,setResult]=useState<WebsiteCheckResult|null>(null),[checking,setChecking]=useState(false),[phase,setPhase]=useState(0),[cancelled,setCancelled]=useState(false)
   const request=useRef<AbortController|null>(null),anchor=useRef<HTMLDivElement|null>(null),input=useRef<HTMLInputElement|null>(null),stop=useRef(false)
   const landingRequest=useRef(fromLanding)
-  async function check(event?:React.FormEvent){
+  async function check(event?:React.FormEvent,selectedUrl?:string,zipEntry?:string){
     event?.preventDefault();if(request.current)return
     let normalized:string
-    try{normalized=normalizeWebsiteInput(url)}catch{setError('Unesite ispravnu adresu, primjerice vasweb.hr.');input.current?.focus();return}
+    try{normalized=normalizeWebsiteInput(selectedUrl??url)}catch{setError('Unesite ispravnu adresu, primjerice vasweb.hr.');input.current?.focus();return}
     const controller=new AbortController();request.current=controller;stop.current=false
-    setChecking(true);setResult(null);setError('');setCancelled(false);setCheckedUrl(normalized);setPhase(0)
+    if(selectedUrl)setUrl(selectedUrl);setChecking(true);setResult(null);setError('');setCancelled(false);setCheckedUrl(normalized);setPhase(0)
     const timer=setTimeout(()=>controller.abort(),45_000)
     try{
       const source=landingRequest.current?'landing':'dashboard';landingRequest.current=false
-      const response=await fetch('/api/digitalni-cjenik/check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:normalized,attribution:readAcquisitionTouch(),source}),signal:controller.signal})
+      const response=await fetch('/api/digitalni-cjenik/check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:normalized,attribution:readAcquisitionTouch(),source,zipEntry}),signal:controller.signal})
       const data=await response.json() as WebsiteCheckResult
       if(!data||!['green','yellow','red','unavailable'].includes(data.status))throw new Error('invalid_response')
       if(!stop.current){setResult(data);onResult({website:normalized,result:data})}
@@ -61,6 +61,6 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,re
       <div className="acq-loading" role="status" aria-live="polite">{checking?<><span className="acq-spinner" aria-hidden="true"/>{loadingCopy[phase]}<small>Provjera je u tijeku. Rezultate prikazujemo po završetku dohvata.</small><button className="acq-cancel" type="button" onClick={()=>{stop.current=true;request.current?.abort();setCancelled(true);input.current?.focus()}}>Odustani od provjere</button></>:cancelled?'Provjera je zaustavljena. Možete pokušati ponovno.':null}</div>
       <ul className="acq-trust">{['Bez registracije','Potpuno besplatno'].map(text=><li key={text}><IconCircleCheckFilled size={18}/>{text}</li>)}</ul>
     </section>
-    <div className="acq-result-anchor" ref={anchor} tabIndex={-1} aria-label="Rezultat provjere"><span className="sr-only" role="status">{report?`Rezultat: ${report.score} potvrđenih od 9 tehničkih provjera; ${report.unknown} nije moguće potvrditi.`:''}</span>{result&&<WebsiteCheckResultPanel result={result} website={checkedUrl} onRetry={()=>void check()} onUpload={onUpload} onHelp={()=>onHelp({website:checkedUrl,result})}/>}</div>
+    <div className="acq-result-anchor" ref={anchor} tabIndex={-1} aria-label="Rezultat provjere"><span className="sr-only" role="status">{report?`Rezultat: ${report.score} potvrđenih od 9 tehničkih provjera; ${report.unknown} nije moguće potvrditi.`:''}</span>{result&&<WebsiteCheckResultPanel result={result} website={checkedUrl} onSelectDocument={(url,entry)=>void check(undefined,url,entry)} onRetry={()=>void check()} onUpload={onUpload} onHelp={()=>onHelp({website:checkedUrl,result})}/>}</div>
   </div>
 }

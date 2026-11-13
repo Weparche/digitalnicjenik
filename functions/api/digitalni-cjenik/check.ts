@@ -7,6 +7,7 @@ import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engin
 import { deferredNote, ruleFor } from '../../../shared/compliance/legal-profile';
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type FindingGroup, type WebsiteCheckDetails } from '../../../shared/website-check';
 import { parseContentDispositionFilename } from '../../../shared/compliance/checks';
+import { readZipDirectory, readZipMember, type FetchRange } from './zip-inspection';
 import { recordCheckerRun } from '../../_checker-history';
 
 type Resolver = {
@@ -19,6 +20,7 @@ type CheckerEnv = {
   DB?: import('../../_repository').D1DatabaseLike;
   CHECKER_RATE_LIMIT_SECRET?: string;
   LEAD_RATE_LIMIT_SECRET?: string;
+  zipEntry?: string;
   requestState?: { signal: AbortSignal; dns: Map<string, Promise<string[]>> };
 };
 
@@ -201,7 +203,7 @@ function timeoutSignal() {
   return { signal: controller.signal, clear: () => clearTimeout(timeout) };
 }
 
-export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv): Promise<{ response: Response; url: URL }> {
+export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv, rangeHeaders?: { range: string; validator?: string }): Promise<{ response: Response; url: URL }> {
   let current = new URL(initialUrl.href);
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
     await assertPublicUrl(current, env);
@@ -213,12 +215,13 @@ export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv
         redirect: "manual",
         cache: "no-store",
         signal: env.requestState ? AbortSignal.any([timeout.signal, env.requestState.signal]) : timeout.signal,
-        headers: { accept: "text/html,application/xml,text/xml,text/csv,*/*;q=0.1" },
+        headers: { accept: "text/html,application/xml,text/xml,text/csv,*/*;q=0.1", ...(rangeHeaders ? { range: rangeHeaders.range, "accept-encoding": "identity", ...(rangeHeaders.validator ? { "if-range": rangeHeaders.validator } : {}) } : {}) },
       });
     } finally {
       timeout.clear();
     }
     if (!isRedirect(response)) return { response, url: current };
+    void response.body?.cancel().catch(()=>{});
     if (redirects === MAX_REDIRECTS) throw new Error("too_many_redirects");
     const location = response.headers.get("location");
     if (!location) throw new Error("invalid_redirect");
@@ -262,8 +265,8 @@ async function fetchHomepage(initialUrl: URL, env: CheckerEnv): Promise<{ respon
   throw primaryError instanceof Error ? primaryError : new Error('homepage_unavailable');
 }
 
-async function readBounded(response: Response, maxBytes: number): Promise<{ body: string; truncated: boolean }> {
-  if (!response.body) return { body: "", truncated: false };
+async function readBytesBounded(response: Response, maxBytes: number): Promise<{ bytes: Uint8Array; truncated: boolean }> {
+  if (!response.body) return { bytes: new Uint8Array(), truncated: false };
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -294,6 +297,11 @@ async function readBounded(response: Response, maxBytes: number): Promise<{ body
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return {bytes,truncated};
+}
+
+async function readBounded(response: Response, maxBytes: number): Promise<{body:string;truncated:boolean}> {
+  const {bytes,truncated}=await readBytesBounded(response,maxBytes);
   let body = new TextDecoder().decode(bytes);
   const charset = /charset\s*=\s*["']?([^;"'\s]+)/i.exec(response.headers.get('content-type') || '')?.[1];
   if (charset || body.includes('\uFFFD')) {
@@ -791,6 +799,39 @@ function publicationChoices(links:URL[],other:string[]):NonNullable<WebsiteCheck
   return Array.from(groups.values()).slice(0,40).map(({time,storage,...choice})=>choice);
 }
 
+async function inspectZip(url:URL,env:CheckerEnv,details:CheckDetails,analyses:CheckerDocumentAnalysis[]){
+  try{
+    const fetchRange:FetchRange=async(range,validator)=>{
+      const {response}=await safeDigitalPriceListFetch(url,env,{range,validator});
+      const contentRange=/^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range')||'');
+      if(response.status!==206||!contentRange){void response.body?.cancel().catch(()=>{});throw new Error('zip_range_unavailable')}
+      const start=Number(contentRange[1]),end=Number(contentRange[2]),total=Number(contentRange[3]),length=end-start+1;
+      const limit=range.startsWith('bytes=-')?65557:Math.min(5*1024*1024,Number(range.split('-')[1])-Number(range.slice(6).split('-')[0])+1);
+      if(!Number.isSafeInteger(total)||!Number.isSafeInteger(length)||length<=0||length>limit||end>=total){void response.body?.cancel().catch(()=>{});throw new Error('zip_range_limit')}
+      const {bytes,truncated}=await readBytesBounded(response,length);
+      if(truncated||bytes.length!==length)throw new Error('zip_range_length');
+      const tag=response.headers.get('etag');
+      return {bytes,start,total,validator:tag&&!tag.startsWith('W/')?tag:response.headers.get('last-modified')||undefined};
+    };
+    const directory=await readZipDirectory(fetchRange);
+    details.zipEvidence='ZIP arhiva: '+directory.entries.length+' podržanih CSV/XML datoteka od '+directory.totalEntries+' zapisa; analiziramo samo odabranu datoteku, ne cijelu arhivu.';
+    const members=directory.entries.map(entry=>({entry,publication:parsePublicationName(entry.name)}));
+    details.discoveredObjectCount=new Set(members.map(m=>m.publication?.objectKey).filter(Boolean)).size;
+    details.documentChoices=members.slice(0,100).map(({entry,publication})=>({url:url.href,entry:entry.name,label:publication?publication.objectKey.split('|').join(' · '):entry.name,format:entry.name.toLowerCase().endsWith('.csv')?'csv':'xml',objectKey:publication?.objectKey}));
+    const chosen=env.zipEntry?members.find(m=>m.entry.name===env.zipEntry):members[0];
+    if(!chosen){details.zipEvidence+=' Odabrana datoteka nije dostupna za sigurnu analizu.';return}
+    const kind=chosen.entry.name.toLowerCase().endsWith('.csv')?'csv':'xml';
+    const body=await readZipMember(directory,chosen.entry);
+    const capped=kind==='csv'?trimCsvToCompleteRecords(body,MAX_CSV_ROWS):body;
+    const sampled=kind==='csv'&&capped.length<body.length&&capped.split(/\r?\n/).length>MAX_CSV_ROWS;
+    const analysis=analyzeDocument(kind,sampled?capped:body,url.href);
+    analysis.archiveEntry=chosen.entry.name;analysis.publicationFilename=chosen.entry.name;analysis.contentType='application/zip';
+    if(sampled){if(analysis.contentStatus==='pass')analysis.status=analysis.contentStatus=analysis.content='unknown';analysis.structureReasons.push('Provjeren je ograničeni uzorak CSV datoteke unutar ZIP-a.')}
+    analyses.push(analysis);
+    if(analysis.structureRecognized){if(kind==='csv')details.csvUrl=url.href;else details.xmlUrl=url.href;details.zipEvidence+=' Prepoznat je strojni cjenik u ZIP-u; zahtjev izravne objave CSV/XML datoteke provjerite zasebno.'}
+  }catch{details.zipEvidence='ZIP poveznica je pronađena, ali siguran ograničeni dohvat arhive nije uspio. Cjelovit sadržaj nije potvrđen.'}
+}
+
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_PUBLICATION_LINKS = 40;
 const MAX_ARCHIVE_PROBES = 3;
@@ -849,14 +890,14 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
   }
 }
 
-function parseBody(request: Request): Promise<{ url?: unknown;attribution?:unknown;source?:unknown } | null> {
+function parseBody(request: Request): Promise<{ url?: unknown;attribution?:unknown;source?:unknown;zipEntry?:unknown } | null> {
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) return Promise.resolve(null);
   return request.text().then((value) => {
     if (new TextEncoder().encode(value).byteLength > MAX_REQUEST_BYTES) return null;
     try {
       const parsed = JSON.parse(value);
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { url?: unknown;attribution?:unknown;source?:unknown } : null;
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { url?: unknown;attribution?:unknown;source?:unknown;zipEntry?:unknown } : null;
     } catch { return null; }
   }).catch(() => null);
 }
@@ -874,7 +915,10 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const network = { failed: false, blocked: false, checked: false };
   const analyses: CheckerDocumentAnalysis[] = [];
   let homepage: { response: Response; url: URL };
+  const directZip=/\.zip$/i.test(initialUrl.pathname);
   try {
+    if(directZip)homepage={response:new Response('',{headers:{'content-type':'application/zip'}}),url:initialUrl};
+    else
     homepage = await fetchHomepage(initialUrl, env);
   } catch (caught) {
     if (caught instanceof Error && caught.message === "host_not_found") {
@@ -949,7 +993,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     if (candidate.kind === "csv" || candidate.kind === "xml") appendUnique(documentLinks, candidate.url, MAX_PUBLICATION_LINKS);
     if (candidate.kind === "archive") { details.archiveLinkDiscovered = true; appendUnique(archive, candidate.url, MAX_SECONDARY_PAGES); }
   }
-  if (!directFormat) {
+  if (!directFormat && !directZip) {
     appendUnique(secondary, new URL("/cjenik/", homepage.url.origin), MAX_SECONDARY_PAGES);
     appendUnique(secondary, new URL("/cjenici/", homepage.url.origin), MAX_SECONDARY_PAGES);
     appendUnique(secondary, new URL("/cijene/", homepage.url.origin), MAX_SECONDARY_PAGES);
@@ -993,14 +1037,15 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
       }
     } catch { network.failed = true; }
   }
+  if(directZip)rememberOther(initialUrl);
   details.otherDocumentUrls = otherDocuments;
   details.documentChoices = publicationChoices(documentLinks,otherDocuments);
   details.discoveredObjectCount = new Set(details.documentChoices.map(c=>c.objectKey).filter(Boolean)).size;
-  if (!directFormat && homepage.url.pathname === '/') {
+  if (!directFormat && !directZip && homepage.url.pathname === '/') {
     appendUnique(csv,new URL('/cjenik.csv',homepage.url.origin),MAX_DOCUMENT_CANDIDATES);
     appendUnique(xml,new URL('/cjenik.xml',homepage.url.origin),MAX_DOCUMENT_CANDIDATES);
   }
-  details.csvUrl = directFormat === 'csv' ? homepage.url.href : directFormat ? null : await findDocument("csv", csv, env, network, analyses, selected);
+  details.csvUrl = directFormat === 'csv' ? homepage.url.href : directFormat || directZip ? null : await findDocument("csv", csv, env, network, analyses, selected);
   const csvSource = selected.get('csv');
   const csvName = parsePublicationName(analyses.find(a=>a.format==='csv')?.publicationFilename || '') || parsePublicationName(details.csvUrl || '');
   const stem = (u:URL) => u.pathname.replace(/\.(csv|xml)$/i,'');
@@ -1010,7 +1055,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     if (csvName && name) return csvName.objectKey === name.objectKey && csvName.storage === name.storage && csvName.stamp === name.stamp;
     return u.origin === csvSource.origin && stem(u) === stem(csvSource);
   };
-  details.xmlUrl = directFormat === 'xml' ? homepage.url.href : directFormat ? null : await findDocument("xml", xml.filter(compatible), env, network, analyses, selected);
+  details.xmlUrl = directFormat === 'xml' ? homepage.url.href : directFormat || directZip ? null : await findDocument("xml", xml.filter(compatible), env, network, analyses, selected);
   const xmlName = parsePublicationName(analyses.find(a=>a.format==='xml')?.publicationFilename || '') || parsePublicationName(details.xmlUrl || '');
   if (csvName && xmlName && (csvName.objectKey !== xmlName.objectKey || csvName.storage !== xmlName.storage || csvName.stamp !== xmlName.stamp)) {
     details.xmlUrl = null; selected.delete('xml');
@@ -1022,6 +1067,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     const source = candidate && linkedSources.get(candidate.href);
     if (source) { details.publicLinkUrl = source.url; details.publicLinkLocation = source.location; break; }
   }
+  if(!details.csvUrl&&!details.xmlUrl){const zip=otherDocuments.find(u=>/\.zip(?:$|[?#])/i.test(u));if(zip){await inspectZip(new URL(zip),env,details,analyses);if(directZip){details.directDocument=true;details.homepageReadable=Boolean(analyses.length);details.reachable=Boolean(analyses.length)}}}
   details.csvFound = Boolean(details.csvUrl);
   details.xmlFound = Boolean(details.xmlUrl);
   details.fetchBlocked = network.blocked;
@@ -1064,6 +1110,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   details.contentEvidence = details.contentReasons.join(' ') + ' Ne potvrđuje stvarnu primjenjivost cijena ni pravnu usklađenost.';
   if (details.contentStatus === 'fail' || details.contentStatus === 'warning' || details.structureStatus === 'warning') return result('yellow', 'Pronađen je strojni cjenik s konkretnim nalazima. Pregledajte odvojene CSV/XML rezultate.', details);
   if ((details.csvFound || details.xmlFound) && (details.structureStatus !== "pass" || details.contentStatus !== "pass" || analyses.some(a => a.structureStatus !== "pass" || a.contentStatus !== "pass"))) return result("yellow", "Datoteka je dostupna, ali strukturu ili potpuni sadržaj nismo mogli potvrditi. Učitajte datoteku u validator.", details);
+  if (details.zipEvidence && (details.csvFound || details.xmlFound)) return result('yellow','Pronađen je strojni cjenik unutar ZIP arhive. Provjeren je samo odabrani član arhive.',details);
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
   if (otherDocuments.length) return result('yellow', 'Pronađene su poveznice na moguće PDF, Excel ili ZIP cjenike. Valjan javni CSV/XML nije potvrđen.', details);
   if (details.pricePageFound) return result("yellow", "Pronađena je stranica ili cjenik, ali nije potvrđen valjan javni CSV/XML dokument.", details);
@@ -1102,7 +1149,8 @@ export const onRequestPost = async ({ request, env, waitUntil }: { request: Requ
   }
   const body = await parseBody(request);
   if (!body || body.url === undefined) return Response.json(result("red", "Unesite ispravnu adresu web stranice."), { status: 400 });
-  const checked = await runDigitalPriceListCheck(body.url, env);
+  const zipEntry=typeof body.zipEntry==='string'&&body.zipEntry.length<=512?body.zipEntry:undefined;
+  const checked = await runDigitalPriceListCheck(body.url, { ...env, zipEntry });
   let checkerRunId:string|null=null;
   const checkedAt=new Date();
   try {const normalized=normalizeDigitalPriceListUrl(body.url).href;checkerRunId=await recordCheckerRun(env.DB,normalized,checked,body.attribution,body.source,checkedAt)}catch{/* Invalid addresses are not checker runs. */}

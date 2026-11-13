@@ -44,7 +44,7 @@ export type WebsiteCheckDetails = {
   /** Discovered links only; their file contents are not verified. */
   otherDocumentUrls?: string[]
   zipEvidence?: string
-  documentChoices?: Array<{url:string;label:string;format:'csv'|'xml'|'zip';objectKey?:string}>
+  documentChoices?: Array<{url:string;label:string;format:'csv'|'xml'|'zip';objectKey?:string;entry?:string}>
   discoveredObjectCount?: number
   directDocument?: boolean
   dynamicShell?: boolean
@@ -120,7 +120,9 @@ export function technicalReport(result: WebsiteCheckResult) {
 
   const machineReadable = Boolean(d.csvFound || d.xmlFound)
   const unrecognized = machineReadable && d.structureStatus === 'unknown'
-  const machineState: { status: TechnicalStatus; evidence: string; url?: string | null } = unrecognized
+  const machineState: { status: TechnicalStatus; evidence: string; url?: string | null } = d.zipEvidence && machineReadable
+    ? {status:'warning',evidence:d.zipEvidence,url:d.csvUrl||d.xmlUrl}
+    : unrecognized
     ? { status: 'unknown', evidence: 'Datoteka je dostupna, ali nije potvrđena struktura strojnog cjenika.', url: d.csvUrl || d.xmlUrl }
     : d.csvFound && d.xmlFound
     ? { status: 'pass', evidence: 'CSV pronađen ✓ · XML pronađen ✓. Za zahtjev je dovoljan jedan od ta dva formata.', url: d.csvUrl || d.xmlUrl }
