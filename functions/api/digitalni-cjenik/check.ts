@@ -353,7 +353,7 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
     if (/(?:sitemap|wlwmanifest|oembed|xmlrpc|rss)(?:[._/?-]|$)/i.test(url.pathname)) continue;
     const csv = /\.csv$/i.test(filename) || format === "csv" || /\bcsv\b/i.test(text);
     const xml = /\.xml$/i.test(filename) || format === "xml" || /\bxml\b/i.test(text);
-    const other = /\.(xlsx?|pdf)$/i.test(filename) && /cjenik|cijene|price|\.xlsx?$/i.test(href + ' ' + text);
+    const other = /\.xlsx?$/i.test(filename) || (/\.pdf$/i.test(filename) && /cjenik|cijene|price/i.test(href + ' ' + text));
     const archive = /(arhiva|archive)/.test(`${href} ${text}`) && /(cjenik|cijene|price)/.test(`${href} ${text}`);
     // Follow explicit external feed/archive links through the same DNS/redirect
     // protections, but do not turn this into a cross-site general crawl.
@@ -462,8 +462,9 @@ export function pageLooksLikePriceList(response: Response, body: string): boolea
   if ((visible.match(amount) || []).length >= 3) score += 1;
   // Only a linked document counts; WordPress pages always reference sitemap/wlwmanifest/oEmbed XML.
   if (/href=["'][^"']*\.(csv|xml)(?:[?#][^"']*)?["']/i.test(body.replace(/href=["'][^"']*(?:sitemap|wlwmanifest|oembed|feed|rss|xmlrpc)[^"']*["']/gi, ''))) score += 1;
-  if (/(cjenik|cijene)/i.test(text) && score === 0) return false;
-  return score >= 2;
+  const explicitList = /<(?:h1|h2|h3|title)[^>]*>[^<]*(?:cjenik|cijene|price list)/i.test(body);
+  const priceTable = /<(table|tbody)[\s>]/i.test(body) && /(cijena|price|€|\beur\b)/i.test(visible) && /(naziv|name|usluga|artikl)/i.test(visible);
+  return score >= 2 && (explicitList || priceTable);
 }
 
 export function pageLooksLikeArchive(response: Response, body: string): boolean {
@@ -796,6 +797,11 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
   }
   details.publicationFindings = findings;
   if (!current) return;
+  if (current.time != null) {
+    const date = new Intl.DateTimeFormat('hr-HR', {dateStyle:'medium',timeZone:'Europe/Zagreb'}).format(new Date(current.time));
+    details.publicationDateEvidence = 'Datum u nazivu preuzete datoteke: ' + date + '. ' +
+      'Za proizvode provjerite odgovara li datum radnom danu konkretnog prodajnog objekta; za usluge objava se ažurira pri promjeni. Sam naziv ne dokazuje vrijeme stvarne objave.';
+  }
   const key = (name: PublicationName) => `${name.storage}|${name.stamp}`;
   const newestFirst = versioned.filter(entry=>entry.name.objectKey===current.objectKey && new URL(entry.href).origin===new URL(details.csvUrl || details.xmlUrl!).origin).sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
   const previous = newestFirst.filter((entry) => key(entry.name) !== key(current) && (current.time != null && entry.name.time != null ? entry.name.time < current.time : entry.name.storage < current.storage)).slice(0, MAX_ARCHIVE_PROBES);
@@ -889,6 +895,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     ? documentLooksValid('xml',homepage.response,html) ? 'xml' : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
     : null;
   if(directFormat) {
+    details.directDocument = true;
     const capped = directFormat === 'csv' ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html;
     const sampled = directTruncated || (capped.length < html.length && capped.split(/\r?\n/).length > MAX_CSV_ROWS);
     const analysis = analyzeDocument(directFormat,sampled ? capped : html,homepage.url.href);

@@ -83,17 +83,17 @@ describe('shared service parsing and price semantics', () => {
     const analysis = analyzeDocument('csv', body)
     expect(analysis).toMatchObject({ itemCount: 34, totalFindings: 34, status: 'fail' })
     expect(analysis.findings).toHaveLength(20)
-    expect(analyzeDocument('csv', body + '\n' + 'x'.repeat(128 * 1024)).status).toBe('unknown')
+    expect(analyzeDocument('csv', body + '\n' + 'x'.repeat(5 * 1024 * 1024)).status).toBe('unknown')
   })
 })
 
 describe('aggregate and backward compatible checker contract', () => {
   it.each([
-    [csv(), unknownXml, 'pass', 'green'],
-    [unknownCsv, xml(), 'pass', 'green'],
+    [csv(), unknownXml, 'pass', 'yellow'],
+    [unknownCsv, xml(), 'pass', 'yellow'],
     [csv('10', ''), xml(), 'fail', 'yellow'],
     [csv(), xml('10', ''), 'fail', 'yellow'],
-    [unknownCsv, unknownXml, 'unknown', 'green'], // legacy discovery: a generic document is available
+    [unknownCsv, unknownXml, 'unknown', 'yellow'], // legacy discovery: a generic document is available
     [undefined, xml(), 'pass', 'green'],
     [undefined, xml('10', ''), 'fail', 'yellow'],
   ] as const)('aggregates both formats without allowing unknown to cancel confirmation (%#)', async (csvBody, xmlBody, contentStatus, status) => {
@@ -102,14 +102,14 @@ describe('aggregate and backward compatible checker contract', () => {
     expect(result.details.csvAnalysis?.format).toBe('csv')
     expect(result.details.xmlAnalysis?.format).toBe('xml')
   })
-  it('freezes the real NEPAR 2026-10-27 regression at 23 services, four missing anchors per format, 7/9 when the publication filename is also unverified', async () => {
+  it('freezes the real NEPAR 2026-10-27 regression at 23 services, four missing anchors per format, 6/9 when the publication filename and archive are unverified', async () => {
     const result = await check(csvFixture, xmlFixture)
     expect(result.status).toBe('yellow')
     for (const analysis of [result.details.csvAnalysis, result.details.xmlAnalysis]) {
       expect(analysis).toMatchObject({ fetched: true, structureRecognized: true, itemCount: 23, totalFindings: 4, structureStatus: 'pass', contentStatus: 'fail' })
       expect(analysis?.findings.every(f => f.field === 'anchorPrice' && f.itemName && /Nedostaje sidrena/.test(f.message) && f.level === 'error' && f.source === 'binding')).toBe(true)
     }
-    expect(technicalReport(result).score).toBe(7)
+    expect(technicalReport(result).score).toBe(6)
   })
 })
 

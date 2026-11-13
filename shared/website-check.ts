@@ -39,6 +39,8 @@ export type WebsiteCheckDetails = {
   archiveUrl?: string | null
   /** Discovered links only; their file contents are not verified. */
   otherDocumentUrls?: string[]
+  directDocument?: boolean
+  publicationDateEvidence?: string
   publicLinkUrl?: string | null
   csvLinkDiscovered?: boolean
   xmlLinkDiscovered?: boolean
@@ -138,7 +140,7 @@ export function technicalReport(result: WebsiteCheckResult) {
     d.reachable ? { status: d.https ? 'pass' : 'warning', evidence: d.https ? 'Dohvaćena adresa koristi HTTPS.' : 'Dohvaćena adresa ne koristi HTTPS.' } : { status: 'unknown', evidence: unknownReason },
     { ...found(d.pricePageFound || d.csvFound || d.xmlFound, 'Pretražene su javne poveznice i uobičajene adrese cjenika.'), url: d.pricePageUrl || d.csvUrl || d.xmlUrl },
     machineState,
-    d.publicLinkLocation === 'inner'
+    d.directDocument ? { status: 'unknown', evidence: 'Unesena je izravna adresa datoteke; poveznicu s početne stranice provjerite zasebno.' } : d.publicLinkLocation === 'inner'
       ? { status: 'warning', evidence: 'Poveznica je pronađena na unutarnjoj stranici, ali ne i na naslovnici. Dodajte vidljiv link „Cjenik” na početnu stranicu ili u footer. To je preporuka za lakši pristup, ne samostalno utvrđena povreda.', url: d.publicLinkUrl }
       : { ...found(Boolean(d.publicLinkUrl), d.publicLinkLocation === 'homepage' ? 'Poveznica je potvrđena u HTML-u početne stranice (uključujući moguće poveznice u footeru).' : 'Poveznica mora biti pročitana iz javnog HTML-a; pretpostavljena adresa nije dokaz poveznice.'), url: d.publicLinkUrl },
     { status: d.structureStatus ?? 'unknown', evidence: d.structureReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera prepoznate strukture datoteke.' },
