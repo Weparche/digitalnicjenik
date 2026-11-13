@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { parsePublicationName, runDigitalPriceListCheck } from './check'
+import { analyzeDocument, parsePublicationName, runDigitalPriceListCheck } from './check'
 import { technicalReport } from '../../../shared/website-check'
 
 const resolver = { resolve4: async () => ['93.184.216.34'], resolve6: async () => [] }
@@ -75,4 +75,16 @@ describe('checker v2 regressions',()=>{
     expect(parsePublicationName('https://example.hr/download?title=SUPERMARKET%2C%C5%BDITNA+1A%2C0204%2C106273%2C13.11.2026%2C+05-21.CSV')).toMatchObject({storage:106273,objectKey:'supermarket|žitna 1a|0204'})
     expect(parsePublicationName('https://example.hr/Supermarket%20104_Ulica%2030_Jastrebarsko_1_13.11.2026_7.15h.csv')).toMatchObject({storage:1})
   })
+})
+
+it('retains an explicitly historical absence as a warning without discarding the row',()=>{
+ const report=analyzeDocument('csv','NAZIV,ŠIFRA,MARKA,MALOPRODAJNA_CIJENA,BARKOD,Sidrena_cijena_na_02.05.2025\nMlijeko,1,Pilos,0.53,4335619246522,Nije_bilo_u_prodaji_02.05.2025')
+ expect(report.itemCount).toBe(1)
+ expect(report.findingGroups?.find(g=>g.rule==='product.anchor.historical-absence')).toMatchObject({level:'warning',count:1,affectedRows:1})
+ expect(report.findings.some(f=>f.rule==='item.row.unreadable'||f.rule==='product.anchor.missing')).toBe(false)
+ const invalid=analyzeDocument('csv','NAZIV,ŠIFRA,MARKA,MALOPRODAJNA_CIJENA,BARKOD,Sidrena_cijena_na_02.05.2025\nMlijeko,1,Pilos,0.53,4335619246522,proizvoljno')
+ expect(invalid.findings.some(f=>f.rule==='item.row.unreadable')).toBe(true)
+})
+it('recognizes the compact Plodine archive member timestamp',()=>{
+ expect(parsePublicationName('SUPERMARKET_ALFREDA_NOBELA_6_SOP_10361_SESVETSKI_KRALJEVEC_184_248_13112026045511.csv')).toMatchObject({storage:248,stamp:'13112026045511',objectKey:'supermarket|alfreda|nobela|6|sop|10361|sesvetski|kraljevec|184'})
 })

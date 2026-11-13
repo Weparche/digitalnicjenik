@@ -12,16 +12,17 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,in
   const [result,setResult]=useState<WebsiteCheckResult|null>(null),[checking,setChecking]=useState(false),[phase,setPhase]=useState(0),[cancelled,setCancelled]=useState(false)
   const request=useRef<AbortController|null>(null),anchor=useRef<HTMLDivElement|null>(null),input=useRef<HTMLInputElement|null>(null),stop=useRef(false)
   const landingRequest=useRef(fromLanding)
+  const chosenEntry=useRef<string|undefined>(undefined)
   async function check(event?:React.FormEvent,selectedUrl?:string,zipEntry?:string){
     event?.preventDefault();if(request.current)return
     let normalized:string
     try{normalized=normalizeWebsiteInput(selectedUrl??url)}catch{setError('Unesite ispravnu adresu, primjerice vasweb.hr.');input.current?.focus();return}
     const controller=new AbortController();request.current=controller;stop.current=false
-    if(selectedUrl)setUrl(selectedUrl);setChecking(true);setResult(null);setError('');setCancelled(false);setCheckedUrl(normalized);setPhase(0)
+    if(selectedUrl){setUrl(selectedUrl);chosenEntry.current=zipEntry;}else if(event){chosenEntry.current=undefined;}setChecking(true);setResult(null);setError('');setCancelled(false);setCheckedUrl(normalized);setPhase(0)
     const timer=setTimeout(()=>controller.abort(),45_000)
     try{
       const source=internal?'internal':landingRequest.current?'landing':'dashboard';landingRequest.current=false
-      const response=await fetch('/api/digitalni-cjenik/check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:normalized,attribution:readAcquisitionTouch(),source,zipEntry}),signal:controller.signal})
+      const response=await fetch('/api/digitalni-cjenik/check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:normalized,attribution:readAcquisitionTouch(),source,zipEntry:chosenEntry.current}),signal:controller.signal})
       const data=await response.json() as WebsiteCheckResult
       if(!data||!['green','yellow','red','unavailable'].includes(data.status))throw new Error('invalid_response')
       if(!stop.current){setResult(data);if(!internal)rememberCheckerRun(data.checkerRunId);else rememberCheckerRun(null);onResult({website:normalized,result:data})}

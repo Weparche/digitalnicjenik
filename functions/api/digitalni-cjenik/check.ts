@@ -71,7 +71,7 @@ const MAX_CSV_ROWS = 20_000;
 const MAX_REDIRECTS = 5;
 const MAX_SECONDARY_PAGES = 6;
 const MAX_DOCUMENT_CANDIDATES = 8;
-const MAX_DISCOVERED_LINKS = 50;
+const MAX_DISCOVERED_LINKS = 200;
 const FETCH_TIMEOUT_MS = 8000;
 const DOH_ENDPOINT = "https://cloudflare-dns.com/dns-query";
 const METADATA_HOSTS = new Set([
@@ -769,9 +769,18 @@ export function parsePublicationName(value: string): PublicationName | null {
   try {
     const url = new URL(value);
     path = Array.from(url.searchParams.values()).find(v => /\.(csv|xml)$/i.test(v)) || decodeURIComponent(url.pathname).split('/').pop() || '';
-  } catch { path = value; }
+  } catch { path = value.split('/').pop() || value; }
   const stem = path.replace(/\.(csv|xml)$/i, '').replace(/([_ ,])\s*(\d{1,2})\.(\d{2})h$/i, (_, sep, hour, minute) => sep + hour.padStart(2,'0') + ':' + minute);
   const parts = (stem.includes('_') ? stem.split('_') : stem.split(',')).map(part => part.trim());
+  const plodine = /^(\d{2})(\d{2})(\d{4})(\d{2})(\d{2})(\d{2})$/.exec(parts.at(-1) ?? '');
+  if(plodine){
+    const storage=parts.at(-2)??'',objectParts=parts.slice(0,-2);
+    if(!/^\d{1,6}$/.test(storage)||objectParts.length<3||objectParts.some(part=>!part.trim()))return null;
+    const [,day,month,year,hour,minute,second]=plodine;
+    const time=Date.parse(year+'-'+month+'-'+day+'T'+hour+':'+minute+':'+second+'Z');
+    const valid=Number.isFinite(time)&&new Date(time).toISOString().slice(0,10)===year+'-'+month+'-'+day;
+    return valid?{storage:Number(storage),stamp:parts.at(-1)!,time,objectKey:objectParts.join('|').toLocaleLowerCase('hr-HR')}:null;
+  }
   const compact = /^(\d{4})-?(\d{2})-?(\d{2})[T-](\d{2})[-:]?(\d{2})(?:[-:]?(\d{2}))?(Z|[+-]\d{2}:?\d{2})?$/i.exec(parts.at(-1) ?? '');
   const splitIsoDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(parts.at(-2) ?? '');
   const splitCroDate = /^(\d{2})\.(\d{2})\.(\d{4})\.?$/.exec(parts.at(-2) ?? '');
@@ -801,7 +810,7 @@ function publicationChoices(links:URL[],other:string[]):NonNullable<WebsiteCheck
     const label=parsed?parsed.objectKey.split('|').join(' · '):decodeHref(raw.split('/').pop()||raw);
     groups.set(key,{url:url.href,label,format,objectKey:parsed?.objectKey,time,storage});
   }
-  return Array.from(groups.values()).slice(0,40).map(({time,storage,...choice})=>choice);
+  return Array.from(groups.values()).slice(0,200).map(({time,storage,...choice})=>choice);
 }
 
 async function inspectZip(url:URL,env:CheckerEnv,details:CheckDetails,analyses:CheckerDocumentAnalysis[]){
@@ -826,7 +835,7 @@ async function inspectZip(url:URL,env:CheckerEnv,details:CheckDetails,analyses:C
     details.zipEvidence='ZIP arhiva: '+directory.entries.length+' podržanih CSV/XML datoteka od '+directory.totalEntries+' zapisa; analiziramo samo odabranu datoteku, ne cijelu arhivu.';
     const members=directory.entries.map(entry=>({entry,publication:parsePublicationName(entry.name)}));
     details.discoveredObjectCount=new Set(members.map(m=>m.publication?.objectKey).filter(Boolean)).size;
-    details.documentChoices=members.slice(0,100).map(({entry,publication})=>({url:url.href,entry:entry.name,label:publication?publication.objectKey.split('|').join(' · '):entry.name,format:entry.name.toLowerCase().endsWith('.csv')?'csv':'xml',objectKey:publication?.objectKey}));
+    details.documentChoices=members.slice(0,500).map(({entry,publication})=>({url:url.href,entry:entry.name,label:publication?publication.objectKey.split('|').join(' · '):entry.name,format:entry.name.toLowerCase().endsWith('.csv')?'csv':'xml',objectKey:publication?.objectKey}));
     const chosen=env.zipEntry?members.find(m=>m.entry.name===env.zipEntry):members[0];
     if(!chosen){details.zipEvidence+=' Odabrana datoteka nije dostupna za sigurnu analizu.';return}
     const kind=chosen.entry.name.toLowerCase().endsWith('.csv')?'csv':'xml';
@@ -864,7 +873,7 @@ async function renderDynamicPage(url:URL,env:CheckerEnv):Promise<string|null>{
 }
 
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
-const MAX_PUBLICATION_LINKS = 40;
+const MAX_PUBLICATION_LINKS = 200;
 const MAX_ARCHIVE_PROBES = 3;
 
 function publicationFinding(rule: string, message: string): DocumentFinding {
@@ -1018,9 +1027,9 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const linkedSources = new Map<string, { url: string; location: 'homepage' | 'inner' }>();
   const selected = new Map<'csv' | 'xml', URL>();
   const otherDocuments: string[] = [];
-  const rememberOther = (url:URL) => { if (otherDocuments.length < 5 && !otherDocuments.includes(url.href)) otherDocuments.push(url.href); };
+  const rememberOther = (url:URL,source?:{url:string;location:'homepage'|'inner'}) => { if (otherDocuments.length < 5 && !otherDocuments.includes(url.href)) otherDocuments.push(url.href);if(source&&!linkedSources.has(url.href))linkedSources.set(url.href,source); };
   for (const candidate of links) {
-    if (candidate.kind === 'other') rememberOther(candidate.url);
+    if (candidate.kind === 'other') rememberOther(candidate.url,{url:candidate.url.href,location:'homepage'});
     if (candidate.kind === "price") appendUnique(secondary, candidate.url, MAX_SECONDARY_PAGES);
     if (candidate.kind === 'csv' || candidate.kind === 'xml') linkedSources.set(candidate.url.href, {url:candidate.url.href,location:'homepage'});
     if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
@@ -1102,7 +1111,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     const source = candidate && linkedSources.get(candidate.href);
     if (source) { details.publicLinkUrl = source.url; details.publicLinkLocation = source.location; break; }
   }
-  if(!details.csvUrl&&!details.xmlUrl){const zip=otherDocuments.find(u=>/\.zip(?:$|[?#])/i.test(u));if(zip){await inspectZip(new URL(zip),env,details,analyses);if(directZip){details.directDocument=true;details.homepageReadable=Boolean(analyses.length);details.reachable=Boolean(analyses.length)}}}
+  if(!details.csvUrl&&!details.xmlUrl){const zip=otherDocuments.find(u=>/\.zip(?:$|[?#])/i.test(u));if(zip){await inspectZip(new URL(zip),env,details,analyses);const source=linkedSources.get(zip);if(source&&(details.csvUrl||details.xmlUrl)){details.publicLinkUrl=source.url;details.publicLinkLocation=source.location;}if(directZip){details.directDocument=true;details.homepageReadable=Boolean(analyses.length);details.reachable=Boolean(analyses.length)}}}
   details.csvFound = Boolean(details.csvUrl);
   details.xmlFound = Boolean(details.xmlUrl);
   details.fetchBlocked = network.blocked;
