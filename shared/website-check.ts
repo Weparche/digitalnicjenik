@@ -48,6 +48,7 @@ export type WebsiteCheckDetails = {
   discoveredObjectCount?: number
   directDocument?: boolean
   dynamicShell?: boolean
+  renderedEvidence?: string
   publicationDateEvidence?: string
   publicLinkUrl?: string | null
   csvLinkDiscovered?: boolean

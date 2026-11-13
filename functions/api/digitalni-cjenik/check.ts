@@ -23,6 +23,9 @@ type CheckerEnv = {
   CHECKER_RATE_LIMIT_SECRET?: string;
   LEAD_RATE_LIMIT_SECRET?: string;
   zipEntry?: string;
+  CF_ACCOUNT_ID?: string;
+  CHECKER_BROWSER_TOKEN?: string;
+  CHECKER_BROWSER_HOSTS?: string;
   requestState?: { signal: AbortSignal; dns: Map<string, Promise<string[]>> };
 };
 
@@ -803,9 +806,13 @@ function publicationChoices(links:URL[],other:string[]):NonNullable<WebsiteCheck
 
 async function inspectZip(url:URL,env:CheckerEnv,details:CheckDetails,analyses:CheckerDocumentAnalysis[]){
   try{
+    let whole:Uint8Array|undefined;let wholeTag:string|undefined;
+    const sliceWhole=(range:string)=>{if(!whole)throw new Error('zip_range_unavailable');const tail=/^bytes=-(\d+)$/.exec(range),part=/^bytes=(\d+)-(\d+)$/.exec(range);const start=tail?Math.max(0,whole.length-Number(tail[1])):Number(part?.[1]),end=tail?whole.length-1:Number(part?.[2]);if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||end>=whole.length||end<start)throw new Error('zip_range_limit');return {bytes:whole.subarray(start,end+1),start,total:whole.length,validator:wholeTag};};
     const fetchRange:FetchRange=async(range,validator)=>{
+      if(whole)return sliceWhole(range);
       const {response}=await safeDigitalPriceListFetch(url,env,{range,validator});
       const contentRange=/^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range')||'');
+      if(response.status===200&&!validator&&range.startsWith('bytes=-')){const advertised=Number(response.headers.get('content-length')||0);if(advertised>8*1024*1024){void response.body?.cancel().catch(()=>{});throw new Error('zip_range_required')}const read=await readBytesBounded(response,8*1024*1024);if(read.truncated)throw new Error('zip_range_required');whole=read.bytes;wholeTag=response.headers.get('etag')||undefined;return sliceWhole(range);}
       if(response.status!==206||!contentRange){void response.body?.cancel().catch(()=>{});throw new Error('zip_range_unavailable')}
       const start=Number(contentRange[1]),end=Number(contentRange[2]),total=Number(contentRange[3]),length=end-start+1;
       const limit=range.startsWith('bytes=-')?65557:Math.min(5*1024*1024,Number(range.split('-')[1])-Number(range.slice(6).split('-')[0])+1);
@@ -832,6 +839,28 @@ async function inspectZip(url:URL,env:CheckerEnv,details:CheckDetails,analyses:C
     analyses.push(analysis);
     if(analysis.structureRecognized){if(kind==='csv')details.csvUrl=url.href;else details.xmlUrl=url.href;details.zipEvidence+=' Prepoznat je strojni cjenik u ZIP-u; zahtjev izravne objave CSV/XML datoteke provjerite zasebno.'}
   }catch{details.zipEvidence='ZIP poveznica je pronađena, ali siguran ograničeni dohvat arhive nije uspio. Cjelovit sadržaj nije potvrđen.'}
+}
+
+/** Optional, administrator-allowlisted browser fallback; no user scripts or credentials. */
+async function renderDynamicPage(url:URL,env:CheckerEnv):Promise<string|null>{
+  if(!env.CHECKER_BROWSER_TOKEN||!env.CF_ACCOUNT_ID||!env.DB||url.protocol!=='https:'||url.port||url.search||url.hash)return null;
+  const hosts=(env.CHECKER_BROWSER_HOSTS||'').split(',').map(h=>h.trim().toLowerCase()).filter(h=>/^[a-z0-9.-]+$/.test(h)&&h.includes('.')&&!isForbiddenHostname(h)).slice(0,12);
+  if(!hosts.includes(url.hostname))return null;
+  try{
+    for(const host of hosts)await assertPublicUrl(new URL('https://'+host+'/'),env);
+    const day=new Date().toISOString().slice(0,10);
+    const budget=await env.DB.prepare('INSERT INTO checker_browser_daily(day,attempts) VALUES (?,1) ON CONFLICT(day) DO UPDATE SET attempts=attempts+1 WHERE attempts<20 RETURNING attempts').bind(day).first<{attempts:number}>();
+    if(!budget)return null;
+    const endpoint='https://api.cloudflare.com/client/v4/accounts/'+encodeURIComponent(env.CF_ACCOUNT_ID)+'/browser-rendering/content';
+    const allow=hosts.map(host=>'^https://'+host.replaceAll('.','\\.')+'(?::443)?(?:/|$)');
+    const timeout=AbortSignal.timeout(9_000);
+    const response=await fetch(endpoint,{method:'POST',redirect:'error',headers:{authorization:'Bearer '+env.CHECKER_BROWSER_TOKEN,'content-type':'application/json'},signal:env.requestState?AbortSignal.any([env.requestState.signal,timeout]):timeout,body:JSON.stringify({url:url.href,allowRequestPattern:allow,allowResourceTypes:['document','script','stylesheet','xhr','fetch'],gotoOptions:{waitUntil:'domcontentloaded',timeout:6000},waitForTimeout:1200,bestAttempt:true})});
+    if(!response.ok)return null;
+    const {body,truncated}=await readBounded(response,MAX_HTML_BYTES+256*1024);
+    if(truncated)return null;
+    const data=JSON.parse(body) as {success?:boolean;result?:unknown};
+    return data.success===true&&typeof data.result==='string'&&data.result.length<=MAX_HTML_BYTES?data.result:null;
+  }catch{return null}
 }
 
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -958,9 +987,13 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     details.pricePageFound = true;
     details.pricePageUrl = homepage.url.href;
   }
-  const links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
+  let links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
   const dynamicShell = homepageReadable && isHtml(homepage.response,html) && !links.length && stripTags(html).length < 150 && (html.match(/<script\b/gi)||[]).length >= 5;
-  if (dynamicShell) details.dynamicShell = true;
+  if (dynamicShell) {
+    details.dynamicShell = true;
+    const rendered=await renderDynamicPage(homepage.url,env);
+    if(rendered){const found=extractLinks(rendered,homepage.url);if(found.length){links=found;details.dynamicShell=false;details.renderedEvidence='Poveznice su pronađene nakon ograničenog renderiranja stranice.'}}
+  }
   const directFormat = homepageReadable && !isHtml(homepage.response,html)
     ? html.trimStart().startsWith('<') ? (documentLooksValid('xml',homepage.response,html) ? 'xml' : null) : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
     : null;
@@ -1087,7 +1120,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     } catch { network.failed = true; }
   }
   await checkPublications(details, documentLinks, env, network, analyses);
-  if (!details.archiveFound && !details.archiveRemoved && archivePageUrl && !details.csvFound && !details.xmlFound) {
+  if (!details.archiveFound && !details.archiveRemoved && archivePageUrl && !details.csvFound && !details.xmlFound && !details.zipEvidence) {
     details.archiveFound = true;
     details.archiveUrl = archivePageUrl;
     details.archiveEvidence = 'Pronađena je javna stranica s prethodnim objavama cjenika.';
@@ -1121,7 +1154,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   }
   if (network.failed && !network.checked) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.", details);
   if (details.fetchBlocked) return result("yellow", "Naslovnica je zaštićena od automatskog dohvata. Javni CSV/XML na uobičajenim adresama nije potvrđen.", details);
-  if (dynamicShell) return result("yellow", "Web stranica učitava sadržaj dinamički. U automatskom HTML dohvatu nismo mogli potvrditi poveznicu na cjenik. Unesite izravnu adresu stranice cjenika ili datoteke.", details);
+  if (details.dynamicShell) return result("yellow", "Web stranica učitava sadržaj dinamički. U automatskom HTML dohvatu nismo mogli potvrditi poveznicu na cjenik. Unesite izravnu adresu stranice cjenika ili datoteke.", details);
   if (network.failed) return result("unavailable", "Dio provjere nije dovršen; nije moguće potvrditi postoji li javni CSV/XML.", details);
   return result("red", "Strojni cjenik nije pronađen.", details);
 }

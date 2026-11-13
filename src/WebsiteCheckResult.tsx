@@ -68,6 +68,7 @@ export function WebsiteCheckResultPanel({ result, onUpload, onRetry,onHelp, webs
     <div className="workspace-check-meta">
       <span>Pravila provjere: {CURRENT_PROFILE_ID} (nacrt pravilnika nije obvezujuće pravilo)</span>
       {result.savedReport?.checkedAt && <span>Pohranjena snimka od {new Intl.DateTimeFormat('hr-HR',{dateStyle:'short',timeStyle:'short'}).format(new Date(result.savedReport.checkedAt))} — ne predstavlja novu provjeru.</span>}
+      {result.details?.renderedEvidence && <p>{result.details.renderedEvidence}</p>}
       {result.details?.publicationDateEvidence && <p><strong>Aktualnost:</strong> {result.details.publicationDateEvidence}</p>}
       {result.details?.robotsEvidence && <p><strong>Automatsko preuzimanje:</strong> {result.details.robotsEvidence} Sam robots.txt ne dokazuje stvarnu blokadu; pristup datoteci provjerava se zasebno.</p>}
     </div>

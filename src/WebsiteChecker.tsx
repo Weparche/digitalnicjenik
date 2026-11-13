@@ -24,7 +24,7 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,in
       const response=await fetch('/api/digitalni-cjenik/check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:normalized,attribution:readAcquisitionTouch(),source,zipEntry}),signal:controller.signal})
       const data=await response.json() as WebsiteCheckResult
       if(!data||!['green','yellow','red','unavailable'].includes(data.status))throw new Error('invalid_response')
-      if(!stop.current){setResult(data);if(!internal)rememberCheckerRun(data.checkerRunId);onResult({website:normalized,result:data})}
+      if(!stop.current){setResult(data);if(!internal)rememberCheckerRun(data.checkerRunId);else rememberCheckerRun(null);onResult({website:normalized,result:data})}
     }catch{if(!stop.current){const data:WebsiteCheckResult={status:'unavailable',message:'Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno ili učitajte datoteku za detaljnu provjeru.'};setResult(data);onResult({website:normalized,result:data})}}
     finally{clearTimeout(timer);request.current=null;setChecking(false)}
   }

@@ -7,3 +7,5 @@ CREATE TABLE checker_interactions (
  created_at TEXT NOT NULL,
  PRIMARY KEY(run_id,event)
 );
+
+CREATE TABLE checker_browser_daily (day TEXT PRIMARY KEY, attempts INTEGER NOT NULL CHECK(attempts BETWEEN 1 AND 20));
