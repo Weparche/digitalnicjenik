@@ -5,7 +5,7 @@ import { normalizeHeader } from '../../../src/price-engine/normalize';
 import { isServiceItem } from '../../../src/price-engine/profile';
 import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engine/types';
 import { deferredNote, ruleFor } from '../../../shared/compliance/legal-profile';
-import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckDetails } from '../../../shared/website-check';
+import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type FindingGroup, type WebsiteCheckDetails } from '../../../shared/website-check';
 import { parseContentDispositionFilename } from '../../../shared/compliance/checks';
 import { recordCheckerRun } from '../../_checker-history';
 
@@ -713,24 +713,31 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
     if (body.length > MAX_DOCUMENT_BYTES) throw new Error('analysis_limit');
     const parsed = kind === 'csv' ? parseMarketinoCsv(body, undefined, { inspection: true }) : inspectXmlPriceList(body);
     const rawCount = parsed.rowCount ?? parsed.priceList.items.length;
+    const historicRows = new Set(parsed.warnings.filter(w=>w.rule==='product.anchor.historical-absence').map(w=>w.row));
     const findings: DocumentFinding[] = parsed.warnings.map(w => withLevel({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }, w.rule ?? parseWarningRule(w.field)));
     if (parsed.priceList.items.length) {
       for (const issue of validatePriceList(parsed.priceList).issues) {
         const index = issue.row - 2;
-        findings.push(withLevel({ row: parsed.sourceRows?.[index] ?? issue.row, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message }, issue.rule ?? 'unknown'));
+        const sourceRow = parsed.sourceRows?.[index] ?? issue.row;
+        if(issue.rule==='product.anchor.missing' && historicRows.has(sourceRow)) continue;
+        findings.push(withLevel({ row: sourceRow, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message }, issue.rule ?? 'unknown'));
       }
     }
     if (!rawCount) findings.push(withLevel({ message: 'Cjenik ne sadrži stavke.' }, 'list.empty'));
     const errors = findings.filter(f => f.level === 'error');
     const warnings = findings.filter(f => f.level === 'warning');
     const legal = [...errors, ...warnings];
+    const groups = new Map<string, FindingGroup & {rows:Set<number>}>();
+    for(const finding of legal){const rule=finding.rule||'unknown',level=finding.level||'warning',key=rule+'|'+level;let group=groups.get(key);if(!group){group={rule,level,message:finding.message,count:0,affectedRows:0,examples:[],rows:new Set()};groups.set(key,group)}group.count++;if(finding.row!=null)group.rows.add(finding.row);if(group.examples.length<3)group.examples.push(finding)}
+    const findingGroups=Array.from(groups.values(),({rows,...group})=>({...group,affectedRows:rows.size})).sort((a,b)=>(a.level==='error'?0:1)-(b.level==='error'?0:1)||b.count-a.count);
+    const affectedRows=new Set(legal.map(f=>f.row).filter(row=>row!=null)).size;
     const recommendations = [...findings.filter(f => f.level === 'info'), schemaRecommendation(parsed.fieldSources, parsed.priceList.items)].filter((f): f is DocumentFinding => Boolean(f));
     const structure = rawCount ? 'pass' : 'warning';
     const content = errors.length ? 'fail' : warnings.length ? 'warning' : 'pass';
     const classification = classifyPriceList(parsed.priceList.items);
     return finish({ ...base, ...classification, structureRecognized: true, itemCount: rawCount, structureStatus: structure, contentStatus: content, status: content,
       structureReasons: [kind.toUpperCase() + ' je parsiran; prepoznata su polja cjenika. Pronađeno stavki: ' + rawCount + '.'],
-      findings: legal.slice(0, 20), totalFindings: legal.length, recommendations });
+      findings: legal.slice(0, 20), totalFindings: legal.length, findingGroups: findingGroups.slice(0,40), affectedRows, recommendations });
   } catch (caught) {
     const limited = caught instanceof Error && caught.message === 'analysis_limit';
     return finish({ ...base, structureReasons: [limited ? 'Sigurnosno ograničenje onemogućuje potpunu analizu. Učitajte datoteku u validator.' : 'Datoteka je dostupna, ali u njoj nisu prepoznati podaci cjenika (naziv, maloprodajna cijena) ili dokument nije ispravan za detaljnu analizu. Učitajte je u validator.'] });
@@ -767,6 +774,21 @@ export function parsePublicationName(value: string): PublicationName | null {
   const offset = !zone ? 'Z' : zone.toUpperCase() === 'Z' ? 'Z' : zone.replace(/^([+-]\d{2}):?(\d{2})$/, '$1:$2');
   const time = Date.parse(`${year}-${month}-${day}T${hour}:${minute}:${second}${offset}`);
   return { storage: Number(storage), stamp: parts.slice(-stampParts).join('_'), time: Number.isFinite(time) ? time : null, objectKey: objectParts.join('|').toLocaleLowerCase('hr-HR') };
+}
+
+/** Display only the latest discovered version per known object and format. Unknown identities stay separate. */
+function publicationChoices(links:URL[],other:string[]):NonNullable<WebsiteCheckDetails['documentChoices']>{
+  const groups=new Map<string,{url:string;label:string;format:'csv'|'xml'|'zip';objectKey?:string;time:number;storage:number}>();
+  for(const url of [...links,...other.filter(u=>/\.zip(?:$|[?#])/i.test(u)).map(u=>new URL(u))]){
+    const raw=Array.from(url.searchParams.values()).find(v=>/\.(csv|xml|zip)$/i.test(v))||url.pathname;
+    const format=/\.(csv|xml|zip)$/i.exec(raw)?.[1]?.toLowerCase() as 'csv'|'xml'|'zip'|undefined;if(!format)continue;
+    const parsed=parsePublicationName(url.href),key=parsed?parsed.objectKey+'|'+format:url.href;
+    const previous=groups.get(key),time=parsed?.time??0,storage=parsed?.storage??0;
+    if(previous&&(previous.time>time||(previous.time===time&&previous.storage>=storage)))continue;
+    const label=parsed?parsed.objectKey.split('|').join(' · '):decodeHref(raw.split('/').pop()||raw);
+    groups.set(key,{url:url.href,label,format,objectKey:parsed?.objectKey,time,storage});
+  }
+  return Array.from(groups.values()).slice(0,40).map(({time,storage,...choice})=>choice);
 }
 
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -972,6 +994,8 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     } catch { network.failed = true; }
   }
   details.otherDocumentUrls = otherDocuments;
+  details.documentChoices = publicationChoices(documentLinks,otherDocuments);
+  details.discoveredObjectCount = new Set(details.documentChoices.map(c=>c.objectKey).filter(Boolean)).size;
   if (!directFormat && homepage.url.pathname === '/') {
     appendUnique(csv,new URL('/cjenik.csv',homepage.url.origin),MAX_DOCUMENT_CANDIDATES);
     appendUnique(xml,new URL('/cjenik.xml',homepage.url.origin),MAX_DOCUMENT_CANDIDATES);

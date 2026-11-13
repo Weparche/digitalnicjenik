@@ -46,6 +46,7 @@ export const RULES: Record<string, RuleDefinition> = {
   'item.price.alternative-column': { level: 'warning', source: 'binding', basis: `${ODLUKA}: maloprodajna cijena kao konačna cijena, uključivo posebne oblike prodaje` },
   'service.anchor.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena`, ...NEW_IN_2026 },
   'service.anchor.invalid': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena`, ...NEW_IN_2026 },
+  'product.anchor.historical-absence': { level: 'warning', source: 'binding', basis: `${ODLUKA}: provjera primjenjive sidrene cijene; oznaka odsutnosti nije izuzeće` },
   'product.anchor.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: sidrena (dodatna) cijena` },
   'sale.flag.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: podatak o posebnom obliku prodaje`, ...NEW_IN_2026 },
   'sale.name.missing': { level: 'error', source: 'binding', basis: `${ODLUKA}: naziv posebnog oblika prodaje`, ...NEW_IN_2026 },

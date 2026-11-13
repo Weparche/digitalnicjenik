@@ -2,6 +2,7 @@
 export type DocumentAnalysisStatus = 'pass' | 'warning' | 'fail' | 'unknown'
 /** level/source come from shared/compliance/legal-profile.ts: only binding rules can be an error. */
 export type DocumentFinding = { row?: number; itemName?: string; field?: string; message: string; rule?: string; level?: 'error' | 'warning' | 'info'; source?: 'binding' | 'official-clarification' | 'draft' | 'recommendation' }
+export type FindingGroup = { rule: string; level: 'error' | 'warning' | 'info'; message: string; count: number; affectedRows: number; examples: DocumentFinding[] }
 export type DocumentAnalysis = {
   format: 'csv' | 'xml'
   url: string | null
@@ -17,6 +18,9 @@ export type DocumentAnalysis = {
   structureReasons: string[]
   findings: DocumentFinding[]
   totalFindings: number
+  findingGroups?: FindingGroup[]
+  affectedRows?: number
+  archiveEntry?: string
   /** NEPAR recommendations (level info). Never change the status and are never legal requirements. */
   recommendations?: DocumentFinding[]
 }
@@ -39,6 +43,9 @@ export type WebsiteCheckDetails = {
   archiveUrl?: string | null
   /** Discovered links only; their file contents are not verified. */
   otherDocumentUrls?: string[]
+  zipEvidence?: string
+  documentChoices?: Array<{url:string;label:string;format:'csv'|'xml'|'zip';objectKey?:string}>
+  discoveredObjectCount?: number
   directDocument?: boolean
   dynamicShell?: boolean
   publicationDateEvidence?: string

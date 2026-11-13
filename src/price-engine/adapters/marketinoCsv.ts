@@ -96,10 +96,15 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
     }
     // When the effective price came from the special-sale column it is the price, not a second (sale) price.
     const salePrice = priceInAlternativeColumn ? null : specialPrice
+    // A known retail-export marker is evidence of absence on the old reference date,
+    // not a numeric price and not an exemption. Keep the row for inspection only.
+    const anchorText = anchorIndex >= 0 ? row[anchorIndex]?.trim() || '' : ''
+    const historicAbsence = options.inspection && /^(?:nije[ _]+bilo[ _]+u[ _]+prodaji)[ _]+0?2\.0?5\.2025\.?$/i.test(anchorText)
+    if (historicAbsence) warnings.push({row:index+2,field:'anchorPrice',itemName:name,imported:true,rule:'product.anchor.historical-absence',message:'Izvoz navodi da proizvod nije bio u prodaji 2. svibnja 2025. Provjerite mjerodavnu sidrenu cijenu i datum prvog uvrštenja; oznaka nije brojčana cijena.'})
     for (const [label, column] of [['Akcijska cijena', saleIndex], ['Sidrena cijena', anchorIndex], ['Cijena za jedinicu mjere', unitPriceIndex]] as const) {
-      if (column >= 0 && row[column]?.trim() && normalizeNumber(row[column]) == null) throw new Error(`CSV redak ${index + 2}: ${label} nije broj. Provjerite izvorni podatak.`)
+      if (column >= 0 && row[column]?.trim() && normalizeNumber(row[column]) == null && !(column === anchorIndex && historicAbsence)) throw new Error(`CSV redak ${index + 2}: ${label} nije broj. Provjerite izvorni podatak.`)
     }
-    const rawType = row[typeIndex]?.trim() || (['naziv usluge', 'service name'].includes(cleanHeader(headers[nameIndex])) ? 'Usluga' : '')
+    const rawType = row[typeIndex]?.trim() || (['naziv usluge', 'service name'].includes(cleanHeader(headers[nameIndex])) ? 'Usluga' : options.inspection && (brandIndex >= 0 && barcodeIndex >= 0 && idIndex >= 0) ? 'Proizvod' : '')
     // WooCommerce exports use the product kind (simple, variable, ...) as "Type"; those are all goods.
     const type = rawType === '2' ? 'Usluga' : /^(simple|variable|variation|grouped|external)$/i.test(rawType) ? 'Proizvod' : rawType || undefined
     const dateRaw = referenceDateIndex >= 0 ? row[referenceDateIndex]?.trim() : anchorIndex >= 0 ? headerDate(cleanHeader(headers[anchorIndex])) : ''
