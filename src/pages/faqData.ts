@@ -121,7 +121,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Radi li s WooCommerceom?',
         answer:
-          'Da, za osnovnu objavu digitalnog cjenika: poveznicu dodate kao i na bilo koji WordPress. Web Link ne čita proizvode iz WooCommercea; automatska sinkronizacija nije dio trenutačne ponude.',
+          'Da, za osnovnu objavu digitalnog cjenika: poveznicu dodate kao i na bilo koji WordPress. Web Link ne čita proizvode iz WooCommercea; proizvode ažurirate učitavanjem nove datoteke.',
       },
       {
         question: 'Radi li sa Shopifyjem, Wixom ili vlastitim webom?',
@@ -146,7 +146,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Hoće li NEPAR sam promijeniti cijene na mom webshopu?',
         answer:
-          'Ne. Web Link objavljuje digitalni cjenik iz datoteke koju učitate. Automatska sinkronizacija s webshopom ili poslovnim sustavom nije dio trenutačne ponude.',
+          'Ne. Web Link objavljuje digitalni cjenik iz datoteke koju učitate. Promjene iz webshopa ili poslovnog sustava učitavate kao novu datoteku.',
       },
     ],
   },
