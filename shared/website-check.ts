@@ -120,7 +120,9 @@ export function technicalReport(result: WebsiteCheckResult) {
       ? { status: 'pass', evidence: 'CSV pronađen ✓ · XML nije objavljen — nije obvezan ako postoji ispravan CSV.', url: d.csvUrl }
       : d.xmlFound
         ? { status: 'pass', evidence: 'XML pronađen ✓ · CSV nije objavljen — nije obvezan ako postoji ispravan XML.', url: d.xmlUrl }
-        : uncertain
+        : d.otherDocumentUrls?.length
+          ? { status: 'unknown', evidence: 'Pronađene su poveznice na druge formate. Sadržaj nije provjeren i CSV/XML nije potvrđen.' }
+          : uncertain
           ? { status: 'unknown', evidence: unknownReason }
           : { status: 'missing', evidence: 'Nije pronađen valjan javno dostupan CSV ni XML cjenik.' }
 
@@ -138,7 +140,7 @@ export function technicalReport(result: WebsiteCheckResult) {
   const states: Array<{ status: TechnicalStatus; evidence: string; url?: string | null }> = [
     d.fetchBlocked && d.homepageReadable !== true ? { status: 'unknown', evidence: unknownReason } : d.reachable === false && result.status === 'red' ? { status: 'missing', evidence: 'Adresa nije pronađena. Provjerite URL web stranice.' } : found(d.homepageReadable ?? d.reachable, 'HTTP odgovor naslovnice.'),
     d.reachable ? { status: d.https ? 'pass' : 'warning', evidence: d.https ? 'Dohvaćena adresa koristi HTTPS.' : 'Dohvaćena adresa ne koristi HTTPS.' } : { status: 'unknown', evidence: unknownReason },
-    { ...found(d.pricePageFound || d.csvFound || d.xmlFound, 'Pretražene su javne poveznice i uobičajene adrese cjenika.'), url: d.pricePageUrl || d.csvUrl || d.xmlUrl },
+    d.otherDocumentUrls?.length && !d.pricePageFound && !machineReadable ? { status: 'warning', evidence: 'Pronađene su moguće datoteke cjenika; njihov sadržaj nije analiziran.', url: d.otherDocumentUrls[0] } : { ...found(d.pricePageFound || d.csvFound || d.xmlFound, 'Pretražene su javne poveznice i uobičajene adrese cjenika.'), url: d.pricePageUrl || d.csvUrl || d.xmlUrl },
     machineState,
     d.directDocument ? { status: 'unknown', evidence: 'Unesena je izravna adresa datoteke; poveznicu s početne stranice provjerite zasebno.' } : d.publicLinkLocation === 'inner'
       ? { status: 'warning', evidence: 'Poveznica je pronađena na unutarnjoj stranici, ali ne i na naslovnici. Dodajte vidljiv link „Cjenik” na početnu stranicu ili u footer. To je preporuka za lakši pristup, ne samostalno utvrđena povreda.', url: d.publicLinkUrl }

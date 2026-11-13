@@ -49,6 +49,14 @@ describe('checker v2 regressions',()=>{
     expect(result.details.otherDocumentUrls).toEqual(['https://example.hr/downloads/cjenik.xlsx'])
     expect(result.details.csvFound).toBe(false)
   })
+  it('finds ZIP price-list links without attempting to download them',async()=>{
+    const zip='/cjenici/cjenici_13_11_2026.zip'
+    const f=stub({'/':()=>html('<a href="/info-o-cijenama">Info o cijenama</a>'),'/info-o-cijenama':()=>html('<a href="'+zip+'">Cjenik</a>')})
+    const result=await check()
+    expect(result.status).toBe('yellow')
+    expect(result.details.otherDocumentUrls).toEqual(['https://example.hr'+zip])
+    expect(f.mock.calls.some(([url])=>String(url).endsWith('.zip'))).toBe(false)
+  })
   it('skips unrelated sitemap XML and prefers a recognizable cjenik over generic CSV',async()=>{
     stub({'/':()=>html('<a href="/sitemap.xml">XML</a><a href="/generic.csv">CSV</a><a href="/price.csv">CSV</a>'),'/generic.csv':()=>new Response('other,value\nfoo,1'),'/price.csv':()=>new Response(csv),'/sitemap.xml':()=>new Response('<urlset><url/></urlset>')})
     const result=await check()
