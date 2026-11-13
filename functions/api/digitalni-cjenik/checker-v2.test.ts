@@ -33,6 +33,10 @@ describe('checker v2 regressions',()=>{
     stub({'/':()=>html('<a href="'+a+'">CSV</a><a href="'+b+'">XML</a>'),[a]:()=>new Response(csv),[b]:()=>new Response(xml)})
     expect((await check()).details).toMatchObject({csvFound:true,xmlFound:false})
   })
+  it('does not combine unrelated unversioned files in a shared folder',async()=>{
+    stub({'/':()=>html('<a href="/files/a.csv">CSV</a><a href="/files/b.xml">XML</a>'),'/files/a.csv':()=>new Response(csv),'/files/b.xml':()=>new Response(xml)})
+    expect((await check()).details).toMatchObject({csvFound:true,xmlFound:false})
+  })
   it('does not infer archive from the previous file of another store',async()=>{
     const a='/files/store_ilica_A_9_20261113-073000.csv',b='/files/store_dubrava_B_8_20261112-073000.csv'
     stub({'/':()=>html('<a href="'+a+'">CSV</a><a href="'+b+'">CSV</a>'),[a]:()=>new Response(csv),[b]:()=>new Response(csv)})

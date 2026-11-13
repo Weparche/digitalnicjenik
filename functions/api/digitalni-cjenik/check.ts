@@ -353,12 +353,12 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
     if (/(?:sitemap|wlwmanifest|oembed|xmlrpc|rss)(?:[._/?-]|$)/i.test(url.pathname)) continue;
     const csv = /\.csv$/i.test(filename) || format === "csv" || /\bcsv\b/i.test(text);
     const xml = /\.xml$/i.test(filename) || format === "xml" || /\bxml\b/i.test(text);
-    const other = /\.xlsx?$/i.test(filename) || (/\.pdf$/i.test(filename) && /cjenik|cijene|price/i.test(href + ' ' + text));
-    const archive = /(arhiva|archive)/.test(`${href} ${text}`) && /(cjenik|cijene|price)/.test(`${href} ${text}`);
+    const other = /\.xlsx?$/i.test(filename) || (/\.pdf$/i.test(filename) && /cjenik|cjenic|cijene|price/i.test(href + ' ' + text));
+    const archive = /(arhiva|archive)/.test(`${href} ${text}`) && /(cjenik|cjenic|cijene|price)/.test(`${href} ${text}`);
     // Follow explicit external feed/archive links through the same DNS/redirect
     // protections, but do not turn this into a cross-site general crawl.
-    if (url.origin !== baseUrl.origin && !(csv || xml || other || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`))) continue;
-    if (csv || xml || other || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`)) results.push({ url, kind: csv ? "csv" : xml ? "xml" : other ? "other" : archive ? "archive" : "price" });
+    if (url.origin !== baseUrl.origin && !(csv || xml || other || archive || /(cjenik|cjenic|cijene|price)/.test(`${href} ${text}`))) continue;
+    if (csv || xml || other || archive || /(cjenik|cjenic|cijene|price)/.test(`${href} ${text}`)) results.push({ url, kind: csv ? "csv" : xml ? "xml" : other ? "other" : archive ? "archive" : "price" });
   }
   const embedded = /<(?:iframe|script)\b([^>]*)>/gi;
   while ((match = embedded.exec(html)) && results.length < MAX_DISCOVERED_LINKS) {
@@ -378,7 +378,7 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
 }
 function candidatePriority(c:Candidate) {
   if(c.kind!=='price') return 100;
-  return /(?:^|\/)(?:digitalni[-_]?)?cjenik(?:i)?(?:\/|$)/.test(c.url.pathname) ? 90 : /cjenik|cjenici|cijene|price-list/i.test(c.url.pathname) ? 70 : 10;
+  return /(?:^|\/)(?:digitalni[-_]?)?(?:cjenik|cjenici)(?:\/|$)/.test(c.url.pathname) ? 90 : /cjenik|cjenici|cijene|price-list/i.test(c.url.pathname) ? 70 : 10;
 }
 
 /** CMS hints are only used for instructions, never for scoring or legal conclusions. */
@@ -400,7 +400,7 @@ export function robotsRestrictionHint(robots: string): string | null {
     const directive = line.match(/^disallow\s*:\s*(\S+)/i);
     if (allAgents && directive) {
       const path = directive[1].toLowerCase();
-      if (path === '/' || /(?:cjenik|cijene|price|\.csv|\.xml)/i.test(path))
+      if (path === '/' || /(?:cjenik|cjenic|cijene|price|\.csv|\.xml)/i.test(path))
         return `robots.txt sadrži "Disallow: ${directive[1]}" za opće botove. Provjerite smeta li to automatskom preuzimanju cjenika.`;
     }
   }
@@ -457,12 +457,12 @@ export function pageLooksLikePriceList(response: Response, body: string): boolea
   let score = 0;
   if (/<(table|tbody)[\s>]/i.test(body) && /(cijena|price|€|\beur\b)/i.test(visible) && /(naziv|name|usluga|artikl)/i.test(visible)) score += 2;
   if (/itemtype=["'][^"']*(product|offer)/i.test(body) || /"@type"\s*:\s*"(product|offer)"/i.test(body)) score += 2;
-  if (/<(h1|h2|h3)[^>]*>[^<]*(cjenik|cijene|price list)/i.test(body)) score += 1;
+  if (/<(h1|h2|h3)[^>]*>[^<]*(cjenik|cjenic|cijene|price list)/i.test(body)) score += 1;
   if ((visible.match(currency) || []).length >= 3) score += 1;
   if ((visible.match(amount) || []).length >= 3) score += 1;
   // Only a linked document counts; WordPress pages always reference sitemap/wlwmanifest/oEmbed XML.
   if (/href=["'][^"']*\.(csv|xml)(?:[?#][^"']*)?["']/i.test(body.replace(/href=["'][^"']*(?:sitemap|wlwmanifest|oembed|feed|rss|xmlrpc)[^"']*["']/gi, ''))) score += 1;
-  const explicitList = /<(?:h1|h2|h3|title)[^>]*>[^<]*(?:cjenik|cijene|price list)/i.test(body);
+  const explicitList = /<(?:h1|h2|h3|title)[^>]*>[^<]*(?:cjenik|cjenic|cijene|price list)/i.test(body);
   const priceTable = /<(table|tbody)[\s>]/i.test(body) && /(cijena|price|€|\beur\b)/i.test(visible) && /(naziv|name|usluga|artikl)/i.test(visible);
   return score >= 2 && (explicitList || priceTable);
 }
@@ -892,7 +892,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   }
   const links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
   const directFormat = homepageReadable && !isHtml(homepage.response,html)
-    ? documentLooksValid('xml',homepage.response,html) ? 'xml' : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
+    ? html.trimStart().startsWith('<') ? (documentLooksValid('xml',homepage.response,html) ? 'xml' : null) : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
     : null;
   if(directFormat) {
     details.directDocument = true;
@@ -977,12 +977,12 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   details.csvUrl = directFormat === 'csv' ? homepage.url.href : directFormat ? null : await findDocument("csv", csv, env, network, analyses, selected);
   const csvSource = selected.get('csv');
   const csvName = parsePublicationName(analyses.find(a=>a.format==='csv')?.publicationFilename || '') || parsePublicationName(details.csvUrl || '');
-  const parent = (u:URL) => u.pathname.slice(0,u.pathname.lastIndexOf('/')+1);
+  const stem = (u:URL) => u.pathname.replace(/\.(csv|xml)$/i,'');
   const compatible = (u:URL) => {
     if (!csvSource) return true;
     const name = parsePublicationName(u.href);
     if (csvName && name) return csvName.objectKey === name.objectKey && csvName.storage === name.storage && csvName.stamp === name.stamp;
-    return u.origin === csvSource.origin && parent(u) === parent(csvSource);
+    return u.origin === csvSource.origin && stem(u) === stem(csvSource);
   };
   details.xmlUrl = directFormat === 'xml' ? homepage.url.href : directFormat ? null : await findDocument("xml", xml.filter(compatible), env, network, analyses, selected);
   const xmlName = parsePublicationName(analyses.find(a=>a.format==='xml')?.publicationFilename || '') || parsePublicationName(details.xmlUrl || '');
