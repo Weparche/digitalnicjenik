@@ -2,6 +2,7 @@ import { beforeEach,afterEach,expect,it,vi } from 'vitest'
 import { env } from 'cloudflare:test'
 import { checkerHistoryUrl,recordCheckerRun,checkerRunCounts } from './_checker-history'
 import { onRequestPost as check } from './api/digitalni-cjenik/check'
+import { onRequestPost as interaction } from './api/digitalni-cjenik/interaction'
 import { onRequestGet as history } from './api/ops/checks'
 import { createSessionForUser } from './_auth'
 import { handleLeadRequest,type LeadEnv } from './_lead'
@@ -88,4 +89,18 @@ it('keeps legacy checks unscored instead of inventing nine historical results',a
   expect(data).toMatchObject({runs:[{hostname:'old.hr',source:'legacy',score:null,checks:[],lead_email:null}]})
   const filtered=await (await history({request:await adminRequest('?score=9'),env:runtime})).json()
   expect(filtered).toMatchObject({runs:[]})
+})
+
+it('separates internal QA and deduplicates anonymous post-check events',async()=>{
+ const publicRun=await recordCheckerRun(env.DB,'https://salon.hr/',result,null,'landing')
+ const internal=await recordCheckerRun(env.DB,'https://salon.hr/',result,null,'dashboard',new Date(),true)
+ const second=await recordCheckerRun(env.DB,'https://salon.hr/',{...result,status:'yellow'},null,'landing')
+ const event=(runId:string|null,event:string,origin='https://app.test')=>interaction({request:new Request('https://app.test/api/digitalni-cjenik/interaction',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({runId,event})}),env:runtime})
+ expect((await event(publicRun,'upload_click')).status).toBe(204)
+ await event(publicRun,'upload_click');await event(publicRun,'upload');await event(internal,'order')
+ expect((await event(second,'order','https://evil.example')).status).toBe(403)
+ const data=await (await history({request:await adminRequest('?scope=public'),env:runtime})).json() as any
+ expect(data.runs).toHaveLength(2);expect(data.domains[0]).toMatchObject({domain:'salon.hr',checks:2})
+ expect(data.funnel).toMatchObject({public_checks:2,upload_clicks:1,uploads:1,orders:0})
+ expect((await (await history({request:await adminRequest('?scope=internal'),env:runtime})).json() as any).runs).toHaveLength(1)
 })

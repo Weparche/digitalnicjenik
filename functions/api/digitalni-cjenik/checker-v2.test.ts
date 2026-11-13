@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { parsePublicationName, runDigitalPriceListCheck } from './check'
+import { analyzeDocument, parsePublicationName, renderDynamicPage, runDigitalPriceListCheck } from './check'
 import { technicalReport } from '../../../shared/website-check'
 
 const resolver = { resolve4: async () => ['93.184.216.34'], resolve6: async () => [] }
@@ -56,13 +56,14 @@ describe('checker v2 regressions',()=>{
     expect(result.details.dynamicShell).toBe(true)
     expect(technicalReport(result).checks.find(c=>c.id==='machine')?.status).toBe('unknown')
   })
-  it('finds ZIP price-list links without attempting to download them',async()=>{
+  it('finds ZIP price-list links and attempts a bounded range read',async()=>{
     const zip='/cjenici/cjenici_13_11_2026.zip'
     const f=stub({'/':()=>html('<a href="/info-o-cijenama">Info o cijenama</a>'),'/info-o-cijenama':()=>html('<a href="'+zip+'">Cjenik</a>')})
     const result=await check()
     expect(result.status).toBe('yellow')
     expect(result.details.otherDocumentUrls).toEqual(['https://example.hr'+zip])
-    expect(f.mock.calls.some(([url])=>String(url).endsWith('.zip'))).toBe(false)
+    expect(f.mock.calls.some(([url])=>String(url).endsWith('.zip'))).toBe(true)
+    expect(result.details.zipEvidence).toContain('nije uspio')
   })
   it('skips unrelated sitemap XML and prefers a recognizable cjenik over generic CSV',async()=>{
     stub({'/':()=>html('<a href="/sitemap.xml">XML</a><a href="/generic.csv">CSV</a><a href="/price.csv">CSV</a>'),'/generic.csv':()=>new Response('other,value\nfoo,1'),'/price.csv':()=>new Response(csv),'/sitemap.xml':()=>new Response('<urlset><url/></urlset>')})
@@ -75,3 +76,43 @@ describe('checker v2 regressions',()=>{
     expect(parsePublicationName('https://example.hr/Supermarket%20104_Ulica%2030_Jastrebarsko_1_13.11.2026_7.15h.csv')).toMatchObject({storage:1})
   })
 })
+
+it('retains an explicitly historical absence as a warning without discarding the row',()=>{
+ const report=analyzeDocument('csv','NAZIV,ŠIFRA,MARKA,MALOPRODAJNA_CIJENA,BARKOD,Sidrena_cijena_na_02.05.2025\nMlijeko,1,Pilos,0.53,4335619246522,Nije_bilo_u_prodaji_02.05.2025')
+ expect(report.itemCount).toBe(1)
+ expect(report.findingGroups?.find(g=>g.rule==='product.anchor.historical-absence')).toMatchObject({level:'warning',count:1,affectedRows:1})
+ expect(report.findings.some(f=>f.rule==='item.row.unreadable'||f.rule==='product.anchor.missing')).toBe(false)
+ const invalid=analyzeDocument('csv','NAZIV,ŠIFRA,MARKA,MALOPRODAJNA_CIJENA,BARKOD,Sidrena_cijena_na_02.05.2025\nMlijeko,1,Pilos,0.53,4335619246522,proizvoljno')
+ expect(invalid.findings.some(f=>f.rule==='item.row.unreadable')).toBe(true)
+})
+it('recognizes the compact Plodine archive member timestamp',()=>{
+ expect(parsePublicationName('SUPERMARKET_ALFREDA_NOBELA_6_SOP_10361_SESVETSKI_KRALJEVEC_184_248_13112026045511.csv')).toMatchObject({storage:248,stamp:'13112026045511',objectKey:'supermarket|alfreda|nobela|6|sop|10361|sesvetski|kraljevec|184'})
+})
+
+describe('native browser discovery',()=>{
+  function env(attempts: number|null=1) {
+    const quickAction=vi.fn(async()=>Response.json({success:true,result:'<a href="https://content.services.dmtech.com/cjenik.xlsx">Cjenik XLSX</a>'}));
+    const first=vi.fn(async()=>attempts===null?null:{attempts});
+    const DB={prepare:vi.fn(()=>({bind:()=>({first})}))} as unknown as NonNullable<Parameters<typeof renderDynamicPage>[1]['DB']>;
+    return {CHECKER_BROWSER:{quickAction},CHECKER_BROWSER_HOSTS:'www.dm.hr,dm.hr,content.services.dmtech.com',DIGITAL_PRICE_LIST_DNS_RESOLVER:resolver,DB};
+  }
+  it('uses the verified dm price page with exact host restrictions and quota',async()=>{
+    const e=env();
+    const r=await renderDynamicPage(new URL('https://www.dm.hr/'),e);
+    expect(r?.url.href).toContain('/novo/promocije/');
+    expect(r?.html).toContain('.xlsx');
+    const args=e.CHECKER_BROWSER.quickAction.mock.calls as unknown as Array<[string,{allowRequestPattern:string[]}]>;
+    expect(args[0][0]).toBe('content');
+    const allow=args[0][1].allowRequestPattern.map(p=>new RegExp(p));
+    expect(allow.some(p=>p.test('https://www.dm.hr/cjenik'))).toBe(true);
+    expect(allow.some(p=>p.test('https://www.dm.hr.evil.example/'))).toBe(false);
+    expect(allow.some(p=>p.test('http://127.0.0.1/'))).toBe(false);
+  });
+  it('does not render an unlisted host or after quota exhaustion',async()=>{
+    const e=env(null);
+    expect(await renderDynamicPage(new URL('https://example.hr/'),e)).toBeNull();
+    expect(e.DB.prepare).not.toHaveBeenCalled();
+    expect(await renderDynamicPage(new URL('https://www.dm.hr/'),e)).toBeNull();
+    expect(e.CHECKER_BROWSER.quickAction).not.toHaveBeenCalled();
+  });
+});

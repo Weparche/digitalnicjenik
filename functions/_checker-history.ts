@@ -27,7 +27,7 @@ export function checkerHistoryUrl(raw:unknown):string|null{
   }catch{return null}
 }
 
-export async function recordCheckerRun(db:D1DatabaseLike|undefined,url:string,result:WebsiteCheckResult,attribution:unknown,source:unknown,now=new Date()){
+export async function recordCheckerRun(db:D1DatabaseLike|undefined,url:string,result:WebsiteCheckResult,attribution:unknown,source:unknown,now=new Date(),internal=false){
   if(!db)return null
   const clean=checkerHistoryUrl(url)
   if(!clean)return null
@@ -39,7 +39,7 @@ export async function recordCheckerRun(db:D1DatabaseLike|undefined,url:string,re
   const id=crypto.randomUUID()
   try{
     const hostname=new URL(clean).hostname,checksJson=JSON.stringify(checks),urlsJson=JSON.stringify(discovered)
-    await db.prepare('INSERT INTO checker_runs(id,checked_at,url,hostname,status,score,unknown_count,checks_json,discovered_urls_json,acquisition_json,source) VALUES (?,?,?,?,?,?,?,?,?,?,?)').bind(id,now.toISOString(),clean,hostname,result.status,report.score,report.unknown,checksJson,urlsJson,touch?JSON.stringify(touch):null,source==='landing'?'landing':'dashboard').run()
+    await db.prepare('INSERT INTO checker_runs(id,checked_at,url,hostname,status,score,unknown_count,checks_json,discovered_urls_json,acquisition_json,source,is_internal) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,now.toISOString(),clean,hostname,result.status,report.score,report.unknown,checksJson,urlsJson,touch?JSON.stringify(touch):null,source==='landing'?'landing':'dashboard',internal?1:0).run()
     return id
   }catch{
     // A missing migration/storage outage must not break the registration-free checker.

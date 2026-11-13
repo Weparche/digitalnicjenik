@@ -105,11 +105,12 @@ export function touchFromSearch(input: {
   attributionId: string
 }): AcquisitionTouch | null {
   const params = new URLSearchParams(input.search)
-  if (!UTM_PARAMS.some((key) => params.has(key))) return null
+  const ref=referrerHost(input.referrer)
+  if (!UTM_PARAMS.some((key) => params.has(key)) && (!ref || ref==='digitalnicjenik.nepar.hr' || ref.endsWith('.digitalnicjenik.pages.dev'))) return null
   return sanitizeAttribution({
     attribution_id: input.attributionId,
-    utm_source: params.get('utm_source'),
-    utm_medium: params.get('utm_medium'),
+    utm_source: params.get('utm_source') || ref,
+    utm_medium: params.get('utm_medium') || (ref && !params.has('utm_source') ? 'referral' : null),
     utm_campaign: params.get('utm_campaign'),
     utm_content: params.get('utm_content'),
     referrer_host: input.referrer,

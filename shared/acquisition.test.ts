@@ -64,3 +64,9 @@ describe('acquisition touch', () => {
     expect(JSON.stringify(parsed)).not.toContain('token')
   })
 })
+
+it('records external referrer without UTM and ignores own navigation',()=>{
+ const input={search:'',referrer:'https://www.google.com/search?q=private',pathname:'/',nowIso:touch.first_seen,attributionId:touch.attribution_id}
+ expect(touchFromSearch(input)).toMatchObject({utm_source:'www.google.com',utm_medium:'referral',referrer_host:'www.google.com'})
+ expect(touchFromSearch({...input,referrer:'https://digitalnicjenik.nepar.hr/'})).toBeNull()
+})

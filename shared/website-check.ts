@@ -2,6 +2,7 @@
 export type DocumentAnalysisStatus = 'pass' | 'warning' | 'fail' | 'unknown'
 /** level/source come from shared/compliance/legal-profile.ts: only binding rules can be an error. */
 export type DocumentFinding = { row?: number; itemName?: string; field?: string; message: string; rule?: string; level?: 'error' | 'warning' | 'info'; source?: 'binding' | 'official-clarification' | 'draft' | 'recommendation' }
+export type FindingGroup = { rule: string; level: 'error' | 'warning' | 'info'; message: string; count: number; affectedRows: number; examples: DocumentFinding[] }
 export type DocumentAnalysis = {
   format: 'csv' | 'xml'
   url: string | null
@@ -17,6 +18,9 @@ export type DocumentAnalysis = {
   structureReasons: string[]
   findings: DocumentFinding[]
   totalFindings: number
+  findingGroups?: FindingGroup[]
+  affectedRows?: number
+  archiveEntry?: string
   /** NEPAR recommendations (level info). Never change the status and are never legal requirements. */
   recommendations?: DocumentFinding[]
 }
@@ -39,8 +43,12 @@ export type WebsiteCheckDetails = {
   archiveUrl?: string | null
   /** Discovered links only; their file contents are not verified. */
   otherDocumentUrls?: string[]
+  zipEvidence?: string
+  documentChoices?: Array<{url:string;label:string;format:'csv'|'xml'|'zip';objectKey?:string;entry?:string}>
+  discoveredObjectCount?: number
   directDocument?: boolean
   dynamicShell?: boolean
+  renderedEvidence?: string
   publicationDateEvidence?: string
   publicLinkUrl?: string | null
   csvLinkDiscovered?: boolean
@@ -113,7 +121,9 @@ export function technicalReport(result: WebsiteCheckResult) {
 
   const machineReadable = Boolean(d.csvFound || d.xmlFound)
   const unrecognized = machineReadable && d.structureStatus === 'unknown'
-  const machineState: { status: TechnicalStatus; evidence: string; url?: string | null } = unrecognized
+  const machineState: { status: TechnicalStatus; evidence: string; url?: string | null } = d.zipEvidence && machineReadable
+    ? {status:'warning',evidence:d.zipEvidence,url:d.csvUrl||d.xmlUrl}
+    : unrecognized
     ? { status: 'unknown', evidence: 'Datoteka je dostupna, ali nije potvrđena struktura strojnog cjenika.', url: d.csvUrl || d.xmlUrl }
     : d.csvFound && d.xmlFound
     ? { status: 'pass', evidence: 'CSV pronađen ✓ · XML pronađen ✓. Za zahtjev je dovoljan jedan od ta dva formata.', url: d.csvUrl || d.xmlUrl }

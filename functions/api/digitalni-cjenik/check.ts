@@ -5,8 +5,11 @@ import { normalizeHeader } from '../../../src/price-engine/normalize';
 import { isServiceItem } from '../../../src/price-engine/profile';
 import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engine/types';
 import { deferredNote, ruleFor } from '../../../shared/compliance/legal-profile';
-import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type WebsiteCheckDetails } from '../../../shared/website-check';
+import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type FindingGroup, type WebsiteCheckDetails } from '../../../shared/website-check';
 import { parseContentDispositionFilename } from '../../../shared/compliance/checks';
+import { readZipDirectory, readZipMember, type FetchRange } from './zip-inspection';
+import { requireAdmin } from '../../_admin-auth';
+import type { AuthEnv } from '../../_auth';
 import { recordCheckerRun } from '../../_checker-history';
 
 type Resolver = {
@@ -19,6 +22,10 @@ type CheckerEnv = {
   DB?: import('../../_repository').D1DatabaseLike;
   CHECKER_RATE_LIMIT_SECRET?: string;
   LEAD_RATE_LIMIT_SECRET?: string;
+  zipEntry?: string;
+  CF_ACCOUNT_ID?: string;
+  CHECKER_BROWSER?: { quickAction(action: 'content', options: Record<string, unknown>): Promise<Response> };
+  CHECKER_BROWSER_HOSTS?: string;
   requestState?: { signal: AbortSignal; dns: Map<string, Promise<string[]>> };
 };
 
@@ -64,7 +71,7 @@ const MAX_CSV_ROWS = 20_000;
 const MAX_REDIRECTS = 5;
 const MAX_SECONDARY_PAGES = 6;
 const MAX_DOCUMENT_CANDIDATES = 8;
-const MAX_DISCOVERED_LINKS = 50;
+const MAX_DISCOVERED_LINKS = 200;
 const FETCH_TIMEOUT_MS = 8000;
 const DOH_ENDPOINT = "https://cloudflare-dns.com/dns-query";
 const METADATA_HOSTS = new Set([
@@ -201,7 +208,7 @@ function timeoutSignal() {
   return { signal: controller.signal, clear: () => clearTimeout(timeout) };
 }
 
-export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv): Promise<{ response: Response; url: URL }> {
+export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv, rangeHeaders?: { range: string; validator?: string }): Promise<{ response: Response; url: URL }> {
   let current = new URL(initialUrl.href);
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
     await assertPublicUrl(current, env);
@@ -213,12 +220,13 @@ export async function safeDigitalPriceListFetch(initialUrl: URL, env: CheckerEnv
         redirect: "manual",
         cache: "no-store",
         signal: env.requestState ? AbortSignal.any([timeout.signal, env.requestState.signal]) : timeout.signal,
-        headers: { accept: "text/html,application/xml,text/xml,text/csv,*/*;q=0.1" },
+        headers: { accept: "text/html,application/xml,text/xml,text/csv,*/*;q=0.1", ...(rangeHeaders ? { range: rangeHeaders.range, "accept-encoding": "identity", ...(rangeHeaders.validator ? { "if-range": rangeHeaders.validator } : {}) } : {}) },
       });
     } finally {
       timeout.clear();
     }
     if (!isRedirect(response)) return { response, url: current };
+    void response.body?.cancel().catch(()=>{});
     if (redirects === MAX_REDIRECTS) throw new Error("too_many_redirects");
     const location = response.headers.get("location");
     if (!location) throw new Error("invalid_redirect");
@@ -262,8 +270,8 @@ async function fetchHomepage(initialUrl: URL, env: CheckerEnv): Promise<{ respon
   throw primaryError instanceof Error ? primaryError : new Error('homepage_unavailable');
 }
 
-async function readBounded(response: Response, maxBytes: number): Promise<{ body: string; truncated: boolean }> {
-  if (!response.body) return { body: "", truncated: false };
+async function readBytesBounded(response: Response, maxBytes: number): Promise<{ bytes: Uint8Array; truncated: boolean }> {
+  if (!response.body) return { bytes: new Uint8Array(), truncated: false };
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -294,6 +302,11 @@ async function readBounded(response: Response, maxBytes: number): Promise<{ body
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return {bytes,truncated};
+}
+
+async function readBounded(response: Response, maxBytes: number): Promise<{body:string;truncated:boolean}> {
+  const {bytes,truncated}=await readBytesBounded(response,maxBytes);
   let body = new TextDecoder().decode(bytes);
   const charset = /charset\s*=\s*["']?([^;"'\s]+)/i.exec(response.headers.get('content-type') || '')?.[1];
   if (charset || body.includes('\uFFFD')) {
@@ -713,24 +726,31 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
     if (body.length > MAX_DOCUMENT_BYTES) throw new Error('analysis_limit');
     const parsed = kind === 'csv' ? parseMarketinoCsv(body, undefined, { inspection: true }) : inspectXmlPriceList(body);
     const rawCount = parsed.rowCount ?? parsed.priceList.items.length;
+    const historicRows = new Set(parsed.warnings.filter(w=>w.rule==='product.anchor.historical-absence').map(w=>w.row));
     const findings: DocumentFinding[] = parsed.warnings.map(w => withLevel({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }, w.rule ?? parseWarningRule(w.field)));
     if (parsed.priceList.items.length) {
       for (const issue of validatePriceList(parsed.priceList).issues) {
         const index = issue.row - 2;
-        findings.push(withLevel({ row: parsed.sourceRows?.[index] ?? issue.row, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message }, issue.rule ?? 'unknown'));
+        const sourceRow = parsed.sourceRows?.[index] ?? issue.row;
+        if(issue.rule==='product.anchor.missing' && historicRows.has(sourceRow)) continue;
+        findings.push(withLevel({ row: sourceRow, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message }, issue.rule ?? 'unknown'));
       }
     }
     if (!rawCount) findings.push(withLevel({ message: 'Cjenik ne sadrži stavke.' }, 'list.empty'));
     const errors = findings.filter(f => f.level === 'error');
     const warnings = findings.filter(f => f.level === 'warning');
     const legal = [...errors, ...warnings];
+    const groups = new Map<string, FindingGroup & {rows:Set<number>}>();
+    for(const finding of legal){const rule=finding.rule||'unknown',level=finding.level||'warning',key=rule+'|'+level;let group=groups.get(key);if(!group){group={rule,level,message:finding.message,count:0,affectedRows:0,examples:[],rows:new Set()};groups.set(key,group)}group.count++;if(finding.row!=null)group.rows.add(finding.row);if(group.examples.length<3)group.examples.push(finding)}
+    const findingGroups=Array.from(groups.values(),({rows,...group})=>({...group,affectedRows:rows.size})).sort((a,b)=>(a.level==='error'?0:1)-(b.level==='error'?0:1)||b.count-a.count);
+    const affectedRows=new Set(legal.map(f=>f.row).filter(row=>row!=null)).size;
     const recommendations = [...findings.filter(f => f.level === 'info'), schemaRecommendation(parsed.fieldSources, parsed.priceList.items)].filter((f): f is DocumentFinding => Boolean(f));
     const structure = rawCount ? 'pass' : 'warning';
     const content = errors.length ? 'fail' : warnings.length ? 'warning' : 'pass';
     const classification = classifyPriceList(parsed.priceList.items);
     return finish({ ...base, ...classification, structureRecognized: true, itemCount: rawCount, structureStatus: structure, contentStatus: content, status: content,
       structureReasons: [kind.toUpperCase() + ' je parsiran; prepoznata su polja cjenika. Pronađeno stavki: ' + rawCount + '.'],
-      findings: legal.slice(0, 20), totalFindings: legal.length, recommendations });
+      findings: legal.slice(0, 20), totalFindings: legal.length, findingGroups: findingGroups.slice(0,40), affectedRows, recommendations });
   } catch (caught) {
     const limited = caught instanceof Error && caught.message === 'analysis_limit';
     return finish({ ...base, structureReasons: [limited ? 'Sigurnosno ograničenje onemogućuje potpunu analizu. Učitajte datoteku u validator.' : 'Datoteka je dostupna, ali u njoj nisu prepoznati podaci cjenika (naziv, maloprodajna cijena) ili dokument nije ispravan za detaljnu analizu. Učitajte je u validator.'] });
@@ -749,9 +769,18 @@ export function parsePublicationName(value: string): PublicationName | null {
   try {
     const url = new URL(value);
     path = Array.from(url.searchParams.values()).find(v => /\.(csv|xml)$/i.test(v)) || decodeURIComponent(url.pathname).split('/').pop() || '';
-  } catch { path = value; }
+  } catch { path = value.split('/').pop() || value; }
   const stem = path.replace(/\.(csv|xml)$/i, '').replace(/([_ ,])\s*(\d{1,2})\.(\d{2})h$/i, (_, sep, hour, minute) => sep + hour.padStart(2,'0') + ':' + minute);
   const parts = (stem.includes('_') ? stem.split('_') : stem.split(',')).map(part => part.trim());
+  const plodine = /^(\d{2})(\d{2})(\d{4})(\d{2})(\d{2})(\d{2})$/.exec(parts.at(-1) ?? '');
+  if(plodine){
+    const storage=parts.at(-2)??'',objectParts=parts.slice(0,-2);
+    if(!/^\d{1,6}$/.test(storage)||objectParts.length<3||objectParts.some(part=>!part.trim()))return null;
+    const [,day,month,year,hour,minute,second]=plodine;
+    const time=Date.parse(year+'-'+month+'-'+day+'T'+hour+':'+minute+':'+second+'Z');
+    const valid=Number.isFinite(time)&&new Date(time).toISOString().slice(0,10)===year+'-'+month+'-'+day;
+    return valid?{storage:Number(storage),stamp:parts.at(-1)!,time,objectKey:objectParts.join('|').toLocaleLowerCase('hr-HR')}:null;
+  }
   const compact = /^(\d{4})-?(\d{2})-?(\d{2})[T-](\d{2})[-:]?(\d{2})(?:[-:]?(\d{2}))?(Z|[+-]\d{2}:?\d{2})?$/i.exec(parts.at(-1) ?? '');
   const splitIsoDate = /^(\d{4})-(\d{2})-(\d{2})$/.exec(parts.at(-2) ?? '');
   const splitCroDate = /^(\d{2})\.(\d{2})\.(\d{4})\.?$/.exec(parts.at(-2) ?? '');
@@ -769,8 +798,83 @@ export function parsePublicationName(value: string): PublicationName | null {
   return { storage: Number(storage), stamp: parts.slice(-stampParts).join('_'), time: Number.isFinite(time) ? time : null, objectKey: objectParts.join('|').toLocaleLowerCase('hr-HR') };
 }
 
+/** Display only the latest discovered version per known object and format. Unknown identities stay separate. */
+function publicationChoices(links:URL[],other:string[]):NonNullable<WebsiteCheckDetails['documentChoices']>{
+  const groups=new Map<string,{url:string;label:string;format:'csv'|'xml'|'zip';objectKey?:string;time:number;storage:number}>();
+  for(const url of [...links,...other.filter(u=>/\.zip(?:$|[?#])/i.test(u)).map(u=>new URL(u))]){
+    const raw=Array.from(url.searchParams.values()).find(v=>/\.(csv|xml|zip)$/i.test(v))||url.pathname;
+    const format=/\.(csv|xml|zip)$/i.exec(raw)?.[1]?.toLowerCase() as 'csv'|'xml'|'zip'|undefined;if(!format)continue;
+    const parsed=parsePublicationName(url.href),key=parsed?parsed.objectKey+'|'+format:url.href;
+    const previous=groups.get(key),time=parsed?.time??0,storage=parsed?.storage??0;
+    if(previous&&(previous.time>time||(previous.time===time&&previous.storage>=storage)))continue;
+    const label=parsed?parsed.objectKey.split('|').join(' · '):decodeHref(raw.split('/').pop()||raw);
+    groups.set(key,{url:url.href,label,format,objectKey:parsed?.objectKey,time,storage});
+  }
+  return Array.from(groups.values()).slice(0,200).map(({time,storage,...choice})=>choice);
+}
+
+async function inspectZip(url:URL,env:CheckerEnv,details:CheckDetails,analyses:CheckerDocumentAnalysis[]){
+  try{
+    let whole:Uint8Array|undefined;let wholeTag:string|undefined;
+    const sliceWhole=(range:string)=>{if(!whole)throw new Error('zip_range_unavailable');const tail=/^bytes=-(\d+)$/.exec(range),part=/^bytes=(\d+)-(\d+)$/.exec(range);const start=tail?Math.max(0,whole.length-Number(tail[1])):Number(part?.[1]),end=tail?whole.length-1:Number(part?.[2]);if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||end>=whole.length||end<start)throw new Error('zip_range_limit');return {bytes:whole.subarray(start,end+1),start,total:whole.length,validator:wholeTag};};
+    const fetchRange:FetchRange=async(range,validator)=>{
+      if(whole)return sliceWhole(range);
+      const {response}=await safeDigitalPriceListFetch(url,env,{range,validator});
+      const contentRange=/^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get('content-range')||'');
+      if(response.status===200&&!validator&&range.startsWith('bytes=-')){const advertised=Number(response.headers.get('content-length')||0);if(advertised>8*1024*1024){void response.body?.cancel().catch(()=>{});throw new Error('zip_range_required')}const read=await readBytesBounded(response,8*1024*1024);if(read.truncated)throw new Error('zip_range_required');whole=read.bytes;wholeTag=response.headers.get('etag')||undefined;return sliceWhole(range);}
+      if(response.status!==206||!contentRange){void response.body?.cancel().catch(()=>{});throw new Error('zip_range_unavailable')}
+      const start=Number(contentRange[1]),end=Number(contentRange[2]),total=Number(contentRange[3]),length=end-start+1;
+      const limit=range.startsWith('bytes=-')?65557:Math.min(5*1024*1024,Number(range.split('-')[1])-Number(range.slice(6).split('-')[0])+1);
+      if(!Number.isSafeInteger(total)||!Number.isSafeInteger(length)||length<=0||length>limit||end>=total){void response.body?.cancel().catch(()=>{});throw new Error('zip_range_limit')}
+      const {bytes,truncated}=await readBytesBounded(response,length);
+      if(truncated||bytes.length!==length)throw new Error('zip_range_length');
+      const tag=response.headers.get('etag');
+      return {bytes,start,total,validator:tag&&!tag.startsWith('W/')?tag:response.headers.get('last-modified')||undefined};
+    };
+    const directory=await readZipDirectory(fetchRange);
+    details.zipEvidence='ZIP arhiva: '+directory.entries.length+' podržanih CSV/XML datoteka od '+directory.totalEntries+' zapisa; analiziramo samo odabranu datoteku, ne cijelu arhivu.';
+    const members=directory.entries.map(entry=>({entry,publication:parsePublicationName(entry.name)}));
+    details.discoveredObjectCount=new Set(members.map(m=>m.publication?.objectKey).filter(Boolean)).size;
+    details.documentChoices=members.slice(0,500).map(({entry,publication})=>({url:url.href,entry:entry.name,label:publication?publication.objectKey.split('|').join(' · '):entry.name,format:entry.name.toLowerCase().endsWith('.csv')?'csv':'xml',objectKey:publication?.objectKey}));
+    const chosen=env.zipEntry?members.find(m=>m.entry.name===env.zipEntry):members[0];
+    if(!chosen){details.zipEvidence+=' Odabrana datoteka nije dostupna za sigurnu analizu.';return}
+    const kind=chosen.entry.name.toLowerCase().endsWith('.csv')?'csv':'xml';
+    const body=await readZipMember(directory,chosen.entry);
+    const capped=kind==='csv'?trimCsvToCompleteRecords(body,MAX_CSV_ROWS):body;
+    const sampled=kind==='csv'&&capped.length<body.length&&capped.split(/\r?\n/).length>MAX_CSV_ROWS;
+    const analysis=analyzeDocument(kind,sampled?capped:body,url.href);
+    analysis.archiveEntry=chosen.entry.name;analysis.publicationFilename=chosen.entry.name;analysis.contentType='application/zip';
+    if(sampled){if(analysis.contentStatus==='pass')analysis.status=analysis.contentStatus=analysis.content='unknown';analysis.structureReasons.push('Provjeren je ograničeni uzorak CSV datoteke unutar ZIP-a.')}
+    analyses.push(analysis);
+    if(analysis.structureRecognized){if(kind==='csv')details.csvUrl=url.href;else details.xmlUrl=url.href;details.zipEvidence+=' Prepoznat je strojni cjenik u ZIP-u; zahtjev izravne objave CSV/XML datoteke provjerite zasebno.'}
+  }catch{details.zipEvidence='ZIP poveznica je pronađena, ali siguran ograničeni dohvat arhive nije uspio. Cjelovit sadržaj nije potvrđen.'}
+}
+
+/** Optional, administrator-allowlisted browser fallback; no user scripts or credentials. */
+const DM_PRICE_PAGE = 'https://www.dm.hr/novo/promocije/nove-oznake-cijena-i-vazeci-cjenik-u-dm-u-2906632';
+export async function renderDynamicPage(url:URL,env:CheckerEnv):Promise<{html:string;url:URL}|null>{
+  if(!env.CHECKER_BROWSER||!env.DB||url.protocol!=='https:'||url.port||url.search||url.hash)return null;
+  const hosts=(env.CHECKER_BROWSER_HOSTS||'').split(',').map(h=>h.trim().toLowerCase()).filter(h=>/^[a-z0-9.-]+$/.test(h)&&h.includes('.')&&!isForbiddenHostname(h)).slice(0,12);
+  if(!hosts.includes(url.hostname))return null;
+  const target=(['dm.hr','www.dm.hr'].includes(url.hostname)&&url.pathname==='/')?new URL(DM_PRICE_PAGE):url;
+  if(!hosts.includes(target.hostname))return null;
+  try{
+    for(const host of hosts)await assertPublicUrl(new URL('https://'+host+'/'),env);
+    const day=new Date().toISOString().slice(0,10);
+    const budget=await env.DB.prepare('INSERT INTO checker_browser_daily(day,attempts) VALUES (?,1) ON CONFLICT(day) DO UPDATE SET attempts=attempts+1 WHERE attempts<20 RETURNING attempts').bind(day).first<{attempts:number}>();
+    if(!budget)return null;
+    const allow=hosts.map(host=>'^https://'+host.replaceAll('.','\\.')+'(?::443)?(?:/|$)');
+    const response=await env.CHECKER_BROWSER.quickAction('content',{url:target.href,allowRequestPattern:allow,allowResourceTypes:['document','script','stylesheet','xhr','fetch'],gotoOptions:{waitUntil:'domcontentloaded',timeout:6000},actionTimeout:6000,waitForTimeout:1200,bestAttempt:true});
+    if(!response.ok)return null;
+    const {body,truncated}=await readBounded(response,MAX_HTML_BYTES+256*1024);
+    if(truncated)return null;
+    const data=JSON.parse(body) as {success?:boolean;result?:unknown};
+    return data.success===true&&typeof data.result==='string'&&data.result.length<=MAX_HTML_BYTES?{html:data.result,url:target}:null;
+  }catch{return null}
+}
+
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
-const MAX_PUBLICATION_LINKS = 40;
+const MAX_PUBLICATION_LINKS = 200;
 const MAX_ARCHIVE_PROBES = 3;
 
 function publicationFinding(rule: string, message: string): DocumentFinding {
@@ -827,14 +931,14 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
   }
 }
 
-function parseBody(request: Request): Promise<{ url?: unknown;attribution?:unknown;source?:unknown } | null> {
+function parseBody(request: Request): Promise<{ url?: unknown;attribution?:unknown;source?:unknown;zipEntry?:unknown } | null> {
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) return Promise.resolve(null);
   return request.text().then((value) => {
     if (new TextEncoder().encode(value).byteLength > MAX_REQUEST_BYTES) return null;
     try {
       const parsed = JSON.parse(value);
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { url?: unknown;attribution?:unknown;source?:unknown } : null;
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as { url?: unknown;attribution?:unknown;source?:unknown;zipEntry?:unknown } : null;
     } catch { return null; }
   }).catch(() => null);
 }
@@ -852,7 +956,10 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const network = { failed: false, blocked: false, checked: false };
   const analyses: CheckerDocumentAnalysis[] = [];
   let homepage: { response: Response; url: URL };
+  const directZip=/\.zip$/i.test(initialUrl.pathname);
   try {
+    if(directZip)homepage={response:new Response('',{headers:{'content-type':'application/zip'}}),url:initialUrl};
+    else
     homepage = await fetchHomepage(initialUrl, env);
   } catch (caught) {
     if (caught instanceof Error && caught.message === "host_not_found") {
@@ -890,9 +997,14 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     details.pricePageFound = true;
     details.pricePageUrl = homepage.url.href;
   }
-  const links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
+  let links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
+  let renderedPage:URL|null=null;
   const dynamicShell = homepageReadable && isHtml(homepage.response,html) && !links.length && stripTags(html).length < 150 && (html.match(/<script\b/gi)||[]).length >= 5;
-  if (dynamicShell) details.dynamicShell = true;
+  if (dynamicShell) {
+    details.dynamicShell = true;
+    const rendered=await renderDynamicPage(homepage.url,env);
+    if(rendered){const found=extractLinks(rendered.html,rendered.url);if(found.length){links=found;renderedPage=rendered.url;details.dynamicShell=false;details.renderedEvidence='Poveznice su pronađene nakon ograničenog renderiranja: '+rendered.url.href;}}
+  }
   const directFormat = homepageReadable && !isHtml(homepage.response,html)
     ? html.trimStart().startsWith('<') ? (documentLooksValid('xml',homepage.response,html) ? 'xml' : null) : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
     : null;
@@ -917,17 +1029,19 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const linkedSources = new Map<string, { url: string; location: 'homepage' | 'inner' }>();
   const selected = new Map<'csv' | 'xml', URL>();
   const otherDocuments: string[] = [];
-  const rememberOther = (url:URL) => { if (otherDocuments.length < 5 && !otherDocuments.includes(url.href)) otherDocuments.push(url.href); };
+  const rememberOther = (url:URL,source?:{url:string;location:'homepage'|'inner'}) => { if (otherDocuments.length < 5 && !otherDocuments.includes(url.href)) otherDocuments.push(url.href);if(source&&!linkedSources.has(url.href))linkedSources.set(url.href,source); };
+  const renderedInner=renderedPage!==null&&renderedPage.href!==homepage.url.href;
+  const sourceLocation=renderedInner?'inner':'homepage';
   for (const candidate of links) {
-    if (candidate.kind === 'other') rememberOther(candidate.url);
+    if (candidate.kind === 'other') rememberOther(candidate.url,{url:renderedInner?renderedPage!.href:candidate.url.href,location:sourceLocation});
     if (candidate.kind === "price") appendUnique(secondary, candidate.url, MAX_SECONDARY_PAGES);
-    if (candidate.kind === 'csv' || candidate.kind === 'xml') linkedSources.set(candidate.url.href, {url:candidate.url.href,location:'homepage'});
+    if (candidate.kind === 'csv' || candidate.kind === 'xml') linkedSources.set(candidate.url.href, {url:renderedInner?renderedPage!.href:candidate.url.href,location:sourceLocation});
     if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
     if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
     if (candidate.kind === "csv" || candidate.kind === "xml") appendUnique(documentLinks, candidate.url, MAX_PUBLICATION_LINKS);
     if (candidate.kind === "archive") { details.archiveLinkDiscovered = true; appendUnique(archive, candidate.url, MAX_SECONDARY_PAGES); }
   }
-  if (!directFormat) {
+  if (!directFormat && !directZip) {
     appendUnique(secondary, new URL("/cjenik/", homepage.url.origin), MAX_SECONDARY_PAGES);
     appendUnique(secondary, new URL("/cjenici/", homepage.url.origin), MAX_SECONDARY_PAGES);
     appendUnique(secondary, new URL("/cijene/", homepage.url.origin), MAX_SECONDARY_PAGES);
@@ -962,7 +1076,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
       }
       for (const candidate of extractLinks(secondaryHtml, fetched.url)) {
         if (candidate.kind === 'other') rememberOther(candidate.url);
-        if (candidate.kind === 'csv' || candidate.kind === 'xml') { const source = links.find(link => link.kind === 'price' && link.url.href === page.href); if (!linkedSources.has(candidate.url.href)) linkedSources.set(candidate.url.href, {url:source?.url.href || candidate.url.href, location:source ? 'homepage' : 'inner'}); }
+        if (candidate.kind === 'csv' || candidate.kind === 'xml') { const source = links.find(link => link.kind === 'price' && link.url.href === page.href); if (!linkedSources.has(candidate.url.href)) linkedSources.set(candidate.url.href, {url:source?.url.href || candidate.url.href, location:source && !renderedInner ? 'homepage' : 'inner'}); }
         if (candidate.kind === 'price' && candidate.url.href !== page.href && candidate.url.href !== homepage.url.href) appendUnique(secondary,candidate.url,MAX_SECONDARY_PAGES);
         if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
         if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
@@ -971,12 +1085,15 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
       }
     } catch { network.failed = true; }
   }
+  if(directZip)rememberOther(initialUrl);
   details.otherDocumentUrls = otherDocuments;
-  if (!directFormat && homepage.url.pathname === '/') {
+  details.documentChoices = publicationChoices(documentLinks,otherDocuments);
+  details.discoveredObjectCount = new Set(details.documentChoices.map(c=>c.objectKey).filter(Boolean)).size;
+  if (!directFormat && !directZip && homepage.url.pathname === '/') {
     appendUnique(csv,new URL('/cjenik.csv',homepage.url.origin),MAX_DOCUMENT_CANDIDATES);
     appendUnique(xml,new URL('/cjenik.xml',homepage.url.origin),MAX_DOCUMENT_CANDIDATES);
   }
-  details.csvUrl = directFormat === 'csv' ? homepage.url.href : directFormat ? null : await findDocument("csv", csv, env, network, analyses, selected);
+  details.csvUrl = directFormat === 'csv' ? homepage.url.href : directFormat || directZip ? null : await findDocument("csv", csv, env, network, analyses, selected);
   const csvSource = selected.get('csv');
   const csvName = parsePublicationName(analyses.find(a=>a.format==='csv')?.publicationFilename || '') || parsePublicationName(details.csvUrl || '');
   const stem = (u:URL) => u.pathname.replace(/\.(csv|xml)$/i,'');
@@ -986,7 +1103,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     if (csvName && name) return csvName.objectKey === name.objectKey && csvName.storage === name.storage && csvName.stamp === name.stamp;
     return u.origin === csvSource.origin && stem(u) === stem(csvSource);
   };
-  details.xmlUrl = directFormat === 'xml' ? homepage.url.href : directFormat ? null : await findDocument("xml", xml.filter(compatible), env, network, analyses, selected);
+  details.xmlUrl = directFormat === 'xml' ? homepage.url.href : directFormat || directZip ? null : await findDocument("xml", xml.filter(compatible), env, network, analyses, selected);
   const xmlName = parsePublicationName(analyses.find(a=>a.format==='xml')?.publicationFilename || '') || parsePublicationName(details.xmlUrl || '');
   if (csvName && xmlName && (csvName.objectKey !== xmlName.objectKey || csvName.storage !== xmlName.storage || csvName.stamp !== xmlName.stamp)) {
     details.xmlUrl = null; selected.delete('xml');
@@ -998,6 +1115,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     const source = candidate && linkedSources.get(candidate.href);
     if (source) { details.publicLinkUrl = source.url; details.publicLinkLocation = source.location; break; }
   }
+  if(!details.csvUrl&&!details.xmlUrl){const zip=otherDocuments.find(u=>/\.zip(?:$|[?#])/i.test(u));if(zip){await inspectZip(new URL(zip),env,details,analyses);const source=linkedSources.get(zip);if(source&&(details.csvUrl||details.xmlUrl)){details.publicLinkUrl=source.url;details.publicLinkLocation=source.location;}if(directZip){details.directDocument=true;details.homepageReadable=Boolean(analyses.length);details.reachable=Boolean(analyses.length)}}}
   details.csvFound = Boolean(details.csvUrl);
   details.xmlFound = Boolean(details.xmlUrl);
   details.fetchBlocked = network.blocked;
@@ -1015,7 +1133,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     } catch { network.failed = true; }
   }
   await checkPublications(details, documentLinks, env, network, analyses);
-  if (!details.archiveFound && !details.archiveRemoved && archivePageUrl && !details.csvFound && !details.xmlFound) {
+  if (!details.archiveFound && !details.archiveRemoved && archivePageUrl && !details.csvFound && !details.xmlFound && !details.zipEvidence) {
     details.archiveFound = true;
     details.archiveUrl = archivePageUrl;
     details.archiveEvidence = 'Pronađena je javna stranica s prethodnim objavama cjenika.';
@@ -1040,6 +1158,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   details.contentEvidence = details.contentReasons.join(' ') + ' Ne potvrđuje stvarnu primjenjivost cijena ni pravnu usklađenost.';
   if (details.contentStatus === 'fail' || details.contentStatus === 'warning' || details.structureStatus === 'warning') return result('yellow', 'Pronađen je strojni cjenik s konkretnim nalazima. Pregledajte odvojene CSV/XML rezultate.', details);
   if ((details.csvFound || details.xmlFound) && (details.structureStatus !== "pass" || details.contentStatus !== "pass" || analyses.some(a => a.structureStatus !== "pass" || a.contentStatus !== "pass"))) return result("yellow", "Datoteka je dostupna, ali strukturu ili potpuni sadržaj nismo mogli potvrditi. Učitajte datoteku u validator.", details);
+  if (details.zipEvidence && (details.csvFound || details.xmlFound)) return result('yellow','Pronađen je strojni cjenik unutar ZIP arhive. Provjeren je samo odabrani član arhive.',details);
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
   if (otherDocuments.length) return result('yellow', 'Pronađene su poveznice na moguće PDF, Excel ili ZIP cjenike. Valjan javni CSV/XML nije potvrđen.', details);
   if (details.pricePageFound) return result("yellow", "Pronađena je stranica ili cjenik, ali nije potvrđen valjan javni CSV/XML dokument.", details);
@@ -1048,7 +1167,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   }
   if (network.failed && !network.checked) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.", details);
   if (details.fetchBlocked) return result("yellow", "Naslovnica je zaštićena od automatskog dohvata. Javni CSV/XML na uobičajenim adresama nije potvrđen.", details);
-  if (dynamicShell) return result("yellow", "Web stranica učitava sadržaj dinamički. U automatskom HTML dohvatu nismo mogli potvrditi poveznicu na cjenik. Unesite izravnu adresu stranice cjenika ili datoteke.", details);
+  if (details.dynamicShell) return result("yellow", "Web stranica učitava sadržaj dinamički. U automatskom HTML dohvatu nismo mogli potvrditi poveznicu na cjenik. Unesite izravnu adresu stranice cjenika ili datoteke.", details);
   if (network.failed) return result("unavailable", "Dio provjere nije dovršen; nije moguće potvrditi postoji li javni CSV/XML.", details);
   return result("red", "Strojni cjenik nije pronađen.", details);
 }
@@ -1078,11 +1197,13 @@ export const onRequestPost = async ({ request, env, waitUntil }: { request: Requ
   }
   const body = await parseBody(request);
   if (!body || body.url === undefined) return Response.json(result("red", "Unesite ispravnu adresu web stranice."), { status: 400 });
-  const checked = await runDigitalPriceListCheck(body.url, env);
+  const zipEntry=typeof body.zipEntry==='string'&&body.zipEntry.length<=512?body.zipEntry:undefined;
+  const checked = await runDigitalPriceListCheck(body.url, { ...env, zipEntry });
   let checkerRunId:string|null=null;
   const checkedAt=new Date();
-  try {const normalized=normalizeDigitalPriceListUrl(body.url).href;checkerRunId=await recordCheckerRun(env.DB,normalized,checked,body.attribution,body.source,checkedAt)}catch{/* Invalid addresses are not checker runs. */}
-  waitUntil?.(reportCheckToNepar(body.url, checked.status));
+  let internal=false;if(body.source==='internal'){try{await requireAdmin(request,env as AuthEnv);internal=true}catch{/* anonymous clients cannot mark themselves internal */}}
+  try {const normalized=normalizeDigitalPriceListUrl(body.url).href;checkerRunId=await recordCheckerRun(env.DB,normalized,checked,body.attribution,body.source,checkedAt,internal)}catch{/* Invalid addresses are not checker runs. */}
+  if(!internal)waitUntil?.(reportCheckToNepar(body.url, checked.status));
   return Response.json({ ...checked,checkerRunId, report: technicalReport(checked) }, { headers: { 'cache-control': 'no-store' } });
 };
 

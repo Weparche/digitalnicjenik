@@ -1,3 +1,4 @@
+import { trackCheckerInteraction } from './checker-analytics'
 import { useEffect, useState } from 'react'
 import { INSTALLATION, PLANS, formatEur, WEB_LINK_LAUNCH_ONLY } from '../shared/pricing'
 import { formatCents, orderAmountCents, orderLabel, type OrderKind } from '../shared/payment'
@@ -165,6 +166,7 @@ export function OrderForm({
       })
       const payload = await response.json().catch(() => ({})) as { ok?: boolean; error?: string }
       if (!response.ok || !payload.ok) throw new Error(payload.error && !payload.error.includes('_') ? payload.error : 'Narudžbu trenutačno nije moguće spremiti.')
+      trackCheckerInteraction('order')
       onPlaced()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Narudžbu trenutačno nije moguće spremiti.')
