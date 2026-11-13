@@ -332,28 +332,33 @@ function decodeHref(value: string) {
   return value.replace(/&(?:amp|#0*38|#x0*26);/gi, "&");
 }
 
-type Candidate = { url: URL; kind: "csv" | "xml" | "archive" | "price" };
+type Candidate = { url: URL; kind: "csv" | "xml" | "archive" | "price" | "other" };
 
 function extractLinks(html: string, baseUrl: URL): Candidate[] {
   const results: Candidate[] = [];
   const anchorPattern = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
   let match: RegExpExecArray | null;
   while ((match = anchorPattern.exec(html)) && results.length < MAX_DISCOVERED_LINKS) {
-    const rawHref = match[1].match(/\bhref\s*=\s*["']([^"']+)["']/i)?.[1];
+    const hrefMatch = match[1].match(/\bhref\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/i);
+    const rawHref = hrefMatch?.[1] || hrefMatch?.[2] || hrefMatch?.[3];
     if (!rawHref) continue;
     let url: URL;
     try { url = new URL(decodeHref(rawHref), baseUrl); } catch { continue; }
     if (!/^https?:$/.test(url.protocol) || url.username || url.password || isForbiddenHostname(url.hostname)) continue;
+    url.hash = '';
     const href = url.href.toLowerCase();
     const text = match[2].replace(/<[^>]+>/g, " ").toLowerCase();
     const format = (url.searchParams.get("format") || url.searchParams.get("type") || "").toLowerCase();
-    const csv = /\.csv(?:$|[?#])/.test(href) || format === "csv" || href.includes("csv");
-    const xml = /\.xml(?:$|[?#])/.test(href) || format === "xml" || href.includes("xml");
+    const filename = Array.from(url.searchParams.values()).find(value => /\.(csv|xml|xlsx?|pdf)$/i.test(value)) || url.pathname;
+    if (/(?:sitemap|wlwmanifest|oembed|xmlrpc|rss)(?:[._/?-]|$)/i.test(url.pathname)) continue;
+    const csv = /\.csv$/i.test(filename) || format === "csv" || /\bcsv\b/i.test(text);
+    const xml = /\.xml$/i.test(filename) || format === "xml" || /\bxml\b/i.test(text);
+    const other = /\.(xlsx?|pdf)$/i.test(filename) && /cjenik|cijene|price|\.xlsx?$/i.test(href + ' ' + text);
     const archive = /(arhiva|archive)/.test(`${href} ${text}`) && /(cjenik|cijene|price)/.test(`${href} ${text}`);
     // Follow explicit external feed/archive links through the same DNS/redirect
     // protections, but do not turn this into a cross-site general crawl.
-    if (url.origin !== baseUrl.origin && !(csv || xml || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`))) continue;
-    if (csv || xml || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`)) results.push({ url, kind: csv ? "csv" : xml ? "xml" : archive ? "archive" : "price" });
+    if (url.origin !== baseUrl.origin && !(csv || xml || other || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`))) continue;
+    if (csv || xml || other || archive || /(cjenik|cijene|price)/.test(`${href} ${text}`)) results.push({ url, kind: csv ? "csv" : xml ? "xml" : other ? "other" : archive ? "archive" : "price" });
   }
   const embedded = /<(?:iframe|script)\b([^>]*)>/gi;
   while ((match = embedded.exec(html)) && results.length < MAX_DISCOVERED_LINKS) {
@@ -369,9 +374,12 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
       } else if(/^<iframe/i.test(match[0]) && /(?:\/c\/[a-z0-9-]+|cjenik|cjenici|price)/i.test(url.pathname)) results.push({url,kind:'price'});
     } catch { /* Unsupported embed remains unconfirmed; never execute third-party JS. */ }
   }
-  return results;
+  return results.sort((a,b)=>candidatePriority(b)-candidatePriority(a));
 }
-
+function candidatePriority(c:Candidate) {
+  if(c.kind!=='price') return 100;
+  return /(?:^|\/)(?:digitalni[-_]?)?cjenik(?:i)?(?:\/|$)/.test(c.url.pathname) ? 90 : /cjenik|cjenici|cijene|price-list/i.test(c.url.pathname) ? 70 : 10;
+}
 
 /** CMS hints are only used for instructions, never for scoring or legal conclusions. */
 export function identifyWebsitePlatform(html: string): 'wordpress' | 'shopify' | 'wix' | 'unknown' {
@@ -558,6 +566,7 @@ async function findDocument(
         network.failed = true;
         continue;
       }
+      if (!fetched.response.ok && ![401,403,429].includes(fetched.response.status)) { network.checked = true; continue; }
       // A guessed /cjenik.xml often answers 200 with the site's HTML 404 page ("soft 404"). That is not a
       // document and not an incomplete fetch, so it must not become a "fetched" analysis or a network failure.
       if (fetched.response.ok && /text\/html/i.test(fetched.response.headers.get("content-type") || "")) {
@@ -795,7 +804,7 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
       const fetched = await safeDigitalPriceListFetch(new URL(entry.href), env);
       const { body } = await readBounded(fetched.response, MAX_DOCUMENT_BYTES);
       if (isBotChallenge(fetched.response, body) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; continue; }
-      if (fetched.response.ok && !isHtml(fetched.response, body)) {
+      if (fetched.response.ok && !isHtml(fetched.response, body) && (analyzeDocument('csv',trimCsvToCompleteRecords(body,MAX_CSV_ROWS)).structureRecognized || analyzeDocument('xml',body).structureRecognized)) {
         details.archiveFound = true;
         details.archiveUrl = fetched.url.href;
         details.archiveEvidence = `Prethodna objava (broj pohrane ${entry.name.storage}) i dalje je javno dostupna.`;
@@ -846,7 +855,14 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.");
   }
   let html = "";
-  try { html = await readLimited(homepage.response, MAX_HTML_BYTES); } catch {
+  let directTruncated = false;
+  const likelyDocument = /csv|xml|octet-stream/i.test(homepage.response.headers.get('content-type') || '') || /\.(csv|xml)$/i.test(homepage.url.pathname);
+  try {
+    if (likelyDocument) {
+      const bounded = await readBounded(homepage.response, MAX_DOCUMENT_BYTES);
+      html = bounded.body; directTruncated = bounded.truncated;
+    } else html = await readLimited(homepage.response, MAX_HTML_BYTES);
+  } catch {
     if (homepage.response.ok) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.");
   }
   const homepageChallenge = isBotChallenge(homepage.response, html) || [401, 403, 429].includes(homepage.response.status);
@@ -870,10 +886,16 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   }
   const links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
   const directFormat = homepageReadable && !isHtml(homepage.response,html)
-    ? documentLooksValid('xml',homepage.response,html) ? 'xml' : documentLooksValid('csv',homepage.response,html) ? 'csv' : null
+    ? documentLooksValid('xml',homepage.response,html) ? 'xml' : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
     : null;
   if(directFormat) {
-    const analysis = analyzeDocument(directFormat,html,homepage.url.href);
+    const capped = directFormat === 'csv' ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html;
+    const sampled = directTruncated || (capped.length < html.length && capped.split(/\r?\n/).length > MAX_CSV_ROWS);
+    const analysis = analyzeDocument(directFormat,sampled ? capped : html,homepage.url.href);
+    if (sampled) {
+      if (analysis.contentStatus === 'pass') analysis.status = analysis.contentStatus = analysis.content = 'unknown';
+      analysis.structureReasons.push('Provjeren je uzorak dokumenta; potpuni sadržaj nije analiziran.');
+    }
     analysis.contentType = homepage.response.headers.get('content-type');
     analysis.publicationFilename = parseContentDispositionFilename(homepage.response.headers.get('content-disposition'));
     analyses.push(analysis);
@@ -885,8 +907,10 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const documentLinks: URL[] = [];
   const linkedSources = new Map<string, { url: string; location: 'homepage' | 'inner' }>();
   const selected = new Map<'csv' | 'xml', URL>();
+  const otherDocuments: string[] = [];
+  const rememberOther = (url:URL) => { if (otherDocuments.length < 5 && !otherDocuments.includes(url.href)) otherDocuments.push(url.href); };
   for (const candidate of links) {
-    if (candidate.kind === 'csv' || candidate.kind === 'xml') { /* confirmed below after fetching */ }
+    if (candidate.kind === 'other') rememberOther(candidate.url);
     if (candidate.kind === "price") appendUnique(secondary, candidate.url, MAX_SECONDARY_PAGES);
     if (candidate.kind === 'csv' || candidate.kind === 'xml') linkedSources.set(candidate.url.href, {url:candidate.url.href,location:'homepage'});
     if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
@@ -898,16 +922,27 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     appendUnique(secondary, new URL("/cjenik/", homepage.url.origin), MAX_SECONDARY_PAGES);
     appendUnique(secondary, new URL("/cjenici/", homepage.url.origin), MAX_SECONDARY_PAGES);
     appendUnique(secondary, new URL("/cijene/", homepage.url.origin), MAX_SECONDARY_PAGES);
-    if (homepage.url.pathname === '/') {
-      appendUnique(csv, new URL("/cjenik.csv", homepage.url.origin), MAX_DOCUMENT_CANDIDATES);
-      appendUnique(xml, new URL("/cjenik.xml", homepage.url.origin), MAX_DOCUMENT_CANDIDATES);
+    if (!csv.length && !xml.length && secondary.length <= 3 && homepageReadable) {
+      try {
+        const sitemap = await safeDigitalPriceListFetch(new URL('/sitemap.xml',homepage.url.origin),env);
+        if(sitemap.response.ok) {
+          const {body} = await readBounded(sitemap.response,512*1024);
+          for(const match of body.matchAll(/<loc\b[^>]*>([^<]+)<\/loc>/gi)) {
+            try { const u=new URL(decodeHref(match[1].trim())); if(u.origin===homepage.url.origin && /cjenik|cjenici|cijene|price-list/i.test(u.pathname)) appendUnique(secondary,u,MAX_SECONDARY_PAGES); } catch { /* invalid sitemap entry */ }
+          }
+        }
+      } catch { /* optional discovery only */ }
     }
   }
 
+  const visited = new Set([homepage.url.href]);
   for (const page of secondary) {
+    if (env.requestState?.signal.aborted) { network.failed = true; break; }
+    if (visited.has(page.href)) continue; visited.add(page.href);
     try {
       const fetched = await safeDigitalPriceListFetch(page, env);
       if (fetched.response.status >= 500) { network.failed = true; continue; }
+      if (!fetched.response.ok && ![401,403,429].includes(fetched.response.status)) { network.checked = true; continue; }
       const secondaryHtml = await readLimited(fetched.response, MAX_HTML_BYTES);
       if (isBotChallenge(fetched.response, secondaryHtml) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; continue; }
       if (!fetched.response.ok) { network.checked = true; continue; }
@@ -917,6 +952,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
         details.pricePageUrl ||= fetched.url.href;
       }
       for (const candidate of extractLinks(secondaryHtml, fetched.url)) {
+        if (candidate.kind === 'other') rememberOther(candidate.url);
         if (candidate.kind === 'csv' || candidate.kind === 'xml') { const source = links.find(link => link.kind === 'price' && link.url.href === page.href); if (!linkedSources.has(candidate.url.href)) linkedSources.set(candidate.url.href, {url:source?.url.href || candidate.url.href, location:source ? 'homepage' : 'inner'}); }
         if (candidate.kind === 'price' && candidate.url.href !== page.href && candidate.url.href !== homepage.url.href) appendUnique(secondary,candidate.url,MAX_SECONDARY_PAGES);
         if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
@@ -925,6 +961,11 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
         if (candidate.kind === "archive") { details.archiveLinkDiscovered = true; appendUnique(archive, candidate.url, MAX_SECONDARY_PAGES); }
       }
     } catch { network.failed = true; }
+  }
+  details.otherDocumentUrls = otherDocuments;
+  if (!directFormat && homepage.url.pathname === '/') {
+    appendUnique(csv,new URL('/cjenik.csv',homepage.url.origin),MAX_DOCUMENT_CANDIDATES);
+    appendUnique(xml,new URL('/cjenik.xml',homepage.url.origin),MAX_DOCUMENT_CANDIDATES);
   }
   details.csvUrl = directFormat === 'csv' ? homepage.url.href : directFormat ? null : await findDocument("csv", csv, env, network, analyses, selected);
   const csvSource = selected.get('csv');
@@ -972,6 +1013,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   }
   const robots = await robotsPromise;
   if (robots) { details.robotsStatus = robots.status; details.robotsEvidence = robots.evidence; }
+  details.fetchBlocked = network.blocked;
   details.networkIncomplete = network.failed;
   details.csvAnalysis = analyses.find(a => a.format === 'csv') ?? { format: 'csv', url: csv[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['CSV nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
   details.xmlAnalysis = analyses.find(a => a.format === 'xml') ?? { format: 'xml', url: xml[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['XML nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
@@ -990,6 +1032,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   if (details.contentStatus === 'fail' || details.contentStatus === 'warning' || details.structureStatus === 'warning') return result('yellow', 'Pronađen je strojni cjenik s konkretnim nalazima. Pregledajte odvojene CSV/XML rezultate.', details);
   if ((details.csvFound || details.xmlFound) && (details.structureStatus !== "pass" || details.contentStatus !== "pass" || analyses.some(a => a.structureStatus !== "pass" || a.contentStatus !== "pass"))) return result("yellow", "Datoteka je dostupna, ali strukturu ili potpuni sadržaj nismo mogli potvrditi. Učitajte datoteku u validator.", details);
   if (details.csvFound || details.xmlFound) return result("green", "Pronađen je javno dostupan strojni cjenik. CSV/XML datoteka je tehnički dostupna za automatizirani dohvat — to još nije potvrda usklađenosti s Odlukom.", details);
+  if (otherDocuments.length) return result('yellow', 'Pronađene su poveznice na moguće PDF ili Excel cjenike. Valjan javni CSV/XML nije potvrđen.', details);
   if (details.pricePageFound) return result("yellow", "Pronađena je stranica ili cjenik, ali nije potvrđen valjan javni CSV/XML dokument.", details);
   if (network.blocked && !network.checked) {
     return result("yellow", "Web je zaštićen od automatskog dohvata, pa javni CSV/XML nismo mogli potvrditi.", details);
