@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { INSTALLATION, PLANS, formatEur } from '../shared/pricing'
+import { INSTALLATION, PLANS, formatEur, WEB_LINK_LAUNCH_ONLY } from '../shared/pricing'
 import { formatCents, orderAmountCents, orderLabel, type OrderKind } from '../shared/payment'
 import { readAcquisitionTouch } from './acquisition'
 import { hoursLeft, licenceState, untilLabel, type Licence, type OrderPayment } from './licenceView'
@@ -259,8 +259,8 @@ export function LicenceCard({ licence, email, name, onChanged }: { licence: Lice
           {state === 'expired' ? licence.order?.paymentReportedAt?'Uplata je prijavljena i čeka provjeru. Ne trebate ponovno uplatiti.':licence.entitlement?.plan==='managed'?'Obnovu Web + Publishera dogovorite s NEPAR-om.':`Uplatite ${formatEur(PLANS[annualKind==='publisher'?1:0].price)} i isti link se vraća.` : null}
         </p>
         {licence.entitlement?.plan==='managed'?<a href="mailto:nepar@nepar.hr">Dogovori obnovu</a>:<KeepLinkFlow licence={licence} email={email} name={name} kind={annualKind} onChanged={onChanged} />}
-        {state === 'free' && <button className="app-link-button" type="button" onClick={() => setUpgradeOpen(!upgradeOpen)}>Želim uređivati stavke — Publisher {formatEur(PLANS[1].price,true)}</button>}
-        {state === 'free' && upgradeOpen && <OrderForm kind="publisher" defaultEmail={email} defaultName={name} onPlaced={onChanged}/>}
+        {!WEB_LINK_LAUNCH_ONLY && state === 'free' && <button className="app-link-button" type="button" onClick={() => setUpgradeOpen(!upgradeOpen)}>Želim uređivati stavke — Publisher {formatEur(PLANS[1].price,true)}</button>}
+        {!WEB_LINK_LAUNCH_ONLY && state === 'free' && upgradeOpen && <OrderForm kind="publisher" defaultEmail={email} defaultName={name} onPlaced={onChanged}/>}
         {help}
       </section>
     )
@@ -273,7 +273,7 @@ export function LicenceCard({ licence, email, name, onChanged }: { licence: Lice
       <h2>{periodEnd ? `Aktivno do ${untilLabel(periodEnd)}` : 'Aktivno'}</h2>
       {licence.order && licence.order.kind !== 'publisher_upgrade' && <PaymentStep order={licence.order} activeUntil={licence.access?.accessUntil ?? periodEnd} onReported={onChanged}/>}
       {licence.entitlement?.plan === 'managed' ? <a href="mailto:nepar@nepar.hr">Obnova Web + Publishera po ponudi — {formatEur(PLANS[2].price,true)}</a> : <><button className="app-link-button" type="button" onClick={() => setRenewOpen(!renewOpen)}>Obnovi {orderLabel(annualKind)} — {formatEur(PLANS[annualKind === 'publisher' ? 1 : 0].price,true)}</button>{renewOpen && (!licence.order || licence.order.status==='paid') && <OrderForm kind={annualKind} defaultEmail={email} defaultName={name} onPlaced={() => {setRenewOpen(false);onChanged()}}/>}</>}
-      {state === 'web_link' && (pendingUpgrade
+      {state === 'web_link' && (pendingUpgrade || !WEB_LINK_LAUNCH_ONLY) && (pendingUpgrade
         ? <PaymentStep order={pendingUpgrade} activeUntil={periodEnd} publisherUntil={periodEnd} onReported={onChanged}/>
         : licence.upgradeAvailable
           ? upgradeOpen

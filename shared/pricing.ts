@@ -12,6 +12,9 @@ export const PLANS = [
   { id: 'web', name: 'Web + Publisher', price: 99, tagline: 'Web i digitalni cjenik na jednom mjestu.', highlight: null, summary: 'Novi jednostavni statički web iz NEPAR predloška, na našem hostingu. Ugovara se po ponudi.', features: ['Sve iz paketa Publisher', 'Novi jednostavni poslovni static web', 'NEPAR hosting, SSL i održavanje hostinga', 'Responsive prikaz, osnovni SEO i sitemap', 'Kontakt, radno vrijeme, lokacija i vaše slike', 'Spajanje postojeće domene; kupnja domene nije uključena'] },
 ] as const
 export type PlanId = typeof PLANS[number]['id']
+/** Launch scope is reversible; existing paid plans retain entitlements. */
+export const WEB_LINK_LAUNCH_ONLY: boolean = true
+export const PUBLIC_PLANS = WEB_LINK_LAUNCH_ONLY ? PLANS.filter(plan => plan.id === 'link') : [...PLANS]
 /** One-off setup of a link or button on the customer's existing website. Custom integrations stay an individual offer. */
 export const INSTALLATION = { name: 'Ugradnja digitalnog cjenika', price: 29.9, scope: 'jedna standardna ugradnja: link, gumb, postojeći NEPAR embed ili redirect na postojeći web; bez redizajna, popravka CMS-a i custom razvoja' } as const
 export const installationPriceLabel = () => `${formatEur(INSTALLATION.price)} jednokratno`

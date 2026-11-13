@@ -4,6 +4,7 @@ import { readEntitlement } from '../_repository'
 import type { TrialEnv } from '../_trial'
 import { accessErrorResponse } from '../_write-auth'
 import { featuresForPlan } from '../../shared/entitlements'
+import { WEB_LINK_LAUNCH_ONLY } from '../../shared/pricing'
 import { upgradeAvailable } from '../../shared/payment'
 import { entitlementAccess } from '../../shared/entitlements'
 import { dispatchLifecycle } from '../../shared/lifecycle'
@@ -29,7 +30,7 @@ export const onRequestGet = async ({ request, env }: { request: Request; env: En
       entitlement,
       access: entitlementAccess(entitlement),
       features: featuresForPlan(entitlement?.plan),
-      upgradeAvailable: upgradeAvailable(entitlement),
+      upgradeAvailable: !WEB_LINK_LAUNCH_ONLY && upgradeAvailable(entitlement),
       order: order ? paymentView(order, tenant.slug) : null,
     }, { headers: noStore })
   } catch (error) {
@@ -44,6 +45,14 @@ export const onRequestPost = async ({ request, env, waitUntil }: { request: Requ
     const body = await request.json().catch(() => ({})) as Record<string, unknown>
     const tenant=body.tenant?session?.tenants.find(t=>t.slug===body.tenant):session?.tenants[0]
     if (!tenant) return Response.json({ ok: false, error: 'unauthorized' }, { status: 401, headers: noStore })
+    if (WEB_LINK_LAUNCH_ONLY && (body.kind === 'publisher' || body.kind === 'publisher_upgrade')) {
+      const entitlement = await readEntitlement(env, tenant.slug)
+      const pending = await readPendingOrder(env, tenant.id)
+      const existingRenewal = body.kind === 'publisher' && entitlement?.plan === 'publisher_self_service'
+      if (!existingRenewal && pending?.kind !== body.kind) {
+        return Response.json({ ok:false, error:'plan_unavailable', message:'Trenutačno je za nove narudžbe dostupan samo Web Link.' }, { status:409, headers:noStore })
+      }
+    }
     const result = await placeOrder(env, tenant, body)
     const payment = paymentView(result.order, tenant.slug)
     if (env.DB) waitUntil?.(dispatchLifecycle({...env,DB:env.DB}))

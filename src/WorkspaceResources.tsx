@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { IconArrowRight,IconArrowUpRight,IconCheck,IconCopy,IconDownload,IconFileSpreadsheet } from '@tabler/icons-react'
-import { INSTALLATION,PLANS,formatEur } from '../shared/pricing'
+import { INSTALLATION,PLANS,formatEur,PUBLIC_PLANS,WEB_LINK_LAUNCH_ONLY } from '../shared/pricing'
 import { formatCents,orderAmountCents,UPGRADE_WINDOW_DAYS } from '../shared/payment'
 import { untilLabel } from './licenceView'
 
@@ -60,9 +60,9 @@ export function WorkspacePackages({onPrepare,onContact}:{onPrepare?:()=>void;onC
   return <section className="workspace-surface workspace-packages" aria-labelledby="workspace-packages-title">
     <h2 id="workspace-packages-title">Godišnji paketi</h2>
     <p>Svi godišnji paketi zadržavaju isti javni link. Plaćanje je bankovnom uplatom, bez automatske naplate.</p>
-    <dl className="workspace-price-list">{PLANS.map(plan=><div key={plan.id}><dt>{plan.name}<span>{plan.id==='link'?'Cjenik vodite u svojoj datoteci.':plan.id==='publisher'?'Cjenik uređujete ovdje.':'Novi jednostavni web i cjenik.'}</span></dt><dd className="workspace-price-amount">{formatEur(plan.price)}<small>/ godina</small></dd><dd className="workspace-price-description">{plan.summary}{plan.id==='web'&&(onContact?<button className="workspace-button-link" type="button" onClick={onContact}>Zatraži ponudu<IconArrowUpRight size={16}/></button>:<a href="/app?new=1&tab=kontakt&plan=web">Zatraži ponudu<IconArrowUpRight size={16}/></a>)}</dd></div>)}</dl>
+    <dl className="workspace-price-list">{PUBLIC_PLANS.map(plan=><div key={plan.id}><dt>{plan.name}<span>{plan.id==='link'?'Cjenik vodite u svojoj datoteci.':plan.id==='publisher'?'Cjenik uređujete ovdje.':'Novi jednostavni web i cjenik.'}</span></dt><dd className="workspace-price-amount">{formatEur(plan.price)}<small>/ godina</small></dd><dd className="workspace-price-description">{plan.summary}{plan.id==='web'&&(onContact?<button className="workspace-button-link" type="button" onClick={onContact}>Zatraži ponudu<IconArrowUpRight size={16}/></button>:<a href="/app?new=1&tab=kontakt&plan=web">Zatraži ponudu<IconArrowUpRight size={16}/></a>)}</dd></div>)}</dl>
     <h3>Dodatne usluge</h3>
-    <dl className="workspace-price-list workspace-price-extras"><div><dt>Web Link → Publisher<span>U prvih {UPGRADE_WINDOW_DAYS} dana od početka licence.</span></dt><dd className="workspace-price-amount">+{formatCents(orderAmountCents('publisher_upgrade'))}<small>jednokratna razlika</small></dd><dd className="workspace-price-description">Nadogradnja zadržava kraj već plaćenog razdoblja.</dd></div><div><dt>Standardna ugradnja<span>Na vašem postojećem webu.</span></dt><dd className="workspace-price-amount">{formatEur(INSTALLATION.price)}<small>jednokratno</small></dd><dd className="workspace-price-description">Jedan link, gumb, NEPAR embed ili redirect. Bez izrade novog weba i popravka CMS-a.</dd></div></dl>
+    <dl className="workspace-price-list workspace-price-extras">{!WEB_LINK_LAUNCH_ONLY&&<div><dt>Web Link → Publisher<span>U prvih {UPGRADE_WINDOW_DAYS} dana od početka licence.</span></dt><dd className="workspace-price-amount">+{formatCents(orderAmountCents('publisher_upgrade'))}<small>jednokratna razlika</small></dd><dd className="workspace-price-description">Nadogradnja zadržava kraj već plaćenog razdoblja.</dd></div>}<div><dt>Standardna ugradnja<span>Na vašem postojećem webu.</span></dt><dd className="workspace-price-amount">{formatEur(INSTALLATION.price)}<small>jednokratno</small></dd><dd className="workspace-price-description">Jedan link, gumb, NEPAR embed ili redirect. Bez izrade novog weba i popravka CMS-a.</dd></div></dl>
     {onPrepare&&<div className="workspace-package-start"><p>Prvo pripremite i objavite cjenik. Paket možete odabrati nakon besplatne objave.</p><button className="workspace-button" type="button" onClick={onPrepare}>Pripremi cjenik besplatno<IconArrowRight size={17}/></button></div>}
   </section>
 }
