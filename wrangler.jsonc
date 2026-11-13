@@ -98,8 +98,8 @@
         "EMAIL_TO": "nepar@nepar.hr",
         "ADMIN_EMAILS": "nepar@nepar.hr",
         "PUBLIC_APP_URL": "https://digitalnicjenik.nepar.hr",
-        "LIFECYCLE_EMAILS_ENABLED": "false",
-        "DAILY_PUBLICATION_ENABLED": "false",
+        "LIFECYCLE_EMAILS_ENABLED": "true",
+        "DAILY_PUBLICATION_ENABLED": "true",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAE81Y0hv6uzetB4O"
       }
     }

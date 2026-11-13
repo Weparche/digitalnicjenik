@@ -75,7 +75,7 @@ and entitlement status recreate (`trial` | `active` | `expired` | `suspended`).
 
 1. Anonymous upload → `POST /api/drafts` (private draft, ~24h, no `/c/nepar` publish).
 2. Resolve every blocking validation issue. Save real object type, full address, code and the product working calendar in `POST /api/drafts` (`publicationDetails`). Claim → `POST /api/trials/start` (business name + e-mail + slug) sends magic mail; **no tenant yet**.
-3. `GET /api/trials/callback?token=` idempotently provisions tenant, trial entitlement (7d), claims draft, publishes, sets session, redirects `/app?welcome=1`.
+3. `GET /api/trials/callback?token=` idempotently provisions tenant, free publication entitlement (24h), claims draft, publishes, sets session, redirects `/app?welcome=1`.
 4. Dashboard upgrade CTAs → `POST /api/publisher/upgrade` e-mails NEPAR with full tenant context.
 5. After payment, ops renew: `POST /api/ops/renew` with `Authorization: Bearer <OPERATOR_WRITE_KEY>` and `{ "slug": "..." }`
    (`period_end = MAX(now, period_end) + 1 year`, `status = active`).
@@ -139,11 +139,15 @@ ime, e-mail, poruka i datoteka ostaju izvan baze i logova.
 
 Buduća automatska sinkronizacija s providerom zahtijevat će zasebne vjerodajnice.
 
+## Production activation (2026-11-13)
+
+Production Pages and the monitor Worker have `DAILY_PUBLICATION_ENABLED=true` and `LIFECYCLE_EMAILS_ENABLED=true`. Preview and local defaults in Pages remain disabled. Existing public links, annual entitlements, and payment confirmation remain unchanged. Daily publication is not automatic price synchronization. Verify the first real product run, delivery acceptance, archive and watchdog before claiming operational end-to-end validation.
+
 ## Compliance Monitor (workers/monitor)
 
 A separate Worker (`digitalnicjenik-monitor`) runs the daily checks; Pages Functions only read results and delegate the manual "Provjeri sada" run to it, so cron, retry and manual runs share one implementation (`shared/compliance/run-check.ts`).
 
-- **Schedule (UTC):** `30 4 * * *` first pass, `30 5 * * *` retry (warn/fail/unchecked), and `5 7 * * *` full pass after 08:00 in both CET and CEST. Product freshness uses the owner’s working days and closed dates; services require publication on change. The monitor does not automatically publish prices.
+- **Schedule (UTC):** `30 4 * * *` first pass, `30 5 * * *` retry (warn/fail/unchecked), and `5 7 * * *` full pass after 08:00 in both CET and CEST. Product freshness uses the owner’s working days and closed dates; services require publication on change. Monitoring itself does not publish prices. The separate daily publication job republishes the last valid product publication when enabled; services are excluded.
 - **Rules** live in `shared/compliance/rulesets.ts` (`ACTIVE_RULESET`, currently `nn-101-2026`). The new Pravilnik is a new entry plus switching `ACTIVE_RULESET`; every `monitor_runs` row stores the ruleset id it was checked against.
 - **Profiles:** derived from the actual published item types (`products` if any non-service item exists); `publication_metadata.compliance_profile` remains for older consumers. Migration 0008 classifies the demo tenant `nepar` and `patrisa-sisa` as services; legacy metadata may be aligned for older consumers:
   `UPDATE publication_metadata SET compliance_profile = 'services' WHERE tenant_id IN (SELECT id FROM tenants WHERE slug IN ('<slug>', ...));`

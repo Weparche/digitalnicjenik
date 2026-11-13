@@ -29,8 +29,8 @@
   "triggers": { "crons": ["30 4 * * *", "30 5 * * *", "5 7 * * *", "15 5 * * *", "15 6 * * *", "0 * * * *"] },
   "vars": {
     "DEMO_WRITE_TENANT": "nepar",
-    "DAILY_PUBLICATION_ENABLED": "false",
-    "LIFECYCLE_EMAILS_ENABLED": "false",
+    "DAILY_PUBLICATION_ENABLED": "true",
+    "LIFECYCLE_EMAILS_ENABLED": "true",
     "DEFAULT_PUBLICATION_TIMEZONE": "Europe/Zagreb",
     "EMAIL_FROM": "publisher@nepar.hr",
     "EMAIL_TO": "nepar@nepar.hr",
