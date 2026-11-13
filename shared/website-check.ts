@@ -10,6 +10,7 @@ export type DocumentAnalysis = {
   itemCount: number
   /** Actual response MIME header, advisory only (some servers omit or mislabel it). */
   contentType?: string | null
+  publicationFilename?: string | null
   status: DocumentAnalysisStatus
   structureStatus: DocumentAnalysisStatus
   contentStatus: DocumentAnalysisStatus
@@ -36,6 +37,8 @@ export type WebsiteCheckDetails = {
   xmlUrl?: string | null
   pricePageUrl?: string | null
   archiveUrl?: string | null
+  /** Discovered links only; their file contents are not verified. */
+  otherDocumentUrls?: string[]
   publicLinkUrl?: string | null
   csvLinkDiscovered?: boolean
   xmlLinkDiscovered?: boolean
@@ -106,7 +109,10 @@ export function technicalReport(result: WebsiteCheckResult) {
     yes ? { status: 'pass', evidence } : uncertain ? { status: 'unknown', evidence: unknownReason } : { status: 'missing', evidence }
 
   const machineReadable = Boolean(d.csvFound || d.xmlFound)
-  const machineState: { status: TechnicalStatus; evidence: string; url?: string | null } = d.csvFound && d.xmlFound
+  const unrecognized = machineReadable && d.structureStatus === 'unknown'
+  const machineState: { status: TechnicalStatus; evidence: string; url?: string | null } = unrecognized
+    ? { status: 'unknown', evidence: 'Datoteka je dostupna, ali nije potvrđena struktura strojnog cjenika.', url: d.csvUrl || d.xmlUrl }
+    : d.csvFound && d.xmlFound
     ? { status: 'pass', evidence: 'CSV pronađen ✓ · XML pronađen ✓. Za zahtjev je dovoljan jedan od ta dva formata.', url: d.csvUrl || d.xmlUrl }
     : d.csvFound
       ? { status: 'pass', evidence: 'CSV pronađen ✓ · XML nije objavljen — nije obvezan ako postoji ispravan CSV.', url: d.csvUrl }

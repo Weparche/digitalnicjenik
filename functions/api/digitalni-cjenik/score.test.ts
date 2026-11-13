@@ -39,7 +39,7 @@ describe('document score evidence', () => {
     const header = 'Naziv;Vrsta;Cijena;Sidrena cijena;Poseban oblik prodaje\n'
     const row = 'Usluga;Usluga;20;20;NE\n'
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => new URL(String(input)).pathname === '/cjenik.csv'
-      ? new Response(header + row.repeat(18000), { headers: { 'content-type': 'text/csv' } })
+      ? new Response(header + row.repeat(25000), { headers: { 'content-type': 'text/csv' } })
       : new Response('<a href="/cjenik.csv">Cjenik</a>')))
     const result = await runDigitalPriceListCheck('example.hr', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
     const report = technicalReport(result)
