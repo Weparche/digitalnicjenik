@@ -12,7 +12,7 @@ export const productFaq: ProductFaqEntry[] = [
   {
     question: 'Što je NEPAR digitalni cjenik?',
     answer:
-      'Sloj za objavu digitalnog cjenika uz web koji već imate: javni cjenik na stalnoj poveznici, CSV i XML te arhiva prethodnih verzija 30 dana. Publisher je digitalni cjenik koji ne samo da objavi CSV/XML datoteku, nego provjerava da je ispravna, svakodnevnim nadzorom i e-mail upozorenjem.',
+      'Sloj za objavu digitalnog cjenika uz web koji već imate: javni cjenik na stalnoj poveznici, CSV i XML te arhiva prethodnih verzija 30 dana. Web Link omogućuje provjeru datoteke prije objave i dnevnu ponovnu objavu posljednjeg valjanog cjenika proizvoda.',
   },
   {
     question: 'Radi li s WordPressom i webshopom?',
@@ -39,7 +39,7 @@ export const productFaq: ProductFaqEntry[] = [
   },
   {
     question: 'Koliko košta nakon besplatne objave?',
-    answer: `Provjera weba i validator su besplatni. Nakon besplatne objave isti link zadržavate s paketom Web Link, a nadogradnja na Publisher ili Web + Publisher dostupna je uz uređivanje stavki, nadzor i upozorenja. Paketi i godišnje cijene vidljivi su na početnoj stranici bez prethodne provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web stoji ${installationPriceLabel()}.`,
+    answer: `Provjera weba i validator su besplatni. Nakon besplatne objave isti link zadržavate s paketom Web Link, koji je trenutačno jedini paket u ponudi. Godišnja cijena vidljiva je na početnoj stranici bez prethodne provjere, a dostupna je i na stranici Cijene. Pomoć s ugradnjom na postojeći web stoji ${installationPriceLabel()}.`,
   },
   {
     question: 'Kako započeti?',

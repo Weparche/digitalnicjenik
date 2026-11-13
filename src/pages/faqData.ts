@@ -1,4 +1,4 @@
-import { PLANS, formatEur } from '../publisherPricing'
+import { PUBLIC_PLANS, formatEur } from '../../shared/pricing'
 import { MAX_ITEMS_LABEL, installationPriceLabel } from '../../shared/pricing'
 // Single source for the /faq page and its FAQPage JSON-LD (rendered in scripts/prerender.mjs).
 // Answers are plain text so the visible copy and the structured data can never drift apart.
@@ -121,7 +121,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Radi li s WooCommerceom?',
         answer:
-          'Da, za osnovnu objavu digitalnog cjenika: poveznicu dodate kao i na bilo koji WordPress. Web Link ne čita proizvode iz WooCommercea; povezivanje s WooCommerceom možemo izraditi po individualnoj ponudi.',
+          'Da, za osnovnu objavu digitalnog cjenika: poveznicu dodate kao i na bilo koji WordPress. Web Link ne čita proizvode iz WooCommercea; proizvode ažurirate učitavanjem nove datoteke.',
       },
       {
         question: 'Radi li sa Shopifyjem, Wixom ili vlastitim webom?',
@@ -141,12 +141,12 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         question: 'Što ako imam puno proizvoda ili usluga?',
-        answer: `Web Link i Publisher podržavaju do ${MAX_ITEMS_LABEL} stavki po cjeniku. Za veći cjenik javite nam se prije objave.`,
+        answer: `Web Link podržava do ${MAX_ITEMS_LABEL} stavki po cjeniku. Za veći cjenik javite nam se prije objave.`,
       },
       {
         question: 'Hoće li NEPAR sam promijeniti cijene na mom webshopu?',
         answer:
-          'Ne. Web Link objavljuje digitalni cjenik iz datoteke koju učitate. Povezivanje s webshopom ili poslovnim sustavom možemo izraditi po individualnoj ponudi.',
+          'Ne. Web Link objavljuje digitalni cjenik iz datoteke koju učitate. Promjene iz webshopa ili poslovnog sustava učitavate kao novu datoteku.',
       },
     ],
   },
@@ -157,7 +157,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Što je NEPAR Publisher?',
         answer:
-          'Digitalni cjenik koji ne samo da objavi datoteku, nego provjerava da je ispravna: učitate Excel, CSV ili XML, dobijete javni CSV/XML na stabilnom URL-u s arhivom, svakodnevni nadzor usklađenosti i e-mail upozorenje čim nešto nije u redu.',
+          'NEPAR Publisher je platforma za objavu digitalnih cjenika. U trenutačno dostupnom paketu Web Link učitate Excel, CSV ili XML, provjerite podatke i dobijete javni CSV/XML na stabilnom URL-u s arhivom.',
       },
       {
         question: 'Što točno nadzor provjerava?',
@@ -177,7 +177,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Koliko košta NEPAR Publisher?',
         answer:
-          `Provjera weba, validator i pretvorba Excela besplatni su, a prva objava je besplatna 24 sata. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom (postavljanje poveznice ili gumba na postojeći web): ${installationPriceLabel()}. Integracija s webshopom ili poslovnim sustavom radi se po individualnoj ponudi.`,
+          `Provjera weba, validator i pretvorba Excela besplatni su, a prva objava je besplatna 24 sata. Godišnji paketi: ${PUBLIC_PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom (postavljanje poveznice ili gumba na postojeći web): ${installationPriceLabel()}. Automatska integracija s webshopom nije dio Web Linka.`,
       },
       {
         question: 'Što se događa nakon 24 sata ako ne platim?',

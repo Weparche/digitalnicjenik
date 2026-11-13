@@ -6,6 +6,7 @@ import { entitlementAccess,entitlementIsLive } from '../shared/entitlements'
 import { mapEntitlement,dispatchLifecycle,scheduleLifecycle,type EntitlementRow } from '../shared/lifecycle'
 import { requireAdmin } from './_admin-auth'
 import { sha256Hex,requestMagicLink,consumeMagicLink } from './_auth'
+import { onRequestPost as orderPost } from './api/orders'
 import { onRequestPost as report } from './api/orders/report'
 import { onRequestGet as dashboard } from './api/ops/dashboard'
 
@@ -92,4 +93,16 @@ it('reporting a payment creates exactly two notifications and never activates a 
   expect((await report({request:request(),env:runtime})).status).toBe(200)
   expect((await entitlement()).status).toBe('trial')
   expect((await env.DB.prepare("SELECT COUNT(*) AS n FROM lifecycle_events WHERE event_type LIKE 'payment_reported_%'").first<{n:number}>())?.n).toBe(2)
+})
+
+it('launch allows new Web Link orders but rejects new Publisher orders and preserves Publisher renewal',async()=>{
+  const owner=await session('owner@example.hr','launch-order-owner')
+  await env.DB.prepare("INSERT INTO tenant_members(id,tenant_id,user_id,role,created_at) VALUES (?,?,?,'owner',?)").bind('launch-order-membership',tenant.id,'launch-order-owner',now.toISOString()).run()
+  const req=(kind:string)=>new Request('https://app.test/api/orders',{method:'POST',headers:{origin:'https://app.test',cookie:owner.headers.get('cookie')!,'content-type':'application/json'},body:JSON.stringify({kind,...billing})})
+  expect((await orderPost({request:req('publisher'),env:runtime})).status).toBe(409)
+  expect((await orderPost({request:req('publisher_upgrade'),env:runtime})).status).toBe(409)
+  expect((await orderPost({request:req('web_link'),env:runtime})).status).toBe(200)
+  await env.DB.prepare("DELETE FROM payment_orders").run()
+  await env.DB.prepare("UPDATE entitlements SET plan='publisher_self_service',status='active' WHERE tenant_id=?").bind(tenant.id).run()
+  expect((await orderPost({request:req('publisher'),env:runtime})).status).toBe(200)
 })

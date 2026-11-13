@@ -68,21 +68,20 @@ test('a pending order on the dashboard says until when the link stays live', asy
   await expect(page.locator('.hub3-barcode-image svg')).toBeVisible()
 })
 
-test('active Web Link: no item editing or monitoring, Publisher upsell for +30 € within 30 days', async ({ page }) => {
+test('active Web Link: no item editing or monitoring, no new Publisher upsell during launch', async ({ page }) => {
   await mockApi(page, () => ({ entitlement: { plan: 'web_link', status: 'active', periodStart: '2026-10-20T09:00:00Z', periodEnd: '2027-10-20T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: true, order: null }))
   await page.goto('/app?tab=pretplata')
   await expect(page.getByRole('heading', { name: 'Aktivno do 20. 10. 2027. u 11:00' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Nadogradi na Publisher +30,00 € jednokratno' })).toBeVisible()
-  await expect(page.getByText('Nadogradnja vrijedi za preostalo plaćeno razdoblje. Kraj razdoblja ostaje isti.')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Nadogradi na Publisher/ })).toHaveCount(0)
   await page.getByRole('button',{name:'Moj cjenik',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Vaša posljednja objava'})).toBeVisible()
   await expect(page.getByRole('button', { name: 'Uredi postojeći cjenik' })).toHaveCount(0)
   await expect(page.locator('.monitor-panel')).toHaveCount(0)
 })
 
-test('after the 30-day window Publisher is offered at renewal', async ({ page }) => {
+test('no Publisher offer after the 30-day window', async ({ page }) => {
   await mockApi(page, () => ({ entitlement: { plan: 'web_link', status: 'active', periodStart: '2026-08-01T09:00:00Z', periodEnd: '2027-08-01T09:00:00Z' }, features: WEB_LINK, upgradeAvailable: false, order: null }))
   await page.goto('/app?tab=pretplata')
-  await expect(page.getByText('Publisher možete odabrati kod obnove.')).toBeVisible()
+  await expect(page.getByText('Publisher možete odabrati kod obnove.')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Nadogradi na Publisher/ })).toHaveCount(0)
 })

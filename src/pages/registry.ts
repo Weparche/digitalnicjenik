@@ -1,4 +1,5 @@
 import { PLANS, formatEur, type PlanId } from '../publisherPricing'
+import { PUBLIC_PLANS } from '../../shared/pricing'
 import { SITE_URL } from '../news/site'
 
 export type SitePageKind = 'hub' | 'pricing' | 'faq' | 'compare' | 'spec' | 'guide' | 'service' | 'reference'
@@ -23,7 +24,7 @@ export type SitePageMeta = {
 }
 
 const UPDATED = '2026-10-18T10:00:00+02:00'
-const OFFER_UPDATED = '2026-10-27T18:00:00+01:00'
+const OFFER_UPDATED = '2026-11-13T20:17:00+01:00'
 
 export const EXISTING_WEB_PATH = '/digitalni-cjenik-za-wordpress-webshop/'
 
@@ -31,10 +32,10 @@ export const SITE_PAGES: SitePageMeta[] = [
   {path:'/digitalni-cjenik/',kind:'hub',label:'Digitalni cjenik',title:'Digitalni cjenik: od provjere weba do javne objave',seoTitle:'Digitalni cjenik 2026. — CSV/XML i besplatna provjera | NEPAR',description:`Što je digitalni cjenik, kako provjeriti javni CSV/XML i kako objaviti svoj Excel. Besplatna provjera weba, objava 24 sata i isti link od ${formatEur(PLANS[0].price,true)}.`,updatedAt:'2026-10-30T19:30:00+01:00'},
   {path:'/sidrena-cijena/',kind:'guide',label:'Sidrena cijena',title:'Sidrena cijena 2026.: što znači i na koga se odnosi',seoTitle:'Sidrena cijena 2026.: značenje, datumi i obveze | NEPAR',description:'Razlika između aktualne, dodatne (sidrene) i bazne cijene. Referentni datumi, kome se mjera primjenjuje i što provjera weba može potvrditi.',updatedAt:'2026-10-30T19:30:00+01:00'},
   {path:'/digitalni-cjenik-2026/',kind:'guide',label:'Vodič za 2026.',title:'Digitalni cjenik 2026.: što mora sadržavati, rok 17.11. i kako ga objaviti',seoTitle:'Digitalni cjenik 2026.: obveze, rok i CSV/XML primjeri | NEPAR',description:'Praktičan vodič za digitalni cjenik: na koga se odnosi, podaci za usluge i proizvode, nazivi datoteka, ažuriranje, 30 dana arhive i stvarni CSV/XML primjeri.',updatedAt:'2026-10-30T19:30:00+01:00'},
-  {path:'/digitalni-cjenik-za-usluge/',kind:'service',label:'Cjenik za usluge',title:'Digitalni cjenik za usluge, salone i servise',seoTitle:'Digitalni cjenik za usluge: Excel u CSV/XML | NEPAR',description:'Kako pružatelj usluga objavljuje naziv, maloprodajnu i sidrenu cijenu te posebni oblik prodaje. Excel predložak, CSV/XML i objava bez promjene postojećeg weba.',updatedAt:'2026-10-30T19:30:00+01:00',service:{name:'Objava digitalnog cjenika usluga',serviceType:'Digitalni CSV/XML cjenik usluga',planIds:['link','publisher']}},
-  {path:'/digitalni-cjenik-za-webshop/',kind:'service',label:'Cjenik za webshop',title:'Digitalni cjenik za webshop: katalog nije isto što i CSV/XML',seoTitle:'Digitalni cjenik za webshop: proizvodi, CSV/XML i arhiva | NEPAR',description:'Podaci proizvoda, dnevna objava, stabilni feedovi i arhiva za webshop. Provjerite što vaš postojeći sustav već objavljuje prije kupnje dodatnog rješenja.',updatedAt:'2026-10-30T19:30:00+01:00',service:{name:'Objava digitalnog cjenika proizvoda',serviceType:'Digitalni CSV/XML cjenik za webshop',planIds:['link','publisher']}},
-  {path:'/digitalni-cjenik-woocommerce/',kind:'service',label:'Cjenik za WooCommerce',title:'Digitalni cjenik za WooCommerce, bez obveznog novog plugina',seoTitle:'Digitalni cjenik za WooCommerce: izvoz i objava CSV/XML | NEPAR',description:'Provjerite WooCommerce web, izvezite podatke i objavite CSV/XML. Što standardni izvoz prenosi, što treba dopuniti i kada dogovoriti zasebnu integraciju.',updatedAt:'2026-10-30T19:30:00+01:00',service:{name:'Objava cjenika za WooCommerce',serviceType:'CSV/XML objava za postojeći WooCommerce web',planIds:['link','publisher']}},
-  {path:'/web-publisher/',kind:'service',label:'Web + Publisher',title:'Web i digitalni cjenik na jednom mjestu',seoTitle:'Novi poslovni web i Publisher | NEPAR',description:`Novi jednostavni statički web na NEPAR hostingu i Publisher za ${formatEur(PLANS[2].price,true)}. Upit i ponuda; bez redizajna postojećeg WordPress/Wix weba.`,updatedAt:'2026-10-29T12:00:00+01:00',service:{name:'Web + Publisher',serviceType:'Novi statički poslovni web i objava cjenika',planIds:['web']}},
+  {path:'/digitalni-cjenik-za-usluge/',kind:'service',label:'Cjenik za usluge',title:'Digitalni cjenik za usluge, salone i servise',seoTitle:'Digitalni cjenik za usluge: Excel u CSV/XML | NEPAR',description:'Kako pružatelj usluga objavljuje naziv, maloprodajnu i sidrenu cijenu te posebni oblik prodaje. Excel predložak, CSV/XML i objava bez promjene postojećeg weba.',updatedAt:'2026-10-30T19:30:00+01:00',service:{name:'Objava digitalnog cjenika usluga',serviceType:'Digitalni CSV/XML cjenik usluga',planIds:['link']}},
+  {path:'/digitalni-cjenik-za-webshop/',kind:'service',label:'Cjenik za webshop',title:'Digitalni cjenik za webshop: katalog nije isto što i CSV/XML',seoTitle:'Digitalni cjenik za webshop: proizvodi, CSV/XML i arhiva | NEPAR',description:'Podaci proizvoda, dnevna objava, stabilni feedovi i arhiva za webshop. Provjerite što vaš postojeći sustav već objavljuje prije kupnje dodatnog rješenja.',updatedAt:'2026-10-30T19:30:00+01:00',service:{name:'Objava digitalnog cjenika proizvoda',serviceType:'Digitalni CSV/XML cjenik za webshop',planIds:['link']}},
+  {path:'/digitalni-cjenik-woocommerce/',kind:'service',label:'Cjenik za WooCommerce',title:'Digitalni cjenik za WooCommerce, bez obveznog novog plugina',seoTitle:'Digitalni cjenik za WooCommerce: izvoz i objava CSV/XML | NEPAR',description:'Provjerite WooCommerce web, izvezite podatke i objavite CSV/XML. Što standardni izvoz prenosi, što treba dopuniti i kada dogovoriti zasebnu integraciju.',updatedAt:'2026-10-30T19:30:00+01:00',service:{name:'Objava cjenika za WooCommerce',serviceType:'CSV/XML objava za postojeći WooCommerce web',planIds:['link']}},
+  {path:'/web-publisher/',kind:'service',label:'Web + Publisher',title:'Web i digitalni cjenik na jednom mjestu',seoTitle:'Novi poslovni web i Publisher | NEPAR',description:`Web + Publisher trenutačno nije dostupan za nove narudžbe. Dostupan je Web Link za postojeći web.`,updatedAt:'2026-10-29T12:00:00+01:00',service:{name:'Web + Publisher',serviceType:'Novi statički poslovni web i objava cjenika',planIds:[]}},
   {
     path: EXISTING_WEB_PATH,
     kind: 'service',
@@ -44,7 +45,7 @@ export const SITE_PAGES: SitePageMeta[] = [
     description: `Digitalni cjenik za WordPress, WooCommerce, Shopify, Wix ili vlastiti web od ${formatEur(PLANS[0].price, true)}: bez plugina, s CSV/XML objavom i 30 dana arhive.`,
     updatedAt: OFFER_UPDATED,
     faqGroupId: 'postojeci-web',
-    service: { name: 'Web Link — digitalni cjenik za postojeći web', serviceType: 'Objava digitalnog cjenika', planIds: ['link', 'publisher'] },
+    service: { name: 'Web Link — digitalni cjenik za postojeći web', serviceType: 'Objava digitalnog cjenika', planIds: ['link'] },
   },
   { path: '/vodici/sidrena-cijena/', kind: 'guide', parent: '/vodici/', label: 'Sidrena cijena', title: 'Sidrena cijena 2026: značenje, datumi i prikaz', seoTitle: 'Sidrena cijena 2026: što znači i kako se ističe | NEPAR', description: 'Sidrena odnosno dodatna cijena: referentni datumi, odnos prema digitalnom CSV/XML cjeniku i prikaz uz aktualnu cijenu. Vodič sa službenim izvorima.', updatedAt: '2026-10-27T12:00:00+01:00' },
   { path: '/vodici/automatizacija-digitalnog-cjenika/', kind: 'guide', parent: '/vodici/', label: 'Automatizacija cjenika', title: 'Automatizacija digitalnog cjenika: objava, integracija i nadzor', seoTitle: 'Automatizacija digitalnog cjenika: što radi Publisher | NEPAR', description: 'Što NEPAR Publisher generira nakon objave, što traži vaš izvor podataka i integraciju te što periodični nadzor provjerava. Bez obećanja automatske sinkronizacije.', updatedAt: '2026-10-27T12:00:00+01:00' },
@@ -80,7 +81,7 @@ export const SITE_PAGES: SitePageMeta[] = [
     title: 'Cijene i godišnji paketi za digitalni cjenik',
     seoTitle: 'Cijene digitalnog cjenika (CSV/XML) | NEPAR Publisher',
     description:
-      `Besplatna provjera weba i validator. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Objavite digitalni cjenik na svojoj web stranici.`,
+      `Besplatna provjera weba i validator. Godišnji paketi: ${PUBLIC_PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Objavite digitalni cjenik na svojoj web stranici.`,
     updatedAt: OFFER_UPDATED,
   },
   {

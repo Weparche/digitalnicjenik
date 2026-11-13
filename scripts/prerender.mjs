@@ -87,7 +87,7 @@ function buildHomeSchema(productFaq, pricing) {
         inLanguage: 'hr',
         offers: [
           { '@type': 'Offer', name: 'Provjera, validator i besplatna objava 24 sata', price: '0', priceCurrency: 'EUR' },
-          ...pricing.PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
+          ...pricing.PUBLIC_PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
           installationOffer(pricing, `${SITE_URL}/cijene/`),
         ],
         provider: { '@id': ORGANIZATION_ID },
@@ -173,7 +173,7 @@ function buildSitePageSchema(page, extras) {
       provider: { '@id': ORGANIZATION_ID },
       offers: [
         { '@type': 'Offer', name: 'Provjera, validator i besplatna objava 24 sata', price: '0', priceCurrency: 'EUR', url: pageUrl },
-        ...extras.pricing.PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: pageUrl })),
+        ...extras.pricing.PUBLIC_PLANS.map(plan => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, price: String(plan.price), priceCurrency: 'EUR', url: pageUrl })),
         installationOffer(extras.pricing, pageUrl),
       ],
     })
@@ -200,7 +200,7 @@ function buildSitePageSchema(page, extras) {
       areaServed: { '@type': 'Country', name: 'Hrvatska' },
       provider: { '@id': ORGANIZATION_ID },
       offers: [
-        ...extras.pricing.PLANS.filter((plan) => page.service.planIds.includes(plan.id)).map((plan) => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, description: plan.tagline, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
+        ...extras.pricing.PUBLIC_PLANS.filter((plan) => page.service.planIds.includes(plan.id)).map((plan) => ({ '@type': 'Offer', name: `${plan.name} (godišnje)`, description: plan.tagline, price: String(plan.price), priceCurrency: 'EUR', url: `${SITE_URL}/cijene/` })),
         installationOffer(extras.pricing, `${SITE_URL}/cijene/`),
       ],
     })

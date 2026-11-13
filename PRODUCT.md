@@ -80,6 +80,8 @@ The fixture at `./marketino-artikli` remains available for the demo tenant only.
 
 ## Commercial offer
 
+Launch scope (2026-11-13): Web Link is the only public package for new customers. Preserve existing paid Publisher/managed access and renewals. Do not introduce new Billing integration, plugins, or external-hosting guarantees before the final regulation. Other plan definitions remain internal for later activation.
+
 - **Web Link — 19,90 €/god = hosting and publication** (id `link`, entitlement plan `web_link`): permanent public URL, CSV/XML, the public 30-day archive, QR/PDF/embed, replacing the whole price list with a new file (and filling in required fields), up to 5.000 items (`MAX_PRICE_LIST_ITEMS`). No plugin: the customer adds the link to any existing website. Web Link on its own is a complete, correct publication; nothing needed for compliance is locked behind Publisher.
 - **Publisher — 49,90 €/god = management and monitoring** (plan `publisher_self_service`): everything in Web Link plus editing single items without Excel, daily monitoring and e-mail alerts. Do not market automatic updating/sync or a detailed change history until they exist.
 - **Web + Publisher — 99 €/god:** Publisher plus a simple NEPAR web/landing, hosting, SSL, basic editing and technical setup. Complex custom development requires a separate offer.

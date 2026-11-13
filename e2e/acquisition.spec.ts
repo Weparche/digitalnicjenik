@@ -157,8 +157,7 @@ test('existing-web landing explains link-only setup with FAQ, plans and extra se
     await expect(page.locator('.ew-platforms dt')).toHaveText(['WordPress', 'WooCommerce', 'Shopify', 'Wix, Webflow i vlastiti web', 'Google Sites', 'Custom HTML / React'])
     await expect(page.locator('#cesta-pitanja .site-faq-item')).toHaveCount(8)
     await expect(page.locator('.acq-plan').first()).toContainText('Do 5.000 stavki')
-    await expect(page.locator('.acq-extra')).toHaveCount(2)
-    await expect(page.locator('.acq-extra').nth(1)).toContainText('individualna ponuda')
+    await expect(page.locator('.acq-extra')).toHaveCount(1)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
   }
   await page.getByRole('link', { name: 'Zatraži ugradnju' }).click()
@@ -169,9 +168,9 @@ test('existing-web landing explains link-only setup with FAQ, plans and extra se
 test('pricing page shares plans and query handoff opens the selected annual offer', async ({ page }) => {
   await page.goto('/cijene/')
   await expect(page.locator('.acq-plans')).toContainText('19,90 €')
-  await page.getByRole('link', { name: 'Zatraži Web + Publisher' }).click()
-  await expect(page.getByRole('heading', { name: 'Zatražite paket Web + Publisher' })).toBeVisible()
-  await expect(page.locator('.workspace-contact')).toContainText('99,00 €/god')
+  await expect(page.locator('.acq-plan')).toHaveCount(1)
+  await page.getByRole('link', { name: 'Zatraži Web Link' }).click()
+  await expect(page).toHaveURL(/\/app\?new=1&plan=link/)
 })
 
 test('mobile FAQ disclosures and resource navigation remain usable below the validator', async ({ page }) => {

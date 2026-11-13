@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PLANS, formatEur } from '../publisherPricing'
+import { PLANS, PUBLIC_PLANS, formatEur } from '../../shared/pricing'
 import { faqGroups } from './faqData'
 import { MARKET_OPTIONS, MARKET_RECOMMENDATIONS, MARKET_SNAPSHOT_DATE } from './marketComparison'
 import { SITE_PAGES } from './registry'
@@ -17,7 +17,8 @@ describe('recommendation and pricing content', () => {
     ])
 
     const faq = allFaqText()
-    for (const plan of PLANS) {
+    expect(PUBLIC_PLANS.map(plan=>plan.id)).toEqual(['link'])
+    for (const plan of PUBLIC_PLANS) {
       expect(faq).toContain(`${plan.name} ${formatEur(plan.price, true)}`)
     }
     expect(faq).not.toContain('39,90 €')
@@ -43,7 +44,7 @@ describe('recommendation and pricing content', () => {
   it('states both where NEPAR fits and where another option can be better', () => {
     const recommendations = MARKET_RECOMMENDATIONS.map((item) => `${item.need} ${item.choice} ${item.reason}`).join('\n')
     expect(recommendations).toContain('NEPAR Web Link')
-    expect(recommendations).toContain('NEPAR Publisher')
+    expect(recommendations).not.toContain('NEPAR Publisher')
     expect(recommendations).toContain('eCjenik Mali')
     expect(recommendations).toContain('nije najbolji univerzalni izbor')
   })
@@ -53,9 +54,9 @@ describe('recommendation and pricing content', () => {
     const faq = SITE_PAGES.find((page) => page.path === '/faq/')
     const comparison = SITE_PAGES.find((page) => page.path === '/usporedba/')
 
-    expect(pricing?.updatedAt.startsWith('2026-10-27')).toBe(true)
-    expect(faq?.updatedAt.startsWith('2026-10-27')).toBe(true)
-    expect(comparison?.updatedAt.startsWith('2026-10-27')).toBe(true)
+    expect(pricing?.updatedAt.startsWith('2026-11-13')).toBe(true)
+    expect(faq?.updatedAt.startsWith('2026-11-13')).toBe(true)
+    expect(comparison?.updatedAt.startsWith('2026-11-13')).toBe(true)
     expect(comparison?.title).toContain('eCjenik')
     expect(comparison?.title).toContain('digitalnicjenik.hr')
     expect(comparison?.description).toContain('26.10.2026.')
