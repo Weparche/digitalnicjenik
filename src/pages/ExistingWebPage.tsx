@@ -33,12 +33,12 @@ export function ExistingWebPage() {
     ]}
   >
     <PlatformPills/>
-    <section className="site-section"><h2>Tri jednostavna načina</h2><ol className="news-bullets"><li><strong>Link ili gumb:</strong> javni NEPAR URL stavite u izbornik, podnožje ili sadržaj.</li><li><strong>Cjenik direktno na stranici:</strong> upotrijebite postojeći embed.js ili iframe iz dashboarda. WordPress: Custom HTML blok; Wix: Embed HTML.</li><li><strong>Redirect /cjenici:</strong> vaš developer ili standardna opcija hostinga može preusmjeriti tu adresu na javni NEPAR cjenik. Ne morate posluživati CSV/XML na istoj domeni.</li></ol></section>
+    <section className="site-section"><h2>Tri jednostavna načina</h2><ol className="news-bullets"><li><strong>Link ili gumb:</strong> javni NEPAR URL stavite u izbornik, podnožje ili sadržaj.</li><li><strong>Cjenik direktno na stranici:</strong> upotrijebite postojeći embed.js ili iframe iz dashboarda. WordPress: Custom HTML blok; Wix: Embed HTML.</li><li><strong>Redirect /cjenici:</strong> vaš developer ili standardna opcija hostinga može preusmjeriti tu adresu na javni NEPAR cjenik. To je tehnička mogućnost; konačni pravilnik još treba razjasniti prihvatljivost vanjskog hostinga.</li></ol></section>
     <ExistingWebSection landingLink={false}/>
 
     <section className="site-section" aria-labelledby="link-placement">
       <h2 id="link-placement">Gdje staviti poveznicu?</h2>
-      <p>Dovoljno je da posjetitelj i program za dohvat podataka mogu doći do cjenika s vašeg weba. Najčešća mjesta:</p>
+      <p>Poveznica treba biti javno dostupna i lako pronaći; konačne uvjete objave provjerite prema važećem propisu. Najčešća mjesta:</p>
       <ul className="news-bullets">{LINK_PLACEMENTS.map((place) => <li key={place}>{place}</li>)}</ul>
     </section>
 
@@ -54,7 +54,7 @@ export function ExistingWebPage() {
     <section className="site-section" aria-labelledby="web-link-scope">
       <h2 id="web-link-scope">Što Web Link ne radi</h2>
       <p>Web Link objavljuje digitalni cjenik iz datoteke koju učitate. Ne mijenja cijene na vašem webshopu i ne čita proizvode iz WooCommercea, blagajne ili ERP-a. Novu verziju cjenika učitate kada se cijene promijene.</p>
-      <p>Treba vam povezivanje s webshopom, API-jem ili ERP/POS sustavom? Takvu integraciju možemo izraditi prema vašem sustavu, po <a href="#integracija">individualnoj ponudi</a>.</p>
+      <p>Automatska sinkronizacija nije dio trenutačne ponude.</p>
     </section>
 
     <section className="site-section" aria-labelledby="existing-web-plans">

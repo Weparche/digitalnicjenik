@@ -16,7 +16,7 @@ function PublicationPath() {
   return <section className="site-section">
     <h2>Nemate javni CSV ili XML? Krenite od svoje tablice.</h2>
     <p>Učitajte Excel, CSV ili XML, provjerite prepoznate stupce i dopunite podatke koji nedostaju. Pregled je bez registracije. Za objavu potvrdite e-mail i dobijte javni HTML cjenik, CSV, XML i arhivu na istom linku.</p>
-    <p><strong>Objava je besplatna 24 sata.</strong> Nakon toga isti link zadržite uz Web Link za {formatEur(PLANS[0].price, true)}. Web Link zamjenjuje cijeli cjenik datotekom; Publisher za {formatEur(PLANS[1].price, true)} dodaje uređivanje stavki i nadzor.</p>
+    <p><strong>Objava je besplatna 24 sata.</strong> Nakon toga isti link zadržite uz Web Link za {formatEur(PLANS[0].price, true)}. Web Link zamjenjuje cijeli cjenik datotekom, bez automatske sinkronizacije.</p>
     <a className="app-button app-button-primary" href="/app?new=1">Učitaj Excel, CSV ili XML →</a>
     <p>Poveznicu na cjenik možete sami dodati na postojeći web. Jedna standardna NEPAR ugradnja stoji {installationPriceLabel()}. <a href="/cijene/">Usporedite što uključuju paketi.</a></p>
   </section>

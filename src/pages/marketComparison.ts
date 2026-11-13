@@ -65,8 +65,8 @@ export const MARKET_RECOMMENDATIONS = [
   },
   {
     need: 'Želite da sustav svaki dan provjerava objavu i šalje alarm',
-    choice: 'NEPAR Publisher',
-    reason: `${formatEur(PLANS[1].price, true)} uz detaljnu validaciju, dashboard, nadzor i e-mail upozorenja.`,
+    choice: 'Usporedite druge pakete',
+    reason: 'Automatizirani nadzor nije dio trenutačne Web Link ponude.',
   },
   {
     need: 'Trebate više poslovnica ili izravni API/ERP tijek',

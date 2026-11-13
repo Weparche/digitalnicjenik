@@ -1,4 +1,4 @@
-import { PLANS, formatEur } from '../publisherPricing'
+import { PUBLIC_PLANS, formatEur } from '../../shared/pricing'
 import { MAX_ITEMS_LABEL, installationPriceLabel } from '../../shared/pricing'
 // Single source for the /faq page and its FAQPage JSON-LD (rendered in scripts/prerender.mjs).
 // Answers are plain text so the visible copy and the structured data can never drift apart.
@@ -177,7 +177,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Koliko košta NEPAR Publisher?',
         answer:
-          `Provjera weba, validator i pretvorba Excela besplatni su, a prva objava je besplatna 24 sata. Godišnji paketi: ${PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom (postavljanje poveznice ili gumba na postojeći web): ${installationPriceLabel()}. Integracija s webshopom ili poslovnim sustavom radi se po individualnoj ponudi.`,
+          `Provjera weba, validator i pretvorba Excela besplatni su, a prva objava je besplatna 24 sata. Godišnji paketi: ${PUBLIC_PLANS.map(p => `${p.name} ${formatEur(p.price, true)}`).join(', ')}. Pomoć s ugradnjom (postavljanje poveznice ili gumba na postojeći web): ${installationPriceLabel()}. Automatska integracija s webshopom nije dio Web Linka.`,
       },
       {
         question: 'Što se događa nakon 24 sata ako ne platim?',
