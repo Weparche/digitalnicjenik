@@ -40,6 +40,7 @@ export type WebsiteCheckDetails = {
   /** Discovered links only; their file contents are not verified. */
   otherDocumentUrls?: string[]
   directDocument?: boolean
+  dynamicShell?: boolean
   publicationDateEvidence?: string
   publicLinkUrl?: string | null
   csvLinkDiscovered?: boolean
@@ -105,8 +106,8 @@ export function technicalReport(result: WebsiteCheckResult) {
     return { checks, score, unknown, attention, tone: attention ? (score <= 2 ? 'red' : 'yellow') : unknown ? 'yellow' : 'green' }
   }
   const d = result.details ?? {}
-  const uncertain = result.status === 'unavailable' || Boolean(d.fetchBlocked || d.networkIncomplete) || d.reachable !== true
-  const unknownReason = d.fetchBlocked ? 'Zaštita weba ograničava automatski dohvat.' : d.reachable === false && result.status !== 'unavailable' ? 'Web nije dostupan pa ovu stavku nije moguće potvrditi.' : 'Dohvat nije dovršen. Pokušajte ponovno ili učitajte datoteku.'
+  const uncertain = result.status === 'unavailable' || Boolean(d.fetchBlocked || d.networkIncomplete || d.dynamicShell) || d.reachable !== true
+  const unknownReason = d.dynamicShell ? 'Web učitava sadržaj dinamički; pokušajte s izravnom adresom stranice cjenika.' : d.fetchBlocked ? 'Zaštita weba ograničava automatski dohvat.' : d.reachable === false && result.status !== 'unavailable' ? 'Web nije dostupan pa ovu stavku nije moguće potvrditi.' : 'Dohvat nije dovršen. Pokušajte ponovno ili učitajte datoteku.'
   const found = (yes: boolean | undefined, evidence: string): { status: TechnicalStatus; evidence: string } =>
     yes ? { status: 'pass', evidence } : uncertain ? { status: 'unknown', evidence: unknownReason } : { status: 'missing', evidence }
 

@@ -891,6 +891,8 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     details.pricePageUrl = homepage.url.href;
   }
   const links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
+  const dynamicShell = homepageReadable && isHtml(homepage.response,html) && !links.length && stripTags(html).length < 150 && (html.match(/<script\b/gi)||[]).length >= 5;
+  if (dynamicShell) details.dynamicShell = true;
   const directFormat = homepageReadable && !isHtml(homepage.response,html)
     ? html.trimStart().startsWith('<') ? (documentLooksValid('xml',homepage.response,html) ? 'xml' : null) : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
     : null;
@@ -1046,6 +1048,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   }
   if (network.failed && !network.checked) return result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.", details);
   if (details.fetchBlocked) return result("yellow", "Naslovnica je zaštićena od automatskog dohvata. Javni CSV/XML na uobičajenim adresama nije potvrđen.", details);
+  if (dynamicShell) return result("yellow", "Web stranica učitava sadržaj dinamički. U automatskom HTML dohvatu nismo mogli potvrditi poveznicu na cjenik. Unesite izravnu adresu stranice cjenika ili datoteke.", details);
   if (network.failed) return result("unavailable", "Dio provjere nije dovršen; nije moguće potvrditi postoji li javni CSV/XML.", details);
   return result("red", "Strojni cjenik nije pronađen.", details);
 }

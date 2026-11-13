@@ -49,6 +49,13 @@ describe('checker v2 regressions',()=>{
     expect(result.details.otherDocumentUrls).toEqual(['https://example.hr/downloads/cjenik.xlsx'])
     expect(result.details.csvFound).toBe(false)
   })
+  it('reports a JavaScript-only shell as uncertain instead of a missing cjenik',async()=>{
+    stub({'/':()=>html('<html><title>Trgovina</title><div id="app"></div>'+ '<script src="/app.js"></script>'.repeat(6)+'</html>')})
+    const result=await check()
+    expect(result.status).toBe('yellow')
+    expect(result.details.dynamicShell).toBe(true)
+    expect(technicalReport(result).checks.find(c=>c.id==='machine')?.status).toBe('unknown')
+  })
   it('finds ZIP price-list links without attempting to download them',async()=>{
     const zip='/cjenici/cjenici_13_11_2026.zip'
     const f=stub({'/':()=>html('<a href="/info-o-cijenama">Info o cijenama</a>'),'/info-o-cijenama':()=>html('<a href="'+zip+'">Cjenik</a>')})
