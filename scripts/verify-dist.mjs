@@ -31,7 +31,7 @@ if (h1Count !== 1) failures.push(`index.html: expected exactly one <h1>, found $
 expect('index.html', /<h1[^>]*>/, 'prerendered H1 is missing')
 expect('index.html', 'Provjerite digitalni cjenik svoje web stranice', 'prerendered checker-first hero H1 is missing')
 expect('index.html', 'id="checker"', 'the URL checker must be in the prerendered hero')
-expect('index.html', 'nego provjerava da je ispravna', 'prerendered Publisher FAQ copy is missing')
+expect('index.html', 'provjeru datoteke prije objave', 'prerendered Web Link FAQ copy is missing')
 expect('index.html', '<link rel="canonical" href="https://digitalnicjenik.nepar.hr/" />', 'self-canonical is missing')
 expect('index.html', /<title>[^<]{10,}<\/title>/, 'title is missing or too short')
 expect('index.html', /<meta name="description" content="[^"]{20,}" \/>/, 'meta description is missing or too short')

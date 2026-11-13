@@ -39,7 +39,7 @@ export const productFaq: ProductFaqEntry[] = [
   },
   {
     question: 'Koliko košta nakon besplatne objave?',
-    answer: `Provjera weba i validator su besplatni. Nakon besplatne objave isti link zadržavate s paketom Web Link, koji je trenutačno jedini paket u ponudi. Godišnja cijena vidljiva je na početnoj stranici bez prethodne provjere, a dostupni su i na stranici Cijene. Pomoć s ugradnjom na postojeći web stoji ${installationPriceLabel()}.`,
+    answer: `Provjera weba i validator su besplatni. Nakon besplatne objave isti link zadržavate s paketom Web Link, koji je trenutačno jedini paket u ponudi. Godišnja cijena vidljiva je na početnoj stranici bez prethodne provjere, a dostupna je i na stranici Cijene. Pomoć s ugradnjom na postojeći web stoji ${installationPriceLabel()}.`,
   },
   {
     question: 'Kako započeti?',

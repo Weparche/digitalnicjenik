@@ -36,7 +36,7 @@ describe('existing-web positioning', () => {
 
   it('registers the landing for navigation, sitemap and llms.txt with FAQ and Service data', () => {
     expect(page).toMatchObject({ kind: 'service', faqGroupId: EXISTING_WEB_FAQ_ID })
-    expect(page.service?.planIds).toEqual(['link', 'publisher'])
+    expect(page.service?.planIds).toEqual(['link'])
     expect(page.description.length).toBeGreaterThanOrEqual(70)
     expect(page.description.length).toBeLessThanOrEqual(200)
     expect(NAV_LINKS.some((link) => link.href === EXISTING_WEB_PATH)).toBe(true)
