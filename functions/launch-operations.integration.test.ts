@@ -97,7 +97,7 @@ it('reporting a payment creates exactly two notifications and never activates a 
 
 it('launch allows new Web Link orders but rejects new Publisher orders and preserves Publisher renewal',async()=>{
   const owner=await session('owner@example.hr','launch-order-owner')
-  await env.DB.prepare("INSERT INTO tenant_members(tenant_id,user_id,role,created_at) VALUES (?,?,'owner',?)").bind(tenant.id,'launch-order-owner',now.toISOString()).run()
+  await env.DB.prepare("INSERT INTO tenant_members(id,tenant_id,user_id,role,created_at) VALUES (?,?,?,'owner',?)").bind('launch-order-membership',tenant.id,'launch-order-owner',now.toISOString()).run()
   const req=(kind:string)=>new Request('https://app.test/api/orders',{method:'POST',headers:{origin:'https://app.test',cookie:owner.headers.get('cookie')!,'content-type':'application/json'},body:JSON.stringify({kind,...billing})})
   expect((await orderPost({request:req('publisher'),env:runtime})).status).toBe(409)
   expect((await orderPost({request:req('publisher_upgrade'),env:runtime})).status).toBe(409)
