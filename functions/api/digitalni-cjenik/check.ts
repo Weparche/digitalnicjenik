@@ -24,7 +24,7 @@ type CheckerEnv = {
   LEAD_RATE_LIMIT_SECRET?: string;
   zipEntry?: string;
   CF_ACCOUNT_ID?: string;
-  CHECKER_BROWSER_TOKEN?: string;
+  CHECKER_BROWSER?: { quickAction(action: 'content', options: Record<string, unknown>): Promise<Response> };
   CHECKER_BROWSER_HOSTS?: string;
   requestState?: { signal: AbortSignal; dns: Map<string, Promise<string[]>> };
 };
@@ -851,24 +851,25 @@ async function inspectZip(url:URL,env:CheckerEnv,details:CheckDetails,analyses:C
 }
 
 /** Optional, administrator-allowlisted browser fallback; no user scripts or credentials. */
-async function renderDynamicPage(url:URL,env:CheckerEnv):Promise<string|null>{
-  if(!env.CHECKER_BROWSER_TOKEN||!env.CF_ACCOUNT_ID||!env.DB||url.protocol!=='https:'||url.port||url.search||url.hash)return null;
+const DM_PRICE_PAGE = 'https://www.dm.hr/novo/promocije/nove-oznake-cijena-i-vazeci-cjenik-u-dm-u-2906632';
+export async function renderDynamicPage(url:URL,env:CheckerEnv):Promise<{html:string;url:URL}|null>{
+  if(!env.CHECKER_BROWSER||!env.DB||url.protocol!=='https:'||url.port||url.search||url.hash)return null;
   const hosts=(env.CHECKER_BROWSER_HOSTS||'').split(',').map(h=>h.trim().toLowerCase()).filter(h=>/^[a-z0-9.-]+$/.test(h)&&h.includes('.')&&!isForbiddenHostname(h)).slice(0,12);
   if(!hosts.includes(url.hostname))return null;
+  const target=(['dm.hr','www.dm.hr'].includes(url.hostname)&&url.pathname==='/')?new URL(DM_PRICE_PAGE):url;
+  if(!hosts.includes(target.hostname))return null;
   try{
     for(const host of hosts)await assertPublicUrl(new URL('https://'+host+'/'),env);
     const day=new Date().toISOString().slice(0,10);
     const budget=await env.DB.prepare('INSERT INTO checker_browser_daily(day,attempts) VALUES (?,1) ON CONFLICT(day) DO UPDATE SET attempts=attempts+1 WHERE attempts<20 RETURNING attempts').bind(day).first<{attempts:number}>();
     if(!budget)return null;
-    const endpoint='https://api.cloudflare.com/client/v4/accounts/'+encodeURIComponent(env.CF_ACCOUNT_ID)+'/browser-rendering/content';
     const allow=hosts.map(host=>'^https://'+host.replaceAll('.','\\.')+'(?::443)?(?:/|$)');
-    const timeout=AbortSignal.timeout(9_000);
-    const response=await fetch(endpoint,{method:'POST',redirect:'error',headers:{authorization:'Bearer '+env.CHECKER_BROWSER_TOKEN,'content-type':'application/json'},signal:env.requestState?AbortSignal.any([env.requestState.signal,timeout]):timeout,body:JSON.stringify({url:url.href,allowRequestPattern:allow,allowResourceTypes:['document','script','stylesheet','xhr','fetch'],gotoOptions:{waitUntil:'domcontentloaded',timeout:6000},waitForTimeout:1200,bestAttempt:true})});
+    const response=await env.CHECKER_BROWSER.quickAction('content',{url:target.href,allowRequestPattern:allow,allowResourceTypes:['document','script','stylesheet','xhr','fetch'],gotoOptions:{waitUntil:'domcontentloaded',timeout:6000},actionTimeout:6000,waitForTimeout:1200,bestAttempt:true});
     if(!response.ok)return null;
     const {body,truncated}=await readBounded(response,MAX_HTML_BYTES+256*1024);
     if(truncated)return null;
     const data=JSON.parse(body) as {success?:boolean;result?:unknown};
-    return data.success===true&&typeof data.result==='string'&&data.result.length<=MAX_HTML_BYTES?data.result:null;
+    return data.success===true&&typeof data.result==='string'&&data.result.length<=MAX_HTML_BYTES?{html:data.result,url:target}:null;
   }catch{return null}
 }
 
@@ -997,11 +998,12 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     details.pricePageUrl = homepage.url.href;
   }
   let links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
+  let renderedPage:URL|null=null;
   const dynamicShell = homepageReadable && isHtml(homepage.response,html) && !links.length && stripTags(html).length < 150 && (html.match(/<script\b/gi)||[]).length >= 5;
   if (dynamicShell) {
     details.dynamicShell = true;
     const rendered=await renderDynamicPage(homepage.url,env);
-    if(rendered){const found=extractLinks(rendered,homepage.url);if(found.length){links=found;details.dynamicShell=false;details.renderedEvidence='Poveznice su pronađene nakon ograničenog renderiranja stranice.'}}
+    if(rendered){const found=extractLinks(rendered.html,rendered.url);if(found.length){links=found;renderedPage=rendered.url;details.dynamicShell=false;details.renderedEvidence='Poveznice su pronađene nakon ograničenog renderiranja: '+rendered.url.href;}}
   }
   const directFormat = homepageReadable && !isHtml(homepage.response,html)
     ? html.trimStart().startsWith('<') ? (documentLooksValid('xml',homepage.response,html) ? 'xml' : null) : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
@@ -1028,10 +1030,12 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   const selected = new Map<'csv' | 'xml', URL>();
   const otherDocuments: string[] = [];
   const rememberOther = (url:URL,source?:{url:string;location:'homepage'|'inner'}) => { if (otherDocuments.length < 5 && !otherDocuments.includes(url.href)) otherDocuments.push(url.href);if(source&&!linkedSources.has(url.href))linkedSources.set(url.href,source); };
+  const renderedInner=renderedPage!==null&&renderedPage.href!==homepage.url.href;
+  const sourceLocation=renderedInner?'inner':'homepage';
   for (const candidate of links) {
-    if (candidate.kind === 'other') rememberOther(candidate.url,{url:candidate.url.href,location:'homepage'});
+    if (candidate.kind === 'other') rememberOther(candidate.url,{url:renderedInner?renderedPage!.href:candidate.url.href,location:sourceLocation});
     if (candidate.kind === "price") appendUnique(secondary, candidate.url, MAX_SECONDARY_PAGES);
-    if (candidate.kind === 'csv' || candidate.kind === 'xml') linkedSources.set(candidate.url.href, {url:candidate.url.href,location:'homepage'});
+    if (candidate.kind === 'csv' || candidate.kind === 'xml') linkedSources.set(candidate.url.href, {url:renderedInner?renderedPage!.href:candidate.url.href,location:sourceLocation});
     if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
     if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
     if (candidate.kind === "csv" || candidate.kind === "xml") appendUnique(documentLinks, candidate.url, MAX_PUBLICATION_LINKS);
@@ -1072,7 +1076,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
       }
       for (const candidate of extractLinks(secondaryHtml, fetched.url)) {
         if (candidate.kind === 'other') rememberOther(candidate.url);
-        if (candidate.kind === 'csv' || candidate.kind === 'xml') { const source = links.find(link => link.kind === 'price' && link.url.href === page.href); if (!linkedSources.has(candidate.url.href)) linkedSources.set(candidate.url.href, {url:source?.url.href || candidate.url.href, location:source ? 'homepage' : 'inner'}); }
+        if (candidate.kind === 'csv' || candidate.kind === 'xml') { const source = links.find(link => link.kind === 'price' && link.url.href === page.href); if (!linkedSources.has(candidate.url.href)) linkedSources.set(candidate.url.href, {url:source?.url.href || candidate.url.href, location:source && !renderedInner ? 'homepage' : 'inner'}); }
         if (candidate.kind === 'price' && candidate.url.href !== page.href && candidate.url.href !== homepage.url.href) appendUnique(secondary,candidate.url,MAX_SECONDARY_PAGES);
         if (candidate.kind === "csv") { details.csvLinkDiscovered = true; appendUnique(csv, candidate.url, MAX_DOCUMENT_CANDIDATES); }
         if (candidate.kind === "xml") { details.xmlLinkDiscovered = true; appendUnique(xml, candidate.url, MAX_DOCUMENT_CANDIDATES); }
