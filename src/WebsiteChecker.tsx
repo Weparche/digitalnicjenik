@@ -1,12 +1,13 @@
 import { useEffect,useRef,useState } from 'react'
 import { IconArrowRight,IconCircleCheckFilled,IconWorld } from '@tabler/icons-react'
 import { normalizeWebsiteInput,technicalReport,type WebsiteCheckResult } from '../shared/website-check'
+import { rememberCheckerRun,trackCheckerInteraction } from './checker-analytics'
 import { readAcquisitionTouch } from './acquisition'
 import { WebsiteCheckResultPanel } from './WebsiteCheckResult'
 
 const loadingCopy=['Otvaramo vašu web stranicu…','Tražimo javni digitalni cjenik…','Provjeravamo dostupne CSV/XML datoteke…','Analiziramo javno dostupne podatke…']
 export type CheckerContactContext={website:string;result:WebsiteCheckResult}
-export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,reportId='',onUpload,onHelp,onResult}:{initialUrl?:string;autoRun?:boolean;fromLanding?:boolean;reportId?:string;onUpload:()=>void;onHelp:(context:CheckerContactContext)=>void;onResult:(context:CheckerContactContext)=>void}){
+export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,internal=false,reportId='',onUpload,onHelp,onResult}:{initialUrl?:string;autoRun?:boolean;fromLanding?:boolean;internal?:boolean;reportId?:string;onUpload:()=>void;onHelp:(context:CheckerContactContext)=>void;onResult:(context:CheckerContactContext)=>void}){
   const [url,setUrl]=useState(initialUrl),[checkedUrl,setCheckedUrl]=useState(''),[error,setError]=useState('')
   const [result,setResult]=useState<WebsiteCheckResult|null>(null),[checking,setChecking]=useState(false),[phase,setPhase]=useState(0),[cancelled,setCancelled]=useState(false)
   const request=useRef<AbortController|null>(null),anchor=useRef<HTMLDivElement|null>(null),input=useRef<HTMLInputElement|null>(null),stop=useRef(false)
@@ -19,16 +20,16 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,re
     if(selectedUrl)setUrl(selectedUrl);setChecking(true);setResult(null);setError('');setCancelled(false);setCheckedUrl(normalized);setPhase(0)
     const timer=setTimeout(()=>controller.abort(),45_000)
     try{
-      const source=landingRequest.current?'landing':'dashboard';landingRequest.current=false
+      const source=internal?'internal':landingRequest.current?'landing':'dashboard';landingRequest.current=false
       const response=await fetch('/api/digitalni-cjenik/check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:normalized,attribution:readAcquisitionTouch(),source,zipEntry}),signal:controller.signal})
       const data=await response.json() as WebsiteCheckResult
       if(!data||!['green','yellow','red','unavailable'].includes(data.status))throw new Error('invalid_response')
-      if(!stop.current){setResult(data);onResult({website:normalized,result:data})}
+      if(!stop.current){setResult(data);if(!internal)rememberCheckerRun(data.checkerRunId);onResult({website:normalized,result:data})}
     }catch{if(!stop.current){const data:WebsiteCheckResult={status:'unavailable',message:'Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno ili učitajte datoteku za detaljnu provjeru.'};setResult(data);onResult({website:normalized,result:data})}}
     finally{clearTimeout(timer);request.current=null;setChecking(false)}
   }
   useEffect(()=>{
-    const params=new URL(window.location.href);params.searchParams.delete('url');params.searchParams.delete('check');params.searchParams.delete('from');window.history.replaceState({},'',params.pathname+params.search)
+    const params=new URL(window.location.href);params.searchParams.delete('url');params.searchParams.delete('check');params.searchParams.delete('from');params.searchParams.delete('internal');window.history.replaceState({},'',params.pathname+params.search)
     const timer=autoRun&&initialUrl?setTimeout(()=>void check(),0):null
     return()=>{if(timer)clearTimeout(timer);stop.current=true;request.current?.abort()}
   },[])
@@ -61,6 +62,6 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,re
       <div className="acq-loading" role="status" aria-live="polite">{checking?<><span className="acq-spinner" aria-hidden="true"/>{loadingCopy[phase]}<small>Provjera je u tijeku. Rezultate prikazujemo po završetku dohvata.</small><button className="acq-cancel" type="button" onClick={()=>{stop.current=true;request.current?.abort();setCancelled(true);input.current?.focus()}}>Odustani od provjere</button></>:cancelled?'Provjera je zaustavljena. Možete pokušati ponovno.':null}</div>
       <ul className="acq-trust">{['Bez registracije','Potpuno besplatno'].map(text=><li key={text}><IconCircleCheckFilled size={18}/>{text}</li>)}</ul>
     </section>
-    <div className="acq-result-anchor" ref={anchor} tabIndex={-1} aria-label="Rezultat provjere"><span className="sr-only" role="status">{report?`Rezultat: ${report.score} potvrđenih od 9 tehničkih provjera; ${report.unknown} nije moguće potvrditi.`:''}</span>{result&&<WebsiteCheckResultPanel result={result} website={checkedUrl} onSelectDocument={(url,entry)=>void check(undefined,url,entry)} onRetry={()=>void check()} onUpload={onUpload} onHelp={()=>onHelp({website:checkedUrl,result})}/>}</div>
+    <div className="acq-result-anchor" ref={anchor} tabIndex={-1} aria-label="Rezultat provjere"><span className="sr-only" role="status">{report?`Rezultat: ${report.score} potvrđenih od 9 tehničkih provjera; ${report.unknown} nije moguće potvrditi.`:''}</span>{result&&<WebsiteCheckResultPanel result={result} website={checkedUrl} onSelectDocument={(url,entry)=>void check(undefined,url,entry)} onRetry={()=>void check()} onUpload={()=>{if(!internal){rememberCheckerRun(result.checkerRunId);trackCheckerInteraction('upload_click')}onUpload()}} onHelp={()=>onHelp({website:checkedUrl,result})}/>}</div>
   </div>
 }

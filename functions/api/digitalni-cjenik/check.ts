@@ -8,6 +8,8 @@ import { deferredNote, ruleFor } from '../../../shared/compliance/legal-profile'
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type FindingGroup, type WebsiteCheckDetails } from '../../../shared/website-check';
 import { parseContentDispositionFilename } from '../../../shared/compliance/checks';
 import { readZipDirectory, readZipMember, type FetchRange } from './zip-inspection';
+import { requireAdmin } from '../../_admin-auth';
+import type { AuthEnv } from '../../_auth';
 import { recordCheckerRun } from '../../_checker-history';
 
 type Resolver = {
@@ -1153,8 +1155,9 @@ export const onRequestPost = async ({ request, env, waitUntil }: { request: Requ
   const checked = await runDigitalPriceListCheck(body.url, { ...env, zipEntry });
   let checkerRunId:string|null=null;
   const checkedAt=new Date();
-  try {const normalized=normalizeDigitalPriceListUrl(body.url).href;checkerRunId=await recordCheckerRun(env.DB,normalized,checked,body.attribution,body.source,checkedAt)}catch{/* Invalid addresses are not checker runs. */}
-  waitUntil?.(reportCheckToNepar(body.url, checked.status));
+  let internal=false;if(body.source==='internal'){try{await requireAdmin(request,env as AuthEnv);internal=true}catch{/* anonymous clients cannot mark themselves internal */}}
+  try {const normalized=normalizeDigitalPriceListUrl(body.url).href;checkerRunId=await recordCheckerRun(env.DB,normalized,checked,body.attribution,body.source,checkedAt,internal)}catch{/* Invalid addresses are not checker runs. */}
+  if(!internal)waitUntil?.(reportCheckToNepar(body.url, checked.status));
   return Response.json({ ...checked,checkerRunId, report: technicalReport(checked) }, { headers: { 'cache-control': 'no-store' } });
 };
 

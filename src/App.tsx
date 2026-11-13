@@ -1,3 +1,4 @@
+import { trackCheckerInteraction } from './checker-analytics'
 import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
 import { stavke, stavkeNema } from '../shared/plural'
 import { IconUpload } from '@tabler/icons-react'
@@ -1067,6 +1068,7 @@ function ValidatorApp({
     setList(scoped)
     setSourceFilename(file.name)
     setSourceFile(file)
+    if(file.name!=='primjer-digitalni-cjenik-usluge-2026.csv')trackCheckerInteraction('upload')
     setExcelFile(undefined)
     setIssues(mergeValidationIssues(validatePriceList(scoped), importIssues).issues)
     setPublished(false)
