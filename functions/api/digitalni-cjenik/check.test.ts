@@ -100,7 +100,7 @@ describe('digital price list checker hardening', () => {
     })
     vi.stubGlobal('fetch', validFetch)
     const valid = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
-    expect(valid.status).toBe('green')
+    expect(valid.status).toBe('yellow')
     expect(valid.details.xmlUrl).toBe('https://example.com/current.xml')
   })
 
@@ -217,7 +217,7 @@ describe('digital price list checker hardening', () => {
     expect(checked.message).toContain('Pokušajte ponovno')
   })
 
-  it('continues after a Cloudflare homepage challenge and reports missing CSV as red', async () => {
+  it('continues after a Cloudflare homepage challenge and reports unconfirmed CSV as yellow', async () => {
     const challenge = () => new Response('<!doctype html><title>Just a moment...</title>', {
       status: 403,
       headers: { 'cf-mitigated': 'challenge', 'content-type': 'text/html' },
@@ -233,7 +233,7 @@ describe('digital price list checker hardening', () => {
     })
     vi.stubGlobal('fetch', fetch)
     const checked = await runDigitalPriceListCheck('https://www.mall.hr', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
-    expect(checked.status).toBe('red')
+    expect(checked.status).toBe('yellow')
     expect(checked.message).toContain('zaštićena od automatskog dohvata')
     expect(checked.details.reachable).toBe(true)
     expect(checked.details.fetchBlocked).toBe(true)

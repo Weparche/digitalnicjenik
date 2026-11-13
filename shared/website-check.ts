@@ -10,6 +10,7 @@ export type DocumentAnalysis = {
   itemCount: number
   /** Actual response MIME header, advisory only (some servers omit or mislabel it). */
   contentType?: string | null
+  publicationFilename?: string | null
   status: DocumentAnalysisStatus
   structureStatus: DocumentAnalysisStatus
   contentStatus: DocumentAnalysisStatus
@@ -36,6 +37,11 @@ export type WebsiteCheckDetails = {
   xmlUrl?: string | null
   pricePageUrl?: string | null
   archiveUrl?: string | null
+  /** Discovered links only; their file contents are not verified. */
+  otherDocumentUrls?: string[]
+  directDocument?: boolean
+  dynamicShell?: boolean
+  publicationDateEvidence?: string
   publicLinkUrl?: string | null
   csvLinkDiscovered?: boolean
   xmlLinkDiscovered?: boolean
@@ -100,19 +106,24 @@ export function technicalReport(result: WebsiteCheckResult) {
     return { checks, score, unknown, attention, tone: attention ? (score <= 2 ? 'red' : 'yellow') : unknown ? 'yellow' : 'green' }
   }
   const d = result.details ?? {}
-  const uncertain = result.status === 'unavailable' || Boolean(d.fetchBlocked || d.networkIncomplete) || d.reachable !== true
-  const unknownReason = d.fetchBlocked ? 'Zaštita weba ograničava automatski dohvat.' : d.reachable === false && result.status !== 'unavailable' ? 'Web nije dostupan pa ovu stavku nije moguće potvrditi.' : 'Dohvat nije dovršen. Pokušajte ponovno ili učitajte datoteku.'
+  const uncertain = result.status === 'unavailable' || Boolean(d.fetchBlocked || d.networkIncomplete || d.dynamicShell) || d.reachable !== true
+  const unknownReason = d.dynamicShell ? 'Web učitava sadržaj dinamički; pokušajte s izravnom adresom stranice cjenika.' : d.fetchBlocked ? 'Zaštita weba ograničava automatski dohvat.' : d.reachable === false && result.status !== 'unavailable' ? 'Web nije dostupan pa ovu stavku nije moguće potvrditi.' : 'Dohvat nije dovršen. Pokušajte ponovno ili učitajte datoteku.'
   const found = (yes: boolean | undefined, evidence: string): { status: TechnicalStatus; evidence: string } =>
     yes ? { status: 'pass', evidence } : uncertain ? { status: 'unknown', evidence: unknownReason } : { status: 'missing', evidence }
 
   const machineReadable = Boolean(d.csvFound || d.xmlFound)
-  const machineState: { status: TechnicalStatus; evidence: string; url?: string | null } = d.csvFound && d.xmlFound
+  const unrecognized = machineReadable && d.structureStatus === 'unknown'
+  const machineState: { status: TechnicalStatus; evidence: string; url?: string | null } = unrecognized
+    ? { status: 'unknown', evidence: 'Datoteka je dostupna, ali nije potvrđena struktura strojnog cjenika.', url: d.csvUrl || d.xmlUrl }
+    : d.csvFound && d.xmlFound
     ? { status: 'pass', evidence: 'CSV pronađen ✓ · XML pronađen ✓. Za zahtjev je dovoljan jedan od ta dva formata.', url: d.csvUrl || d.xmlUrl }
     : d.csvFound
       ? { status: 'pass', evidence: 'CSV pronađen ✓ · XML nije objavljen — nije obvezan ako postoji ispravan CSV.', url: d.csvUrl }
       : d.xmlFound
         ? { status: 'pass', evidence: 'XML pronađen ✓ · CSV nije objavljen — nije obvezan ako postoji ispravan XML.', url: d.xmlUrl }
-        : uncertain
+        : d.otherDocumentUrls?.length
+          ? { status: 'unknown', evidence: 'Pronađene su poveznice na druge formate. Sadržaj nije provjeren i CSV/XML nije potvrđen.' }
+          : uncertain
           ? { status: 'unknown', evidence: unknownReason }
           : { status: 'missing', evidence: 'Nije pronađen valjan javno dostupan CSV ni XML cjenik.' }
 
@@ -130,9 +141,9 @@ export function technicalReport(result: WebsiteCheckResult) {
   const states: Array<{ status: TechnicalStatus; evidence: string; url?: string | null }> = [
     d.fetchBlocked && d.homepageReadable !== true ? { status: 'unknown', evidence: unknownReason } : d.reachable === false && result.status === 'red' ? { status: 'missing', evidence: 'Adresa nije pronađena. Provjerite URL web stranice.' } : found(d.homepageReadable ?? d.reachable, 'HTTP odgovor naslovnice.'),
     d.reachable ? { status: d.https ? 'pass' : 'warning', evidence: d.https ? 'Dohvaćena adresa koristi HTTPS.' : 'Dohvaćena adresa ne koristi HTTPS.' } : { status: 'unknown', evidence: unknownReason },
-    { ...found(d.pricePageFound || d.csvFound || d.xmlFound, 'Pretražene su javne poveznice i uobičajene adrese cjenika.'), url: d.pricePageUrl || d.csvUrl || d.xmlUrl },
+    d.otherDocumentUrls?.length && !d.pricePageFound && !machineReadable ? { status: 'warning', evidence: 'Pronađene su moguće datoteke cjenika; njihov sadržaj nije analiziran.', url: d.otherDocumentUrls[0] } : { ...found(d.pricePageFound || d.csvFound || d.xmlFound, 'Pretražene su javne poveznice i uobičajene adrese cjenika.'), url: d.pricePageUrl || d.csvUrl || d.xmlUrl },
     machineState,
-    d.publicLinkLocation === 'inner'
+    d.directDocument ? { status: 'unknown', evidence: 'Unesena je izravna adresa datoteke; poveznicu s početne stranice provjerite zasebno.' } : d.publicLinkLocation === 'inner'
       ? { status: 'warning', evidence: 'Poveznica je pronađena na unutarnjoj stranici, ali ne i na naslovnici. Dodajte vidljiv link „Cjenik” na početnu stranicu ili u footer. To je preporuka za lakši pristup, ne samostalno utvrđena povreda.', url: d.publicLinkUrl }
       : { ...found(Boolean(d.publicLinkUrl), d.publicLinkLocation === 'homepage' ? 'Poveznica je potvrđena u HTML-u početne stranice (uključujući moguće poveznice u footeru).' : 'Poveznica mora biti pročitana iz javnog HTML-a; pretpostavljena adresa nije dokaz poveznice.'), url: d.publicLinkUrl },
     { status: d.structureStatus ?? 'unknown', evidence: d.structureReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera prepoznate strukture datoteke.' },

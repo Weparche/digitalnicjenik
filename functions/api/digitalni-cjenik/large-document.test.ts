@@ -15,7 +15,7 @@ function routeFetch(routes: Record<string, Response | (() => Response)>) {
   })
 }
 
-function largeCsv(rows = 18_071) {
+function largeCsv(rows = 25_071) {
   return [
     'Naziv;Vrsta;Cijena;Sidrena cijena;Poseban oblik prodaje',
     ...Array.from({ length: rows }, (_, index) => `Usluga ${index + 1};Usluga;${10 + (index % 50)},00;${10 + (index % 50)},00;NE`),
@@ -33,7 +33,7 @@ describe('large digital price lists', () => {
     expect(parsed?.time).toBe(Date.parse('2026-10-27T05:00:00Z'))
   })
 
-  it('detects and samples a CSV much larger than 128 KB without reporting a network failure', async () => {
+  it('detects and samples a CSV above the 20,000-row inspection limit without reporting a network failure', async () => {
     const csv = largeCsv()
     expect(new TextEncoder().encode(csv).byteLength).toBeGreaterThan(128 * 1024)
 
@@ -52,7 +52,7 @@ describe('large digital price lists', () => {
     const checked = await runDigitalPriceListCheck('https://example.com', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
     const report = technicalReport(checked)
 
-    expect(checked.status).toBe('green')
+    expect(checked.status).toBe('yellow')
     expect(checked.details.csvFound).toBe(true)
     expect(checked.details.csvUrl).toBe(`https://example.com${current}`)
     expect(checked.details.networkIncomplete).toBe(false)

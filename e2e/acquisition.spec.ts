@@ -204,5 +204,5 @@ test('a CSV that was never fetched is not linked as if it were found', async ({ 
   const csvPanel = page.getByRole('article', { name: 'CSV analiza' })
   await expect(csvPanel).toContainText('CSV nije pronađen')
   await expect(csvPanel.locator('a')).toHaveCount(0)
-  await expect(page.getByText(/obveza se primjenjuje od 17\. 11\. 2026\./)).toBeVisible()
+  await expect(page.getByText(/ako se na vaše poslovanje primjenjuje obveza objave/)).toBeVisible()
 })

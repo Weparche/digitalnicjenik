@@ -62,7 +62,7 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const barcodeIndex = findColumn(headers, 'barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn')
   const availabilityIndex = findColumn(headers, 'dostupnost', 'dostupno', 'availability', 'dostupno/nedostupno', 'in stock?')
   const referenceDateIndex = findColumn(headers, 'datum referentne cijene', 'datum sidrene cijene', 'referentni datum', 'anchor reference date', 'anchor date', 'reference date')
-  const lowestIndex = findColumn(headers, 'najniža cijena u 30 dana', 'najniza cijena u 30 dana', 'najniža cijena u posljednjih 30 dana', 'najniza cijena u posljednjih 30 dana', 'lowest 30 day price')
+  const lowestIndex = findColumn(headers, 'najniža cijena u 30 dana', 'najniza cijena u 30 dana', 'najniža cijena u posljednjih 30 dana', 'najniza cijena u posljednjih 30 dana', 'najniža cijena u poslj. 30 dana', 'najniza cijena u poslj. 30 dana', 'lowest 30 day price')
   const newIndex = findColumn(headers, 'nova stavka', 'nova usluga', 'new item', 'new service')
   const exemptionIndex = findColumn(headers, 'razlog izuzeća cijene po jedinici')
   // Retail exports carry the price charged during a special sale in its own column and may leave MPC empty.
