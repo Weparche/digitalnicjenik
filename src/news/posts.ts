@@ -103,6 +103,89 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const NEWS_POSTS: NewsPost[] = [
   {
+    "slug": "digitalni-cjenici-inspektorat-upozorenja-2026",
+    "title": "Digitalni cjenici od 17. studenoga: ministar najavio upozorenja umjesto kazni",
+    "seoTitle": "Digitalni cjenici 2026.: upozorenja umjesto kazni | NEPAR",
+    "description": "Ministar Šušnjar 14.11. najavio je edukativni inspekcijski nadzor digitalnih cjenika i baznih cijena. Rok 17.11. ostaje, a trajanje prijelaza nije navedeno.",
+    "excerpt": "Vlada objavila ministrovu najavu upozorenja u početnom razdoblju. To nije odgoda obveza niti zakonsko oslobođenje od kazni.",
+    "readingTimeMinutes": 3,
+    "publishedAt": "2026-11-14T20:04:00+01:00",
+    "updatedAt": "2026-11-14T20:04:00+01:00",
+    "author": {
+      "name": "NEPAR Publisher",
+      "url": "https://nepar.hr/"
+    },
+    "tags": [
+      "digitalni cjenik",
+      "bazna cijena",
+      "Državni inspektorat",
+      "17. studenoga"
+    ],
+    "kicker": "Vlada RH · 14.11.",
+    "widgetEyebrow": "NOVO · INSPEKCIJSKI NADZOR",
+    "widgetHeadline": "Ministar najavio upozorenja umjesto kazni",
+    "widgetSub": "Rok 17.11. ostaje; trajanje prijelaznog razdoblja nije navedeno",
+    "schemaSection": "Regulativa",
+    "image": {
+      "src": "/og/vijesti-digitalni-cjenik-2026.png",
+      "alt": "Digitalni cjenici i najava prijelaznog inspekcijskog nadzora",
+      "width": 1200,
+      "height": 630
+    },
+    "cta": {
+      "label": "Provjeri svoj web",
+      "href": "/"
+    },
+    "secondaryCta": {
+      "label": "Vodič o sidrenoj cijeni",
+      "href": "/vodici/sidrena-cijena/"
+    },
+    "sources": [
+      {
+        "title": "Vlada RH, 14.11.2026. — izjava ministra o početnom inspekcijskom nadzoru (Hina/Vlada)",
+        "url": "https://vlada.gov.hr/inspektorat-nece-kaznjavati-zbog-baznih-cijena-nego-upozoravati/47604",
+        "type": "primary"
+      },
+      {
+        "title": "Vlada RH — 225. sjednica, dnevni red i prijedlozi prestanka važenja odluka",
+        "url": "https://vlada.gov.hr/225-sjednica-vlade-republike-hrvatske-47600/47600",
+        "type": "primary"
+      },
+      {
+        "title": "NN 110/2026 — izmjena odluke o dodatnoj cijeni",
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_110_1309.html",
+        "type": "primary"
+      },
+      {
+        "title": "NN 110/2026 — izmjena odluke o objavi cjenika",
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_110_1310.html",
+        "type": "primary"
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Što je ministar najavio 14. studenoga?",
+        "level": 2,
+        "html": "<p>Ministar gospodarstva Ante Šušnjar nakon sjednice Vlade najavio je da će inspekcija u početnom razdoblju primjene novih obveza pristupiti edukativno, upozoravati na nepravilnosti i pomoći obveznicima pri prilagodbi. Službena objava Vlade prenosi njegovu izjavu o dogovoru s Državnim inspektoratom.</p><p>U objavi nije navedeno koliko će prijelazno razdoblje trajati niti su objavljeni detaljni kriteriji postupanja.</p>"
+      },
+      {
+        "heading": "Je li rok odgođen ili su kazne ukinute?",
+        "level": 2,
+        "html": "<p>Ne radi se o potvrdi nove odgode. Ministar je ponovno naveo 17. studenoga 2026. kao datum početka primjene dvaju pravilnika. Najava načina nadzora nije izmjena propisa, ukidanje kaznenih odredbi ni jamstvo da pojedini obveznik neće biti kažnjen.</p><p>Na dan 14.11. nismo potvrdili objavu konačnih tekstova pravilnika u Narodnim novinama. Za pravne obveze mjerodavni su objavljeni propisi.</p>"
+      },
+      {
+        "heading": "Vlada razmatrala prestanak važenja triju odluka",
+        "level": 2,
+        "html": "<p>Na dnevnom redu 225. sjednice pod točkom 4 nalaze se tri prijedloga prestanka važenja privremenih odluka o cjenicima i dodatnim cijenama. To je povezano s najavljenim prelaskom na trajni sustav zaštite potrošača. Sam dnevni red nije dokaz objave ili stupanja na snagu tih odluka.</p><p>Detalje tehničkih zahtjeva treba provjeriti nakon objave konačnih tekstova. Pročitajte <a href=\"/vijesti/nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026/\">pregled nacrta</a> i <a href=\"/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/\">prethodnu odgodu</a>.</p>"
+      },
+      {
+        "heading": "Što poduzetnici mogu pripremiti sada?",
+        "level": 2,
+        "html": "<p>Sačuvajte aktualne i referentne cijene, postojeće CSV/XML izvoze i arhivu. Provjerite dostupnost cjenika na webu, ali nemojte tehničku provjeru smatrati potvrdom pravne usklađenosti. Pogledajte <a href=\"/vodici/sidrena-cijena/\">vodič o sidrenoj cijeni</a> ili <a href=\"/\">provjerite svoju stranicu</a>.</p>"
+      }
+    ]
+  },
+  {
     slug: 'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026',
     title: 'Nacrti pravilnika za digitalne cjenike i bazne cijene na e-Savjetovanju',
     seoTitle: 'Nacrti pravilnika za digitalni cjenik 2026. | NEPAR',
