@@ -21,11 +21,11 @@ describe('news posts', () => {
   })
 
   it('resolves latest and paths', () => {
-    expect(getLatestPost().slug).toBe('nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026')
+    expect(getLatestPost().slug).toBe('hok-digitalni-cjenici-zavrseno-savjetovanje-2026')
     expect(getLatestPosts(3).map((post) => post.slug)).toEqual([
+      'hok-digitalni-cjenici-zavrseno-savjetovanje-2026',
       'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026',
       'odgoda-digitalnih-cjenika-sidrenih-cijena-2026',
-      'primjeri-digitalnih-cjenika-hrvatska-2026',
     ])
     expect(getPostBySlug('odgoda-digitalnih-cjenika-sidrenih-cijena-2026')?.seoTitle).toContain('Odgoda')
     expect(getPostBySlug('primjeri-digitalnih-cjenika-hrvatska-2026')?.seoTitle).toContain('Primjeri')

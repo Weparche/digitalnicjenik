@@ -127,6 +127,8 @@ if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: mis
 if (!redirects.includes('/admin /app-shell 200')) failures.push('_redirects: missing the /admin route mapping to app-shell')
 
 const HOME_TITLE = (/<title>([^<]*)<\/title>/.exec(indexHtml) || [])[1] ?? ''
+const CONSULTATION_SLUG = 'hok-digitalni-cjenici-zavrseno-savjetovanje-2026'
+const CONSULTATION_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${CONSULTATION_SLUG}/`
 const DRAFT_SLUG = 'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026'
 const LATEST_SLUG = 'odgoda-digitalnih-cjenika-sidrenih-cijena-2026'
 const EXAMPLES_SLUG = 'primjeri-digitalnih-cjenika-hrvatska-2026'
@@ -152,7 +154,10 @@ const REGULATORY_REL = `vijesti/${REGULATORY_SLUG}/index.html`
 
 expect('index.html', `href="/vijesti/${DRAFT_SLUG}/"`, 'landing widget must link to latest news article')
 expect('index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'landing must link to the second latest article')
-expect('index.html', `href="/vijesti/${EXAMPLES_SLUG}/"`, 'landing must link to the third latest article')
+expect('index.html', `href="/vijesti/${CONSULTATION_SLUG}/"`, 'landing must link to latest HOK article')
+expect('sitemap.xml', `<loc>${CONSULTATION_CANONICAL}</loc>`, 'sitemap must include HOK consultation article')
+expect('llms.txt', CONSULTATION_CANONICAL, 'llms.txt must include HOK consultation article')
+expect('vijesti/index.html', `href="/vijesti/${CONSULTATION_SLUG}/"`, 'news index must link to HOK consultation article')
 expect('index.html', 'href="/vijesti/"', 'landing must link to the news index')
 expect('index.html', 'Sve vijesti', 'landing must label the news index link')
 expect('index.html', 'index,follow,max-image-preview:large', 'homepage must be explicitly indexable')
@@ -303,6 +308,9 @@ verifyArticle(
   ],
 )
 
+verifyArticle(`vijesti/${CONSULTATION_SLUG}/index.html`, CONSULTATION_CANONICAL, 'Digitalni cjenici: HOK traži dulji rok i izmjene nakon e-Savjetovanja', [
+  ['700 komentara', 'HOK article must report consultation comments'],
+])
 verifyArticle(CSV_REL, CSV_CANONICAL, 'Primjer CSV digitalnog cjenika za pružatelje usluga', [
   ['narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html', 'CSV guide HTML must link NN 1213'],
   ['Naziv usluge;Maloprodajna cijena', 'CSV guide must include HOK-style CSV example in HTML'],
