@@ -103,6 +103,94 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const NEWS_POSTS: NewsPost[] = [
   {
+    "slug": "hok-digitalni-cjenici-zavrseno-savjetovanje-2026",
+    "title": "Digitalni cjenici: HOK traži dulji rok i izmjene nakon e-Savjetovanja",
+    "seoTitle": "Digitalni cjenici: HOK traži dulji rok | NEPAR",
+    "description": "HOK je 13.11. zatražio izmjene pravila o digitalnim cjenicima i baznim cijenama. Savjetovanje je završilo, a nova odgoda još nije potvrđena.",
+    "excerpt": "Više od 700 komentara prema HOK-u, zahtjev za primjerenim rokom i otvorena pitanja za ugostitelje i webshopove. Konačni pravilnici još nisu potvrđeni.",
+    "readingTimeMinutes": 3,
+    "publishedAt": "2026-11-14T08:00:00+01:00",
+    "updatedAt": "2026-11-14T08:00:00+01:00",
+    "author": {
+      "name": "NEPAR Publisher",
+      "url": "https://nepar.hr/"
+    },
+    "tags": [
+      "digitalni cjenik",
+      "HOK",
+      "bazna cijena",
+      "e-Savjetovanje"
+    ],
+    "kicker": "HOK · završetak savjetovanja",
+    "widgetEyebrow": "NOVO · HOK",
+    "widgetHeadline": "HOK traži dulji rok za digitalne cjenike",
+    "widgetSub": "Savjetovanje završilo; nova odgoda nije potvrđena",
+    "schemaSection": "Regulativa",
+    "image": {
+      "src": "/og/vijesti-digitalni-cjenik-2026.png",
+      "alt": "Digitalni cjenici i bazne cijene 2026.",
+      "width": 1200,
+      "height": 630
+    },
+    "cta": {
+      "label": "Provjeri svoj web",
+      "href": "/"
+    },
+    "secondaryCta": {
+      "label": "Pročitaj vodič za digitalni cjenik",
+      "href": "/digitalni-cjenik-2026/"
+    },
+    "sources": [
+      {
+        "title": "HOK, 13.11.2026. — primjedbe na nacrte i zahtjev za primjerenim rokom",
+        "url": "https://www.hok.hr/novosti-iz-hok/hok-savjetovanje-zavrsava-veceras-konacnim-pravilima-treba-se-prilagoditi-do-utorka",
+        "type": "secondary"
+      },
+      {
+        "title": "e-Savjetovanje — nacrt o objavi cjenika",
+        "url": "https://esavjetovanja.gov.hr/Econ/10332",
+        "type": "primary"
+      },
+      {
+        "title": "e-Savjetovanje — nacrt o baznoj cijeni",
+        "url": "https://esavjetovanja.gov.hr/Econ/10333",
+        "type": "primary"
+      },
+      {
+        "title": "NN 59/2026 — izmjene Zakona o zaštiti potrošača",
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_06_59_728.html",
+        "type": "primary"
+      },
+      {
+        "title": "Vlada RH — prethodno produljenje roka",
+        "url": "https://vlada.gov.hr/produljuje-se-rok-za-isticanje-sidrenih-cijena-na-17-studenoga/47358",
+        "type": "primary"
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Što je novo nakon završetka savjetovanja?",
+        "level": 2,
+        "html": "<p>Javno savjetovanje o dvama nacrtima prema objavljenom rasporedu završilo je 13. studenoga. HOK je istoga dana izvijestio o podnesenim primjedbama i više od 700 komentara na oba nacrta zajedno do trenutka objave.</p><p>Komora traži više vremena za prilagodbu nakon objave konačnih pravila. Prema HOK-u, predviđeni datum izvješća o savjetovanju je 17. prosinca, mjesec dana nakon planiranog početka primjene.</p>"
+      },
+      {
+        "heading": "Što HOK traži za digitalne cjenike i bazne cijene?",
+        "level": 2,
+        "html": "<p>Komora osporava nametanje izrade novih popisa cijena, dodatnih XML/CSV datoteka, javnih arhiva i automatiziranog preuzimanja bez obrazloženja troškova i koristi. Posebno upozorava na webshopove koji već prikazuju cijene.</p><p>Za bazne cijene traži ograničenje obuhvata, razjašnjenje izuzeća ugostiteljskih usluga te razmatranje izuzeća knjiga.</p><p>To su zahtjevi HOK-a, a ne donesena izuzeća ili obvezujuće tumačenje Ministarstva.</p>"
+      },
+      {
+        "heading": "Je li rok 17. studenoga ponovno odgođen?",
+        "level": 2,
+        "html": "<p>Na dan 14. studenoga nije potvrđena nova odgoda ni objava konačnih pravilnika. Prethodno utvrđeni datum ostaje 17. studenoga 2026. Za pravne obveze mjerodavni su objavljeni propisi, a ne prijedlozi iz savjetovanja.</p><p>Pročitajte <a href=\"/vijesti/nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026/\">pregled nacrta pravilnika</a> i <a href=\"/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/\">prethodnu odluku o odgodi</a>.</p>"
+      },
+      {
+        "heading": "Što pripremiti dok čekamo konačna pravila?",
+        "level": 2,
+        "html": "<p>Sačuvajte podatke o aktualnim i referentnim cijenama te postojeće izvoze cjenika. Tehničku dostupnost možete provjeriti već sada, ali rezultat nije potvrda usklađenosti s budućim pravilnicima.</p><p>Pogledajte <a href=\"/digitalni-cjenik-za-usluge/\">vodič za usluge</a>, <a href=\"/vodici/sidrena-cijena/\">vodič o sidrenoj cijeni</a> ili <a href=\"/#checker\">provjerite svoju web stranicu</a>.</p>"
+      }
+    ]
+  },
+  {
     slug: 'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026',
     title: 'Nacrti pravilnika za digitalne cjenike i bazne cijene na e-Savjetovanju',
     seoTitle: 'Nacrti pravilnika za digitalni cjenik 2026. | NEPAR',
