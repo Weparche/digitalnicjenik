@@ -110,7 +110,7 @@ export const NEWS_POSTS: NewsPost[] = [
     "excerpt": "Vlada objavila ministrovu najavu upozorenja u početnom razdoblju. To nije odgoda obveza niti zakonsko oslobođenje od kazni.",
     "readingTimeMinutes": 3,
     "publishedAt": "2026-11-14T20:04:00+01:00",
-    "updatedAt": "2026-11-14T20:04:00+01:00",
+    "updatedAt": "2026-11-15T14:58:00+01:00",
     "author": {
       "name": "NEPAR Publisher",
       "url": "https://nepar.hr/"
@@ -160,6 +160,16 @@ export const NEWS_POSTS: NewsPost[] = [
         "title": "NN 110/2026 — izmjena odluke o objavi cjenika",
         "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_110_1310.html",
         "type": "primary"
+      },
+      {
+        "title": "Vlada RH, 14.11.2026. — izvješće sa sjednice i potvrda donošenja pravilnika",
+        "url": "https://www.vlada.gov.hr/proracun-2027-socijalna-kohezija-ulaganja-te-otpornost-i-sigurnost-hrvatske/47601",
+        "type": "primary"
+      },
+      {
+        "title": "HRT/Hina, 14.11.2026. — potvrda donošenja triju odluka",
+        "url": "https://vijesti.hrt.hr/hrvatska/od-utorka-na-snazi-objava-baznih-cijena-i-cjenika-13009802",
+        "type": "secondary"
       }
     ],
     "sections": [
@@ -174,9 +184,9 @@ export const NEWS_POSTS: NewsPost[] = [
         "html": "<p>Ne radi se o potvrdi nove odgode. Ministar je ponovno naveo 17. studenoga 2026. kao datum početka primjene dvaju pravilnika. Najava načina nadzora nije izmjena propisa, ukidanje kaznenih odredbi ni jamstvo da pojedini obveznik neće biti kažnjen.</p><p>Na dan 14.11. nismo potvrdili objavu konačnih tekstova pravilnika u Narodnim novinama. Za pravne obveze mjerodavni su objavljeni propisi.</p>"
       },
       {
-        "heading": "Vlada razmatrala prestanak važenja triju odluka",
+        "heading": "Vlada donijela tri odluke o prestanku važenja privremenih mjera",
         "level": 2,
-        "html": "<p>Na dnevnom redu 225. sjednice pod točkom 4 nalaze se tri prijedloga prestanka važenja privremenih odluka o cjenicima i dodatnim cijenama. To je povezano s najavljenim prelaskom na trajni sustav zaštite potrošača. Sam dnevni red nije dokaz objave ili stupanja na snagu tih odluka.</p><p>Detalje tehničkih zahtjeva treba provjeriti nakon objave konačnih tekstova. Pročitajte <a href=\"/vijesti/nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026/\">pregled nacrta</a> i <a href=\"/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/\">prethodnu odgodu</a>.</p>"
+        "html": "<p>Prema izvješću HRT/Hina sa sjednice 14. studenoga, Vlada je donijela tri odluke o prestanku važenja privremenih mjera za cjenike i dodatne cijene. Službeno izvješće Vlade sa sjednice navodi i donošenje dvaju pravilnika na temelju Zakona o zaštiti potrošača, s početkom primjene 17. studenoga.</p><p>Ažurirano 15.11.: objavu konačnih tekstova u Narodnim novinama još nismo potvrdili. Donošenje odluka i pravilnika treba razlikovati od njihove službene objave i stupanja na snagu.</p><p>Detalje tehničkih zahtjeva treba provjeriti nakon objave konačnih tekstova. Pročitajte <a href=\"/vijesti/nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026/\">pregled nacrta</a> i <a href=\"/vijesti/odgoda-digitalnih-cjenika-sidrenih-cijena-2026/\">prethodnu odgodu</a>.</p>"
       },
       {
         "heading": "Što poduzetnici mogu pripremiti sada?",
