@@ -103,6 +103,84 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const NEWS_POSTS: NewsPost[] = [
   {
+    "slug": "digitalni-cjenici-novi-pravilnici-15-dana-2026",
+    "title": "Digitalni cjenici od 17. studenoga: arhiva 15 dana i nova pravila",
+    "seoTitle": "Digitalni cjenici 2026.: arhiva 15 dana i nova pravila | NEPAR",
+    "description": "Ministarstvo 16.11. potvrdilo slanje pravilnika na objavu: arhiva 15 dana, izmjene do 11 sati, CSV/XML i proširene iznimke. Početak 17.11.",
+    "excerpt": "Ministarstvo je objavilo detalje konačnih pravilnika upućenih na objavu. Arhiva se skraćuje na 15 dana, a pravila oglašavanja i iznimke preciziraju.",
+    "readingTimeMinutes": 4,
+    "publishedAt": "2026-11-16T15:36:00+01:00",
+    "updatedAt": "2026-11-16T15:36:00+01:00",
+    "author": {
+      "name": "NEPAR Publisher",
+      "url": "https://nepar.hr/"
+    },
+    "tags": [
+      "digitalni cjenik",
+      "bazna cijena",
+      "CSV/XML",
+      "15 dana"
+    ],
+    "kicker": "Ministarstvo gospodarstva · 16.11.2026.",
+    "widgetEyebrow": "NOVO · PRAVILNICI",
+    "widgetHeadline": "Arhiva cjenika 15 dana prema novim pravilima",
+    "widgetSub": "Ministarstvo potvrdilo slanje pravilnika na objavu",
+    "schemaSection": "Regulativa",
+    "image": {
+      "src": "/og/vijesti-digitalni-cjenik-2026.png",
+      "alt": "Nova pravila digitalnih cjenika i baznih cijena",
+      "width": 1200,
+      "height": 630
+    },
+    "cta": {
+      "label": "Provjeri svoj web besplatno",
+      "href": "/#checker"
+    },
+    "secondaryCta": {
+      "label": "Izradi digitalni cjenik",
+      "href": "/app?new=1"
+    },
+    "sources": [
+      {
+        "title": "Ministarstvo gospodarstva, 16.11.2026. — priopćenje o konačnim pravilnicima",
+        "url": "https://mingo.gov.hr/vijesti/pravilnici-o-baznim-cijenama-i-objavi-cjenika-veca-transparentnost-za-potrosace-provediva-pravila-za-gospodarstvo/10490",
+        "type": "primary"
+      },
+      {
+        "title": "Vlada RH, 14.11.2026. — najava edukativnog nadzora",
+        "url": "https://vlada.gov.hr/inspektorat-nece-kaznjavati-zbog-baznih-cijena-nego-upozoravati/47604",
+        "type": "primary"
+      },
+      {
+        "title": "NN 101/2026 — dosadašnja odluka o objavi cjenika",
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html",
+        "type": "primary"
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Što je Ministarstvo potvrdilo 16. studenoga?",
+        "level": 2,
+        "html": "<p>Ministarstvo gospodarstva objavilo je da su dva pravilnika poslana na objavu u Narodnim novinama, s početkom primjene 17. studenoga. Nakon 866 komentara u savjetovanju dorađene su odredbe i iznimke. Ovo je pregled službenog priopćenja, ne citat normativnog teksta: objavu pravilnika u Narodnim novinama u trenutku provjere još nismo potvrdili.</p>"
+      },
+      {
+        "heading": "Digitalni cjenik: arhiva 15 dana i izmjene do 11 sati",
+        "level": 2,
+        "html": "<p>Prema Ministarstvu, CSV ili XML ostaju predviđeni formati. Nova verzija cjenika objavljuje se do 11 sati na dan promjene, a prethodna ostaje dostupna 15 dana nakon zamjene. To je kraće od 30 dana iz dosadašnjeg režima. Automatizirani pristup podacima ne smije se blokirati. Za prodajna mjesta s jednakim asortimanom i cjenikom predviđena je zajednička objava; različiti cjenici objavljuju se odvojeno.</p>"
+      },
+      {
+        "heading": "Bazna cijena, oglašavanje i iznimke",
+        "level": 2,
+        "html": "<p>Referentni datumi ostaju 2. svibnja 2025. za ranije obuhvaćene kategorije i 10. rujna 2026. za ostalu robu i usluge. Za naknadno uvedenu ponudu relevantna je početna cijena. Ministarstvo navodi obvezno isticanje bazne cijene u tiskanim i televizijskim oglasima s maloprodajnom cijenom, a dobrovoljno u drugim oblicima oglašavanja. To ne ukida zasebne obveze isticanja cijene na prodajnom mjestu. Priopćenje navodi i proširene iznimke za određene personalizirane i dinamičke cijene te posredničke kanale; točan obuhvat treba provjeriti u pravilnicima.</p>"
+      },
+      {
+        "heading": "Što sada napraviti s postojećim cjenikom?",
+        "level": 2,
+        "html": "<p>Sačuvajte postojeće datoteke i arhivu dok se ne potvrdi objavljeni tekst. Provjerite javni dohvat i pripremite ažuriranje cjenika. <a href=\"/digitalni-cjenik-2026/\">Vodič za digitalni cjenik</a> i <a href=\"/specifikacija-csv-xml/\">CSV/XML specifikacija</a> daju tehnički kontekst ranijeg režima; pojedinosti treba uskladiti s novim propisima. <a href=\"/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/\">Najava upozorenja umjesto kazni</a> nije odgoda obveza. <a href=\"/#checker\">Provjerite tehničku dostupnost weba</a> ili <a href=\"/app?new=1\">pripremite cjenik</a>. Checker nije pravna potvrda usklađenosti.</p>"
+      }
+    ]
+  },
+  {
     "slug": "digitalni-cjenici-rezultati-provjera-studeni-2026",
     "title": "Digitalni cjenici u praksi: 15 provjera i 11 različitih domena uoči 17. studenoga",
     "seoTitle": "Digitalni cjenici: rezultati 11 provjerenih domena | NEPAR",
