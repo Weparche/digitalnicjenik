@@ -31,7 +31,7 @@ export function PriceHistoryPanel({slug,items,onApply}:{slug:string;items:Normal
    const request=new AbortController();controller.current=request;setBusy(true)
    try{
      const response=await fetch('/api/tenants/'+encodeURIComponent(slug)+'/price-history',{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify({start:iso,items:batch.map(x=>x.item)}),signal:request.signal})
-     const result=await response.json()
+     const result=await response.json() as Reply & {error?:string}
      if(!response.ok)throw new Error(result.error||'Izračun nije dostupan.')
      if(!request.signal.aborted)setReply({key,data:result as Reply})
    }catch(e){if(!request.signal.aborted)setError(e instanceof Error?e.message:'Izračun nije uspio.')}
