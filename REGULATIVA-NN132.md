@@ -7,4 +7,4 @@ Novi format je verzioniran u payloadu (formatVersion). Stare datoteke, njihovi h
 
 Izuzeci čl.4: posebnim propisima određene cijene, popusti skupinama ili oblicima plaćanja, stvarno personalizirane i neusporedive dinamičke cijene, automati i posredničke platforme. Ne zaključujemo automatski da je djelatnost izuzeta. Cjenik mora sadržavati sve primjenjive stavke; korisnik utvrđuje osnovu izuzeća.
 
-Najniža cijena 30 dana i naziv akcije nisu obvezni stupci novog izvoza; interna evidencija ostaje. NEPAR zadržava javnu arhivu 30 dana (minimum 15). Rok izmjene do 11 sati na dan izmjene; nema obvezne dnevne objave neizmijenjenih podataka.
+Najniža cijena 30 dana i naziv akcije nisu obvezni stupci novog izvoza; interna evidencija ostaje. NEPAR zadržava javnu arhivu 15 dana od zamjene; već dodijeljeni rokovi ostaju nepromijenjeni. Rok izmjene do 11 sati na dan izmjene; nema obvezne dnevne objave neizmijenjenih podataka.

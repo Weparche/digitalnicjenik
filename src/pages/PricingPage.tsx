@@ -6,7 +6,7 @@ import { getSitePage } from './registry'
 export const PRICING_INCLUDED = [
   'Validator Excel, CSV i XML cjenika usluga i proizvoda s popisom što nedostaje (za proizvode i šifra, marka, barkod, dostupnost)',
   'Javni cjenik na stabilnom URL-u, CSV i XML s propisanim nazivom datoteke',
-  'Arhiva prethodnih objava (najmanje 30 dana od zamjene)',
+  'Arhiva prethodnih objava (15 dana od zamjene)',
   'Dnevna objava zadnjeg valjanog cjenika proizvoda prema radnom kalendaru',
   'QR kod, prikaz za ispis na A4 (spremanje u PDF iz preglednika) i skripta za ugradnju na vaš web',
   'Provjere se temelje na objavljenim propisima; nova pravila uključuju se nakon objave i provjere konačnog teksta',
