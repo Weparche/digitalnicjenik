@@ -1,4 +1,7 @@
-import { describe, expect, it, vi, afterEach } from 'vitest'
+import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest'
+// Historical checker fixtures use the pre-NN132 schema; current-rule coverage is separate.
+beforeEach(()=>{vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-16T22:00:00Z'))})
+afterEach(()=>vi.useRealTimers())
 import { documentLooksValid, isForbiddenIp, normalizeDigitalPriceListUrl, runDigitalPriceListCheck } from './check'
 
 const resolver = {
