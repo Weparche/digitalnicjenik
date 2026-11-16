@@ -91,6 +91,7 @@ test('first-publication guidance and package prices stay inside the dashboard wi
   await page.getByLabel('Učitaj cjenik',{exact:true}).setInputFiles({name:'salon.csv',mimeType:'text/csv',buffer:Buffer.from(csv)})
   const nav=page.getByRole('navigation',{name:'Radni prostor'})
   await expect(nav.getByRole('button').nth(2)).toHaveText('Upute')
+  await expect(page.locator('.workspace-steps [aria-current=step]')).toContainText('Provjerite podatke')
   await nav.getByRole('button',{name:'Upute',exact:true}).click()
   await expect(page.getByRole('link',{name:'Otvori HOK Excel predloške'})).toHaveAttribute('href',/^https:\/\/www.hok.hr\//)
   await expect(page.getByText('Ovo nije preslika službenog HOK predloška.',{exact:false})).toBeVisible()
@@ -235,4 +236,30 @@ test('mobile workspace has fixed bottom tabs, context action and accessible more
  await nav.getByRole('button',{name:'Paketi i cijene'}).click()
  await expect(page.getByRole('region',{name:'Godišnji paketi'})).toBeVisible()
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390)
+})
+
+test('guest mobile dock fills the viewport and keeps upload content reachable',async({page})=>{
+ for(const width of [320,390,430]){
+  await page.setViewportSize({width,height:700})
+  await page.route('**/api/auth/me',route=>route.fulfill({status:401,json:{authenticated:false}}))
+  await page.goto('/app?new=1')
+  const nav=page.locator('.workspace-mobile-nav')
+  const action=page.getByRole('button',{name:'Odaberi datoteku',exact:true})
+  await expect(action).toBeVisible()
+  await expect(page.locator('.workspace-steps [aria-current=step]')).toContainText('Učitajte cjenik')
+  await expect(nav.locator(':scope > button')).toHaveCount(5)
+  const box=(await nav.boundingBox())!
+  expect(Math.abs(box.x)).toBeLessThanOrEqual(1)
+  expect(Math.abs(box.width-width)).toBeLessThanOrEqual(1)
+  const buttons=await nav.locator(':scope > button').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,width:b.width}}))
+  expect(Math.max(...buttons.map(b=>b.width))-Math.min(...buttons.map(b=>b.width))).toBeLessThanOrEqual(1)
+  const cta=(await action.boundingBox())!
+  expect(cta.height).toBeGreaterThanOrEqual(48)
+  expect(cta.height).toBeLessThanOrEqual(52)
+  expect(box.y-cta.y-cta.height).toBeLessThanOrEqual(10)
+  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight))
+  const footer=(await page.locator('.workspace-mobile-help').boundingBox())!
+  expect(footer.y+footer.height).toBeLessThanOrEqual(cta.y)
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(width)
+ }
 })
