@@ -1,7 +1,7 @@
 import { trackCheckerInteraction } from './checker-analytics'
 import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
 import { stavke, stavkeNema } from '../shared/plural'
-import { IconUpload } from '@tabler/icons-react'
+import { IconArrowRight, IconUpload } from '@tabler/icons-react'
 import { PublicationOverview, UploadReview } from './PublicationOverview'
 import { PriceHistoryPanel } from './PriceHistoryPanel'
 import { validRequiredPrice } from './price-engine/normalize'
@@ -1266,7 +1266,8 @@ function ValidatorApp({
   const tool = <>{importer}{review}</>
 
   if (embedded) {
-    return <div className="validator-app validator-app-embedded">{!onboarding&&intro}{tool}</div>
+    const step = claimOpen && list ? 3 : list ? 2 : 1
+    return <div className="validator-app validator-app-embedded">{!onboarding&&intro}{onboarding&&<div className="workspace-steps" aria-label="Koraci objave"><span aria-current={step===1?'step':undefined}><b aria-hidden="true">1</b>Učitajte cjenik</span><IconArrowRight size={16} aria-hidden="true"/><span aria-current={step===2?'step':undefined}><b aria-hidden="true">2</b>Provjerite podatke</span><IconArrowRight size={16} aria-hidden="true"/><span aria-current={step===3?'step':undefined}><b aria-hidden="true">3</b>Objavite link</span></div>}{tool}</div>
   }
 
   if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} mobilePrimary={!replacing} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}} onMigrate={currentPublication?()=>{setList({...currentPublication.payload,formatVersion:'nn-132-2026'});setReplacing(true);setDraftId('');setPublished(false);setSourceFilename('postojeci-cjenik.csv');setIssues([]);setPublication(null);setError('');setMessage('Provjerite podatke i objavite novu verziju. Stara objava ostaje dostupna do potvrde.');}:undefined}/>{!replacing&&currentPublication&&<PriceHistoryPanel key={tenantSlug} slug={tenantSlug} items={currentPublication.payload.items}/>}{replacing && tool}{message && <p role="status">{message}</p>}</div>
