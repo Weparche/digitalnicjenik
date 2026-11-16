@@ -88,7 +88,7 @@ export function SpecPage() {
           <li><strong>Usluge:</strong> naziv usluge, maloprodajna cijena, podatak o posebnom obliku prodaje (i njegov naziv) te sidrena odnosno dodatna cijena.</li>
           <li><strong>Proizvodi:</strong> među ostalim naziv, šifra, marka, maloprodajna i sidrena cijena, posebni oblik prodaje, barkod i dostupnost.</li>
           <li><strong>Naziv datoteke:</strong> oblik prodajnog odnosno uslužnog objekta, adresa, oznaka objekta, broj pohrane i vremenska oznaka.</li>
-          <li><strong>Arhiva:</strong> Ministarstvo je najavilo 15 dana od zamjene. NEPAR čuva verzije 30 dana; vanjska arhiva dopuštena je bez autentifikacije.</li>
+          <li><strong>Arhiva:</strong> Ministarstvo je najavilo 15 dana od zamjene. NEPAR čuva verzije 15 dana; vanjska arhiva dopuštena je bez autentifikacije.</li>
           <li><strong>Struktura:</strong> u ranijoj odluci nazivi i separator nisu bili definirani. Novi pravilnik najavljuje konkretnije tehničke zahtjeve. Jedan zajednički cjenik predviđen je za prodajna mjesta s istim cijenama i asortimanom.</li>
           <li><strong>Rok primjene:</strong> 17. studenoga 2026. Referentni datum sidrene cijene je 10. rujna 2026. (za ranije obuhvaćene skupine proizvoda 2. svibnja 2025.).</li>
         </ul>

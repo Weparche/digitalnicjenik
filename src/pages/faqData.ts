@@ -99,7 +99,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Koliko dugo prethodni cjenici moraju ostati dostupni?',
         answer:
-          'Ministarstvo je 16.11. potvrdilo 15 dana javne dostupnosti nakon zamjene novim cjenikom. NEPAR i dalje zadržava prethodne verzije 30 dana. Vanjska arhiva dopuštena je ako je dostupna bez autentifikacije i pogodna za automatsku obradu.',
+          'Ministarstvo je 16.11. potvrdilo 15 dana javne dostupnosti nakon zamjene novim cjenikom. NEPAR zadržava prethodne verzije 15 dana. Vanjska arhiva dopuštena je ako je dostupna bez autentifikacije i pogodna za automatsku obradu.',
       },
       {
         question: 'Što znači automatizirani dohvat podataka?',
@@ -202,7 +202,7 @@ export const faqGroups: FaqGroup[] = [
       },
       {
         question:'Mogu li preuzeti svoje verzije i otići drugom pružatelju?',
-        answer:'Zadržavate svoj izvorni Excel/CSV/XML. Objavljene verzije koje sustav čuva možete pojedinačno preuzeti iz prijavljenog dashboarda. Javna arhiva čuva prethodne verzije najmanje 30 dana od zamjene i posljednju najmanje 30 dana od objave, uključujući obični istek. ZIP export nije dio ove isporuke.',
+        answer:'Zadržavate svoj izvorni Excel/CSV/XML. Objavljene verzije koje sustav čuva možete pojedinačno preuzeti iz prijavljenog dashboarda. Javna arhiva čuva prethodne verzije najmanje 15 dana od zamjene i posljednju najmanje 15 dana od objave, uključujući obični istek. ZIP export nije dio ove isporuke.',
       },
       {
         question: 'Kako se plaća?',

@@ -20,7 +20,7 @@ export function InstallationPage() {
       <ol className="news-bullets">
         <li><strong>Pripremite podatke.</strong> Excel, CSV ili XML, naziv poslovanja i stvarne podatke objekta. Validacija pripada svakom uploadu, uključujući Web Link.</li>
         <li><strong>Pregledajte prije objave.</strong> Besplatni validator pokazuje probleme u podržanom formatu. Vlasnik provjerava stvarne cijene i potpunost ponude.</li>
-        <li><strong>Objavite cjenik.</strong> Dobivate javnu stranicu i CSV/XML. Prethodne verzije ostaju najmanje 30 dana od zamjene, posljednja najmanje 30 dana od objave, uključujući obični istek.</li>
+        <li><strong>Objavite cjenik.</strong> Dobivate javnu stranicu i CSV/XML. Prethodne verzije ostaju najmanje 15 dana od zamjene, posljednja najmanje 15 dana od objave, uključujući obični istek.</li>
         <li><strong>Povežite s postojećim webom.</strong> Link/gumb, postojeći NEPAR embed ili iframe dostupni su i u Web Linku. Jednu standardnu ugradnju možemo postaviti za {installationPriceLabel()}.</li>
         <li><strong>Održavajte aktualne podatke.</strong> Sami dostavljate novu verziju kada se cijene promijene. Publisher dodatno provjerava objavu i šalje e-mail upozorenja; nadzor nije automatski uvoz novih cijena.</li>
       </ol>
