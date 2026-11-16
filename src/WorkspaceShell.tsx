@@ -5,6 +5,7 @@ import '@fontsource-variable/inter/wght.css'
 export type WorkspaceNavItem={id:string;label:string;icon:typeof IconLayoutDashboard;count?:number}
 export function WorkspaceShell({children,items,active,onNavigate,title,subtitle,email,admin=false,onLogout,tools,isAdmin=false}:{children:ReactNode;items:WorkspaceNavItem[];active:string;onNavigate:(id:string)=>void;title:string;subtitle?:string;email?:string;admin?:boolean;onLogout?:()=>void;tools?:ReactNode;isAdmin?:boolean}){
   const [moreOpen,setMoreOpen]=useState(false)
+  const [keyboardOpen,setKeyboardOpen]=useState(false)
   const moreRef=useRef<HTMLButtonElement>(null)
   const morePanel=useRef<HTMLDivElement>(null)
   const mobileIds=['provjera','cjenik',items.some(item=>item.id==='objava')?'objava':'upute','pretplata']
@@ -15,6 +16,39 @@ export function WorkspaceShell({children,items,active,onNavigate,title,subtitle,
   const selectMobile=(id:string)=>{setMoreOpen(false);onNavigate(id)}
   useEffect(()=>{setMoreOpen(false)},[active])
   useEffect(()=>{if(!moreOpen)return;morePanel.current?.querySelector<HTMLElement>('button')?.focus();const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){setMoreOpen(false);moreRef.current?.focus()}};window.addEventListener('keydown',escape);return()=>window.removeEventListener('keydown',escape)},[moreOpen])
+  // The virtual keyboard reduces the visual viewport on mobile. Keep actions in the
+  // normal flow while editing so the keyboard and fixed bars cannot cover fields.
+  useEffect(()=>{
+    if(admin)return
+    const mobile=window.matchMedia('(max-width:760px)')
+    const viewport=window.visualViewport
+    const height=()=>viewport?.height??window.innerHeight
+    let baseline=height()
+    let lastWidth=window.innerWidth
+    let frame=0
+    const editable=()=>{
+      const element=document.activeElement
+      return element instanceof HTMLElement && (element.isContentEditable||element.matches('textarea:not([readonly]):not([disabled]),input:not([readonly]):not([disabled]):is([type=text],[type=email],[type=url],[type=search],[type=tel],[type=password],[type=number],:not([type]))'))
+    }
+    const update=()=>{
+      cancelAnimationFrame(frame)
+      frame=requestAnimationFrame(()=>{
+        const current=height()
+        if(window.innerWidth!==lastWidth){lastWidth=window.innerWidth;baseline=current}
+        const focused=editable()
+        if(!focused && current>=baseline-100)baseline=current
+        const open=mobile.matches&&focused&&(viewport?.scale??1)<=1.05&&baseline-current>120
+        setKeyboardOpen(open)
+      })
+    }
+    window.addEventListener('resize',update)
+    viewport?.addEventListener('resize',update)
+    document.addEventListener('focusin',update)
+    document.addEventListener('focusout',update)
+    update()
+    return()=>{cancelAnimationFrame(frame);window.removeEventListener('resize',update);viewport?.removeEventListener('resize',update);document.removeEventListener('focusin',update);document.removeEventListener('focusout',update)}
+  },[admin])
+  useEffect(()=>{if(keyboardOpen)setMoreOpen(false)},[keyboardOpen])
   const navRef=useRef<HTMLElement>(null)
   const [edges,setEdges]=useState({left:false,right:false})
   const itemIds=items.map(item=>item.id).join('|')
@@ -46,7 +80,7 @@ export function WorkspaceShell({children,items,active,onNavigate,title,subtitle,
     const nav=navRef.current
     if(nav)nav.scrollBy({left:direction*Math.max(120,nav.clientWidth*.7),behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'})
   }
-  return <div className={`workspace${admin?' workspace-admin':''}`}>
+  return <div className={`workspace${admin?' workspace-admin':''}`} data-keyboard-open={keyboardOpen?'true':undefined}>
     <a className="workspace-skip" href="#workspace-content">Preskoči na sadržaj</a>
     <aside className="workspace-sidebar">
       <a className="workspace-brand" href="/" aria-label="NEPAR početna"><svg width="27" height="28" viewBox="0 0 32 34" aria-hidden="true"><rect x="1" y="18" width="8" height="15" rx="3"/><rect x="12" y="9" width="8" height="24" rx="3"/><rect x="23" y="1" width="8" height="32" rx="3"/></svg><span>NEPAR<small>{admin?'Administracija':'Digitalni cjenik'}</small></span></a>
