@@ -50,13 +50,14 @@ describe('existing-web positioning', () => {
       'Radi li s WooCommerceom?',
       'Radi li sa Shopifyjem, Wixom ili vlastitim webom?',
       'Moram li mijenjati postojeći web?',
+      'Smijem li na vlastitom webu imati poveznicu na vanjski digitalni cjenik?',
       'Trebam li instalirati plugin?',
       'Što ako već imam CSV/XML?',
       'Što ako imam puno proizvoda ili usluga?',
       'Hoće li NEPAR sam promijeniti cijene na mom webshopu?',
     ])
-    expect(faq.entries[6].answer).toContain(`${MAX_ITEMS_LABEL} stavki`)
-    expect(faq.entries[7].answer.startsWith('Ne.')).toBe(true)
+    expect(faq.entries[7].answer).toContain(`${MAX_ITEMS_LABEL} stavki`)
+    expect(faq.entries[8].answer.startsWith('Ne.')).toBe(true)
   })
 
   it('keeps sales copy free of guarantees, overclaims and competitor names', () => {

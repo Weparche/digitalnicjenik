@@ -78,7 +78,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Propisuje li Odluka nazive stupaca u CSV-u?',
         answer:
-          'Ne. Odluka propisuje podatke koje cjenik mora sadržavati, ali ne imena stupaca ni XML elemenata, separator ni kodiranje. Zato je važno da je struktura dosljedna i strojno čitljiva. HOK je objavio pomoćne predloške, ne obvezujuću shemu. NEPAR preporučena shema, usklađena s podacima iz Odluke i HOK predloškom, opisana je u specifikaciji CSV/XML.',
+          'Ranija Odluka nije propisivala imena stupaca, separator ni kodiranje. Ministarstvo je u izvješću e-Savjetovanja prihvatilo detaljnija pravila za redoslijed stupaca, kodiranje i razdjelnik. Do potvrde konačnog teksta NEPAR-ova postojeća shema ostaje tehnički primjer, ne konačna propisana shema.',
       },
       {
         question: 'Kako se mora zvati datoteka cjenika?',

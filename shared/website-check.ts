@@ -62,7 +62,7 @@ export type WebsiteCheckDetails = {
   contentStatus?: DocumentAnalysisStatus
   /** What proved that an earlier publication is still public (versioned file or archive page). */
   archiveEvidence?: string
-  /** A linked earlier publication superseded less than 30 days ago is no longer served. */
+  /** A linked previous publication appears to have been removed within the announced 15-day retention window. */
   archiveRemoved?: boolean
   /** Publication-level notes (file name metadata, single format, chain structure). */
   publicationFindings?: DocumentFinding[]

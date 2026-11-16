@@ -235,6 +235,17 @@ describe('publication file names and archive evidence', () => {
     expect(report.tone).toBe('yellow')
   })
 
+  it('does not require archives beyond 15 days', async () => {
+    // 17 November is exactly sixteen days after 1 November. The older publication is not inferred missing.
+    vi.setSystemTime(new Date('2026-11-17T12:00:00Z'))
+    const old='/cjenik/usluzni-objekt_ilica-10_poslovnica-1_0001_20261020T080000+0200'
+    const current='/cjenik/usluzni-objekt_ilica-10_poslovnica-1_0002_20261101T080000+0100'
+    stubSite({'/':html(pricePage(`<a href="${current}.csv">Aktualni CSV</a><a href="${old}.csv">Prethodni CSV</a>`)),[`${current}.csv`]:()=>new Response(recommendedCsv, {headers:{'content-type':'text/csv'}})})
+    const result=await runDigitalPriceListCheck(site,{DIGITAL_PRICE_LIST_DNS_RESOLVER:resolver})
+    expect(result.details.archiveRemoved).not.toBe(true)
+    expect(technicalReport(result).checks.find(c=>c.id==='archive')?.status).toBe('unknown')
+  })
+
   it('warns about a linked publication apparently removed within the announced 15-day window', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-27T12:00:00Z'))

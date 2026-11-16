@@ -12,9 +12,9 @@
  * archive URL. NEPAR's own field names are the "NEPAR preporučena shema, usklađena s podacima iz Odluke i HOK
  * predloškom" — a recommendation, never a legal requirement.
  *
- * TODO(regulativa): the price-list regulation published for consultation in October 2026 is a draft and must
- * not produce errors. When the final text is published (expected around 17. 11. 2026.), add a new profile
- * instead of editing the binding rules in place.
+ * On 16.11.2026 the Ministry announced the new rulebooks and accepted external hosting and 15-day archives.
+ * This file is the historical field-level profile; do not treat it as a final new-rulebook schema.
+ * When the final text is published, add a new profile rather than rewriting historical rules.
  */
 export type RuleSource = 'binding' | 'official-clarification' | 'draft' | 'recommendation'
 export type FindingLevel = 'error' | 'warning' | 'info'
