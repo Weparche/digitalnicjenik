@@ -1,5 +1,5 @@
 import { downloadQrPng, downloadQrSvg, QrCode } from './QrCode'
-import { embedIframeSnippet, embedScriptSnippet, printUrl } from './embedCode'
+import { embedIframeSnippet, embedScriptSnippet, printUrl, publicInstallationLinks, publicInstallationSnippet } from './embedCode'
 
 function copyText(value: string) {
   void navigator.clipboard?.writeText(value)
@@ -26,6 +26,11 @@ export function ShareAndPrintCard({ slug, publicUrl }: { slug: string; publicUrl
           <strong>Ispis / PDF (A4)</strong>
           <p>Pregled za ispis s QR kodom. U dijalogu za ispis odaberite &bdquo;Spremi kao PDF&rdquo;.</p>
           <a className="app-button app-button-light" href={printUrl(origin, slug)} target="_blank" rel="noreferrer">Ispis / Spremi kao PDF</a>
+          <strong>Javne poveznice za vaš web</strong>
+          <p>Ministarstvo dopušta vanjski hosting uz slobodan automatski dohvat bez prijave. Na svojem webu istaknite poveznicu na aktualni cjenik (CSV ili XML) i arhivu; HTML prikaz je dodatna pomoć posjetiteljima.</p>
+          <div className="publish-link-row">{publicInstallationLinks(origin,slug).map(link=><button key={link.url} type="button" className="app-link-button" onClick={()=>copyText(link.url)}>Kopiraj {link.label}</button>)}</div>
+          <pre className="share-snippet" tabIndex={0}>{publicInstallationSnippet(origin,slug)}</pre>
+          <button type="button" className="app-link-button" onClick={()=>copyText(publicInstallationSnippet(origin,slug))}>Kopiraj HTML poveznice</button>
           <strong>Ugradnja na vašu web stranicu</strong>
           <pre className="share-snippet" tabIndex={0}>{script}</pre>
           <div className="publish-link-row">

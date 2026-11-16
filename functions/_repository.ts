@@ -1,6 +1,7 @@
 import { deterministicPublicationHash, diffPriceLists } from "../src/price-engine/hash"
 import { usesProductStructure } from '../src/price-engine/profile'
 import { getRuleset } from '../shared/compliance/rulesets'
+import { NEPAR_ARCHIVE_DAYS } from '../shared/regulation-update'
 import { parsePublicationDetails } from '../shared/publication-details'
 import { entitlementIsLive, featuresForPlan, liveEntitlementSql } from '../shared/entitlements'
 import { createFilenameStemPrefix, filenameTimestamp } from "../src/price-engine/filename"
@@ -231,7 +232,7 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const priceListId = id()
   const filenamePrefix = createFilenameStemPrefix(metadata)
   const filenameTime = filenameTimestamp(new Date(timestamp), metadata.timezone)
-  const publicUntil = addDays(timestamp, 30)
+  const publicUntil = addDays(timestamp, NEPAR_ARCHIVE_DAYS)
   await assertActivePublicationTarget(env, tenantId)
   // The first statement claims the draft. Every following statement also
   // requires that this payload is not already current. This makes a retry or

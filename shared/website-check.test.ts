@@ -14,7 +14,7 @@ describe('technical evidence score', () => {
     // An archive that cannot be confirmed is unknown, not missing: no particular archive page is prescribed.
     expect(report).toMatchObject({ score: 7, attention: 0, unknown: 2, tone: 'yellow' })
     expect(report.checks.find((c) => c.id === 'archive')).toMatchObject({ status: 'unknown', evidence: expect.stringContaining('nije moguće potvrditi') })
-    expect(technicalReport({ status: 'green', message: '', details: { ...complete, archiveFound: false, archiveRemoved: true } }).checks.find((c) => c.id === 'archive')?.status).toBe('missing')
+    expect(technicalReport({ status: 'green', message: '', details: { ...complete, archiveFound: false, archiveRemoved: true } }).checks.find((c) => c.id === 'archive')?.status).toBe('warning')
     expect(technicalReport({ status: 'green', message: '', details: { ...complete, contentStatus: 'fail' } })).toMatchObject({ score: 8, attention: 1, tone: 'yellow' })
   })
   it('keeps blocked checks unknown instead of declaring missing files', () => {

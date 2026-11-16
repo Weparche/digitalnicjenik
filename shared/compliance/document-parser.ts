@@ -41,6 +41,9 @@ const CSV_HEADERS: Record<string, keyof FeedRecord> = {
   'posebni oblik prodaje': 'specialSaleApplied',
   'naziv posebnog oblika prodaje': 'specialSaleName',
   'sidrena cijena': 'anchorPrice',
+  'bazna cijena': 'anchorPrice',
+  'dodatna cijena': 'anchorPrice',
+  'base price': 'anchorPrice',
   jedinica: 'unit',
   marka: 'brand',
   barkod: 'barcode',
@@ -111,7 +114,7 @@ export function parseXmlFeed(text: string): ParsedFeed {
       record.name = raw.naziv_usluge
       record.type ||= 'Usluga'
       record.price = raw.maloprodajna_cijena ?? ''
-      record.anchorPrice = raw.sidrena_cijena ?? ''
+      record.anchorPrice = raw.bazna_cijena ?? raw.sidrena_cijena ?? raw.dodatna_cijena ?? ''
       record.specialSaleApplied = raw.posebni_oblik_prodaje ?? ''
       record.specialSaleName = raw.naziv_posebnog_oblika_prodaje ?? raw.naziv_posebnog_oblika ?? ''
     }
