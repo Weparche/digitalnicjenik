@@ -95,8 +95,8 @@ export const SITE_PAGES: SitePageMeta[] = [
     title: 'Digitalni cjenik i sidrena cijena: česta pitanja',
     seoTitle: 'Digitalni cjenik i sidrena cijena: česta pitanja | NEPAR',
     description:
-      'Odgovori na najčešća pitanja o digitalnom cjeniku: tko mora objaviti CSV/XML, rok 17.11.2026., sidrena cijena, arhiva 30 dana, naziv datoteke, više poslovnica i web shop.',
-    updatedAt: OFFER_UPDATED,
+      'Odgovori na najčešća pitanja o digitalnom cjeniku: rok 17.11.2026., bazna cijena, CSV/XML, izuzeća, arhiva i web shop. Razlikujemo ranije odluke i nove pravilnike.',
+    updatedAt: '2026-11-16T12:30:00+01:00',
   },
   {
     path: '/usporedba/',

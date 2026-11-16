@@ -7,7 +7,7 @@ export function FaqPage() {
   return (
     <SitePageLayout
       page={page}
-      lead="Kratki odgovori na najčešća pitanja o digitalnom cjeniku i sidrenoj (dodatnoj) cijeni. Rok primjene je 17. studenoga 2026.; nacrti novih pravilnika su u savjetovanju."
+      lead="Kratki odgovori na najčešća pitanja o digitalnom cjeniku i sidrenoj (dodatnoj) cijeni. Najavljeni početak primjene novih pravilnika je 17. studenoga 2026.; savjetovanje je završilo 13.11. Konačne obveze treba provjeriti prema objavljenim pravilnicima."
       related={[
         { href: '/digitalni-cjenik-za-wordpress-webshop/', label: 'Digitalni cjenik za WordPress, webshop i postojeći web' },
         { href: '/specifikacija-csv-xml/', label: 'Specifikacija CSV/XML polje po polje' },

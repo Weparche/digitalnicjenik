@@ -1,0 +1,33 @@
+name: Notify IndexNow
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/news/**'
+      - 'src/pages/**'
+      - 'src/seo/**'
+      - 'scripts/prerender.mjs'
+      - '.github/workflows/indexnow.yml'
+  workflow_dispatch:
+concurrency:
+  group: indexnow-production
+  cancel-in-progress: true
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Confirm new pages are live before submitting
+        run: |
+          for i in $(seq 1 18); do
+            if curl -fsSL https://digitalnicjenik.nepar.hr/sitemap.xml | grep -q '/statistika-digitalnih-cjenika/' && curl -fsSL https://digitalnicjenik.nepar.hr/statistika-digitalnih-cjenika/ | grep -q 'Metodologija i ograničenja'; then
+              npm run indexnow -- https://digitalnicjenik.nepar.hr/ https://digitalnicjenik.nepar.hr/statistika-digitalnih-cjenika/ https://digitalnicjenik.nepar.hr/digitalni-cjenik-2026/ https://digitalnicjenik.nepar.hr/sidrena-cijena/ https://digitalnicjenik.nepar.hr/cijene/ https://digitalnicjenik.nepar.hr/faq/ https://digitalnicjenik.nepar.hr/vodici/digitalni-cjenik-frizerski-salon/ https://digitalnicjenik.nepar.hr/vodici/digitalni-cjenik-autoservis/ https://digitalnicjenik.nepar.hr/vodici/digitalni-cjenik-ugostiteljstvo/ https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenici-rezultati-provjera-studeni-2026/
+              exit $?
+            fi
+            sleep 10
+          done
+          echo "Production pages not yet confirmed; no IndexNow submission."
+          exit 1

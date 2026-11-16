@@ -58,6 +58,7 @@ export function NewsArticle({ slug }: { slug: string }) {
             )}
           </p>
           <WebsiteCheckEntry source={newsArticlePath(post.slug)}/>
+          {Date.parse(post.publishedAt)<Date.parse('2026-11-14T00:00:00+01:00') && <p className="news-lead-note">Ovaj članak opisuje tadašnje stanje. Za početak primjene novih pravilnika 17.11.2026. pročitajte <a href="/digitalni-cjenik-2026/">aktualni vodič</a> i <a href="/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/">najnoviju službenu najavu</a>.</p>}
           <img
             className="news-article-hero"
             src={post.image.src}

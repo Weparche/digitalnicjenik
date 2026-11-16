@@ -29,7 +29,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Tko mora objaviti digitalni cjenik?',
         answer:
-          'Trgovci na malo i pružatelji registriranih usluga koji imaju mrežnu stranicu. Ministarstvo je pojasnilo da se obveza odnosi i na informativne ili prezentacijske stranice bez web shopa, dok profil na društvenoj mreži nije mrežna stranica za tu svrhu.',
+          'Ranija Odluka NN 101/2026 obuhvaćala je trgovce na malo i pružatelje usluga s mrežnom stranicom. Ministarstvo je pojasnilo da to uključuje informativne webove, ali ne i sam profil na društvenoj mreži. Za početak primjene novih pravilnika 17.11. provjerite konačni tekst, posebno obuhvat usluga i izuzeća.',
       },
       {
         question: 'Moram li imati digitalni cjenik ako nemam web stranicu?',
@@ -39,7 +39,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Mijenja li se nešto s novim pravilnicima?',
         answer:
-          'Dva nacrta pravilnika (o načinu isticanja bazne cijene i o sadržaju i načinu objave cjenika proizvoda) na e-Savjetovanju su od 14. listopada do 13. studenoga 2026. Ministarstvo planira stupanje na snagu 17. studenoga 2026. Nacrti predviđaju, među ostalim, evidentiranje promjene sljedeći radni dan do 11 sati, ali to su prijedlozi, ne konačna pravila.',
+          'Savjetovanje o baznoj cijeni i objavi cjenika završilo je 13.11.2026. Vlada je 14.11. najavila početak primjene 17.11. i edukativni inspekcijski pristup u početnom razdoblju. Na 16.11. nismo potvrdili konačne tekstove u Narodnim novinama; nacrti nisu važeći propis.',
       },
     ],
   },

@@ -420,3 +420,9 @@ if (failures.length) {
 }
 
 console.log('Verified index.html prerender, share meta, robots.txt, sitemap.xml, llms.txt, and 404 artifact.')
+
+// Sector-specific editable templates and aggregate research page must exist in every build.
+for (const filename of ['salon','autoservis','ugostiteljstvo']) {
+  const path=resolve(distDir,'examples/digitalni-cjenik-'+filename+'.xlsx')
+  if(!existsSync(path))throw new Error('Missing Excel template: '+path)
+}
