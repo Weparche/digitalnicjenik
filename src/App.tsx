@@ -1,7 +1,7 @@
 import { trackCheckerInteraction } from './checker-analytics'
 import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
 import { stavke, stavkeNema } from '../shared/plural'
-import { IconArrowRight, IconUpload } from '@tabler/icons-react'
+import { IconArrowRight, IconCircleCheck, IconFileSpreadsheet, IconUpload } from '@tabler/icons-react'
 import { PublicationOverview, UploadReview } from './PublicationOverview'
 import { PriceHistoryPanel } from './PriceHistoryPanel'
 import { validRequiredPrice } from './price-engine/normalize'
@@ -1089,11 +1089,14 @@ function ValidatorApp({
 
   // The demo runs the real upload → review flow on a sample salon list instead of opening NEPAR's own public page.
   async function loadExample() {
+    if (busy) return
+    setBusy(true); setError('')
     try {
       const response = await fetch('/examples/primjer-digitalni-cjenik-usluge-2026.csv')
       if (!response.ok) throw new Error()
       await loadFile(new File([await response.text()], 'primjer-digitalni-cjenik-usluge-2026.csv', { type: 'text/csv' }))
     } catch { setError('Primjer trenutačno nije moguće učitati.') }
+    finally { setBusy(false) }
   }
 
   async function loadFile(file?: File) {
@@ -1225,9 +1228,12 @@ function ValidatorApp({
 
   const importer = <>
     <section className="workspace-upload" aria-label={mode === 'publisher' ? 'Zamjena cjenika' : 'Uvoz cjenika'}>
-      <label className="upload-action workspace-dropzone"><input type="file" aria-label="Učitaj cjenik" accept=".csv,.xml,.xlsx,.xls,text/csv,application/xml" onChange={event=>void loadFile(event.target.files?.[0])}/><IconUpload size={28} stroke={1.5}/><strong>{sourceFilename||'Odaberite svoj Excel, CSV ili XML'}</strong><span>Kliknite za odabir datoteke. Provjera i pregled su besplatni.</span></label>
+      {onboarding&&!list&&!excelFile&&<p className="workspace-upload-trust"><IconCircleCheck size={18} aria-hidden="true"/><span>Provjera i pregled bez plaćanja i registracije.</span></p>}
+      <label className="upload-action workspace-dropzone"><input type="file" aria-label="Učitaj cjenik" accept=".csv,.xml,.xlsx,.xls,text/csv,application/xml" disabled={busy} onChange={event=>void loadFile(event.target.files?.[0])}/><IconUpload size={28} stroke={1.5}/><strong>{sourceFilename||'Odaberite svoj Excel, CSV ili XML'}</strong><span>{onboarding?'Dodajte datoteku sa svojeg uređaja.':'Kliknite za odabir datoteke.'}</span></label>
       {!list&&!excelFile&&<button className="app-button app-button-primary workspace-mobile-only" type="button" data-mobile-primary="true" disabled={busy} onClick={event=>event.currentTarget.parentElement?.querySelector<HTMLInputElement>('input[type=file]')?.click()}>Odaberi datoteku</button>}
       <p className="workspace-upload-note">CSV / XML do 2 MB · Excel do 5 MB · izvorna datoteka ostaje kod vas</p>
+      {onboarding&&!list&&!excelFile&&<button className="workspace-example-button" type="button" disabled={busy} onClick={()=>void loadExample()}><IconFileSpreadsheet size={21} aria-hidden="true"/><span><strong>Isprobajte na primjeru</strong><small>Otvorite demo cjenik bez vlastite datoteke.</small></span><IconArrowRight size={18} aria-hidden="true"/></button>}
+      {onboarding&&sourceFilename==='primjer-digitalni-cjenik-usluge-2026.csv'&&list&&<p className="workspace-demo-notice" role="status">Prikazujete demo podatke. Za stvarnu objavu učitajte vlastiti cjenik.</p>}
       {busy&&<p className="app-status" role="status">Provjeravamo datoteku…</p>}{error&&<p className="app-error" role="alert">{error}</p>}
     </section>
     {excelFile&&<ExcelConverter file={excelFile} onConverted={applyNormalizedList}/>}
@@ -1261,7 +1267,7 @@ function ValidatorApp({
         publishBlocked={publishBlocked}
       />
     )}
-    {mode === 'sandbox' && <p className="validator-footnote">Želite prvo vidjeti primjer? <button className="app-link-button" type="button" onClick={() => void loadExample()}>Učitaj primjer cjenika usluga →</button></p>}
+    {mode === 'sandbox' && !onboarding && <p className="validator-footnote">Želite prvo vidjeti primjer? <button className="app-link-button" type="button" onClick={() => void loadExample()}>Učitaj primjer cjenika usluga →</button></p>}
   </>
   const tool = <>{importer}{review}</>
 
