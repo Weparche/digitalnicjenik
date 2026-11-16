@@ -1,4 +1,5 @@
 import { usesProductStructure } from './profile'
+import { renderNn132Csv } from './nn132'
 import type { NormalizedPriceList } from './types'
 
 const protectSpreadsheetFormula = (value: string) => /^[=+\-@]/.test(value) || /^[\t\r\n]/.test(value) ? "'" + value : value
@@ -13,6 +14,7 @@ export const CSV_PRODUCT_HEADER = ['Marka', 'Barkod', 'Cijena za jedinicu mjere'
 export const CSV_HISTORY_HEADER = ['Datum referentne cijene', 'Najniža cijena u 30 dana', 'Nova stavka', 'Razlog izuzeća cijene po jedinici']
 
 export function renderCsv(priceList: NormalizedPriceList): string {
+  if (priceList.formatVersion === 'nn-132-2026') return renderNn132Csv(priceList)
   const products = usesProductStructure(priceList)
   const history = priceList.items.some(item => item.anchorReferenceDate || item.lowest30DayPrice != null || item.isNewSinceReferenceDate || item.unitPricingExemption)
   const header = [...CSV_BASE_HEADER, ...(products ? CSV_PRODUCT_HEADER : []), ...(history ? CSV_HISTORY_HEADER : [])]

@@ -1,11 +1,13 @@
 import { XMLParser, XMLValidator } from 'fast-xml-parser'
 import { normalizeBarcode, normalizeNumber, normalizeReferenceDate, parseAvailability } from './normalize'
 import { usesProductStructure } from './profile'
+import { renderNn132Xml } from './nn132'
 import type { FieldSources, NormalizedPriceList, ParseResult } from './types'
 
 const xml = (value: unknown) => String(value ?? '').replace(/[<>&'\"]/g, (character) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[character] ?? character)
 
 export function renderXml(priceList: NormalizedPriceList): string {
+  if (priceList.formatVersion === 'nn-132-2026') return renderNn132Xml(priceList)
   const products = usesProductStructure(priceList)
   const items = priceList.items.map((item) => {
     const historyFields = [
@@ -69,10 +71,10 @@ const xmlTextOf = (parent: XmlTree, name: string) => findXmlNode(parent, name)?.
  * Element names are not prescribed by the Odluka, so items and fields are matched by meaning: NEPAR's own
  * camelCase, the NEPAR preporučena shema (snake_case, based on the HOK template) and common English names.
  */
-const ITEM_ELEMENTS = ['item', 'stavka', 'usluga', 'service', 'proizvod', 'product']
+const ITEM_ELEMENTS = ['item', 'stavka', 'usluga', 'service', 'proizvod', 'product', 'roba']
 const SERVICE_ELEMENTS = ['usluga', 'service']
 const XML_FIELDS = {
-  name: ['name', 'naziv_usluge', 'naziv', 'serviceName', 'service_name', 'productName', 'product_name', 'naziv_proizvoda'],
+  name: ['name', 'naziv_usluge', 'naziv', 'serviceName', 'service_name', 'productName', 'product_name', 'naziv_proizvoda', 'naziv_robe'],
   price: ['price', 'retailPrice', 'retail_price', 'maloprodajna_cijena', 'cijena', 'mpc'],
   specialSaleApplied: ['specialSaleApplied', 'specialSale', 'special_sale', 'special_sale_applied', 'posebni_oblik_prodaje', 'poseban_oblik_prodaje'],
   specialSaleName: ['specialSaleName', 'special_sale_name', 'naziv_posebnog_oblika_prodaje', 'naziv_posebnog_oblika'],
@@ -125,7 +127,9 @@ export function inspectXmlPriceList(xmlText: string, tenant = { id: 'nepar', slu
     if (!name || price == null) throw new Error(`XML stavka ${index + 1}: ${!name ? 'nedostaje naziv' : !priceRaw ? 'nedostaje maloprodajna cijena' : 'cijena nije broj'}.`)
     const sale = xmlTextOf(node, 'salePrice')
     const anchor = field('anchorPrice')
-    const unitPrice = xmlTextOf(node, 'unitPrice')
+    const unitPrice = xmlTextOf(node, 'unitPrice') || xmlTextOf(node, 'cijena_za_jedinicu_mjere')
+    const netRaw=xmlTextOf(node,'netQuantity')||xmlTextOf(node,'neto_kolicina')
+    if(netRaw&&normalizeNumber(netRaw)==null)throw new Error('Neto količina nije broj.')
     const applied = field('specialSaleApplied').toLocaleLowerCase('hr-HR')
     const dateRaw = field('anchorReferenceDate')
     const referenceDate = normalizeReferenceDate(dateRaw)
@@ -139,10 +143,10 @@ export function inspectXmlPriceList(xmlText: string, tenant = { id: 'nepar', slu
     const isNew = field('isNewSinceReferenceDate').toLocaleLowerCase('hr-HR')
     sourceRows.push(index + 1)
     return [{
-      externalId: xmlTextOf(node, 'externalId') || undefined,
+      externalId: xmlTextOf(node, 'externalId') || xmlTextOf(node,'sifra_robe') || undefined,
       category: xmlTextOf(node, 'category') || undefined,
       name,
-      type: xmlTextOf(node, 'type') || (service ? 'Usluga' : undefined),
+      type: xmlTextOf(node, 'type') || (service ? 'Usluga' : localXmlName(node.name)==='roba'||Boolean(findXmlNode(node,'naziv_robe'))?'Proizvod':undefined),
       description: xmlTextOf(node, 'description') || undefined,
       price,
       salePrice: sale ? normalizeNumber(sale) : null,
@@ -150,10 +154,12 @@ export function inspectXmlPriceList(xmlText: string, tenant = { id: 'nepar', slu
       ...(referenceDate ? { anchorReferenceDate: referenceDate } : {}),
       ...(lowest != null ? { lowest30DayPrice: lowest } : {}),
       ...(xmlTextOf(node, 'unitPricingExemption') ? { unitPricingExemption: xmlTextOf(node, 'unitPricingExemption') } : {}),
-      unit: xmlTextOf(node, 'unit') || null,
+      unit: xmlTextOf(node, 'unit') || xmlTextOf(node,'jedinica_mjere') || null,
+      ...(netRaw?{netQuantity:normalizeNumber(netRaw)}:{}),
+      ...((xmlTextOf(node,'eanBarcode')||xmlTextOf(node,'ean_barkod_robe'))?{eanBarcode:normalizeBarcode(xmlTextOf(node,'eanBarcode')||xmlTextOf(node,'ean_barkod_robe'))}:{}),
       unitPrice: normalizeNumber(unitPrice),
-      brand: xmlTextOf(node, 'brand') || null,
-      barcode: normalizeBarcode(xmlTextOf(node, 'barcode')) || null,
+      brand: xmlTextOf(node, 'brand') || xmlTextOf(node,'marka_robe') || null,
+      barcode: normalizeBarcode(xmlTextOf(node, 'barcode')||xmlTextOf(node,'barkod_robe')) || null,
       availability: parseAvailability(xmlTextOf(node, 'availability')),
       specialSaleApplied: applied === 'true' || applied === 'da' ? true : applied === 'false' || applied === 'ne' ? false : null,
       specialSaleName: field('specialSaleName') || null,

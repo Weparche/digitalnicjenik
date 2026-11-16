@@ -47,19 +47,21 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   if (!rows.length) throw new Error('CSV je prazan. Izvezite cjenik s barem jednim artiklom.')
   const headers = rows[0]
   const groupIndex = findColumn(headers, 'grupa*', 'grupa', 'kategorija', 'kategorija proizvoda', 'category', 'categories')
-  const nameIndex = findColumn(headers, 'naziv*', 'naziv', 'naziv proizvoda', 'naziv usluge', 'name', 'service name', 'product name', 'usluga')
+  const nameIndex = findColumn(headers, 'naziv*', 'naziv', 'naziv proizvoda', 'naziv robe', 'naziv usluge', 'name', 'service name', 'product name', 'usluga')
   const typeIndex = findColumn(headers, 'vrsta*', 'vrsta', 'type')
-  const idIndex = findColumn(headers, 'interna šifra', 'interna sifra', 'sku', 'šifra', 'šifra proizvoda', 'sifra', 'sifra proizvoda', 'id')
+  const idIndex = findColumn(headers, 'interna šifra', 'interna sifra', 'sku', 'šifra', 'šifra proizvoda', 'šifra robe', 'sifra', 'sifra proizvoda', 'id')
   const priceIndex = findColumn(headers, 'cijena*', 'cijena', 'maloprodajna cijena', 'mpc', 'cena', 'price', 'retail price', 'regular price')
   const saleIndex = findColumn(headers, 'akcijska cijena', 'akcijska cijena*', 'akcija', 'mpc za vrijeme posebnog oblika prodaje', 'maloprodajna cijena za vrijeme posebnog oblika prodaje', 'sale price')
   const namedAnchorIndex = findColumn(headers, 'sidrena cijena', 'sidrena cijena*', 'dodatna cijena', 'bazna cijena', 'bazna cijena*', 'base price', 'anchor price', 'reference price', 'additional price', 'sidrena cijena 10.9.2026.', 'sidrena cijena 10. 9. 2026.', 'dodatna cijena 10.9.2026.')
   const anchorIndex = namedAnchorIndex >= 0 ? namedAnchorIndex : datedAnchorColumn(headers)
   const specialSaleAppliedIndex = findColumn(headers, 'poseban oblik prodaje', 'posebni oblik prodaje', 'special sale', 'special sale applied', 'poseban oblik prodaje (da/ne)', 'posebni oblik prodaje (da/ne)')
   const specialSaleNameIndex = findColumn(headers, 'naziv posebnog oblika prodaje', 'poseban oblik prodaje naziv', 'special sale name')
-  const unitIndex = findColumn(headers, 'jedinica', 'jedinica mjere', 'unit')
+  const unitIndex = findColumn(headers, 'jedinica', 'jedinica mjere', 'jedinica mjere robe', 'unit')
   const unitPriceIndex = findColumn(headers, 'cijena za jedinicu mjere', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price')
-  const brandIndex = findColumn(headers, 'marka', 'marka proizvoda', 'brend', 'brand', 'brands')
-  const barcodeIndex = findColumn(headers, 'barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn')
+  const brandIndex = findColumn(headers, 'marka', 'marka proizvoda', 'marka robe', 'brend', 'brand', 'brands')
+  const netQuantityIndex = findColumn(headers,'neto količina','neto kolicina','net quantity')
+  const eanIndex = findColumn(headers,'ean barkod robe','ean barkod','ean barcode')
+  const barcodeIndex = findColumn(headers, 'barkod robe', 'barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn')
   const availabilityIndex = findColumn(headers, 'dostupnost', 'dostupno', 'availability', 'dostupno/nedostupno', 'in stock?')
   const referenceDateIndex = findColumn(headers, 'datum referentne cijene', 'datum sidrene cijene', 'datum bazne cijene', 'referentni datum', 'anchor reference date', 'anchor date', 'reference date')
   const lowestIndex = findColumn(headers, 'najniža cijena u 30 dana', 'najniza cijena u 30 dana', 'najniža cijena u posljednjih 30 dana', 'najniza cijena u posljednjih 30 dana', 'najniža cijena u poslj. 30 dana', 'najniza cijena u poslj. 30 dana', 'lowest 30 day price')
@@ -104,7 +106,7 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
     for (const [label, column] of [['Akcijska cijena', saleIndex], ['Sidrena cijena', anchorIndex], ['Cijena za jedinicu mjere', unitPriceIndex]] as const) {
       if (column >= 0 && row[column]?.trim() && normalizeNumber(row[column]) == null && !(column === anchorIndex && historicAbsence)) throw new Error(`CSV redak ${index + 2}: ${label} nije broj. Provjerite izvorni podatak.`)
     }
-    const rawType = row[typeIndex]?.trim() || (['naziv usluge', 'service name'].includes(cleanHeader(headers[nameIndex])) ? 'Usluga' : options.inspection && (brandIndex >= 0 && barcodeIndex >= 0 && idIndex >= 0) ? 'Proizvod' : '')
+    const rawType = row[typeIndex]?.trim() || (['naziv usluge', 'service name'].includes(cleanHeader(headers[nameIndex])) ? 'Usluga' : cleanHeader(headers[nameIndex])==='naziv robe'?'Proizvod': options.inspection && (brandIndex >= 0 && barcodeIndex >= 0 && idIndex >= 0) ? 'Proizvod' : '')
     // WooCommerce exports use the product kind (simple, variable, ...) as "Type"; those are all goods.
     const type = rawType === '2' ? 'Usluga' : /^(simple|variable|variation|grouped|external)$/i.test(rawType) ? 'Proizvod' : rawType || undefined
     const dateRaw = referenceDateIndex >= 0 ? row[referenceDateIndex]?.trim() : anchorIndex >= 0 ? headerDate(cleanHeader(headers[anchorIndex])) : ''
@@ -112,7 +114,8 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
     if (dateRaw && !date) throw new Error(`CSV redak ${index + 2}: datum referentne cijene nije valjan.`)
     const lowest = lowestIndex >= 0 ? normalizeNumber(row[lowestIndex]) : null
     if (lowestIndex >= 0 && row[lowestIndex]?.trim() && lowest == null) throw new Error(`CSV redak ${index + 2}: najniža cijena nije broj.`)
-    const historical = { ...(date ? { anchorReferenceDate: date } : {}), ...(lowest != null ? { lowest30DayPrice: lowest } : {}), ...(newIndex >= 0 ? { isNewSinceReferenceDate: booleanValue(row[newIndex]) === true } : {}), ...(exemptionIndex >= 0 ? { unitPricingExemption: row[exemptionIndex]?.trim() || null } : {}) }
+    if(netQuantityIndex>=0&&row[netQuantityIndex]?.trim()&&normalizeNumber(row[netQuantityIndex])==null)throw new Error('Neto količina nije broj.')
+    const historical = { ...(netQuantityIndex>=0?{netQuantity:normalizeNumber(row[netQuantityIndex])}:{}), ...(eanIndex>=0?{eanBarcode:normalizeBarcode(row[eanIndex])||null}:{}), ...(date ? { anchorReferenceDate: date } : {}), ...(lowest != null ? { lowest30DayPrice: lowest } : {}), ...(newIndex >= 0 ? { isNewSinceReferenceDate: booleanValue(row[newIndex]) === true } : {}), ...(exemptionIndex >= 0 ? { unitPricingExemption: row[exemptionIndex]?.trim() || null } : {}) }
     sourceRows.push(index + 2)
     return [{ ...historical, externalId: row[idIndex]?.trim() || undefined, category: row[groupIndex]?.trim() || undefined, name, type, price, salePrice, anchorPrice: anchorIndex >= 0 ? normalizeNumber(row[anchorIndex]) : null, specialSaleApplied: specialSaleAppliedIndex >= 0 ? booleanValue(row[specialSaleAppliedIndex]) : saleIsSpecialSaleColumn ? specialPrice != null : null, specialSaleName: specialSaleNameIndex >= 0 ? row[specialSaleNameIndex]?.trim() || null : null, ...(unitIndex >= 0 ? { unit: row[unitIndex]?.trim() || null } : {}), ...(unitPriceIndex >= 0 ? { unitPrice: normalizeNumber(row[unitPriceIndex]) } : {}), ...(brandIndex >= 0 ? { brand: row[brandIndex]?.trim() || null } : {}), ...(barcodeIndex >= 0 ? { barcode: normalizeBarcode(row[barcodeIndex]) || null } : {}), ...(availabilityIndex >= 0 ? { availability: parseAvailability(row[availabilityIndex]) } : {}) }]
     } catch (caught) {

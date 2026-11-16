@@ -1,12 +1,13 @@
 import { isValidGtin, normalizeReferenceDate, validRequiredPrice } from './normalize'
 import { isServiceItem } from './profile'
+import { nn132Kind } from './nn132'
 import type { NormalizedPriceList, ParseWarning, ValidationIssue, ValidationResult } from './types'
 
 export { isServiceItem }
 
 const keyFor = (item: NormalizedPriceList['items'][number]) => item.externalId || `${item.category ?? ''}:${item.name}`
 
-export function validatePriceList(priceList: NormalizedPriceList, options: { now?: Date; timeZone?: string } = {}): ValidationResult {
+export function validatePriceList(priceList: NormalizedPriceList, options: { now?: Date; timeZone?: string; nn132?: boolean } = {}): ValidationResult {
   const issues: ValidationIssue[] = []
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: options.timeZone ?? 'Europe/Zagreb', year: 'numeric', month: '2-digit', day: '2-digit' }).format(options.now ?? new Date())
   if (!priceList.items.length) issues.push({ row: 1, itemKey: 'empty', field: 'import', severity: 'error', rule: 'list.empty', message: 'Cjenik mora sadržavati barem jednu stavku.' })
@@ -43,6 +44,13 @@ export function validatePriceList(priceList: NormalizedPriceList, options: { now
     if (item.lowest30DayPrice != null && (!Number.isFinite(item.lowest30DayPrice) || item.lowest30DayPrice <= 0)) issues.push({ row, itemKey, field: 'price', severity: 'error', rule: 'sale.lowest30.invalid', message: 'Prethodna najniža cijena mora biti pozitivan broj.' })
     if (item.specialSaleApplied === true && item.lowest30DayPrice != null && (item.salePrice ?? item.price) >= item.lowest30DayPrice) issues.push({ row, itemKey, field: 'price', severity: 'manual_review', rule: 'sale.lowest30.not-lower', message: 'Cijena posebne prodaje nije niža od navedene prethodne najniže cijene. Provjerite evidenciju i primjenjiva pravila.' })
   })
+  if(options.nn132||priceList.formatVersion==='nn-132-2026'){
+    const removed=new Set(['sale.name.missing','product.availability.missing','product.externalId.missing','product.brand.missing','product.barcode.missing','product.barcode.invalid','product.anchor.date.missing','anchor.date.new-before-reference','anchor.date.before-reference'])
+    const applicable=issues.filter(i=>!removed.has(i.rule??''))
+    if(nn132Kind(priceList)==='mixed')applicable.push({row:1,itemKey:'mixed',field:'type',severity:'manual_review',message:'Odvojite cjenik robe od cjenika usluga (NN 132/2026).',rule:'list.mixed'})
+    priceList.items.forEach((item,index)=>{if(isServiceItem(item))return;const row=index+2,itemKey=keyFor(item);if(item.netQuantity!=null&&(!Number.isFinite(item.netQuantity)||item.netQuantity<=0))applicable.push({row,itemKey,field:'netQuantity',severity:'error',message:'Neto količina mora biti pozitivan broj.',rule:'product.netQuantity.invalid'});if(item.unitPrice!=null&&item.netQuantity==null&&!item.unitPricingExemption)applicable.push({row,itemKey,field:'netQuantity',severity:'manual_review',message:'Unesite neto količinu za robu za koju je obvezna cijena po jedinici mjere.',rule:'product.netQuantity.missing'});if(item.eanBarcode&&!isValidGtin(item.eanBarcode))applicable.push({row,itemKey,field:'eanBarcode',severity:'warning',message:'Provjerite EAN barkod.',rule:'product.ean.invalid'})})
+    return finalizeValidation(applicable)
+  }
   return finalizeValidation(issues)
 }
 

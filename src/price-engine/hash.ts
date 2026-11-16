@@ -7,6 +7,8 @@ function productFields(item: NormalizedPriceItem) {
     ...(item.anchorReferenceDate ? { anchorReferenceDate: item.anchorReferenceDate } : {}),
     ...(item.lowest30DayPrice != null ? { lowest30DayPrice: item.lowest30DayPrice } : {}),
     ...(item.brand ? { brand: item.brand } : {}),
+    ...(item.netQuantity != null ? { netQuantity: item.netQuantity } : {}),
+    ...(item.eanBarcode ? { eanBarcode: item.eanBarcode } : {}),
     ...(item.barcode ? { barcode: item.barcode } : {}),
     ...(item.unitPrice != null ? { unitPrice: item.unitPrice } : {}),
     ...(item.availability ? { availability: item.availability } : {}),
@@ -19,7 +21,7 @@ function canonicalItem(item: NormalizedPriceItem) {
 
 export function canonicalize(priceList: NormalizedPriceList): string {
   const items = priceList.items.map(canonicalItem).sort((a, b) => `${a.externalId ?? ''}:${a.category ?? ''}:${a.name}`.localeCompare(`${b.externalId ?? ''}:${b.category ?? ''}:${b.name}`, 'hr-HR'))
-  return JSON.stringify({ tenant: priceList.tenant, currency: priceList.currency, items })
+  return JSON.stringify({ tenant: priceList.tenant, currency: priceList.currency, ...(priceList.formatVersion?{formatVersion:priceList.formatVersion}:{}), items })
 }
 
 export async function deterministicHash(priceList: NormalizedPriceList): Promise<string> {
@@ -30,7 +32,7 @@ export async function deterministicHash(priceList: NormalizedPriceList): Promise
 
 /** Metadata changes also need a new immutable publication, even when prices are unchanged. */
 export async function deterministicPublicationHash(priceList: NormalizedPriceList, metadata: PublicationMetadata, publicationDay?: string): Promise<string> {
-  const text = JSON.stringify({ content: canonicalize(priceList), objectType: metadata.objectType, objectAddress: metadata.objectAddress, objectCode: metadata.objectCode, timezone: metadata.timezone, ...(publicationDay ? { publicationDay } : {}) })
+  const text = JSON.stringify({ content: canonicalize(priceList), objectType: metadata.objectType, objectAddress: metadata.objectAddress, objectCode: metadata.objectCode, timezone: metadata.timezone, ...(metadata.merchantIdentifier?{merchantIdentifier:metadata.merchantIdentifier,merchantType:metadata.merchantType,allLocations:metadata.allLocations??false}:{}), ...(publicationDay ? { publicationDay } : {}) })
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
   return [...new Uint8Array(digest)].map(part => part.toString(16).padStart(2, '0')).join('')
 }
