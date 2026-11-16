@@ -1,7 +1,7 @@
 import { normalizeBarcode, normalizeHeader, normalizeNumber, normalizeReferenceDate, parseAvailability, validateItems } from '../normalize'
 import type { FieldSources, NormalizedPriceList, ParseResult, PriceSourceAdapter } from '../types'
 
-function splitCsv(input: string, delimiter: string): string[][] {
+export function splitCsv(input: string, delimiter: string): string[][] {
   const rows: string[][] = []; let row: string[] = []; let field = ''; let quoted = false
   for (let i = 0; i < input.length; i += 1) {
     const character = input[i]; const next = input[i + 1]

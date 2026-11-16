@@ -1232,7 +1232,7 @@ function ValidatorApp({
     {excelFile&&<ExcelConverter file={excelFile} onConverted={applyNormalizedList}/>}
   </>
   const review = <>
-    {mode==='publisher'&&list&&<PriceHistoryPanel key={tenantSlug} slug={tenantSlug} items={list.items} onApply={!published&&!publishBlocked?values=>{setList(current=>current?{...current,items:current.items.map((item,index)=>values[index]!=null&&item.lowest30DayPrice==null?{...item,lowest30DayPrice:values[index]}:item)}:current);setDraftId('');setMessage('Najniže cijene prenesene su u nacrt. Provjerite ih prije objave.');}:undefined}/>}
+    {list&&(mode==='publisher'||mode==='sandbox')&&<PriceHistoryPanel key={tenantSlug} slug={tenantSlug} items={list.items} allowServer={mode==='publisher'} onApply={!published&&!publishBlocked?values=>{setList(current=>current?{...current,items:current.items.map((item,index)=>values[index]!=null&&item.lowest30DayPrice==null?{...item,lowest30DayPrice:values[index]}:item)}:current);setDraftId('');setMessage('Najniže cijene prenesene su u nacrt. Provjerite ih prije objave.');}:undefined}/>}
     {list && claimOpen && mode === 'sandbox' && (
       <TrialClaimForm list={list} accountEmail={accountEmail} sourceFilename={sourceFilename} onCancel={() => setClaimOpen(false)} />
     )}
