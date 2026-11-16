@@ -67,7 +67,7 @@ export function SpecPage() {
       page={page}
       lead={
         <>
-          Ranija Odluka NN 101/2026 propisivala je podatke bez točnog formata stupaca. Ministarstvo je u izvješću e-Savjetovanja najavilo detaljnija pravila kodiranja, redoslijeda i razdjelnika. U nastavku je postojeći NEPAR format, ne još potvrđena konačna shema.
+          NN 132/2026-1584 propisuje redoslijed podataka, UTF-8, točku-zarez za CSV, stabilnu URL adresu i arhivu 15 dana. NEPAR uvodi novu shemu, uz nepromijenjene ranije arhivske objave.
           Ovdje je točno kako izgleda NEPAR CSV i XML, kako se zove datoteka i što provjeravamo svaki dan.
         </>
       }
@@ -79,7 +79,10 @@ export function SpecPage() {
       ]}
     >
       <section className="site-section" aria-labelledby="odluka-title">
-        <h2 id="odluka-title">Pregled ranije Odluke i najnovije izmjene</h2>
+        <h2 id="odluka-title">Pravilnik NN 132/2026 – primjena od 17.11.</h2>
+        <p><a href="https://narodne-novine.nn.hr/eli/sluzbeni/2026/132/pdf">Službeni tekst, članci 3.–6.</a> · CSV usluga: <code>Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje;Bazna cijena</code>.</p>
+        <p>CSV robe: <code>Naziv robe;Šifra robe;Marka robe;Neto količina;Jedinica mjere;Maloprodajna cijena;Poseban oblik prodaje;Cijena za jedinicu mjere;Barkod robe;EAN barkod robe;Bazna cijena</code>. Šifra, marka, jedinica i barkodovi samo gdje su primjenjivi. Neto količina kad je obvezna cijena po jedinici mjere.</p>
+        <p>Datoteke nove objave koriste OIB pravne osobe ili matični broj fizičke osobe, prodajno mjesto i oznaku vrste cjenika, redni broj i vremensku oznaku. Ako isti cjenik vrijedi posvuda, koristi se ZA_SVA_PRODAJNA_MJESTA. Tablice niže opisuju povijesni NEPAR format i uvoz, ne novi obvezni redoslijed.</p>
         <ul className="news-bullets">
           <li><strong>Format:</strong> važeći cjenik na mrežnoj stranici u <code>.csv</code> ili <code>.xml</code> obliku, uz mogućnost automatiziranog dohvata.</li>
           <li><strong>Usluge:</strong> naziv usluge, maloprodajna cijena, podatak o posebnom obliku prodaje (i njegov naziv) te sidrena odnosno dodatna cijena.</li>
@@ -94,7 +97,7 @@ export function SpecPage() {
         <h3>NEPAR preporuka</h3>
         <p>Stupci u nastavku su NEPAR preporučena shema, usklađena s podacima iz Odluke i HOK predloškom. Objava oba formata (CSV i XML), stabilna adresa poput <code>/cjenik.csv</code> i javna stranica arhive korisne su preporuke, ali nisu zakonska obveza.</p>
         <p className="news-lead-note">
-          Ovo je sažetak, ne zamjena za službeni tekst. <strong>Stanje 16.11.2026.:</strong> pravilnici su upućeni na objavu. <a href="https://esavjetovanja.gov.hr/EConReport/10332">Izvješće e-Savjetovanja</a> najavljuje detaljniji format; NEPAR će izlaznu shemu uskladiti nakon potvrde normativnog teksta.
+          Ovo je sažetak, ne zamjena za službeni tekst. <strong>Stanje 16.11.2026.:</strong> konačni pravilnici objavljeni su u <a href="https://narodne-novine.nn.hr/eli/sluzbeni/2026/132/pdf">NN 132/2026</a> i stupaju na snagu 17.11. Stare objave ostaju dostupne u povijesnom formatu.
         </p>
       </section>
 

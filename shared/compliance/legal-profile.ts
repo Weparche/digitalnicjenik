@@ -25,6 +25,7 @@ const ODLUKA = 'Odluka NN 101/2026-1213 (izmjena NN 110/2026)'
 const MINGO = 'Službeno pojašnjenje Ministarstva gospodarstva'
 
 export const CURRENT_PROFILE_ID = 'nn-101-2026+nn-110-2026'
+export const NN132_PROFILE_ID = 'nn-132-2026-1584'
 
 /**
  * NN 110/2026 postponed the start of NN 101/2026 to 17. 11. 2026. Data elements that exist only in the new
@@ -99,3 +100,13 @@ export function ruleFor(rule: string | undefined, profile: Record<string, RuleDe
 
 /** Note appended to a finding whose obligation has not started yet. */
 export const deferredNote = (day: string) => ` Obveza se primjenjuje od ${formatHrDay(day)}`
+
+/** Final profile for new-format documents; legacy results keep their historical provenance. */
+export const NN132_RULES:Record<string,RuleDefinition>=Object.fromEntries(Object.entries(RULES).filter(([k])=>!['sale.name.missing','product.availability.missing','product.externalId.missing','product.brand.missing','product.barcode.missing','product.barcode.invalid','product.anchor.date.missing'].includes(k)).map(([k,v])=>[k,{...v,basis:v.source==='binding'&&v.basis.includes(ODLUKA)?'Pravilnik NN 132/2026-1584, čl. 3. i 6.':v.basis,effectiveFrom:undefined}]))
+NN132_RULES['product.netQuantity.missing']={level:'warning',source:'binding',basis:'NN 132/2026-1584, čl. 3. st. 2. — neto količina kada je primjenjivo'}
+NN132_RULES['product.netQuantity.invalid']={level:'error',source:'binding',basis:'NN 132/2026-1584, čl. 3. st. 2.'}
+NN132_RULES['product.ean.invalid']={level:'warning',source:'recommendation',basis:'Provjera kontrolne znamenke EAN-a, ako je primjenjivo.'}
+NN132_RULES['list.mixed']={level:'warning',source:'binding',basis:'NN 132/2026-1584, čl. 3. st. 2.–4.; zaseban redoslijed robe i usluga'}
+NN132_RULES['schema.order']={level:'warning',source:'binding',basis:'NN 132/2026-1584, čl. 3. st. 4. i čl. 6. st. 7.'}
+NN132_RULES['sale.lowest30.missing']={level:'info',source:'recommendation',basis:'Podatak o najnižoj cijeni pripada zasebnim pravilima isticanja sniženja; nije stupac propisan ovim pravilnikom.'}
+NN132_RULES['sale.lowest30.not-lower']={level:'info',source:'recommendation',basis:'Provjerite zasebna pravila isticanja sniženja.'}

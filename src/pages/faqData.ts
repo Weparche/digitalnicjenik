@@ -39,7 +39,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Mijenja li se nešto s novim pravilnicima?',
         answer:
-          'Savjetovanje je završilo 13.11. Ministarstvo je 16.11. potvrdilo slanje pravilnika na objavu s početkom 17.11., 15 dana arhive, izmjene do 11 sati i proširena izuzeća. U izvješću je potvrdilo vanjskog pružatelja. Konačni normativni tekst još treba provjeriti u Narodnim novinama.',
+          'Savjetovanje je završilo 13.11. Ministarstvo je 16.11. potvrdilo slanje pravilnika na objavu s početkom 17.11., 15 dana arhive, izmjene do 11 sati i proširena izuzeća. U izvješću je potvrdilo vanjskog pružatelja. Konačni pravilnici objavljeni su u NN 132/2026 (1583 i 1584), s primjenom od 17.11.2026.',
       },
     ],
   },
@@ -78,7 +78,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Propisuje li Odluka nazive stupaca u CSV-u?',
         answer:
-          'Ranija Odluka nije propisivala imena stupaca, separator ni kodiranje. Ministarstvo je u izvješću e-Savjetovanja prihvatilo detaljnija pravila za redoslijed stupaca, kodiranje i razdjelnik. Do potvrde konačnog teksta NEPAR-ova postojeća shema ostaje tehnički primjer, ne konačna propisana shema.',
+          'NN 132/2026-1584 propisuje redoslijed podataka prema članku 3., UTF-8 i točku-zarez. Cjenici robe i usluga imaju različit redoslijed. NEPAR-ov novi izvoz primjenjuje taj redoslijed; ranije datoteke ostaju u arhivi.',
       },
       {
         question: 'Kako se mora zvati datoteka cjenika?',

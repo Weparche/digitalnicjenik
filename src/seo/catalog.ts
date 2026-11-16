@@ -150,7 +150,7 @@ export function renderLlms(posts: NewsPost[] = NEWS_POSTS) {
     `do ${MAX_ITEMS_LABEL} stavki po cjeniku. Poveznicu vlasnik dodaje kao gumb, stavku izbornika ili običan link.`,
     'Web Link je trenutačno jedini paket za nove narudžbe. Validacija Excela/CSV-a/XML-a uključena je prije objave.',
     'Automatska sinkronizacija s webshopom, API-jem ili ERP/POS sustavom nije dio Web Linka.',
-    'Ministarstvo gospodarstva je 16.11. potvrdilo 15 dana arhive od zamjene i izmjene do 11 sati na dan izmjene. Izvješće e-Savjetovanja potvrđuje vanjski link na javni CSV/XML i arhivu bez autentifikacije. NEPAR čuva 30 dana; konačnu tehničku shemu treba provjeriti u objavljenim propisima. Tehnička provjera nije pravna potvrda.',
+    'Ministarstvo gospodarstva je 16.11. potvrdilo 15 dana arhive od zamjene i izmjene do 11 sati na dan izmjene. Izvješće e-Savjetovanja potvrđuje vanjski link na javni CSV/XML i arhivu bez autentifikacije. NEPAR čuva 30 dana; novi izvoz prati redoslijed podataka, UTF-8 i točku-zarez prema NN 132/2026-1584. Tehnička provjera nije pravna potvrda.',
     'Sidrene cijene (bazne cijene) i digitalni cjenici imaju različite zahtjeve. Vodič /sidrena-cijena/ donosi zakon, referentne datume, praktične primjere i ograničenja tehničke provjere.',
     '- Besplatna provjera javnog weba ne zahtijeva registraciju i prikazuje devet tehničkih provjera. Izrada i objava pokreću se zasebno na /app?new=1.',
     '',

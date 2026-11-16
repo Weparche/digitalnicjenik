@@ -161,7 +161,7 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         "heading": "Što je Ministarstvo potvrdilo 16. studenoga?",
         "level": 2,
-        "html": "<p>Ministarstvo gospodarstva objavilo je da su dva pravilnika poslana na objavu u Narodnim novinama, s početkom primjene 17. studenoga. Nakon 866 komentara u savjetovanju dorađene su odredbe i iznimke. Ovo je pregled službenog priopćenja, ne citat normativnog teksta: objavu pravilnika u Narodnim novinama u trenutku provjere još nismo potvrdili.</p>"
+        "html": "<p>Konačni pravilnici objavljeni su u NN 132/2026 (1583 i 1584), s početkom primjene 17. studenoga. Članci 3. i 6. pravilnika 1584 definiraju sadržaj i redoslijed podataka, UTF-8, točku-zarez, stabilnu adresu i naziv datoteke. NEPAR uvodi novi format uz zadržavanje prethodnih arhiva. <a href=\"https://narodne-novine.nn.hr/eli/sluzbeni/2026/132/pdf\">Službeni tekst</a>.</p>"
       },
       {
         "heading": "Ministarstvo potvrdilo vanjski link za aktualni cjenik i arhivu",

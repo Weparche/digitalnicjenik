@@ -4,7 +4,8 @@ import { validatePriceList } from '../../../src/price-engine/validate';
 import { normalizeHeader } from '../../../src/price-engine/normalize';
 import { isServiceItem } from '../../../src/price-engine/profile';
 import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engine/types';
-import { deferredNote, ruleFor } from '../../../shared/compliance/legal-profile';
+import { nn132GoodsHeaders, nn132ServiceHeaders, nn132Kind } from '../../../src/price-engine/nn132';
+import { deferredNote, ruleFor, NN132_RULES } from '../../../shared/compliance/legal-profile';
 import { ANNOUNCED_ARCHIVE_DAYS } from '../../../shared/regulation-update';
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type FindingGroup, type WebsiteCheckDetails } from '../../../shared/website-check';
 import { parseContentDispositionFilename } from '../../../shared/compliance/checks';
@@ -667,8 +668,8 @@ function parseWarningRule(field: string | undefined) {
   return field === 'name' ? 'item.name.missing' : field === 'price' ? 'item.price.invalid' : 'item.row.unreadable'
 }
 
-function withLevel(finding: DocumentFinding, rule: string): DocumentFinding {
-  const definition = ruleFor(rule)
+function withLevel(finding: DocumentFinding, rule: string, nn132=false): DocumentFinding {
+  const definition = ruleFor(rule,nn132?NN132_RULES:undefined)
   const message = definition.deferredUntil ? finding.message + deferredNote(definition.deferredUntil) : finding.message
   return { ...finding, message, rule, level: definition.level, source: definition.source }
 }
@@ -729,16 +730,22 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
     const rawCount = parsed.rowCount ?? parsed.priceList.items.length;
     const historicRows = new Set(parsed.warnings.filter(w=>w.rule==='product.anchor.historical-absence').map(w=>w.row));
     const findings: DocumentFinding[] = parsed.warnings.map(w => withLevel({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }, w.rule ?? parseWarningRule(w.field)));
+    const nn132=kind==='csv'?/bazna cijena/i.test(body.split(/\r?\n/,1)[0]):/<bazna_cijena\b/i.test(body);
     if (parsed.priceList.items.length) {
-      const nn132=kind==='csv'?/bazna cijena/i.test(body.split(/\r?\n/,1)[0]):/<bazna_cijena\b/i.test(body);
       for (const issue of validatePriceList(parsed.priceList,{nn132}).issues) {
         const index = issue.row - 2;
         const sourceRow = parsed.sourceRows?.[index] ?? issue.row;
         if(issue.rule==='product.anchor.missing' && historicRows.has(sourceRow)) continue;
-        findings.push(withLevel({ row: sourceRow, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message }, issue.rule ?? 'unknown'));
+        findings.push(withLevel({ row: sourceRow, itemName: parsed.priceList.items[index]?.name, field: issue.field, message: issue.message }, issue.rule ?? 'unknown',nn132));
       }
     }
     if (!rawCount) findings.push(withLevel({ message: 'Cjenik ne sadrži stavke.' }, 'list.empty'));
+    if(nn132&&kind==='csv'){
+      const header=body.replace(/^\uFEFF/,'').split(/\r?\n/,1)[0];
+      const actual=header.split(';').map(v=>normalizeHeader(v.replace(/^"|"$/g,'')));
+      const expected=(nn132Kind(parsed.priceList)==='services'?nn132ServiceHeaders:nn132GoodsHeaders).map(normalizeHeader);
+      if(actual.length!==expected.length||actual.some((v,i)=>v!==expected[i]))findings.push(withLevel({message:'Provjerite propisani redoslijed podataka i točku-zarez kao razdjelnik (NN 132/2026-1584). Nazivi zaglavlja prikazani su kao NEPAR primjer; pravilnik propisuje redoslijed podataka, ne njihov doslovni naziv.'},'schema.order',true));
+    }
     const errors = findings.filter(f => f.level === 'error');
     const warnings = findings.filter(f => f.level === 'warning');
     const legal = [...errors, ...warnings];
@@ -746,7 +753,7 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
     for(const finding of legal){const rule=finding.rule||'unknown',level=finding.level||'warning',key=rule+'|'+level;let group=groups.get(key);if(!group){group={rule,level,message:finding.message,count:0,affectedRows:0,examples:[],rows:new Set()};groups.set(key,group)}group.count++;if(finding.row!=null)group.rows.add(finding.row);if(group.examples.length<3)group.examples.push(finding)}
     const findingGroups=Array.from(groups.values(),({rows,...group})=>({...group,affectedRows:rows.size})).sort((a,b)=>(a.level==='error'?0:1)-(b.level==='error'?0:1)||b.count-a.count);
     const affectedRows=new Set(legal.map(f=>f.row).filter(row=>row!=null)).size;
-    const recommendations = [...findings.filter(f => f.level === 'info'), schemaRecommendation(parsed.fieldSources, parsed.priceList.items)].filter((f): f is DocumentFinding => Boolean(f));
+    const recommendations = [...findings.filter(f => f.level === 'info'), nn132?null:schemaRecommendation(parsed.fieldSources, parsed.priceList.items)].filter((f): f is DocumentFinding => Boolean(f));
     const structure = rawCount ? 'pass' : 'warning';
     const content = errors.length ? 'fail' : warnings.length ? 'warning' : 'pass';
     const classification = classifyPriceList(parsed.priceList.items);
