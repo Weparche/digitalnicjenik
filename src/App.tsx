@@ -3,6 +3,7 @@ import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
 import { stavke, stavkeNema } from '../shared/plural'
 import { IconUpload } from '@tabler/icons-react'
 import { PublicationOverview, UploadReview } from './PublicationOverview'
+import { PriceHistoryPanel } from './PriceHistoryPanel'
 import { validRequiredPrice } from './price-engine/normalize'
 import { PlanCards } from './PlanCards'
 import { AcquisitionLanding } from './AcquisitionLanding'
@@ -1231,6 +1232,7 @@ function ValidatorApp({
     {excelFile&&<ExcelConverter file={excelFile} onConverted={applyNormalizedList}/>}
   </>
   const review = <>
+    {mode==='publisher'&&list&&<PriceHistoryPanel key={tenantSlug} slug={tenantSlug} items={list.items} onApply={!published&&!publishBlocked?values=>{setList(current=>current?{...current,items:current.items.map((item,index)=>values[index]!=null&&item.lowest30DayPrice==null?{...item,lowest30DayPrice:values[index]}:item)}:current);setDraftId('');setMessage('Najniže cijene prenesene su u nacrt. Provjerite ih prije objave.');}:undefined}/>}
     {list && claimOpen && mode === 'sandbox' && (
       <TrialClaimForm list={list} accountEmail={accountEmail} sourceFilename={sourceFilename} onCancel={() => setClaimOpen(false)} />
     )}
@@ -1266,7 +1268,7 @@ function ValidatorApp({
     return <div className="validator-app validator-app-embedded">{!onboarding&&intro}{tool}</div>
   }
 
-  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}} onMigrate={currentPublication?()=>{setList({...currentPublication.payload,formatVersion:'nn-132-2026'});setReplacing(true);setDraftId('');setPublished(false);setSourceFilename('postojeci-cjenik.csv');setIssues([]);setPublication(null);setError('');setMessage('Provjerite podatke i objavite novu verziju. Stara objava ostaje dostupna do potvrde.');}:undefined}/>{replacing && tool}{message && <p role="status">{message}</p>}</div>
+  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}} onMigrate={currentPublication?()=>{setList({...currentPublication.payload,formatVersion:'nn-132-2026'});setReplacing(true);setDraftId('');setPublished(false);setSourceFilename('postojeci-cjenik.csv');setIssues([]);setPublication(null);setError('');setMessage('Provjerite podatke i objavite novu verziju. Stara objava ostaje dostupna do potvrde.');}:undefined}/>{!replacing&&currentPublication&&<PriceHistoryPanel key={tenantSlug} slug={tenantSlug} items={currentPublication.payload.items}/>}{replacing && tool}{message && <p role="status">{message}</p>}</div>
   if (mode === 'publisher') {
     return <div className="validator-app">{list ? <><details className="workspace-import"><summary>Zamijeni cjenik datotekom</summary>{importer}</details>{published&&<button className="app-button app-button-light" type="button" onClick={()=>{setList({...list,formatVersion:'nn-132-2026'});setDraftId('');setPublished(false)}}>Uredi postojeći cjenik</button>}{review}</> : tool}</div>
   }

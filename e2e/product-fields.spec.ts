@@ -23,14 +23,14 @@ test('product list: Odluka fields are grouped, editable, and clear the blocker c
 
   // The complete row keeps its parsed values in editable product columns.
   await expect(panel.getByLabel('Marka za Mlijeko 1 l')).toHaveValue('Dukat')
-  await expect(panel.getByLabel('Barkod za Mlijeko 1 l')).toHaveValue('4006381333931')
+  await expect(panel.getByLabel('Barkod za Mlijeko 1 l',{exact:true})).toHaveValue('4006381333931')
 
   await panel.getByLabel('Neto količina za Mlijeko 1 l').fill('1')
   await panel.getByLabel('Neto količina za Kruh').fill('0.5')
   await panel.getByLabel('Šifra za Kruh').fill('M-002')
   await panel.getByLabel('Marka za Kruh').fill('bez marke')
 
-  await panel.getByLabel('Barkod za Kruh').fill('96385074')
+  await panel.getByLabel('Barkod za Kruh',{exact:true}).fill('96385074')
   await panel.getByLabel('Jedinica mjere za Kruh', { exact: true }).fill('kg')
   await panel.getByLabel('Cijena za jedinicu mjere za Kruh').fill('1.98')
   await expect(counter).toContainText('bez blokera')

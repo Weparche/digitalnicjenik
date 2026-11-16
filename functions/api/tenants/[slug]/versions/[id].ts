@@ -1,11 +1,11 @@
-import { requireTenantAccess,accessErrorResponse } from '../../../../_write-auth'
+import { requireOwnerOrOperator,accessErrorResponse } from '../../../../_write-auth'
 import type { RuntimeEnv } from '../../../../_repository'
 import type { NormalizedPriceList } from '../../../../../src/price-engine/types'
 import { renderCsv } from '../../../../../src/price-engine/csv'
 import { renderXml } from '../../../../../src/price-engine/xml'
 export const onRequestGet=async({request,params,env}:{request:Request;params:Record<string,string>;env:RuntimeEnv})=>{
   try{
-    const tenant=await requireTenantAccess({request,env,slug:params.slug,operation:'draft_get'})
+    const tenant=await requireOwnerOrOperator({request,env,slug:params.slug})
     const row=await env.DB!.prepare('SELECT filename_stem,payload_json FROM price_publications WHERE id=? AND tenant_id=?').bind(params.id,tenant.id).first<{filename_stem:string;payload_json:string}>()
     if(!row)return new Response('Not found',{status:404,headers:{'cache-control':'no-store'}})
     const format=new URL(request.url).searchParams.get('format')==='xml'?'xml':'csv'
