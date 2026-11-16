@@ -60,7 +60,7 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
     {session?.isAdmin&&<div className="workspace-notice"><IconShieldCheck size={21}/><div><strong>Prijavljeni ste kao administrator.</strong><p>Za korisnike i uplate otvorite administraciju. Ovdje možete pripremiti vlastiti cjenik.</p></div><a className="workspace-button" href="/admin">Otvori administraciju<IconArrowUpRight size={17}/></a></div>}
     {createAnother&&<section className="workspace-surface"><p>Za drugu poslovnicu ili zaseban cjenik robe/usluga otvorite dodatnu objavu pod istim korisničkim računom. Svaki cjenik ima svoj link, arhivu i zasebnu licencu nakon probnog razdoblja.</p><a href="/app?tab=cjenik" className="workspace-button">Natrag na moje cjenike</a></section>}
     <TrialOffer onHelp={()=>navigate('upute')}/>
-    <div className="workspace-setup"><div className="workspace-steps" aria-label="Koraci objave"><span aria-current="step">Učitajte cjenik</span><IconArrowRight size={16}/><span>Provjerite podatke</span><IconArrowRight size={16}/><span>Objavite link</span></div>{renderOnboarding(session?.user.email)}</div>
+    <div className="workspace-setup">{renderOnboarding(session?.user.email)}</div>
     </div>
     {tab==='upute'&&<WorkspaceInstructions onPrepare={()=>navigate('cjenik')}/>}
     {tab==='pretplata'&&<WorkspacePackages onPrepare={()=>navigate('cjenik')} onContact={()=>{setContactPlan('web');navigate('kontakt')}}/>}
