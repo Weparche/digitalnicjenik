@@ -127,6 +127,8 @@ if (!redirects.includes('/app/* /app-shell 200')) failures.push('_redirects: mis
 if (!redirects.includes('/admin /app-shell 200')) failures.push('_redirects: missing the /admin route mapping to app-shell')
 
 const HOME_TITLE = (/<title>([^<]*)<\/title>/.exec(indexHtml) || [])[1] ?? ''
+const NEW_RULES_SLUG = 'digitalni-cjenici-novi-pravilnici-15-dana-2026'
+const NEW_RULES_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${NEW_RULES_SLUG}/`
 const INSPECTION_SLUG = 'digitalni-cjenici-inspektorat-upozorenja-2026'
 const INSPECTION_CANONICAL = `https://digitalnicjenik.nepar.hr/vijesti/${INSPECTION_SLUG}/`
 const DRAFT_SLUG = 'nacrti-pravilnika-digitalni-cjenik-bazna-cijena-2026'
@@ -152,8 +154,11 @@ const HOK_REL = `vijesti/${HOK_SLUG}/index.html`
 const CSV_REL = `vijesti/${CSV_SLUG}/index.html`
 const REGULATORY_REL = `vijesti/${REGULATORY_SLUG}/index.html`
 
-expect('index.html', `href="/vijesti/${DRAFT_SLUG}/"`, 'landing widget must link to latest news article')
-expect('index.html', `href="/vijesti/${LATEST_SLUG}/"`, 'landing must link to the second latest article')
+expect('index.html', `href="/vijesti/${NEW_RULES_SLUG}/"`, 'landing must link to new rules article')
+expect('index.html', 'href="/vijesti/digitalni-cjenici-rezultati-provjera-studeni-2026/"', 'landing must link to analysis article')
+expect('sitemap.xml', `<loc>${NEW_RULES_CANONICAL}</loc>`, 'sitemap must include new rules article')
+expect('llms.txt', NEW_RULES_CANONICAL, 'llms.txt must include new rules article')
+expect('vijesti/index.html', `href="/vijesti/${NEW_RULES_SLUG}/"`, 'news index must link to new rules article')
 expect('index.html', `href="/vijesti/${INSPECTION_SLUG}/"`, 'landing must link to inspection article')
 expect('sitemap.xml', `<loc>${INSPECTION_CANONICAL}</loc>`, 'sitemap must include inspection article')
 expect('llms.txt', INSPECTION_CANONICAL, 'llms.txt must include inspection article')
@@ -308,6 +313,7 @@ verifyArticle(
   ],
 )
 
+verifyArticle(`vijesti/${NEW_RULES_SLUG}/index.html`, NEW_RULES_CANONICAL, 'Digitalni cjenici od 17. studenoga: arhiva 15 dana i nova pravila', [])
 verifyArticle(`vijesti/${INSPECTION_SLUG}/index.html`, INSPECTION_CANONICAL, 'Digitalni cjenici od 17. studenoga: ministar najavio upozorenja umjesto kazni', [])
 verifyArticle(CSV_REL, CSV_CANONICAL, 'Primjer CSV digitalnog cjenika za pružatelje usluga', [
   ['narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html', 'CSV guide HTML must link NN 1213'],
