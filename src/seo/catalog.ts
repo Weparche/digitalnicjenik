@@ -151,6 +151,7 @@ export function renderLlms(posts: NewsPost[] = NEWS_POSTS) {
     'Web Link je trenutačno jedini paket za nove narudžbe. Validacija Excela/CSV-a/XML-a uključena je prije objave.',
     'Automatska sinkronizacija s webshopom, API-jem ili ERP/POS sustavom nije dio Web Linka.',
     'Vlada RH je 14.11.2026. najavila početak primjene novih pravilnika 17.11.2026. Konačne tehničke zahtjeve treba provjeriti u objavljenim propisima. Tehnička provjera nije pravna potvrda.',
+    'Sidrene cijene (bazne cijene) i digitalni cjenici imaju različite zahtjeve. Vodič /sidrena-cijena/ donosi zakon, referentne datume, praktične primjere i ograničenja tehničke provjere.',
     '- Besplatna provjera javnog weba ne zahtijeva registraciju i prikazuje devet tehničkih provjera. Izrada i objava pokreću se zasebno na /app?new=1.',
     '',
     `Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — ${NEPAR_URL}`,

@@ -55,10 +55,13 @@ export function DigitalPricelistPage() {
 }
 
 export function AnchorPricePage() {
-  return <SitePageLayout page={getSitePage('/sidrena-cijena/')} lead="Bazna cijena i ranije korišteni nazivi sidrena odnosno dodatna cijena odnose se na usporedbu današnje cijene s odgovarajućom referentnom vrijednošću. Nije automatski popust ni cijena koju smijete izračunati iz današnje." related={[...related.filter(item => item.href !== '/sidrena-cijena/'), {href:'/vodici/sidrena-cijena/',label:'Detaljne upute za prikaz i održavanje cijena'}]}>
+  return <SitePageLayout page={getSitePage('/sidrena-cijena/')} lead="Sidrena cijena je uobičajeni naziv za povijesnu referentnu cijenu koja se prikazuje uz aktualnu cijenu. Zakon o zaštiti potrošača koristi izraz bazna cijena. Uvođenje novog sustava najavljeno je za 17. studenoga 2026. To nije popust ni ograničenje visine nove cijene." related={[...related.filter(item => item.href !== '/sidrena-cijena/'), {href:'/vodici/sidrena-cijena/',label:'Detaljne upute za prikaz i održavanje cijena'}]}>
     <RegulationUpdate/>
-    <section className="site-section"><h2>Na koga se odnosi dodatna cijena?</h2>
-      <p>Odluka NN 101/2026-1212 obuhvaća registriranu trgovinu na malo i registrirano pružanje usluga u Hrvatskoj. Uređuje isticanje dodatne cijene uz maloprodajnu cijenu, uključujući propisane oblike oglašavanja. Obveza nije ograničena samo na webshopove.</p>
+    <section className="site-section" id="zakon"><h2>Sidrene cijene: što propisuje zakon?</h2><p>Članak 7. Zakona o zaštiti potrošača, izmijenjen Zakonom NN 59/2026, uređuje isticanje bazne cijene i objavu važećih cjenika na mrežnim stranicama. Ministar pravilnicima određuje referentni datum, proizvode, način isticanja i način objave. Vlada je 14.11. najavila prijelaz s privremenih odluka na taj trajni sustav od 17.11.</p><p><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_06_59_728.html" target="_blank" rel="noopener noreferrer">Pročitajte Zakon NN 59/2026</a>. Konačni pravilnici i izuzeća moraju se provjeriti u službeno objavljenom tekstu. <a href="/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/">Što znači najava upozorenja umjesto kazni?</a></p></section>
+    <section className="site-section" id="primjer"><h2>Sidrena cijena: primjer prikaza uz aktualnu cijenu</h2><p>Primjer je ilustrativan za stavke na koje se primjenjuje referentni datum 10.9.2026. Navedeni iznosi nisu stvarne povijesne cijene.</p><ul className="news-bullets"><li>Šišanje — aktualna cijena: 17,00 €. Cijena na 10.9.2026.: 15,00 €.</li><li>Servisna dijagnostika — aktualna cijena: 30,00 €. Cijena na 10.9.2026.: 30,00 €.</li><li>Nova usluga — aktualna cijena: 20,00 €. Ako se primjenjuje pravilo prvog uvrštenja, upisuje se stvarna cijena na taj datum, ne pretpostavljena vrijednost.</li></ul><p>Promjena aktualne cijene sama po sebi ne mijenja referentnu cijenu. Povijesnu vrijednost provjerite u svojim evidencijama. Primjer prikazuje smisao dva iznosa, ne propisuje univerzalni izgled etikete ili izuzeća.</p><p><a href="/vodici/digitalni-cjenik-frizerski-salon/">Excel predložak za salon</a> · <a href="/vodici/digitalni-cjenik-autoservis/">Excel za autoservis</a> · <a href="/vodici/digitalni-cjenik-ugostiteljstvo/">Vodič za ugostitelje</a></p></section>
+    <section className="site-section" id="kazne"><h2>Sidrene cijene: odgoda i kazne</h2><p>Rok iz rujanskih odluka pomaknut je s 1. listopada na 17. studenoga. Najava ministra o edukativnom inspekcijskom pristupu u početnom razdoblju nije nova odgoda, amnestija niti jamstvo da prekršaj neće biti kažnjen. Za konkretnu obvezu i kaznenu odredbu provjerite važeći zakon i konačni pravilnik.</p></section>
+    <section className="site-section"><h2>Na koga se odnose sidrene i bazne cijene?</h2>
+      <p>Ranija Odluka NN 101/2026-1212 obuhvaćala je registriranu trgovinu na malo i registrirano pružanje usluga u Hrvatskoj. Uređuje isticanje dodatne cijene uz maloprodajnu cijenu, uključujući propisane oblike oglašavanja. Obveza nije ograničena samo na webshopove.</p>
       <p>CSV/XML objava uređena je drugom Odlukom, 1213, koja se odnosi na obuhvaćene subjekte s uspostavljenim mrežnim stranicama. Zato web bez CSV-a i pogrešno istaknuta dodatna cijena nisu isti problem.</p>
     </section>
     <section className="site-section"><h2>Koju povijesnu cijenu trebate pripremiti?</h2>
@@ -70,7 +73,7 @@ export function AnchorPricePage() {
       <p>„Sidrena” je uobičajen naziv za referentnu dodatnu cijenu iz navedenih odluka. Naziv „bazna cijena” pojavljuje se i u zasebnom regulatornom okviru; ne mijenjajte polja ni datume samo zbog sličnog naziva. Za nove pravilnike provjerite konačni objavljeni tekst i početak njegove primjene.</p>
       <p><a href="/vodici/sidrena-cijena/">Detaljni vodič</a> objašnjava odnos prikaza na webu i izvora podataka. <a href="/specifikacija-csv-xml/">Specifikacija</a> pokazuje kako NEPAR prenosi cijene u CSV i XML.</p>
     </section>
-    <TopicLinks/><SourceList sources={OFFICIAL_SOURCES}/>
+    <PublicationPath/><TopicLinks/><SourceList sources={OFFICIAL_SOURCES}/>
   </SitePageLayout>
 }
 

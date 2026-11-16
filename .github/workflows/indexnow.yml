@@ -23,7 +23,7 @@ jobs:
       - name: Confirm new pages are live before submitting
         run: |
           for i in $(seq 1 18); do
-            if curl -fsSL https://digitalnicjenik.nepar.hr/sitemap.xml | grep -q '/statistika-digitalnih-cjenika/' && curl -fsSL https://digitalnicjenik.nepar.hr/statistika-digitalnih-cjenika/ | grep -q 'Metodologija i ograničenja'; then
+            if curl -fsSL https://digitalnicjenik.nepar.hr/sitemap.xml | grep -q '/statistika-digitalnih-cjenika/' && curl -fsSL https://digitalnicjenik.nepar.hr/statistika-digitalnih-cjenika/ | grep -q 'Metodologija i ograničenja' && curl -fsSL https://digitalnicjenik.nepar.hr/sidrena-cijena/ | grep -q 'Sidrene cijene: što propisuje zakon?'; then
               npm run indexnow -- https://digitalnicjenik.nepar.hr/ https://digitalnicjenik.nepar.hr/statistika-digitalnih-cjenika/ https://digitalnicjenik.nepar.hr/digitalni-cjenik-2026/ https://digitalnicjenik.nepar.hr/sidrena-cijena/ https://digitalnicjenik.nepar.hr/cijene/ https://digitalnicjenik.nepar.hr/faq/ https://digitalnicjenik.nepar.hr/vodici/digitalni-cjenik-frizerski-salon/ https://digitalnicjenik.nepar.hr/vodici/digitalni-cjenik-autoservis/ https://digitalnicjenik.nepar.hr/vodici/digitalni-cjenik-ugostiteljstvo/ https://digitalnicjenik.nepar.hr/vijesti/digitalni-cjenici-rezultati-provjera-studeni-2026/
               exit $?
             fi

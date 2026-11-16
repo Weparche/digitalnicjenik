@@ -1,6 +1,6 @@
 // Content migrated from nepar.hr; historical prices are never inferred from notes.
 export const anchorGuide = {
-  "lead": "Odluka NN 101/2026-1212 o isticanju dodatne cijene primjenjuje se od 17. studenoga 2026. (Vlada je 29. rujna 2026. pomaknula rok s 1. listopada). U javnosti se ta referentna cijena često naziva sidrena cijena. To je zasebna obveza od objave XML/CSV digitalnog cjenika iz Odluke 1213.",
+  "lead": "Ova tehnička uputa razlikuje prikaz sidrene odnosno bazne cijene od objave CSV/XML datoteke. Ranije odluke NN 101/2026 uređivale su oba područja; Vlada je najavila prijelaz na nove pravilnike 17.11.2026. Konačne zahtjeve i izuzeća provjerite u objavljenim propisima.",
   "sections": [
     {
       "heading": "Što je sidrena odnosno dodatna cijena?",

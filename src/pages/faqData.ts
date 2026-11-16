@@ -53,6 +53,14 @@ export const faqGroups: FaqGroup[] = [
           'Uz aktualnu maloprodajnu cijenu mora se istaknuti i dodatna, popularno nazvana sidrena cijena: referentna cijena iz propisanog datuma, bez posebnih oblika prodaje. Služi informiranju potrošača i nije nova prodajna cijena. Može biti jednaka aktualnoj cijeni.',
       },
       {
+        question: 'Kako izgleda primjer sidrene cijene?',
+        answer: 'Ako je usluga na primjenjivi referentni datum stajala 15 €, a danas stoji 17 €, prikazuju se aktualnih 17 € i referentnih 15 € s odgovarajućim datumom. Primjer je ilustrativan; vrijednost preuzmite iz vlastite evidencije.',
+      },
+      {
+        question: 'Jesu li odgođene sidrene cijene i postoje li kazne?',
+        answer: 'Vlada je rok pomaknula na 17.11.2026. Ministar je 14.11. najavio upozoravanje u početnom razdoblju, što nije nova odgoda niti ukidanje kaznenih odredbi. Za konkretne obveze i kazne provjerite objavljeni zakon i pravilnike.',
+      },
+      {
         question: 'Koji su referentni datumi za sidrenu cijenu?',
         answer:
           'Za robu i usluge koje su novo obuhvaćene referentna je cijena važeća 10. rujna 2026. Za skupine koje su već bile u režimu iz 2025. (primjerice hrana, piće, kozmetika, sredstva za čišćenje i proizvodi za kućanstvo) i dalje se koristi 2. svibnja 2025. Točan popis provjerite u tekstu Odluke.',

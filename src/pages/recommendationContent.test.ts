@@ -55,7 +55,7 @@ describe('recommendation and pricing content', () => {
     const comparison = SITE_PAGES.find((page) => page.path === '/usporedba/')
 
     expect(pricing?.updatedAt.startsWith('2026-11-13')).toBe(true)
-    expect(faq?.updatedAt.startsWith('2026-11-13')).toBe(true)
+    expect(Date.parse(faq?.updatedAt ?? '')).toBeGreaterThanOrEqual(Date.parse('2026-11-13T00:00:00+01:00'))
     expect(comparison?.updatedAt.startsWith('2026-11-13')).toBe(true)
     expect(comparison?.title).toContain('eCjenik')
     expect(comparison?.title).toContain('digitalnicjenik.hr')

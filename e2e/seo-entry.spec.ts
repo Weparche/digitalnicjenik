@@ -82,3 +82,13 @@ test('public statistics and templates are discoverable without exposing individu
   expect((await response.body()).subarray(0,2).toString()).toBe('PK')
  }
 })
+
+
+test('anchor price hub answers law, examples and penalties in crawlable HTML',async({request})=>{
+ const html=await (await request.get('/sidrena-cijena/')).text()
+ expect(html).toContain('Sidrene cijene: što propisuje zakon?')
+ expect(html).toContain('Sidrena cijena: primjer prikaza uz aktualnu cijenu')
+ expect(html).toContain('Sidrene cijene: odgoda i kazne')
+ expect(html).toContain('2026_06_59_728.html')
+ expect(html).toContain('/app?new=1')
+})

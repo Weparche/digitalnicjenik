@@ -211,6 +211,7 @@ export function AnchorGuidePage() {
     { href: '/vodici/automatizacija-digitalnog-cjenika/', label: 'Automatizacija i nadzor' },
     { href: '/vodici/', label: 'Svi vodiči' },
   ]}>
+    <section className="site-section"><h2>Prije tehničke implementacije</h2><p>Za aktualne informacije o zakonu, roku, referentnim datumima i primjerima pogledajte <a href="/sidrena-cijena/">glavni vodič za sidrene cijene 2026.</a> Na 16.11. konačni pravilnici nisu potvrđeni u Narodnim novinama. Primjeri u nastavku opisuju tehničke pristupe i ranije odluke.</p></section>
     {anchorGuide.sections.map((section, index) => <section className="site-section" key={section.heading} aria-labelledby={`anchor-${index}`}><h2 id={`anchor-${index}`}>{section.heading}</h2>{section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}</section>)}
     <section className="site-section" aria-labelledby="anchor-faq"><h2 id="anchor-faq">Česta pitanja o sidrenoj cijeni</h2><div className="site-faq">{anchorGuide.faq.map(([question, answer]) => <div className="site-faq-item" key={question}><h3>{question}</h3><p>{answer}</p></div>)}</div></section>
     <SourceList sources={OFFICIAL_SOURCES}/>
