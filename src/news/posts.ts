@@ -103,6 +103,79 @@ export const SERVICE_XML_EXAMPLE = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const NEWS_POSTS: NewsPost[] = [
   {
+    "slug": "digitalni-cjenici-rezultati-provjera-studeni-2026",
+    "title": "Digitalni cjenici u praksi: 15 provjera i 11 različitih domena uoči 17. studenoga",
+    "seoTitle": "Digitalni cjenici: rezultati 11 provjerenih domena | NEPAR",
+    "description": "NEPAR analiza od 14. do 16.11.2026.: 15 provjera, 11 domena, 3 potvrđene CSV/XML objave. Metodologija, ograničenja i besplatna provjera weba.",
+    "excerpt": "U uzorku od 11 domena tri imaju potvrđenu strojno čitljivu datoteku, tri je nemaju pronađenu, a za pet rezultat nije potvrđen. Ovo nije reprezentativan uzorak hrvatskog tržišta.",
+    "readingTimeMinutes": 4,
+    "publishedAt": "2026-11-16T12:15:00+01:00",
+    "updatedAt": "2026-11-16T12:15:00+01:00",
+    "author": {
+      "name": "NEPAR Publisher",
+      "url": "https://nepar.hr/"
+    },
+    "tags": [
+      "digitalni cjenik",
+      "CSV/XML",
+      "provjera weba",
+      "bazna cijena"
+    ],
+    "kicker": "NEPAR analiza · 16.11.2026.",
+    "widgetEyebrow": "PODACI IZ CHECKERA",
+    "widgetHeadline": "15 provjera, 11 domena: što je pokazao checker?",
+    "widgetSub": "Anonimizirani rezultati od 14. do 16. studenoga",
+    "schemaSection": "Praksa",
+    "image": {
+      "src": "/og/vijesti-digitalni-cjenik-2026.png",
+      "alt": "NEPAR analiza tehničke dostupnosti digitalnih cjenika",
+      "width": 1200,
+      "height": 630
+    },
+    "cta": {
+      "label": "Provjeri svoj web besplatno",
+      "href": "/#checker"
+    },
+    "secondaryCta": {
+      "label": "Izradi digitalni cjenik",
+      "href": "/app?new=1"
+    },
+    "sources": [
+      {
+        "title": "Vlada RH, 14.11.2026. — najava početka primjene i edukativnog nadzora",
+        "url": "https://vlada.gov.hr/inspektorat-nece-kaznjavati-zbog-baznih-cijena-nego-upozoravati/47604",
+        "type": "primary"
+      },
+      {
+        "title": "Zakon o izmjenama i dopunama Zakona o zaštiti potrošača — NN 59/2026",
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_06_59_728.html",
+        "type": "primary"
+      }
+    ],
+    "sections": [
+      {
+        "heading": "Rezultati NEPAR provjera: 14.–16. studenoga 2026.",
+        "level": 2,
+        "html": "<p>Od 14.11. u 00:00 do 16.11. u 12:15 (Europe/Zagreb), NEPAR checker evidentirao je <strong>15 provjera na 11 različitih hostnameova</strong> nakon isključenja označenih internih provjera i NEPAR domena. Za svaki hostname uzeli smo posljednji rezultat. Devet je rezultata označeno žuto, dva crveno i nijedan zeleno. Prosječno tehničko skóre iznosi 3,55 od 9.</p><ul class=\"news-bullets\"><li><strong>3 od 11:</strong> potvrđena strojno čitljiva datoteka (CSV/XML).</li><li><strong>3 od 11:</strong> datoteka nije pronađena.</li><li><strong>5 od 11:</strong> strojno čitljivu datoteku nije bilo moguće potvrditi.</li><li><strong>11 od 11:</strong> potvrđena dostupnost weba i HTTPS.</li><li><strong>0 od 11:</strong> potvrđena arhiva; u svih 11 slučajeva rezultat provjere arhive bio je nepotvrđen.</li></ul>"
+      },
+      {
+        "heading": "Kako smo izračunali rezultate i što oni ne dokazuju?",
+        "level": 2,
+        "html": "<p>Izvor je vlastita operativna evidencija NEPAR checkera u produkciji, stanje na 16.11.2026. u 12:15. Analiziramo tehničke statuse devet provjera; ponovljene provjere istog hostnamea nisu dodatne domene. Poddomene se broje zasebno. Ne objavljujemo nazive domena ni podatke korisnika.</p><p>Uzorak je mali i samoselektiran, a nezaobilježene testne provjere mogu biti uključene. Ne može predstavljati sve hrvatske poduzetnike, mjeriti broj jedinstvenih korisnika ili dokazati kršenje propisa. Nepotvrđen dohvat nije dokaz da cjenik ili arhiva ne postoje. Boja i broj potvrđenih tehničkih provjera nisu pravna ocjena.</p>"
+      },
+      {
+        "heading": "Što napraviti ako checker ne pronađe CSV ili XML?",
+        "level": 2,
+        "html": "<ol class=\"news-bullets\"><li>Provjerite postoji li već javna datoteka ili poveznica u vašem poslovnom programu.</li><li>Ako postoji, provjerite može li se otvoriti bez prijave i ima li potrebne podatke.</li><li>Ako ne postoji, pripremite Excel, CSV ili XML te provjerite aktualne i referentne cijene prema važećim pravilima.</li><li>Objavite javni link i dodajte ga na postojeći web.</li></ol><p>NEPAR nudi <a href=\"/#checker\">besplatnu provjeru weba</a> bez registracije. Ako želite sami objaviti cjenik, <a href=\"/app?new=1\">otvorite radni prostor</a>; pregled je besplatan, a prva objava traje 24 sata. Aktualnu ponudu pogledajte na <a href=\"/cijene/\">stranici cijena</a>.</p>"
+      },
+      {
+        "heading": "Zašto je 17. studenoga važan?",
+        "level": 2,
+        "html": "<p>Vlada je 14.11. najavila početak primjene dvaju novih pravilnika 17.11.2026. i edukativni inspekcijski pristup u početnom razdoblju. Najava upozorenja nije nova odgoda niti jamstvo izuzeća od kazni. Na datum ove analize nismo potvrdili konačne tekstove pravilnika u Narodnim novinama. Za zakonske obveze mjerodavan je objavljeni propis, ne rezultat checkera.</p><p>Pročitajte <a href=\"/digitalni-cjenik-2026/\">vodič za digitalni cjenik 2026.</a> i <a href=\"/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/\">pregled najave inspekcijskog nadzora</a>.</p>"
+      }
+    ]
+  },
+  {
     "slug": "digitalni-cjenici-inspektorat-upozorenja-2026",
     "title": "Digitalni cjenici od 17. studenoga: ministar najavio upozorenja umjesto kazni",
     "seoTitle": "Digitalni cjenici 2026.: upozorenja umjesto kazni | NEPAR",

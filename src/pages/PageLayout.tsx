@@ -88,6 +88,8 @@ export function SourceList({ sources }: { sources: Array<{ title: string; url: s
 }
 
 export const OFFICIAL_SOURCES = [
+  { title: 'Vlada RH, 14.11.2026. — najava novih pravilnika i edukativnog nadzora', url: 'https://vlada.gov.hr/inspektorat-nece-kaznjavati-zbog-baznih-cijena-nego-upozoravati/47604' },
+  { title: 'NN 59/2026 — izmjene Zakona o zaštiti potrošača', url: 'https://narodne-novine.nn.hr/clanci/sluzbeni/2026_06_59_728.html' },
   { title: 'NN 101/2026-1213 — Odluka o objavi cjenika proizvoda i usluga', url: 'https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html' },
   { title: 'NN 101/2026-1212 — Odluka o isticanju dodatne cijene', url: 'https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1212.html' },
   { title: 'Vlada RH — produljenje roka na 17. studenoga 2026.', url: 'https://vlada.gov.hr/produljuje-se-rok-za-isticanje-sidrenih-cijena-na-17-studenoga/47358' },

@@ -127,6 +127,7 @@ export function renderSitemap(urls: SitemapUrl[]) {
 export function renderRobots() {
   return [
     'User-agent: *',
+    'User-agent: OAI-SearchBot',
     'Allow: /',
     'Disallow: /api/',
     'Disallow: /app$',
@@ -149,7 +150,8 @@ export function renderLlms(posts: NewsPost[] = NEWS_POSTS) {
     `do ${MAX_ITEMS_LABEL} stavki po cjeniku. Poveznicu vlasnik dodaje kao gumb, stavku izbornika ili običan link.`,
     'Web Link je trenutačno jedini paket za nove narudžbe. Validacija Excela/CSV-a/XML-a uključena je prije objave.',
     'Automatska sinkronizacija s webshopom, API-jem ili ERP/POS sustavom nije dio Web Linka.',
-    'Rok primjene Odluka NN 101/2026 je 17. studenoga 2026. (odgoda potvrđena 29.9.2026.).',
+    'Vlada RH je 14.11.2026. najavila početak primjene novih pravilnika 17.11.2026. Konačne tehničke zahtjeve treba provjeriti u objavljenim propisima. Tehnička provjera nije pravna potvrda.',
+    '- Besplatna provjera javnog weba ne zahtijeva registraciju i prikazuje devet tehničkih provjera. Izrada i objava pokreću se zasebno na /app?new=1.',
     '',
     `Proizvod pruža: NEPAR (Nepar, obrt za digitalna rješenja i usluge) — ${NEPAR_URL}`,
     '',

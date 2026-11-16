@@ -46,6 +46,7 @@ describe('public SEO catalog', () => {
 
   it('keeps private app and API routes out of the crawl while leaving public cjeniks allowed', () => {
     expect(robots.startsWith('User-agent:')).toBe(true)
+    expect(robots).toContain('User-agent: OAI-SearchBot')
     expect(robots).toContain('Allow: /')
     expect(robots).toContain('Disallow: /api/')
     expect(robots).toContain('Disallow: /app$')

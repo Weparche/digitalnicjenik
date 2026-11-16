@@ -16,9 +16,9 @@ const OG_IMAGE = `${SITE_URL}/og/digitalni-cjenik-og.png`
 const INDEXABLE_ROBOTS = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
 const FEED_URL = `${SITE_URL}/feed.xml`
 
-export const HOME_TITLE = 'Digitalni cjenik 2026. – besplatna provjera CSV/XML | NEPAR'
+export const HOME_TITLE = 'Digitalni cjenik – besplatna provjera i izrada | NEPAR'
 const DESCRIPTION =
-  'Imate web stranicu? Besplatno provjerite digitalni cjenik, CSV/XML i javne linkove. Objava za bilo koji postojeći web od 19,90 €/god, bez plugina.'
+  'Besplatno provjerite digitalni cjenik web stranice. Izradite i objavite CSV/XML cjenik od 19,90 €/god, bez plugina. Vodič za bazne cijene i rok 17.11.2026.'
 const TWITTER_DESCRIPTION = DESCRIPTION
 
 function escapeHtml(value) {

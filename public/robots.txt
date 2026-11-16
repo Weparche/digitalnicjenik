@@ -1,4 +1,5 @@
 User-agent: *
+User-agent: OAI-SearchBot
 Allow: /
 Disallow: /api/
 Disallow: /app$

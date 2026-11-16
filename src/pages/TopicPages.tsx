@@ -12,6 +12,10 @@ const related = [
   { href: '/cijene/', label: 'Paketi i cijene' },
 ]
 
+function RegulationUpdate() {
+  return <section className="site-section"><h2>Najnovije: bazne cijene i digitalni cjenici od 17. studenoga 2026.</h2><p>Vlada je 14.11. najavila početak primjene dvaju pravilnika 17.11.2026. i edukativni pristup inspekcije u početnom razdoblju. To nije nova odgoda niti ukidanje kaznenih odredbi. Na 16.11. nismo potvrdili objavu konačnih tekstova pravilnika u Narodnim novinama. U nastavku su tehničke upute i pregled ranijih odluka; konačne obveze, izuzeća i rokove ažuriranja provjerite prema važećem objavljenom propisu.</p><p><a href="https://vlada.gov.hr/inspektorat-nece-kaznjavati-zbog-baznih-cijena-nego-upozoravati/47604" target="_blank" rel="noopener noreferrer">Službena objava Vlade RH</a> · <a href="/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/">Detalji o nadzoru</a> · <a href="/vijesti/digitalni-cjenici-rezultati-provjera-studeni-2026/">NEPAR analiza provjera</a></p></section>
+}
+
 function PublicationPath() {
   return <section className="site-section">
     <h2>Nemate javni CSV ili XML? Krenite od svoje tablice.</h2>
@@ -30,6 +34,7 @@ export function TopicLinks() {
 
 export function DigitalPricelistPage() {
   return <SitePageLayout page={getSitePage('/digitalni-cjenik/')} lead="Digitalni cjenik je javno dostupna datoteka s cijenama koju računalo može pročitati. Provjerite nalazi li se na vašem webu — bez prijave i bez promjene postojeće stranice." related={related.slice(1)}>
+    <RegulationUpdate/>
     <section className="site-section"><h2>Što zapravo treba biti objavljeno?</h2>
       <p>Za obuhvaćene trgovce i pružatelje usluga s uspostavljenom mrežnom stranicom Odluka NN 101/2026-1213 predviđa cjenik u CSV ili XML obliku. Obična tablica na stranici, fotografija jelovnika ili PDF ne zamjenjuju strojno čitljivu datoteku.</p>
       <p>Izbor alata nije propisan. Ako vaš poslovni program ili postojeći web već objavljuje valjani cjenik, zadržite taj izvor. NEPAR je opcija za provjeru i objavu, bez obveznog novog weba, plugina ili promjene domene.</p>
@@ -49,7 +54,8 @@ export function DigitalPricelistPage() {
 }
 
 export function AnchorPricePage() {
-  return <SitePageLayout page={getSitePage('/sidrena-cijena/')} lead="Sidrena, odnosno dodatna cijena služi usporedbi današnje cijene s propisanom referentnom cijenom. Nije automatski popust ni cijena koju smijete izračunati iz današnje." related={[...related.filter(item => item.href !== '/sidrena-cijena/'), {href:'/vodici/sidrena-cijena/',label:'Detaljne upute za prikaz i održavanje cijena'}]}>
+  return <SitePageLayout page={getSitePage('/sidrena-cijena/')} lead="Bazna cijena i ranije korišteni nazivi sidrena odnosno dodatna cijena odnose se na usporedbu današnje cijene s odgovarajućom referentnom vrijednošću. Nije automatski popust ni cijena koju smijete izračunati iz današnje." related={[...related.filter(item => item.href !== '/sidrena-cijena/'), {href:'/vodici/sidrena-cijena/',label:'Detaljne upute za prikaz i održavanje cijena'}]}>
+    <RegulationUpdate/>
     <section className="site-section"><h2>Na koga se odnosi dodatna cijena?</h2>
       <p>Odluka NN 101/2026-1212 obuhvaća registriranu trgovinu na malo i registrirano pružanje usluga u Hrvatskoj. Uređuje isticanje dodatne cijene uz maloprodajnu cijenu, uključujući propisane oblike oglašavanja. Obveza nije ograničena samo na webshopove.</p>
       <p>CSV/XML objava uređena je drugom Odlukom, 1213, koja se odnosi na obuhvaćene subjekte s uspostavljenim mrežnim stranicama. Zato web bez CSV-a i pogrešno istaknuta dodatna cijena nisu isti problem.</p>
@@ -120,6 +126,7 @@ export function WooCommercePricelistPage() {
 
 export function LaunchGuidePage() {
   return <SitePageLayout page={getSitePage('/digitalni-cjenik-2026/')} lead="Praktičan pregled od pripreme podataka do javne objave. Rok prilagodbe je 17. studenoga 2026.; sadržaj provjerite prema službenim odlukama i važećim izmjenama." related={related.filter(item => item.href !== '/digitalni-cjenik-2026/')}>
+    <RegulationUpdate/>
     <nav className="topic-toc" aria-label="Sadržaj vodiča"><strong>Što trebate pripremiti</strong><ul>{[['obveza','Na koga se odnosi'],['podaci','Podaci i datoteke'],['rokovi','Ažuriranje i arhiva'],['primjeri','CSV/XML primjeri'],['objava','Objava na webu']].map(([id,label])=><li key={id}><a href={`#${id}`}>{label}</a></li>)}</ul></nav>
     <section className="site-section" id="obveza"><h2>Tko treba objaviti digitalni cjenik?</h2>
       <p>Odluka o objavi cjenika odnosi se na obuhvaćene trgovce i pružatelje usluga koji imaju uspostavljene mrežne stranice. Ne odnosi se samo na online trgovine: relevantan je i poslovni web salona ili servisa.</p>
@@ -131,9 +138,9 @@ export function LaunchGuidePage() {
       <ul className="news-bullets"><li><strong>Usluge:</strong> naziv, maloprodajna cijena, poseban oblik prodaje i njegov naziv te sidrena cijena.</li><li><strong>Proizvodi:</strong> uz cijene pripremite šifru, marku, barkod, dostupnost i podatke o jedinici mjere gdje je primjenjivo.</li><li><strong>Sidrena cijena:</strong> povijesna vrijednost prema odgovarajućem referentnom datumu, ne procjena iz aktualne cijene. <a href="/sidrena-cijena/">Pregled datuma i pojmova.</a></li></ul>
       <p>Odluka propisuje sadržaj, a ne univerzalne nazive stupaca ili XML oznaka. Naziv datoteke obuhvaća oblik objekta, adresu, oznaku objekta, broj pohrane i vremensku oznaku. Konkretan izlaz nastaje iz podataka o vašem objektu. <a href="/specifikacija-csv-xml/">Specifikacija NEPAR formata</a> razlikuje obvezne podatke od naših tehničkih preporuka.</p>
     </section>
-    <section className="site-section" id="rokovi"><h2>Ažuriranje do 08:00 i arhiva 30 dana</h2>
-      <p>Proizvodi se ažuriraju svakog radnog dana do 08:00. Usluge se ažuriraju pri promjeni, do 08:00 na dan objave izmjene. To su različita pravila; ne trebate svakodnevno duplicirati čisti cjenik usluga.</p>
-      <p>Prethodne objave trebaju ostati javno dostupne tijekom propisanih 30 dana. Posebna stranica arhive i stabilni aliasi aktualnih datoteka praktična su pomoć, ali njihov naziv nije univerzalna propisana shema. NEPAR čuva verzije; novu datoteku nemojte ručno prepisivati preko jedine stare kopije.</p>
+    <section className="site-section" id="rokovi"><h2>Ažuriranje i arhiva prema ranijoj Odluci NN 101/2026</h2>
+      <p>Prema ranijoj Odluci NN 101/2026 proizvodi se ažuriraju svakog radnog dana do 08:00. Usluge se ažuriraju pri promjeni, do 08:00 na dan objave izmjene. To su različita pravila; ne trebate svakodnevno duplicirati čisti cjenik usluga.</p>
+      <p>Ranija Odluka propisuje javnu dostupnost prethodnih objava tijekom 30 dana. Provjerite konačni pravilnik za pravila koja će se primjenjivati od 17.11. Posebna stranica arhive i stabilni aliasi aktualnih datoteka praktična su pomoć, ali njihov naziv nije univerzalna propisana shema. NEPAR čuva verzije; novu datoteku nemojte ručno prepisivati preko jedine stare kopije.</p>
       <p>Dnevna NEPAR objava koristi posljednje objavljeno valjano stanje proizvoda. Promjene u Excelu, blagajni ili webshopu ne dolaze u sustav same od sebe — objavite ih ili dogovorite integraciju.</p>
     </section>
     <section className="site-section" id="primjeri"><h2>Stvarni primjeri izlaznih datoteka</h2>
