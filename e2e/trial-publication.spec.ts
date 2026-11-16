@@ -12,6 +12,8 @@ test('a valid HOK file leads to explicit object metadata before a trial claim', 
   await expect(panel.getByRole('button', { name: /Objavi besplatno na 24 h/ })).toBeEnabled()
   await panel.getByRole('button', { name: /Objavi besplatno na 24 h/ }).click()
   await page.getByLabel('Naziv poslovanja', { exact: true }).fill('Salon Test')
+  await page.getByLabel('Vrsta trgovca',{exact:true}).selectOption('natural')
+  await page.getByLabel(/Matični broj fizičke osobe/).fill('12345678')
   await page.getByLabel('E-mail', { exact: true }).fill('test@example.hr')
   await page.getByText('Uredi adresu cjenika i podatke objekta',{exact:true}).click()
   await page.getByLabel('Adresa vašeg cjenika', { exact: true }).fill('salon-test')

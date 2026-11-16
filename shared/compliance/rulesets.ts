@@ -74,36 +74,9 @@ const nn1012026: Ruleset = {
   },
 }
 
-const nn1322026:Ruleset={id:'nn-132-2026',label:'Pravilnik NN 132/2026-1584',archiveDays:15,filenameStemPattern:'^\\d{5,15}_(?:ZA_SVA_PRODAJNA_MJESTA|[a-z0-9-]+_[a-z0-9-]+_[a-z0-9-]+)_(?:ROBA|USLUGE)_\\d+_\\d{8}_\\d{5}
-export const complianceRules: Record<string, Ruleset> = {
-  [nn1012026.id]: nn1012026,
-  [nn1322026.id]:nn1322026,
-}
-
-export const ACTIVE_RULESET = nn1012026.id
-
-export function getRuleset(id: string = ACTIVE_RULESET): Ruleset {
-  const ruleset = complianceRules[id]
-  if (!ruleset) throw new Error(`unknown_ruleset:${id}`)
-  return ruleset
-}
-
-export function isComplianceProfile(value: unknown): value is ComplianceProfile {
-  return value === 'products' || value === 'services'
-}
-,profiles:{products:{label:'cjenik robe',freshness:{kind:'on_change'},requiredFields:[{field:'name',label:'naziv robe',severity:'fail'},{field:'price',label:'maloprodajna cijena',severity:'fail'},{field:'anchorPrice',label:'bazna cijena',severity:'fail'},{field:'specialSaleApplied',label:'poseban oblik prodaje',severity:'warn'}]},services:{label:'cjenik usluga',freshness:{kind:'on_change'},requiredFields:[{field:'name',label:'naziv usluge',severity:'fail'},{field:'price',label:'maloprodajna cijena',severity:'fail'},{field:'anchorPrice',label:'bazna cijena',severity:'fail'},{field:'specialSaleApplied',label:'poseban oblik prodaje',severity:'warn'}]}}}
-export const complianceRules: Record<string, Ruleset> = {
-  [nn1012026.id]: nn1012026,
-}
-
-export const ACTIVE_RULESET = nn1012026.id
-
-export function getRuleset(id: string = ACTIVE_RULESET): Ruleset {
-  const ruleset = complianceRules[id]
-  if (!ruleset) throw new Error(`unknown_ruleset:${id}`)
-  return ruleset
-}
-
-export function isComplianceProfile(value: unknown): value is ComplianceProfile {
-  return value === 'products' || value === 'services'
-}
+const fields132:RequiredFieldRule[]=[{field:'name',label:'naziv',severity:'fail'},{field:'price',label:'maloprodajna cijena',severity:'fail'},{field:'anchorPrice',label:'bazna cijena',severity:'fail'},{field:'specialSaleApplied',label:'poseban oblik prodaje',severity:'warn'}]
+const nn1322026:Ruleset={id:'nn-132-2026',label:'Pravilnik NN 132/2026-1584',archiveDays:15,filenameStemPattern:'^\\d{5,15}_(?:ZA_SVA_PRODAJNA_MJESTA|[a-z0-9-]+_[a-z0-9-]+_[a-z0-9-]+)_(?:ROBA|USLUGE)_\\d+_\\d{8}_\\d{5}$',profiles:{products:{label:'cjenik robe',freshness:{kind:'on_change'},requiredFields:fields132},services:{label:'cjenik usluga',freshness:{kind:'on_change'},requiredFields:fields132}}}
+export const complianceRules:Record<string,Ruleset>={[nn1012026.id]:nn1012026,[nn1322026.id]:nn1322026}
+export const ACTIVE_RULESET=nn1012026.id
+export function getRuleset(id:string=ACTIVE_RULESET):Ruleset{const ruleset=complianceRules[id];if(!ruleset)throw new Error('unknown_ruleset:'+id);return ruleset}
+export function isComplianceProfile(value:unknown):value is ComplianceProfile{return value==='products'||value==='services'}

@@ -66,7 +66,7 @@ export function WebsiteCheckResultPanel({ result, onUpload, onRetry,onHelp, webs
     {!unconfirmed && <progress max={9} value={report.score} aria-label={`${report.score} od 9 tehničkih provjera prolazi`}/>}
     <p className="acq-result-message">{website}<br/>{result.message}</p>
     <div className="workspace-check-meta">
-      <span>Tehnički profil podataka: {CURRENT_PROFILE_ID} (ranije odluke). Arhiva i vanjske poveznice prema pojašnjenju Ministarstva 16.11.; konačna shema još se provjerava.</span>
+      <span>Tehnička provjera NN 132/2026-1584 i kompatibilnost ranijih datoteka ({CURRENT_PROFILE_ID}).</span>
       {result.savedReport?.checkedAt && <span>Pohranjena snimka od {new Intl.DateTimeFormat('hr-HR',{dateStyle:'short',timeStyle:'short'}).format(new Date(result.savedReport.checkedAt))} — ne predstavlja novu provjeru.</span>}
       {result.details?.renderedEvidence && <p>{result.details.renderedEvidence}</p>}
       {result.details?.publicationDateEvidence && <p><strong>Aktualnost:</strong> {result.details.publicationDateEvidence}</p>}

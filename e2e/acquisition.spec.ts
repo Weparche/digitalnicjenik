@@ -155,7 +155,7 @@ test('existing-web landing explains link-only setup with FAQ, plans and extra se
     await page.goto('/digitalni-cjenik-za-wordpress-webshop/')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Digitalni cjenik za WordPress, webshop i bilo koji postojeći web')
     await expect(page.locator('.ew-platforms dt')).toHaveText(['WordPress', 'WooCommerce', 'Shopify', 'Wix, Webflow i vlastiti web', 'Google Sites', 'Custom HTML / React'])
-    await expect(page.locator('#cesta-pitanja .site-faq-item')).toHaveCount(8)
+    await expect(page.locator('#cesta-pitanja .site-faq-item')).toHaveCount(9)
     await expect(page.locator('.acq-plan').first()).toContainText('Do 5.000 stavki')
     await expect(page.locator('.acq-extra')).toHaveCount(1)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)

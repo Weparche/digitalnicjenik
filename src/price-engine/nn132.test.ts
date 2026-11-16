@@ -21,3 +21,9 @@ describe('NN 132/2026 formats',()=>{
  expect(parseXmlPriceList(renderXml(list)).items[0]).toMatchObject({netQuantity:0.5,eanBarcode:'4006381333931',barcode:'X123',type:'Proizvod'})
  })
 })
+
+import {parseCsvFeed,parseXmlFeed,compareFeedToPayload} from '../../shared/compliance/document-parser'
+it('monitor compares all new-format fields including effective sale price',()=>{
+ expect(compareFeedToPayload(service.items,parseCsvFeed(renderCsv(service)))).toEqual({missing:0,unexpected:0})
+ expect(compareFeedToPayload(service.items,parseXmlFeed(renderXml(service)))).toEqual({missing:0,unexpected:0})
+})

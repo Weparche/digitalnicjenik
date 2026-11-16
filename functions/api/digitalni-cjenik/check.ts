@@ -730,7 +730,8 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
     const historicRows = new Set(parsed.warnings.filter(w=>w.rule==='product.anchor.historical-absence').map(w=>w.row));
     const findings: DocumentFinding[] = parsed.warnings.map(w => withLevel({ row: w.row, itemName: w.itemName, field: w.field, message: w.message }, w.rule ?? parseWarningRule(w.field)));
     if (parsed.priceList.items.length) {
-      for (const issue of validatePriceList(parsed.priceList).issues) {
+      const nn132=kind==='csv'?/bazna cijena/i.test(body.split(/\r?\n/,1)[0]):/<bazna_cijena\b/i.test(body);
+      for (const issue of validatePriceList(parsed.priceList,{nn132}).issues) {
         const index = issue.row - 2;
         const sourceRow = parsed.sourceRows?.[index] ?? issue.row;
         if(issue.rule==='product.anchor.missing' && historicRows.has(sourceRow)) continue;
@@ -773,6 +774,9 @@ export function parsePublicationName(value: string): PublicationName | null {
   } catch { path = value.split('/').pop() || value; }
   const stem = path.replace(/\.(csv|xml)$/i, '').replace(/([_ ,])\s*(\d{1,2})\.(\d{2})h$/i, (_, sep, hour, minute) => sep + hour.padStart(2,'0') + ':' + minute);
   const parts = (stem.includes('_') ? stem.split('_') : stem.split(',')).map(part => part.trim());
+  const nn132=/^(\d{5,15})_(.+)_(ROBA|USLUGE)_(\d+)_(\d{8})_(0?\d{4})$/i.exec(stem);
+  if(nn132){const [,id,location,kind,sequence,date,rawTime]=nn132;const hhmm=rawTime.slice(-4);const iso=date.slice(0,4)+'-'+date.slice(4,6)+'-'+date.slice(6,8)+'T'+hhmm.slice(0,2)+':'+hhmm.slice(2)+':00Z';const time=Date.parse(iso);if(Number.isFinite(time)&&(/^[a-z0-9-]+_[a-z0-9-]+_[a-z0-9-]+$/i.test(location)||location.toUpperCase()==='ZA_SVA_PRODAJNA_MJESTA'))return {storage:Number(sequence),stamp:date+'_'+rawTime,time,objectKey:[id,location,kind].join('|').toLowerCase()};}
+
   const plodine = /^(\d{2})(\d{2})(\d{4})(\d{2})(\d{2})(\d{2})$/.exec(parts.at(-1) ?? '');
   if(plodine){
     const storage=parts.at(-2)??'',objectParts=parts.slice(0,-2);
