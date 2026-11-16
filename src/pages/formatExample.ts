@@ -25,3 +25,7 @@ export const NEPAR_PRODUCT_FORMAT_EXAMPLE: NormalizedPriceList = {
     { category: 'Pića', name: 'Sok od jabuke, 1 l', type: 'Proizvod', anchorReferenceDate: '2025-05-02', externalId: 'PIC-203', brand: 'Primjer sokovi', barcode: '4012345678901', unit: 'l', unitPrice: 1.79, price: 1.79, salePrice: 1.49, lowest30DayPrice: 1.79, anchorPrice: 1.79, specialSaleApplied: true, specialSaleName: 'Jesenska akcija', availability: 'dostupno' },
   ],
 }
+
+/** Current regulatory examples; the old constants document legacy imports only. */
+export const NN132_SERVICE_EXAMPLE:NormalizedPriceList={...NEPAR_FORMAT_EXAMPLE,formatVersion:'nn-132-2026',items:NEPAR_FORMAT_EXAMPLE.items.map(i=>({...i,specialSaleApplied:false,lowest30DayPrice:null,specialSaleName:null}))}
+export const NN132_PRODUCT_EXAMPLE:NormalizedPriceList={...NEPAR_PRODUCT_FORMAT_EXAMPLE,formatVersion:'nn-132-2026',items:NEPAR_PRODUCT_FORMAT_EXAMPLE.items.map((i,n)=>({...i,netQuantity:n===1?0.5:1,unitPrice:n===2?1.79:i.unitPrice,eanBarcode:i.barcode,specialSaleApplied:false,salePrice:null,lowest30DayPrice:null,specialSaleName:null}))}

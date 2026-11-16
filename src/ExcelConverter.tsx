@@ -18,7 +18,7 @@ const fieldLabels: Array<{ field: ExcelField; label: string; required?: boolean 
   { field: 'type', label: 'Vrsta' },
   { field: 'category', label: 'Kategorija' },
   { field: 'externalId', label: 'Šifra' },
-  { field: 'anchorPrice', label: 'Sidrena cijena' },
+  { field: 'anchorPrice', label: 'Bazna cijena' },
   { field: 'anchorReferenceDate', label: 'Datum referentne cijene' },
   { field: 'lowest30DayPrice', label: 'Prethodna najniža cijena (30 dana)' },
   { field: 'unitPricingExemption', label: 'Razlog izuzeća cijene po jedinici' },
@@ -29,6 +29,8 @@ const fieldLabels: Array<{ field: ExcelField; label: string; required?: boolean 
   { field: 'unitPrice', label: 'Cijena za jedinicu mjere' },
   { field: 'brand', label: 'Marka' },
   { field: 'barcode', label: 'Barkod' },
+  { field: 'eanBarcode', label: 'EAN barkod' },
+  { field: 'netQuantity', label: 'Neto količina' },
   { field: 'availability', label: 'Dostupnost (dostupno/nedostupno)' },
   { field: 'isNewSinceReferenceDate', label: 'Nova usluga' },
 ]

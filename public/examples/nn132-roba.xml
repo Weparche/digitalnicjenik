@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cjenik format="nn-132-2026">
+  <roba>
+    <naziv_robe>Mlijeko 2,8% mm, 1 l</naziv_robe>
+    <sifra_robe>MLI-001</sifra_robe>
+    <marka_robe>Primjer mljekara</marka_robe>
+    <neto_kolicina>1</neto_kolicina>
+    <jedinica_mjere>l</jedinica_mjere>
+    <maloprodajna_cijena>1.19</maloprodajna_cijena>
+    <poseban_oblik_prodaje>NE</poseban_oblik_prodaje>
+    <cijena_za_jedinicu_mjere>1.19</cijena_za_jedinicu_mjere>
+    <barkod_robe>4006381333931</barkod_robe>
+    <ean_barkod_robe>4006381333931</ean_barkod_robe>
+    <bazna_cijena>1.09</bazna_cijena>
+  </roba>
+  <roba>
+    <naziv_robe>Kruh bijeli, 500 g</naziv_robe>
+    <sifra_robe>PEK-014</sifra_robe>
+    <marka_robe>bez marke</marka_robe>
+    <neto_kolicina>0.5</neto_kolicina>
+    <jedinica_mjere>kg</jedinica_mjere>
+    <maloprodajna_cijena>0.99</maloprodajna_cijena>
+    <poseban_oblik_prodaje>NE</poseban_oblik_prodaje>
+    <cijena_za_jedinicu_mjere>1.98</cijena_za_jedinicu_mjere>
+    <barkod_robe>96385074</barkod_robe>
+    <ean_barkod_robe>96385074</ean_barkod_robe>
+    <bazna_cijena>0.95</bazna_cijena>
+  </roba>
+  <roba>
+    <naziv_robe>Sok od jabuke, 1 l</naziv_robe>
+    <sifra_robe>PIC-203</sifra_robe>
+    <marka_robe>Primjer sokovi</marka_robe>
+    <neto_kolicina>1</neto_kolicina>
+    <jedinica_mjere>l</jedinica_mjere>
+    <maloprodajna_cijena>1.79</maloprodajna_cijena>
+    <poseban_oblik_prodaje>NE</poseban_oblik_prodaje>
+    <cijena_za_jedinicu_mjere>1.79</cijena_za_jedinicu_mjere>
+    <barkod_robe>4012345678901</barkod_robe>
+    <ean_barkod_robe>4012345678901</ean_barkod_robe>
+    <bazna_cijena>1.79</bazna_cijena>
+  </roba>
+</cjenik>

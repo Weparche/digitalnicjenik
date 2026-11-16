@@ -85,25 +85,25 @@ export function SpecPage() {
         <p>Datoteke nove objave koriste OIB pravne osobe ili matični broj fizičke osobe, prodajno mjesto i oznaku vrste cjenika, redni broj i vremensku oznaku. Ako isti cjenik vrijedi posvuda, koristi se ZA_SVA_PRODAJNA_MJESTA. Tablice niže opisuju povijesni NEPAR format i uvoz, ne novi obvezni redoslijed.</p>
         <ul className="news-bullets">
           <li><strong>Format:</strong> važeći cjenik na mrežnoj stranici u <code>.csv</code> ili <code>.xml</code> obliku, uz mogućnost automatiziranog dohvata.</li>
-          <li><strong>Usluge:</strong> naziv usluge, maloprodajna cijena, podatak o posebnom obliku prodaje (i njegov naziv) te sidrena odnosno dodatna cijena.</li>
-          <li><strong>Proizvodi:</strong> među ostalim naziv, šifra, marka, maloprodajna i sidrena cijena, posebni oblik prodaje, barkod i dostupnost.</li>
-          <li><strong>Naziv datoteke:</strong> oblik prodajnog odnosno uslužnog objekta, adresa, oznaka objekta, broj pohrane i vremenska oznaka.</li>
-          <li><strong>Arhiva:</strong> Ministarstvo je najavilo 15 dana od zamjene. NEPAR čuva verzije 15 dana; vanjska arhiva dopuštena je bez autentifikacije.</li>
-          <li><strong>Struktura:</strong> u ranijoj odluci nazivi i separator nisu bili definirani. Novi pravilnik najavljuje konkretnije tehničke zahtjeve. Jedan zajednički cjenik predviđen je za prodajna mjesta s istim cijenama i asortimanom.</li>
+          <li><strong>Usluge:</strong> naziv, maloprodajna cijena, podatak o posebnom obliku prodaje i bazna cijena.</li>
+          <li><strong>Roba:</strong> naziv, primjenjiva identifikacijska polja, neto količina kada je obvezna jedinična cijena, maloprodajna i bazna cijena te podatak o posebnoj prodaji. Dostupnost nije obvezan stupac.</li>
+          <li><strong>Naziv datoteke:</strong> identifikator trgovca, prodajno mjesto, naznaka robe/usluga, broj pohrane i vremenska oznaka.</li>
+          <li><strong>Arhiva:</strong> 15 dana od zamjene prema članku 3. NEPAR čuva verzije 15 dana; vanjska arhiva dopuštena je bez autentifikacije.</li>
+          <li><strong>Struktura:</strong> u ranijoj odluci nazivi i separator nisu bili definirani. Novi pravilnik propisuje redoslijed, UTF-8 i razdjelnik te dopušta ZIP i GZ. Jedan zajednički cjenik predviđen je za prodajna mjesta s istim cijenama i asortimanom.</li>
           <li><strong>Rok primjene:</strong> 17. studenoga 2026. Referentni datum sidrene cijene je 10. rujna 2026. (za ranije obuhvaćene skupine proizvoda 2. svibnja 2025.).</li>
         </ul>
         <h3>Službeno pojašnjenje Ministarstva</h3>
-        <p>Za proizvod ili uslugu uvedenu nakon 10. rujna 2026. sidrena (dodatna) cijena je cijena s datuma prvog uvrštenja u prodaju, uz jasno naveden taj datum.</p>
+        <p>Za proizvod ili uslugu uvedenu nakon 10. rujna 2026. sidrena (dodatna) cijena je cijena s datuma prvog uvrštenja u prodaju, Datum prvog uvrštenja čuvajte u vlastitoj evidenciji.</p>
         <h3>NEPAR preporuka</h3>
-        <p>Stupci u nastavku su NEPAR preporučena shema, usklađena s podacima iz Odluke i HOK predloškom. Objava oba formata (CSV i XML), stabilna adresa poput <code>/cjenik.csv</code> i javna stranica arhive korisne su preporuke, ali nisu zakonska obveza.</p>
+        <p>Novi primjeri ispod prate redoslijed iz članka 3. Dovoljan je CSV ili XML; oba su korisna. Ista URL adresa obvezna je prema članku 6. stavku 2. Posebna stranica arhive olakšava pristup, ali nije zasebno propisana.</p>
         <p className="news-lead-note">
           Ovo je sažetak, ne zamjena za službeni tekst. <strong>Stanje 16.11.2026.:</strong> konačni pravilnici objavljeni su u <a href="https://narodne-novine.nn.hr/eli/sluzbeni/2026/132/pdf">NN 132/2026</a> i stupaju na snagu 17.11. Stare objave ostaju dostupne u povijesnom formatu.
         </p>
       </section>
 
       <section className="site-section" aria-labelledby="csv-title">
-        <h2 id="csv-title">NEPAR CSV: stupci</h2>
-        <p>Kodiranje UTF-8 (s BOM-om), separator zarez, kraj retka CRLF, decimalna točka. Pri uvozu prepoznajemo i točku-zarez te uobičajena zaglavlja (uključujući HOK predložak za usluge). Provjera web stranice prepoznaje i drukčije nazvana polja istog značenja, npr. <code>service_name</code> ili <code>retail_price</code>, jer Odluka ne propisuje nazive stupaca.</p>
+        <h2 id="csv-title">Preuzmite aktualne primjere prema NN 132/2026</h2><p>Ilustrativni podaci – zamijenite ih svojim stvarnim cijenama. Nazivi datoteka za stvarnu objavu generiraju se iz podataka trgovca.</p><p><a href="/examples/nn132-usluge.csv" download>Usluge CSV</a> · <a href="/examples/nn132-usluge.xml" download>Usluge XML</a> · <a href="/examples/nn132-roba.csv" download>Roba CSV</a> · <a href="/examples/nn132-roba.xml" download>Roba XML</a></p><h3>Raniji NEPAR format – kompatibilnost uvoza</h3>
+        <p>Povijesni izvoz (ne za novu objavu): kodiranje UTF-8 (s BOM-om), separator zarez, kraj retka CRLF, decimalna točka. Pri uvozu prepoznajemo i točku-zarez te uobičajena zaglavlja (uključujući HOK predložak za usluge). Provjera web stranice prepoznaje i drukčije nazvana polja istog značenja, npr. <code>service_name</code> ili <code>retail_price</code>, jer Odluka ne propisuje nazive stupaca.</p>
         <div className="site-table-wrap" role="region" aria-label="Stupci CSV-a" tabIndex={0}>
           <table className="site-table">
             <caption className="sr-only">Stupci NEPAR CSV formata</caption>

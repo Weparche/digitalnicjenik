@@ -20,6 +20,8 @@ export type ExcelField =
   | 'unitPrice'
   | 'brand'
   | 'barcode'
+  | 'eanBarcode'
+  | 'netQuantity'
   | 'availability'
   | 'isNewSinceReferenceDate'
   | 'anchorReferenceDate'
@@ -31,12 +33,13 @@ export type ExcelSheet = { name: string; rows: unknown[][] }
 export type ExcelWorkbook = { sheets: ExcelSheet[] }
 
 const aliases: Record<ExcelField, string[]> = {
-  name: ['naziv', 'naziv usluge', 'naziv proizvoda', 'naziv artikla', 'artikl', 'usluga', 'name'],
-  price: ['cijena', 'maloprodajna cijena', 'mp cijena', 'prodajna cijena', 'price', 'regular price'],
+  name: ['naziv', 'naziv usluge', 'naziv proizvoda', 'naziv robe', 'opis usluge', 'naziv artikla', 'artikl', 'usluga', 'name'],
+  price: ['cijena', 'maloprodajna cijena', 'maloprodajna cijena robe', 'maloprodajna cijena usluge', 'mp cijena', 'prodajna cijena', 'price', 'regular price'],
   type: ['vrsta', 'tip', 'vrsta stavke', 'type'],
   category: ['grupa', 'kategorija', 'category', 'categories'],
-  externalId: ['sku', 'šifra', 'sifra', 'interna šifra', 'interna sifra', 'šifra proizvoda', 'sifra proizvoda', 'id', 'code'],
+  externalId: ['sku', 'šifra', 'sifra', 'interna šifra', 'interna sifra', 'šifra proizvoda', 'šifra robe', 'sifra proizvoda', 'id', 'code'],
   anchorPrice: [
+    'bazna cijena','bazna cijena robe','bazna cijena usluge','base price',
     'sidrena cijena',
     'sidrena cijena 10.9.2026.',
     'sidrena cijena 10. 9. 2026.',
@@ -57,17 +60,19 @@ const aliases: Record<ExcelField, string[]> = {
   specialSaleName: ['naziv posebnog oblika prodaje', 'naziv posebne prodaje', 'special sale name'],
   unit: ['jedinica', 'jedinica mjere', 'unit'],
   unitPrice: ['cijena za jedinicu mjere', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price'],
-  brand: ['marka', 'brend', 'brand', 'brands'],
-  barcode: ['barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn'],
+  brand: ['marka', 'marka robe','marka proizvoda','brend', 'brand', 'brands'],
+  netQuantity:['neto količina','neto kolicina','net quantity'],
+  eanBarcode:['ean barkod robe','ean barkod','ean barcode'],
+  barcode: ['barkod robe','barkod', 'barcode', 'ean', 'gtin', 'bar kod', 'gtin, upc, ean, or isbn'],
   availability: ['dostupnost', 'dostupno', 'dostupno/nedostupno', 'availability', 'in stock?'],
   isNewSinceReferenceDate: ['nova stavka', 'nova usluga', 'novouvedena usluga', 'new service'],
-  anchorReferenceDate: ['datum referentne cijene', 'anchor reference date'],
+  anchorReferenceDate: ['datum referentne cijene','datum bazne cijene', 'anchor reference date'],
   lowest30DayPrice: ['najniža cijena u 30 dana', 'najniza cijena u 30 dana', 'lowest 30 day price'],
   unitPricingExemption: ['razlog izuzeća cijene po jedinici', 'unit pricing exemption'],
 }
 
 const clean = (value: unknown) => String(value ?? '').replace(/^\uFEFF/, '').trim()
-const normalizedHeader = (value: unknown) => normalizeHeader(clean(value)).replace(/[*:]+$/g, '').trim()
+const normalizedHeader = (value: unknown) => normalizeHeader(clean(value)).replace(/\s*\((?:eur|€|u eurima)\)\s*$/i,'').replace(/[*:]+$/g, '').trim()
 
 function booleanValue(value: unknown): boolean | null {
   const normalized = clean(value).toLocaleLowerCase('hr-HR')
@@ -167,14 +172,14 @@ export function excelRowsToPriceList(
       })
       return []
     }
-    const rawType = clean(value('type')) || (normalizedHeader(mapping.name ?? '') === 'naziv usluge' ? 'Usluga' : '')
+    const rawType = clean(value('type')) || (['naziv usluge','opis usluge','usluga'].includes(normalizedHeader(mapping.name ?? '')) ? 'Usluga' : ['naziv robe','naziv proizvoda'].includes(normalizedHeader(mapping.name??''))?'Proizvod':'')
     const isGoodsKind = /^(simple|variable|variation|grouped|external)$/i.test(rawType)
     const salePrice = normalizeNumber(value('salePrice'))
     const specialSaleApplied = booleanValue(value('specialSaleApplied'))
     const dateRaw = clean(value('anchorReferenceDate'))
     const referenceDate = normalizeReferenceDate(dateRaw)
     if (dateRaw && !referenceDate) warnings.push({ row: absoluteRow, field: 'anchorPrice', message: 'referentni datum nije valjan (koristite GGGG-MM-DD ili DD.MM.GGGG.).' })
-    for (const field of ['salePrice', 'anchorPrice', 'unitPrice', 'lowest30DayPrice'] as const) {
+    for (const field of ['salePrice', 'anchorPrice', 'unitPrice', 'lowest30DayPrice','netQuantity'] as const) {
       if (clean(value(field)) && normalizeNumber(value(field)) == null) warnings.push({ row: absoluteRow, field: field === 'salePrice' || field === 'lowest30DayPrice' ? 'price' : field, message: 'vrijednost nije valjan broj.' })
     }
     return [{
@@ -191,6 +196,8 @@ export function excelRowsToPriceList(
       ...(indexes.unitPrice == null ? {} : { unitPrice: normalizeNumber(value('unitPrice')) }),
       ...(indexes.brand == null ? {} : { brand: clean(value('brand')) || null }),
       ...(indexes.barcode == null ? {} : { barcode: normalizeBarcode(value('barcode')) || null }),
+      ...(indexes.eanBarcode == null ? {} : {eanBarcode:normalizeBarcode(value('eanBarcode'))||null}),
+      ...(indexes.netQuantity == null ? {} : {netQuantity:normalizeNumber(value('netQuantity'))}),
       ...(indexes.availability == null ? {} : { availability: parseAvailability(value('availability')) }),
       isNewSinceReferenceDate: booleanValue(value('isNewSinceReferenceDate')) === true,
       ...(referenceDate ? { anchorReferenceDate: referenceDate } : {}),

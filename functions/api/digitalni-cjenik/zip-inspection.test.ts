@@ -50,3 +50,18 @@ describe('bounded ZIP inspection',()=>{
   await expect(readZipDirectory(fetcher(bytes))).rejects.toThrow()
  })
 })
+
+it('accepts valid GZ and does not accept legacy filenames as current under NN132',async()=>{
+ const content='Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje;Bazna cijena\nŠišanje;15;NE;15'
+ const bytes=await new Response(new Blob([content]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()
+ const current='/12345678_ZA_SVA_PRODAJNA_MJESTA_USLUGE_1_20261117_00830.csv.gz'
+ vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>new URL(String(input)).pathname.endsWith('.gz')?new Response(bytes,{headers:{'content-type':'application/gzip'}}):new Response('missing',{status:404})))
+ const options={enforceNN132:true,DIGITAL_PRICE_LIST_DNS_RESOLVER:{resolve4:async()=>['93.184.216.34'],resolve6:async()=>[]}}
+ const result=await runDigitalPriceListCheck('https://example.hr'+current,options)
+ expect(result.details.csvAnalysis?.structureRecognized).toBe(true)
+ expect(result.details.csvAnalysis?.contentStatus).toBe('pass')
+ expect(result.details.publicationFindings?.some(f=>f.rule==='publication.filename.unverified')).toBe(false)
+ const legacy=await runDigitalPriceListCheck('https://example.hr/stari.csv.gz',options)
+ expect(legacy.status).toBe('yellow')
+ expect(legacy.details.publicationFindings?.some(f=>f.rule==='publication.filename.unverified')).toBe(true)
+})

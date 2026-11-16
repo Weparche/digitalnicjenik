@@ -57,3 +57,17 @@ describe('content integrity', () => {
     for (const row of COMPARE_ROWS) expect(row.cells).toHaveLength(COMPARE_COLUMNS.length)
   })
 })
+
+import service132Csv from '../../public/examples/nn132-usluge.csv?raw'
+import goods132Csv from '../../public/examples/nn132-roba.csv?raw'
+import service132Xml from '../../public/examples/nn132-usluge.xml?raw'
+import goods132Xml from '../../public/examples/nn132-roba.xml?raw'
+import {NN132_SERVICE_EXAMPLE,NN132_PRODUCT_EXAMPLE} from './formatExample'
+it('current downloadable examples match the NN132 renderers',()=>{
+ expect(service132Csv).toBe(renderCsv(NN132_SERVICE_EXAMPLE))
+ expect(goods132Csv).toBe(renderCsv(NN132_PRODUCT_EXAMPLE))
+ expect(service132Xml).toBe(renderXml(NN132_SERVICE_EXAMPLE))
+ expect(goods132Xml).toBe(renderXml(NN132_PRODUCT_EXAMPLE))
+ expect(validatePriceList(NN132_SERVICE_EXAMPLE).status).toBe('ready_to_publish')
+ expect(validatePriceList(NN132_PRODUCT_EXAMPLE).status).toBe('ready_to_publish')
+})

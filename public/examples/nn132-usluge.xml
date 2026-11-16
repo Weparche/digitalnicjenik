@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cjenik format="nn-132-2026">
+  <usluga>
+    <naziv_usluge>Muško šišanje</naziv_usluge>
+    <maloprodajna_cijena>15.00</maloprodajna_cijena>
+    <poseban_oblik_prodaje>NE</poseban_oblik_prodaje>
+    <bazna_cijena>15.00</bazna_cijena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Žensko šišanje</naziv_usluge>
+    <maloprodajna_cijena>21.00</maloprodajna_cijena>
+    <poseban_oblik_prodaje>NE</poseban_oblik_prodaje>
+    <bazna_cijena>18.00</bazna_cijena>
+  </usluga>
+  <usluga>
+    <naziv_usluge>Bojanje kose</naziv_usluge>
+    <maloprodajna_cijena>40.00</maloprodajna_cijena>
+    <poseban_oblik_prodaje>NE</poseban_oblik_prodaje>
+    <bazna_cijena>45.00</bazna_cijena>
+  </usluga>
+</cjenik>
