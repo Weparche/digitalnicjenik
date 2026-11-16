@@ -40,7 +40,7 @@ export function PriceHistoryPanel({slug,items,onApply}:{slug:string;items:Normal
  const applicable:Record<number,number>={}
  if(data)for(const result of data.results){
    const row=batch[result.index];if(!row)continue
-   if(result.status==='complete'&&result.lowest!=null&&(counts.get(result.key)??0)===1&&row.item.specialSaleApplied===true&&row.item.lowest30DayPrice==null)applicable[row.index]=result.lowest
+   if(result.status==='complete'&&result.lowest!=null&&result.lowest>0&&(counts.get(result.key)??0)===1&&row.item.specialSaleApplied===true&&row.item.lowest30DayPrice==null)applicable[row.index]=result.lowest
  }
  return <details className="workspace-surface price-history-panel" open={open} onToggle={e=>setOpen(e.currentTarget.open)}>
   <summary>Najniža cijena u prethodnih 30 dana</summary>

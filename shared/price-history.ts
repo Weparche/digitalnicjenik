@@ -25,7 +25,7 @@ export function historyWindow(start:string){
  return {from:zagrebTimeToIso(earlier),to:new Date(asOf).toISOString()}
 }
 export function historyIdentity(item:Pick<NormalizedPriceItem,'type'|'externalId'|'eanBarcode'|'barcode'|'name'>){
- const kind=isServiceItem(item)?'s:':'p:'
+ const kind=isServiceItem({...item,price:0})?'s:':'p:'
  const code=item.externalId?.trim(),ean=item.eanBarcode?.trim(),barcode=item.barcode?.trim()
  if(code)return {key:kind+'code:'+code,identity:'code' as const}
  if(ean)return {key:kind+'ean:'+ean,identity:'ean' as const}

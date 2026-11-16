@@ -197,3 +197,20 @@ test('a second owned price list keeps its tenant when ordering after the welcome
   await page.getByRole('button',{name:'Nastavi na uplatu →'}).click()
   await expect.poll(()=>placed?.tenant).toBe('salon')
 })
+
+
+test('Web Link can calculate and confirm a historical lowest price before publication',async({page})=>{
+ await api(page)
+ await page.route('**/api/tenants/salon/price-history',route=>route.fulfill({json:{window:{from:'2026-10-01T08:00:00Z',to:'2026-10-31T08:00:00Z'},truncated:false,results:[{index:0,key:'s:name:Šišanje',name:'Šišanje',status:'complete',lowest:15,observations:[{from:'2026-10-01T08:00:00Z',price:15}],reason:'Objave pokrivaju cijelo razdoblje.',identity:'name'}]}}))
+ await page.goto('/app?tab=cjenik')
+ await page.getByRole('button',{name:'Zamijeni cjenik',exact:true}).click()
+ await page.getByLabel('Učitaj cjenik',{exact:true}).setInputFiles({name:'akcija.csv',mimeType:'text/csv',buffer:Buffer.from('Naziv,Vrsta,Cijena,Bazna cijena,Poseban oblik prodaje\nŠišanje,Usluga,10,15,DA')})
+ await expect(page.getByRole('button',{name:'Objavi zamjenu cjenika'})).toBeDisabled()
+ await page.locator('.price-history-panel summary').first().click()
+ await page.getByRole('button',{name:'Izračunaj najniže cijene'}).click()
+ const apply=page.getByRole('button',{name:'Prenesi potvrđene najniže cijene (1)'})
+ await expect(apply).toBeDisabled()
+ await page.getByLabel(/Potvrđujem stvarni početak akcije/).check()
+ await apply.click()
+ await expect(page.getByRole('button',{name:'Objavi zamjenu cjenika'})).toBeEnabled()
+})

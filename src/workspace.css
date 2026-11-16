@@ -43,3 +43,5 @@
   #rezultat details{break-inside:avoid;page-break-inside:avoid}
   #rezultat details .acq-evidence{display:block!important;visibility:visible!important}
 }
+
+.price-history-panel{min-width:0;margin-top:1rem}.price-history-panel>summary{cursor:pointer;font-weight:650}.price-history-content{display:grid;gap:12px;margin-top:12px;min-width:0}.price-history-content>label{display:grid;gap:6px;max-width:420px}.price-history-content>label:has(input[type=checkbox]){display:flex;align-items:flex-start;max-width:none;gap:10px}.price-history-content input:not([type=checkbox]),.price-history-content select{box-sizing:border-box;width:100%;min-width:0;padding:10px;border:1px solid #b8c3d2;border-radius:8px;background:white;color:#172033}.price-history-content .publication-actions{flex-wrap:wrap}.price-history-content .validator-table-wrap{min-width:0;overflow-x:auto}.price-history-content td small{display:block;margin-top:4px;max-width:380px}.price-history-content td{vertical-align:top}

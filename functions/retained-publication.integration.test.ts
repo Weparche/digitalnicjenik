@@ -2,6 +2,7 @@ import { beforeEach, expect, it } from 'vitest'
 import { env } from 'cloudflare:test'
 import { onRequestGet as getArchivedCsv } from './c/[slug]/[filename].csv'
 import { onRequestGet as getCurrentCsv } from './c/[slug]/cjenik.csv'
+import {onRequestPost as getPriceHistory} from './api/tenants/[slug]/price-history'
 import { onRequestGet as getRetained } from './api/publication/retained'
 import { onRequestPatch as saveMetadata } from './api/tenants/[slug]/metadata'
 import { createDraft, publishDraft, readMetadataForSlug, type RuntimeEnv } from './_repository'
@@ -72,4 +73,22 @@ it('requires write access to metadata and creates a new filename when only the a
   expect(after.changed).toBe(true)
   expect(after.publication!.filenameStem).toContain('nova-ulica-20-zagreb')
   expect(after.publication!.filenameStem).not.toBe(before.publication!.filenameStem)
+})
+
+
+it('calculates a private historical minimum across expired public archive and active sale prices',async()=>{
+ const earlier={...list,items:[{...list.items[0],externalId:'S1',price:15}]}
+ const later={...earlier,items:[{...earlier.items[0],price:18,salePrice:12,specialSaleApplied:true}]}
+ await env.DB.batch([
+  env.DB.prepare("UPDATE price_publications SET published_at='2025-09-01T08:00:00.000Z',superseded_at='2025-10-20T08:00:00.000Z',public_until='2025-11-04T08:00:00.000Z',payload_json=? WHERE id='old'").bind(JSON.stringify(earlier)),
+  env.DB.prepare("UPDATE price_publications SET published_at='2025-10-20T08:00:00.000Z',payload_json=? WHERE id='current'").bind(JSON.stringify(later))
+ ])
+ const request=(authorized:boolean)=>new Request('https://digitalnicjenik.nepar.hr/api/tenants/retained/price-history',{method:'POST',headers:{'content-type':'application/json',...(authorized?{authorization:'Bearer operator-test'}:{})},body:JSON.stringify({start:'2025-11-01T10:00:00Z',items:[{...earlier.items[0],price:10}]})})
+ expect((await getPriceHistory({request:request(false),params:{slug:'retained'},env:runtime()})).status).toBe(401)
+ expect((await getPriceHistory({request:request(false),params:{slug:'nepar'},env:runtime()})).status).toBe(401)
+ expect((await getPriceHistory({request:request(true),params:{slug:'another'},env:runtime()})).status).toBe(404)
+ const result=await getPriceHistory({request:request(true),params:{slug:'retained'},env:runtime()})
+ expect(result.status).toBe(200)
+ expect(result.headers.get('cache-control')).toContain('no-store')
+ expect(await result.json()).toMatchObject({results:[{status:'complete',lowest:12,observations:[{price:15},{price:12}]}]})
 })
