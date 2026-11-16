@@ -1,4 +1,7 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi, beforeEach, afterEach } from 'vitest'
+// These fixtures intentionally test the historical pre-NN132 publication path.
+beforeEach(()=>{vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-16T22:00:00Z'))})
+afterEach(()=>vi.useRealTimers())
 import { env } from 'cloudflare:test'
 import { createPrivateDraft, startTrialClaim, provisionTrialFromToken, type TrialEnv } from './_trial'
 import { readCurrentPublication, readMetadataForSlug } from './_repository'
@@ -51,4 +54,16 @@ it('publishes a verified valid trial with the real object address and services p
   expect(entitlement).toMatchObject({ plan: 'web_link', status: 'trial' })
   expect(Date.parse(entitlement!.period_end) - Date.parse(entitlement!.period_start)).toBe(24 * 3_600_000)
   expect(mail[0]).toContain('besplatna 24 sata')
+})
+
+it('publishes an NN132 trial with verified-format merchant metadata after the effective date',async()=>{
+ vi.setSystemTime(new Date('2026-11-17T10:00:00+01:00'))
+ const {runtime,request,turnstile,mail}=setup()
+ const draft=await createPrivateDraft(runtime,{...prices,formatVersion:'nn-132-2026'},'novi.csv','nepar',[],{...details,merchantIdentifier:'12345678',merchantType:'natural'})
+ await startTrialClaim(request,runtime,{draftId:draft.draftId,email:'nn132@example.hr',businessName:'Salon NN132',slug:'salon-nn132',turnstileToken:'local'},turnstile)
+ const token=mail[0]?.match(/token=([a-f0-9]+)/)?.[1];expect(token).toBeTruthy()
+ await provisionTrialFromToken(runtime,token!)
+ const publication=await readCurrentPublication(runtime,'salon-nn132')
+ expect(publication?.payload.formatVersion).toBe('nn-132-2026')
+ expect(publication?.filenameStem).toMatch(/^12345678_.*_USLUGE_/)
 })

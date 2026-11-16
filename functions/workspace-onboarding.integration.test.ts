@@ -1,4 +1,7 @@
-import { expect,it } from 'vitest'
+import { expect, it, vi, beforeEach, afterEach } from 'vitest'
+// These fixtures intentionally test the historical pre-NN132 publication path.
+beforeEach(()=>{vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-16T22:00:00Z'))})
+afterEach(()=>vi.useRealTimers())
 import { env } from 'cloudflare:test'
 import { createPrivateDraft,startTrialClaim,type TrialEnv } from './_trial'
 import { createSessionForUser } from './_auth'

@@ -1,4 +1,7 @@
-import { beforeEach, expect, it } from 'vitest'
+import { beforeEach, expect, it, vi, afterEach } from 'vitest'
+// These fixtures intentionally test the historical pre-NN132 publication path.
+beforeEach(()=>{vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-16T22:00:00Z'))})
+afterEach(()=>vi.useRealTimers())
 import { env } from 'cloudflare:test'
 import { onRequestGet as getArchivedCsv } from './c/[slug]/[filename].csv'
 import { onRequestGet as getCurrentCsv } from './c/[slug]/cjenik.csv'
