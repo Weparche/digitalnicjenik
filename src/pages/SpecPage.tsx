@@ -90,7 +90,7 @@ export function SpecPage() {
           <li><strong>Naziv datoteke:</strong> identifikator trgovca, prodajno mjesto, naznaka robe/usluga, broj pohrane i vremenska oznaka.</li>
           <li><strong>Arhiva:</strong> 15 dana od zamjene prema članku 3. NEPAR čuva verzije 15 dana; vanjska arhiva dopuštena je bez autentifikacije.</li>
           <li><strong>Struktura:</strong> u ranijoj odluci nazivi i separator nisu bili definirani. Novi pravilnik propisuje redoslijed, UTF-8 i razdjelnik te dopušta ZIP i GZ. Jedan zajednički cjenik predviđen je za prodajna mjesta s istim cijenama i asortimanom.</li>
-          <li><strong>Rok primjene:</strong> 17. studenoga 2026. Referentni datum sidrene cijene je 10. rujna 2026. (za ranije obuhvaćene skupine proizvoda 2. svibnja 2025.).</li>
+          <li><strong>Rok primjene:</strong> 17. studenoga 2026. Referentni datum bazne cijene je 10. rujna 2026. (za ranije obuhvaćene skupine proizvoda 2. svibnja 2025.).</li>
         </ul>
         <h3>Službeno pojašnjenje Ministarstva</h3>
         <p>Za proizvod ili uslugu uvedenu nakon 10. rujna 2026. sidrena (dodatna) cijena je cijena s datuma prvog uvrštenja u prodaju, Datum prvog uvrštenja čuvajte u vlastitoj evidenciji.</p>

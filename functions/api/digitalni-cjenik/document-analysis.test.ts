@@ -33,7 +33,7 @@ async function check(csvBody?: string, xmlBody?: string) {
     if (path.startsWith('/cjenik/arhiva')) return new Response('<h1>Arhiva cjenika</h1><a href="/cjenik.csv">Prethodni cjenik CSV 2026-10-27</a>')
     return new Response('Not found', { status: 404 })
   }))
-  return runDigitalPriceListCheck('https://example.hr/', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+  return runDigitalPriceListCheck('https://example.hr/', { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver,enforceNN132:false })
 }
 afterEach(() => vi.unstubAllGlobals())
 
@@ -213,7 +213,7 @@ describe('publication file names and archive evidence', () => {
       [`${v1}.csv`]: () => new Response(autogubicCsv, { headers: { 'content-type': 'text/csv' } }),
       [`${v1}.xml`]: () => new Response(autogubicXml, { headers: { 'content-type': 'application/xml' } }),
     })
-    const result = await runDigitalPriceListCheck(site, { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
+    const result = await runDigitalPriceListCheck(site, { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver,enforceNN132:false })
     expect(result.details).toMatchObject({ csvUrl: `${site}${v2}.csv`, xmlUrl: `${site}${v2}.xml`, archiveFound: true, archiveUrl: expect.stringContaining('_0001_'), contentStatus: 'pass', structureStatus: 'pass' })
     expect(result.details.publicationFindings?.some((finding) => finding.level === 'warning')).toBe(false)
     expect(technicalReport(result)).toMatchObject({ score: 9, tone: 'green' })
@@ -290,4 +290,20 @@ describe('obligations that start with NN 101/2026 on 17. 11. 2026.', () => {
       expect(ruleFor(rule, RULES, before)).toMatchObject({ level: 'warning', deferredUntil: '2026-11-17' })
     }
   })
+})
+
+describe('current NN132 checker',()=>{
+ it('matches equivalent headers, but requires semicolon and prescribed field order',()=>{
+  const data='Naziv usluge;Maloprodajna cijena (EUR);Posebni oblik prodaje (DA/NE);Bazna cijena usluge\nŠišanje;15;NE;12'
+  expect(analyzeDocument('csv',data,null,true).contentStatus).toBe('pass')
+  expect(analyzeDocument('csv',data.replaceAll(';',','),null,true).findings).toEqual(expect.arrayContaining([expect.objectContaining({rule:'schema.order'})]))
+  expect(analyzeDocument('csv',csv(),null,true).findings).toEqual(expect.arrayContaining([expect.objectContaining({rule:'schema.order'})]))
+ })
+ it('switches the current filename and format at the Croatian effective date',async()=>{
+  const body='Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje;Bazna cijena\nŠišanje;15;NE;12'
+  vi.stubGlobal('fetch',vi.fn(async(input:RequestInfo|URL)=>new URL(String(input)).pathname==='/old_type_address_1_20261116-083000.csv'?new Response(body,{headers:{'content-type':'text/csv'}}):new Response('missing',{status:404})))
+  const result=await runDigitalPriceListCheck('https://example.hr/old_type_address_1_20261116-083000.csv',{DIGITAL_PRICE_LIST_DNS_RESOLVER:resolver,now:new Date('2026-11-16T23:00:00Z')})
+  expect(result.details.publicationFindings?.some(f=>f.rule==='publication.filename.unverified')).toBe(true)
+  expect(result.status).toBe('yellow')
+ })
 })

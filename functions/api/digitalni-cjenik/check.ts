@@ -750,6 +750,7 @@ export function analyzeDocument(kind: 'csv' | 'xml', body: string, url: string |
       const expected=(nn132Kind(parsed.priceList)==='services'?nn132ServiceHeaders:nn132GoodsHeaders).map(canonicalPriceHeader);
       if(delimiter!==';'||actual.length!==expected.length||actual.some((v,i)=>v!==expected[i]))findings.push(withLevel({message:'Provjerite propisani redoslijed podataka i točku-zarez kao razdjelnik (NN 132/2026-1584). Nazivi zaglavlja prikazani su kao NEPAR primjer; pravilnik propisuje redoslijed podataka, ne njihov doslovni naziv.'},'schema.order',true));
     }
+    if(nn132&&kind==='xml'&&(!/<(?:[\w-]+:)?bazna_cijena(?:\s|>)/i.test(body)||/<(?:[\w-]+:)?sidrena_cijena(?:\s|>)/i.test(body)))findings.push(withLevel({message:'Provjerite strukturu XML-a i podatak o baznoj cijeni prema NN 132/2026. Povijesni naziv elementa nije dokaz nove sheme.'},'schema.order',true));
     const errors = findings.filter(f => f.level === 'error');
     const warnings = findings.filter(f => f.level === 'warning');
     const legal = [...errors, ...warnings];
