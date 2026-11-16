@@ -143,3 +143,22 @@
  .workspace .workspace-upload{margin-bottom:14px}
  .workspace .workspace-upload-note{margin-top:8px}
 }
+
+/* Free preview and one-click example. */
+.workspace .workspace-upload-trust{display:flex;align-items:center;gap:7px;color:#245c40;font-size:13px;font-weight:600;margin:0 0 10px;line-height:1.4}
+.workspace .workspace-upload-trust svg{color:#28704d}
+.workspace .workspace-example-button{display:flex;align-items:center;gap:10px;text-align:left;width:100%;padding:12px 14px;min-height:56px;background:#fff;border:1px solid var(--ws-line);border-radius:10px;color:#0758dc;margin-top:12px}
+.workspace .workspace-example-button:hover{background:#eff5ff;border-color:#9dbcf0}
+.workspace .workspace-example-button>span{flex:1;min-width:0;display:grid;gap:2px}
+.workspace .workspace-example-button strong{font-size:13px;font-weight:650}
+.workspace .workspace-example-button small{font-size:12px;line-height:1.35;color:var(--ws-muted);font-weight:400}
+.workspace .workspace-demo-notice{padding:10px 12px;margin:10px 0 0;background:#fff8eb;border-radius:8px;font-size:12px;color:#815318}
+@media screen and (max-width:760px){
+ .workspace .workspace-upload-trust{font-size:12px;margin-bottom:8px}
+ .workspace .workspace-example-button{padding:9px 12px;min-height:54px;margin-top:10px}
+ .workspace:not(.workspace-admin)[data-keyboard-open=true] .workspace-mobile-dock{display:none!important}
+ .workspace:not(.workspace-admin)[data-keyboard-open=true]::after{display:none}
+ .workspace:not(.workspace-admin)[data-keyboard-open=true] .workspace-content{padding-bottom:24px}
+ .workspace:not(.workspace-admin)[data-keyboard-open=true] [data-mobile-primary="true"]{position:static!important;width:100%!important;max-height:none;margin:8px 0!important;z-index:auto}
+ html:has(.workspace[data-keyboard-open=true]){scroll-padding-bottom:24px}
+}
