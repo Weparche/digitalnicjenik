@@ -21,6 +21,6 @@ test('a valid HOK file leads to explicit object metadata before a trial claim', 
   await page.getByLabel('Oznaka objekta', { exact: true }).fill('P1')
   const draftRequest = page.waitForRequest(request => request.url().endsWith('/api/drafts') && request.method() === 'POST')
   await page.getByRole('button', { name: /Pošalji potvrdni link/ }).click()
-  expect((await draftRequest).postDataJSON().publicationDetails).toMatchObject({ objectAddress: 'Ilica 10, 10000 Zagreb', objectCode: 'P1', objectType: 'usluzni-objekt' })
+  expect((await draftRequest).postDataJSON().publicationDetails).toMatchObject({ objectAddress: 'Ilica 10, 10000 Zagreb', objectCode: 'P1', objectType: 'usluzni-objekt', merchantIdentifier:'12345678', merchantType:'natural' })
   await expect(page.getByRole('heading', { name: 'Poslali smo potvrdni link' })).toBeVisible()
 })

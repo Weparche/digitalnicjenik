@@ -40,6 +40,8 @@ test('a verified user without a tenant has a complete first-publication flow',as
   await page.getByLabel('Učitaj cjenik',{exact:true}).setInputFiles({name:'salon.csv',mimeType:'text/csv',buffer:Buffer.from(csv)})
   await page.getByRole('button',{name:/Objavi besplatno na 24 h/}).click()
   await page.getByLabel('Naziv poslovanja',{exact:true}).fill('Salon Lana')
+  await page.getByLabel('Vrsta trgovca',{exact:true}).selectOption('natural')
+  await page.getByLabel(/Matični broj fizičke osobe/).fill('12345678')
   await page.getByLabel('Puna adresa objekta',{exact:true}).fill('Ilica 10, 10000 Zagreb')
   await expect(page.getByLabel('E-mail',{exact:true})).toHaveCount(0)
   await page.getByRole('button',{name:'Objavi moj cjenik',exact:true}).click()

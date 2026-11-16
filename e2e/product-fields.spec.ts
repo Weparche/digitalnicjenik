@@ -12,21 +12,21 @@ test('product list: Odluka fields are grouped, editable, and clear the blocker c
 
   const panel = page.locator('.validation-app-panel')
   await expect(panel).toBeVisible()
-  await expect(panel.getByText('Cjenik proizvoda: podaci koje Odluka traži')).toBeVisible()
-  await expect(panel.getByText(/1 stavka nema šifru/)).toBeVisible()
-  await expect(panel.getByText(/1 stavka nema marku/)).toBeVisible()
-  await expect(panel.getByText(/1 stavka nema oznaku dostupnosti/)).toBeVisible()
-  await expect(panel.getByText(/1 stavka nema valjan barkod/)).toBeVisible()
+  await expect(panel.getByText('Cjenik proizvoda: podaci koje treba provjeriti')).toBeVisible()
+  await expect(panel.getByText(/1 stavka nema šifru/)).toHaveCount(0)
+  await expect(panel.getByText(/1 stavka nema marku/)).toHaveCount(0)
+  await expect(panel.getByText(/1 stavka nema oznaku dostupnosti/)).toHaveCount(0)
+  await expect(panel.getByText(/1 stavka nema valjan barkod/)).toHaveCount(0)
   const counter = panel.locator('.validation-app-count')
-  await expect(counter).toContainText('6')
+  await expect(counter).toContainText('3')
   await expect(counter).toContainText('za dopunu')
 
   // The complete row keeps its parsed values in editable product columns.
   await expect(panel.getByLabel('Marka za Mlijeko 1 l')).toHaveValue('Dukat')
   await expect(panel.getByLabel('Barkod za Mlijeko 1 l')).toHaveValue('4006381333931')
 
-  await panel.getByRole('button', { name: /Sve bez oznake: dostupno/ }).click()
-  await expect(panel.getByLabel('Dostupnost za Kruh')).toHaveValue('dostupno')
+  await panel.getByLabel('Neto količina za Mlijeko 1 l').fill('1')
+  await panel.getByLabel('Neto količina za Kruh').fill('0.5')
   await panel.getByLabel('Šifra za Kruh').fill('M-002')
   await panel.getByLabel('Marka za Kruh').fill('bez marke')
 
@@ -44,11 +44,11 @@ test('list without a Vrsta column asks once for services or products before prod
 
   const panel = page.locator('.validation-app-panel')
   await expect(panel.getByText('Što je u ovom cjeniku?')).toBeVisible()
-  await expect(panel.getByText('Cjenik proizvoda: podaci koje Odluka traži')).toHaveCount(0)
+  await expect(panel.getByText('Cjenik proizvoda: podaci koje treba provjeriti')).toHaveCount(0)
 
   await panel.getByRole('button', { name: 'Sve su usluge' }).click()
   await expect(panel.getByText('Što je u ovom cjeniku?')).toHaveCount(0)
-  await expect(panel.getByText('Cjenik proizvoda: podaci koje Odluka traži')).toHaveCount(0)
+  await expect(panel.getByText('Cjenik proizvoda: podaci koje treba provjeriti')).toHaveCount(0)
   await expect(panel.getByText(/nema šifru/)).toHaveCount(0)
 })
 

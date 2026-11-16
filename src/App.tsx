@@ -333,7 +333,7 @@ function ValidationResultPanel({
 
         {productGroups.length > 0 && (
           <div className="validation-group-callout" role="status">
-            <p><strong>Cjenik proizvoda: podaci koje Odluka traži</strong></p>
+            <p><strong>Cjenik proizvoda: podaci koje treba provjeriti</strong></p>
             <ul className="product-field-summary">
               {productGroups.map((group) => (
                 <li key={group.field}><b>{group.blocking ? 'RUČNI PREGLED' : 'UPOZORENJE'}</b>{stavkeNema(group.count)} {group.label}</li>
@@ -965,7 +965,7 @@ function TrialClaimForm({
       <p>{accountEmail?'E-mail je potvrđen. Cjenik možete odmah objaviti.':'Potvrdite e-mail i vaš će cjenik biti objavljen.'} Besplatna objava traje 24 sata.</p>
       <form className="trial-claim-form" onSubmit={(event) => void submit(event)}>
         <label>Naziv poslovanja<input value={businessName} onChange={(event) => setBusinessName(event.target.value)} required maxLength={120} placeholder="Auto Gubić" /></label>
-        <label>Vrsta trgovca<select value={merchantType} required onChange={event=>{setMerchantType(event.target.value as 'legal'|'natural'|'');setMerchantIdentifier('')}}><option value="">Odaberite</option><option value="legal">Pravna osoba (OIB)</option><option value="natural">Fizička osoba / obrt (matični broj)</option></select></label>
+        <label>Vrsta trgovca<select aria-label="Vrsta trgovca" value={merchantType} required onChange={event=>{setMerchantType(event.target.value as 'legal'|'natural'|'');setMerchantIdentifier('')}}><option value="">Odaberite</option><option value="legal">Pravna osoba (OIB)</option><option value="natural">Fizička osoba / obrt (matični broj)</option></select></label>
         <label>{merchantType==='natural'?'Matični broj fizičke osobe':'OIB pravne osobe'}<input required inputMode="numeric" pattern={merchantType==='natural'?'[0-9]{5,15}':'[0-9]{11}'} value={merchantIdentifier} onChange={event=>setMerchantIdentifier(event.target.value.replace(/\D/g,''))}/><small>Identifikator ulazi u javni naziv datoteke prema NN 132/2026.</small></label>
         <label><input type="checkbox" checked={allLocations} onChange={event=>setAllLocations(event.target.checked)}/> Isti cjenik za sva prodajna mjesta</label>
         <label>Puna adresa objekta<input value={objectAddress} onChange={event => setObjectAddress(event.target.value)} required={!allLocations} minLength={5} maxLength={240} placeholder="Ulica i broj, poštanski broj i mjesto" autoComplete="street-address" /></label>

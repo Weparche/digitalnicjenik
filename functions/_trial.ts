@@ -18,7 +18,7 @@ import { sanitizeAttribution } from '../shared/acquisition'
 import { recordAttribution } from './_acquisition'
 import type { NormalizedPriceList, ValidationIssue } from '../src/price-engine/types'
 import { mergeValidationIssues, validatePriceList } from '../src/price-engine/validate'
-import { parsePublicationDetails, type PublicationDetails } from '../shared/publication-details'
+import { parsePublicationDetails, requireNn132Details, type PublicationDetails } from '../shared/publication-details'
 import { usesProductStructure } from '../src/price-engine/profile'
 import { freePublicationEnd } from '../shared/payment'
 
@@ -71,6 +71,11 @@ type DraftPayload = {
   validationIssues: ValidationIssue[]
   sourceType: string
   publicationDetails?: PublicationDetails
+}
+
+function publicationDetailsForClaim(list:NormalizedPriceList,details:unknown){
+  const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Zagreb',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
+  return list.formatVersion==='nn-132-2026'||date>='2026-11-17'?requireNn132Details(details):parsePublicationDetails(details)
 }
 
 function nowIso() {
@@ -287,7 +292,7 @@ export async function startTrialClaim(
   if (mergeValidationIssues(validatePriceList(draft.payload.list,{nn132:Boolean(draft.payload.publicationDetails?.merchantIdentifier)}), draft.payload.validationIssues).blockingCount) {
     throw new AccessDeniedError(422, 'draft_not_ready', 'Dopunite označene podatke prije javne objave.')
   }
-  try { parsePublicationDetails(draft.payload.publicationDetails) }
+  try { publicationDetailsForClaim(draft.payload.list,draft.payload.publicationDetails) }
   catch (error) { throw new AccessDeniedError(400, 'publication_details_required', (error as Error).message) }
 
   await consumeTrialClaimBudget(env, request, email)
@@ -467,7 +472,7 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
       throw new AccessDeniedError(400, 'draft_expired', 'Privremeni draft je istekao.')
     }
 
-    const details = parsePublicationDetails(draft.payload.publicationDetails)
+    const details = publicationDetailsForClaim(draft.payload.list,draft.payload.publicationDetails)
     const validation = mergeValidationIssues(validatePriceList(draft.payload.list,{nn132:Boolean(draft.payload.publicationDetails?.merchantIdentifier)}), draft.payload.validationIssues)
     if (validation.blockingCount) throw new AccessDeniedError(422, 'draft_not_ready', 'Cjenik nije spreman za javnu objavu.')
     const { tenantId, slug } = await insertTenantWithSlug(env, claim.requested_slug, claim.business_name, details, usesProductStructure(draft.payload.list))
