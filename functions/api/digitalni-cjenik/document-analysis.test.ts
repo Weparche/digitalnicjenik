@@ -235,7 +235,7 @@ describe('publication file names and archive evidence', () => {
     expect(report.tone).toBe('yellow')
   })
 
-  it('reports a linked earlier publication removed within 30 days as missing', async () => {
+  it('warns about a linked publication apparently removed within the announced 15-day window', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-10-27T12:00:00Z'))
     try {
@@ -247,7 +247,7 @@ describe('publication file names and archive evidence', () => {
       })
       const result = await runDigitalPriceListCheck(site, { DIGITAL_PRICE_LIST_DNS_RESOLVER: resolver })
       expect(result.details).toMatchObject({ archiveFound: false, archiveRemoved: true })
-      expect(technicalReport(result).checks.find((check) => check.id === 'archive')?.status).toBe('missing')
+      expect(technicalReport(result).checks.find((check) => check.id === 'archive')?.status).toBe('warning')
     } finally { vi.useRealTimers() }
   })
 })

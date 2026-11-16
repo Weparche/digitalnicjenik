@@ -1,3 +1,5 @@
+import { ANNOUNCED_ARCHIVE_DAYS } from './regulation-update'
+
 /** Evidence model shared by the anonymous checker and the acquisition UI. */
 export type DocumentAnalysisStatus = 'pass' | 'warning' | 'fail' | 'unknown'
 /** level/source come from shared/compliance/legal-profile.ts: only binding rules can be an error. */
@@ -73,6 +75,7 @@ export type WebsiteCheckDetails = {
   platform?: 'wordpress' | 'shopify' | 'wix' | 'unknown'
   /** Whether the public price-list link appears in the homepage HTML or only on a linked inner page. */
   publicLinkLocation?: 'homepage' | 'inner'
+  externalFeedLinked?: boolean
   /** robots.txt is only an indication of bot restrictions, not a legal compliance conclusion. */
   robotsStatus?: 'clear' | 'restricted' | 'unknown'
   robotsEvidence?: string
@@ -155,15 +158,14 @@ export function technicalReport(result: WebsiteCheckResult) {
     machineState,
     d.directDocument ? { status: 'unknown', evidence: 'Unesena je izravna adresa datoteke; poveznicu s početne stranice provjerite zasebno.' } : d.publicLinkLocation === 'inner'
       ? { status: 'warning', evidence: 'Poveznica je pronađena na unutarnjoj stranici, ali ne i na naslovnici. Dodajte vidljiv link „Cjenik” na početnu stranicu ili u footer. To je preporuka za lakši pristup, ne samostalno utvrđena povreda.', url: d.publicLinkUrl }
-      : { ...found(Boolean(d.publicLinkUrl), d.publicLinkLocation === 'homepage' ? 'Poveznica je potvrđena u HTML-u početne stranice (uključujući moguće poveznice u footeru).' : 'Poveznica mora biti pročitana iz javnog HTML-a; pretpostavljena adresa nije dokaz poveznice.'), url: d.publicLinkUrl },
+      : { ...found(Boolean(d.publicLinkUrl), d.publicLinkLocation === 'homepage' ? d.externalFeedLinked ? 'Poveznica vodi do javno dostupnog vanjskog cjenika. Ministarstvo je potvrdilo mogućnost vanjskog pružatelja bez autentifikacije.' : 'Poveznica je potvrđena u HTML-u početne stranice (uključujući moguće poveznice u footeru).' : 'Poveznica mora biti pročitana iz javnog HTML-a; pretpostavljena adresa nije dokaz poveznice.'), url: d.publicLinkUrl },
     { status: d.structureStatus ?? 'unknown', evidence: d.structureReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera prepoznate strukture datoteke.' },
     publicationState,
-    // Odluka traži dostupnost objava 30 dana, ne određenu stranicu ili adresu arhive.
-    d.archiveFound
-      ? { status: 'pass', evidence: `${d.archiveEvidence || 'Pronađena je prethodna objava cjenika.'} Ne potvrđuje trajanje ni potpunost povijesti objava.`, url: d.archiveUrl }
-      : d.archiveRemoved
-        ? { status: 'missing', evidence: 'Povezana prethodna objava više nije dostupna, iako je zamijenjena prije manje od 30 dana.', url: d.archiveUrl }
-        : { status: 'unknown', evidence: 'Arhivu prethodnih objava nije moguće potvrditi. Odluka traži da objavljene datoteke ostanu dostupne 30 dana; posebna stranica arhive nije propisana.' },
+    d.archiveRemoved
+      ? { status: 'warning', evidence: `Poveznica na prethodnu objavu ne radi. Prema vremenskim oznakama možda je zamijenjena unutar najavljenog roka od ${ANNOUNCED_ARCHIVE_DAYS} dana; stvarni trenutak zamjene provjerite u evidenciji.`, url: d.archiveUrl }
+      : d.archiveFound
+        ? { status: 'pass', evidence: `${d.archiveEvidence || 'Pronađena je prethodna objava cjenika.'} Ne potvrđuje trajanje ni potpunost povijesti objava.`, url: d.archiveUrl }
+        : { status: 'unknown', evidence: `Arhivu prethodnih objava nije moguće potvrditi. Ministarstvo je najavilo dostupnost arhive ${ANNOUNCED_ARCHIVE_DAYS} dana od zamjene; može biti kod vanjskog pružatelja. Ako još nije bilo izmjena, arhiva može biti prazna.` },
     { status: d.contentStatus ?? 'unknown', evidence: d.contentReasons?.join(' ') || d.contentEvidence || 'Potrebna detaljna provjera. Učitajte cjenik u validator.' },
   ]
   const checks = TECHNICAL_CHECKS.map((check, i) => ({ ...check, ...states[i] }))

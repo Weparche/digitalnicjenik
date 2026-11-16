@@ -27,7 +27,7 @@ const findColumn = (headers: string[], ...names: string[]) => {
   return -1
 }
 /** Header such as "SIDRENA CIJENA NA 2.5.2025" (Konzum and other retail exports): the date is part of the name. */
-const datedAnchorColumn = (headers: string[]) => headers.map(cleanHeader).findIndex((header) => /^(sidrena|dodatna) cijena\b.*\d{1,2}\.\s*\d{1,2}\.\s*\d{4}/.test(header))
+const datedAnchorColumn = (headers: string[]) => headers.map(cleanHeader).findIndex((header) => /^(sidrena|dodatna|bazna) cijena\b.*\d{1,2}\.\s*\d{1,2}\.\s*\d{4}/.test(header))
 const headerDate = (header: string | undefined) => {
   const match = header && /(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/.exec(header)
   return match ? `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}` : ''
@@ -52,7 +52,7 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const idIndex = findColumn(headers, 'interna šifra', 'interna sifra', 'sku', 'šifra', 'šifra proizvoda', 'sifra', 'sifra proizvoda', 'id')
   const priceIndex = findColumn(headers, 'cijena*', 'cijena', 'maloprodajna cijena', 'mpc', 'cena', 'price', 'retail price', 'regular price')
   const saleIndex = findColumn(headers, 'akcijska cijena', 'akcijska cijena*', 'akcija', 'mpc za vrijeme posebnog oblika prodaje', 'maloprodajna cijena za vrijeme posebnog oblika prodaje', 'sale price')
-  const namedAnchorIndex = findColumn(headers, 'sidrena cijena', 'sidrena cijena*', 'dodatna cijena', 'anchor price', 'reference price', 'additional price', 'sidrena cijena 10.9.2026.', 'sidrena cijena 10. 9. 2026.', 'dodatna cijena 10.9.2026.')
+  const namedAnchorIndex = findColumn(headers, 'sidrena cijena', 'sidrena cijena*', 'dodatna cijena', 'bazna cijena', 'bazna cijena*', 'base price', 'anchor price', 'reference price', 'additional price', 'sidrena cijena 10.9.2026.', 'sidrena cijena 10. 9. 2026.', 'dodatna cijena 10.9.2026.')
   const anchorIndex = namedAnchorIndex >= 0 ? namedAnchorIndex : datedAnchorColumn(headers)
   const specialSaleAppliedIndex = findColumn(headers, 'poseban oblik prodaje', 'posebni oblik prodaje', 'special sale', 'special sale applied', 'poseban oblik prodaje (da/ne)', 'posebni oblik prodaje (da/ne)')
   const specialSaleNameIndex = findColumn(headers, 'naziv posebnog oblika prodaje', 'poseban oblik prodaje naziv', 'special sale name')

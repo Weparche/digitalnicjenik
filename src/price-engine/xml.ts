@@ -76,7 +76,7 @@ const XML_FIELDS = {
   price: ['price', 'retailPrice', 'retail_price', 'maloprodajna_cijena', 'cijena', 'mpc'],
   specialSaleApplied: ['specialSaleApplied', 'specialSale', 'special_sale', 'special_sale_applied', 'posebni_oblik_prodaje', 'poseban_oblik_prodaje'],
   specialSaleName: ['specialSaleName', 'special_sale_name', 'naziv_posebnog_oblika_prodaje', 'naziv_posebnog_oblika'],
-  anchorPrice: ['anchorPrice', 'anchor_price', 'sidrena_cijena', 'dodatna_cijena', 'referencePrice', 'reference_price', 'additionalPrice'],
+  anchorPrice: ['anchorPrice', 'anchor_price', 'sidrena_cijena', 'dodatna_cijena', 'bazna_cijena', 'basePrice', 'base_price', 'referencePrice', 'reference_price', 'additionalPrice'],
   anchorReferenceDate: ['anchorReferenceDate', 'datum_referentne_cijene', 'referenceDate', 'reference_date', 'anchorDate', 'anchor_date', 'referentni_datum'],
   isNewSinceReferenceDate: ['isNewSinceReferenceDate', 'nova_stavka', 'newItem', 'new_item'],
 } as const

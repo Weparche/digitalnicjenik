@@ -5,6 +5,7 @@ import { normalizeHeader } from '../../../src/price-engine/normalize';
 import { isServiceItem } from '../../../src/price-engine/profile';
 import type { FieldSources, NormalizedPriceItem } from '../../../src/price-engine/types';
 import { deferredNote, ruleFor } from '../../../shared/compliance/legal-profile';
+import { ANNOUNCED_ARCHIVE_DAYS } from '../../../shared/regulation-update';
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type FindingGroup, type WebsiteCheckDetails } from '../../../shared/website-check';
 import { parseContentDispositionFilename } from '../../../shared/compliance/checks';
 import { readZipDirectory, readZipMember, type FetchRange } from './zip-inspection';
@@ -873,7 +874,7 @@ export async function renderDynamicPage(url:URL,env:CheckerEnv):Promise<{html:st
   }catch{return null}
 }
 
-const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const RETENTION_MS = ANNOUNCED_ARCHIVE_DAYS * 24 * 60 * 60 * 1000;
 const MAX_PUBLICATION_LINKS = 200;
 const MAX_ARCHIVE_PROBES = 3;
 
@@ -904,10 +905,10 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
   if (current.time != null) {
     const date = new Intl.DateTimeFormat('hr-HR', {dateStyle:'medium',timeZone:'Europe/Zagreb'}).format(new Date(current.time));
     details.publicationDateEvidence = 'Datum u nazivu preuzete datoteke: ' + date + ' — ' +
-      'Za proizvode provjerite odgovara li datum radnom danu konkretnog prodajnog objekta; za usluge objava se ažurira pri promjeni. Sam naziv ne dokazuje vrijeme stvarne objave.';
+      'Prema objavi Ministarstva 16.11., izmijenjeni cjenik objavljuje se do 11 sati na dan izmjene. Stariji datum sam po sebi ne znači da cjenik nije aktualan. Sam naziv ne dokazuje vrijeme stvarne objave.';
   }
   const key = (name: PublicationName) => `${name.storage}|${name.stamp}`;
-  const newestFirst = versioned.filter(entry=>entry.name.objectKey===current.objectKey && new URL(entry.href).origin===new URL(details.csvUrl || details.xmlUrl!).origin).sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
+  const newestFirst = versioned.filter(entry=>entry.name.objectKey===current.objectKey).sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
   const previous = newestFirst.filter((entry) => key(entry.name) !== key(current) && (current.time != null && entry.name.time != null ? entry.name.time < current.time : entry.name.storage < current.storage)).slice(0, MAX_ARCHIVE_PROBES);
   for (const entry of previous) {
     try {
@@ -916,9 +917,9 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
       if (isBotChallenge(fetched.response, body) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; continue; }
       if (fetched.response.ok && !isHtml(fetched.response, body) && (analyzeDocument('csv',trimCsvToCompleteRecords(body,MAX_CSV_ROWS)).structureRecognized || analyzeDocument('xml',body).structureRecognized)) {
         details.archiveFound = true;
-        details.archiveUrl = fetched.url.href;
+        if (!details.archiveRemoved) details.archiveUrl = fetched.url.href;
         details.archiveEvidence = `Prethodna objava (broj pohrane ${entry.name.storage}) i dalje je javno dostupna.`;
-        return;
+        continue;
       }
       if ([404, 410].includes(fetched.response.status) && entry.name.time != null) {
         const supersededAt = [current,...newestFirst.map(other=>other.name)].map(other=>other.time).filter((time): time is number => time != null && time > entry.name.time!).sort((a, b) => a - b)[0];
@@ -1113,7 +1114,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     if (!analyses.some(a=>a.format===kind && a.structureRecognized)) continue;
     const candidate = selected.get(kind);
     const source = candidate && linkedSources.get(candidate.href);
-    if (source) { details.publicLinkUrl = source.url; details.publicLinkLocation = source.location; break; }
+    if (source) { details.publicLinkUrl = source.url; details.publicLinkLocation = source.location; const feed = kind === 'csv' ? details.csvUrl : details.xmlUrl; details.externalFeedLinked = Boolean(feed && new URL(feed).origin !== homepage.url.origin); break; }
   }
   if(!details.csvUrl&&!details.xmlUrl){const zip=otherDocuments.find(u=>/\.zip(?:$|[?#])/i.test(u));if(zip){await inspectZip(new URL(zip),env,details,analyses);const source=linkedSources.get(zip);if(source&&(details.csvUrl||details.xmlUrl)){details.publicLinkUrl=source.url;details.publicLinkLocation=source.location;}if(directZip){details.directDocument=true;details.homepageReadable=Boolean(analyses.length);details.reachable=Boolean(analyses.length)}}}
   details.csvFound = Boolean(details.csvUrl);
