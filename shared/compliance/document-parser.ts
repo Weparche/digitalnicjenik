@@ -137,7 +137,7 @@ function normalizeField(field: string, value: unknown, fromFeed: boolean): strin
   if (value == null || value === '') return ''
   if (numericFields.has(field)) {
     const number = Number(String(value).replace(',', '.'))
-    return Number.isFinite(number) ? number.toFixed(2) : 'INVALID_NUMBER'
+    return Number.isFinite(number) ? (field === 'netQuantity' ? String(number) : number.toFixed(2)) : 'INVALID_NUMBER'
   }
   if (field === 'specialSaleApplied') return /^(true|da|1)$/i.test(String(value)) ? 'true' : /^(false|ne|0)$/i.test(String(value)) ? 'false' : 'INVALID_FLAG'
   const text = String(value).trim()

@@ -765,7 +765,7 @@ function PublisherWorkspace() {
 
   async function createRemoteDraft() {
     if (!list) return null
-    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename, importIssues: issues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED') }) })
+    const response = await fetch('/api/tenants/nepar/import', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source, formatVersion: list.formatVersion }, sourceFilename, importIssues: issues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED') }) })
     if (!response.ok) throw new Error(await writeErrorMessage(response, 'Draft nije spremljen.'))
     const payload = await response.json() as { draft: { id: string }; validation: { issues: ValidationIssue[] } }
     setDraftId(payload.draft.id); setIssues(payload.validation.issues)
@@ -779,7 +779,7 @@ function PublisherWorkspace() {
       let idToSave = draftId
       if (!idToSave) idToSave = await createRemoteDraft() || ''
       if (idToSave) {
-        const response = await fetch('/api/tenants/nepar/draft/' + idToSave, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }) })
+        const response = await fetch('/api/tenants/nepar/draft/' + idToSave, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source, formatVersion: list.formatVersion } }) })
         if (!response.ok) throw new Error(await writeErrorMessage(response, 'Dopuna nije spremljena.'))
         const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
         setIssues(payload.validation.issues)
@@ -795,7 +795,7 @@ function PublisherWorkspace() {
       let idToPublish = draftId
       if (!idToPublish) idToPublish = await createRemoteDraft() || ''
       if (!idToPublish) throw new Error('Za objavu pokrenite Cloudflare Pages lokalni server.')
-      const saved = await fetch('/api/tenants/nepar/draft/' + idToPublish, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }) })
+      const saved = await fetch('/api/tenants/nepar/draft/' + idToPublish, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source, formatVersion: list.formatVersion } }) })
       if (!saved.ok) throw new Error(await writeErrorMessage(saved, 'Dopuna nije spremljena.'))
       const response = await fetch('/api/tenants/nepar/publish', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ draftId: idToPublish }) })
       const payload = await response.json() as { error?: string; message?: string; publication?: PricePublication }
@@ -1127,7 +1127,7 @@ function ValidatorApp({
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       ...fetchOpts,
-      body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source }, sourceFilename, importIssues: issues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED') }),
+      body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source, formatVersion: list.formatVersion }, sourceFilename, importIssues: issues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED') }),
     })
     if (!response.ok) throw new Error(await writeErrorMessage(response, 'Cjenik nije moguće pripremiti.'))
     const payload = await response.json() as { draft: { id: string }; validation: { issues: ValidationIssue[] } }
@@ -1144,7 +1144,7 @@ function ValidatorApp({
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       ...fetchOpts,
-      body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source } }),
+      body: JSON.stringify({ priceList: { items: list.items, currency: list.currency, updatedAt: list.updatedAt, source: list.source, formatVersion: list.formatVersion } }),
     })
     if (!response.ok) throw new Error(await writeErrorMessage(response, 'Dopuna nije spremljena.'))
     const payload = await response.json() as { validation: { issues: ValidationIssue[] } }
@@ -1266,9 +1266,9 @@ function ValidatorApp({
     return <div className="validator-app validator-app-embedded">{!onboarding&&intro}{tool}</div>
   }
 
-  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}}/>{replacing && tool}{message && <p role="status">{message}</p>}</div>
+  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}} onMigrate={currentPublication?()=>{setList({...currentPublication.payload,formatVersion:'nn-132-2026'});setReplacing(true);setDraftId('');setPublished(false);setSourceFilename('postojeci-cjenik.csv');setIssues([]);setPublication(null);setError('');setMessage('Provjerite podatke i objavite novu verziju. Stara objava ostaje dostupna do potvrde.');}:undefined}/>{replacing && tool}{message && <p role="status">{message}</p>}</div>
   if (mode === 'publisher') {
-    return <div className="validator-app">{list ? <><details className="workspace-import"><summary>Zamijeni cjenik datotekom</summary>{importer}</details>{published&&<button className="app-button app-button-light" type="button" onClick={()=>setPublished(false)}>Uredi postojeći cjenik</button>}{review}</> : tool}</div>
+    return <div className="validator-app">{list ? <><details className="workspace-import"><summary>Zamijeni cjenik datotekom</summary>{importer}</details>{published&&<button className="app-button app-button-light" type="button" onClick={()=>{setList({...list,formatVersion:'nn-132-2026'});setDraftId('');setPublished(false)}}>Uredi postojeći cjenik</button>}{review}</> : tool}</div>
   }
 
   return <div className="validator-app-shell"><header className="app-header"><Logo /><a href="#posaljite-cjenik" onClick={(event) => { if (onLead) { event.preventDefault(); onLead('implementation') } }}>Trebate pomoć? <strong>NEPAR postavljanje →</strong></a></header><main className="validator-app">
