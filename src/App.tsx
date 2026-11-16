@@ -378,7 +378,7 @@ function ValidationResultPanel({
         </div>
       )}
 
-      <div className="validator-table-wrap" ref={tableRef}>
+      <div className="validator-table-wrap workspace-item-cards" ref={tableRef}>
         <table>
           <thead>
             <tr>
@@ -398,13 +398,13 @@ function ValidationResultPanel({
               const specialApplied = item.specialSaleApplied === true
               return (
                 <tr key={index} className={anchorMissing ? 'row-needs-anchor' : undefined}>
-                  <td>
+                  <td data-label="Naziv">
                     {editItems ? <input className="app-table-input" aria-label={'Naziv za ' + (item.name || 'novu stavku')} value={item.name} onChange={event => onUpdateItem(index, {name:event.target.value})}/> : <strong>{item.name}</strong>}
                     <small>{item.category || 'Bez kategorije'}</small>
                   </td>
-                  <td>{editItems ? <select aria-label={'Vrsta za ' + item.name} value={item.type ?? ''} onChange={event => onUpdateItem(index,{type:event.target.value})}><option value="">Odaberite</option><option value="Usluga">Usluga</option><option value="Proizvod">Proizvod</option></select> : item.type || 'Nije navedena'}</td>
-                  <td>{editItems ? <input className="app-table-input" aria-label={'Cijena za ' + item.name} type="number" min="0" step="0.01" value={Number.isFinite(item.price) ? item.price : ''} onChange={event => onUpdateItem(index,{price:event.target.value === '' ? NaN : Number(event.target.value)})}/> : money(item.price)}</td>
-                  <td>
+                  <td data-label="Vrsta">{editItems ? <select aria-label={'Vrsta za ' + item.name} value={item.type ?? ''} onChange={event => onUpdateItem(index,{type:event.target.value})}><option value="">Odaberite</option><option value="Usluga">Usluga</option><option value="Proizvod">Proizvod</option></select> : item.type || 'Nije navedena'}</td>
+                  <td data-label="Maloprodajna cijena">{editItems ? <input className="app-table-input" aria-label={'Cijena za ' + item.name} type="number" min="0" step="0.01" value={Number.isFinite(item.price) ? item.price : ''} onChange={event => onUpdateItem(index,{price:event.target.value === '' ? NaN : Number(event.target.value)})}/> : money(item.price)}</td>
+                  <td data-label="Bazna cijena">
                     <label className={'anchor-field' + (anchorMissing ? ' is-required' : '')}>
                       <span className="sr-only">Sidrena cijena za {item.name}</span>
                       <input
@@ -424,7 +424,7 @@ function ValidationResultPanel({
                     <label><input type="checkbox" aria-label={'Nova stavka nakon referentnog datuma za ' + item.name} checked={item.isNewSinceReferenceDate === true} onChange={event => onUpdateItem(index, { isNewSinceReferenceDate: event.target.checked })} /> Nova stavka: datum prvog uvrštenja</label>
                     {!service && <small>2. 5. 2025. za ranije obuhvaćene proizvode; inače 10. 9. 2026. Provjerite primjenjivi režim.</small>}
                   </td>
-                  <td>
+                  <td data-label="Posebna prodaja">
                     <div className="app-sale-fields">
                       <label className="special-sale-toggle">
                         <span>Posebna prodaja</span>
@@ -459,17 +459,17 @@ function ValidationResultPanel({
                     </div>
                   </td>
                   {hasProducts && (service ? <td colSpan={5}><small>Usluga: ova polja se ne traže.</small></td> : <>
-                    <td><input className="app-table-input" aria-label={'Šifra za ' + item.name} value={item.externalId ?? ''} placeholder="šifra" onChange={(event) => onUpdateItem(index, { externalId: event.target.value })} /></td>
-                    <td><input className="app-table-input" aria-label={'Marka za ' + item.name} value={item.brand ?? ''} placeholder="marka" onChange={(event) => onUpdateItem(index, { brand: event.target.value })} /></td>
-                    <td><input className="app-table-input" inputMode="numeric" aria-label={'Barkod za ' + item.name} value={item.barcode ?? ''} placeholder="Barkod" onChange={(event) => onUpdateItem(index, { barcode: event.target.value.replace(/\s+/g, '') || null })} /><input className="app-table-input" aria-label={'EAN barkod za '+item.name} value={item.eanBarcode??''} placeholder="EAN" inputMode="numeric" onChange={event=>onUpdateItem(index,{eanBarcode:event.target.value.replace(/\s+/g,'')||null})}/></td>
-                    <td>
+                    <td data-label="Šifra"><input className="app-table-input" aria-label={'Šifra za ' + item.name} value={item.externalId ?? ''} placeholder="šifra" onChange={(event) => onUpdateItem(index, { externalId: event.target.value })} /></td>
+                    <td data-label="Marka"><input className="app-table-input" aria-label={'Marka za ' + item.name} value={item.brand ?? ''} placeholder="marka" onChange={(event) => onUpdateItem(index, { brand: event.target.value })} /></td>
+                    <td data-label="Barkod / EAN"><input className="app-table-input" inputMode="numeric" aria-label={'Barkod za ' + item.name} value={item.barcode ?? ''} placeholder="Barkod" onChange={(event) => onUpdateItem(index, { barcode: event.target.value.replace(/\s+/g, '') || null })} /><input className="app-table-input" aria-label={'EAN barkod za '+item.name} value={item.eanBarcode??''} placeholder="EAN" inputMode="numeric" onChange={event=>onUpdateItem(index,{eanBarcode:event.target.value.replace(/\s+/g,'')||null})}/></td>
+                    <td data-label="Količina i jedinica">
                       <div className="app-sale-fields">
                         <input className="app-table-input" aria-label={'Jedinica mjere za ' + item.name} value={item.unit ?? ''} placeholder="npr. kg" onChange={(event) => onUpdateItem(index, { unit: event.target.value || null })} />
                         <input className="app-table-input" aria-label={'Neto količina za '+item.name} type="number" min="0.000001" step="any" value={item.netQuantity??''} placeholder="Neto količina" onChange={event=>onUpdateItem(index,{netQuantity:event.target.value?Number(event.target.value):null})}/><input className="app-table-input" aria-label={'Cijena za jedinicu mjere za ' + item.name} type="number" min="0.01" step="0.01" value={item.unitPrice ?? ''} placeholder="€ / jedinica" onChange={(event) => onUpdateItem(index, { unitPrice: event.target.value ? Number(event.target.value) : null })} />
                         {!item.unit && <input className="app-table-input" aria-label={'Razlog iznimke cijene po jedinici za ' + item.name} value={item.unitPricingExemption ?? ''} placeholder="Ako nije primjenjivo: navedite razlog" onChange={event => onUpdateItem(index, { unitPricingExemption: event.target.value || null })} />}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Dostupnost">
                       <select aria-label={'Dostupnost za ' + item.name} value={item.availability ?? ''} onChange={(event) => onUpdateItem(index, { availability: (event.target.value || null) as Availability | null })}>
                         {!item.availability && <option value="">Odaberite</option>}
                         <option value="dostupno">Dostupno</option>
@@ -490,10 +490,10 @@ function ValidationResultPanel({
         {mode === 'publisher' ? (
           <>
             <button className="app-button app-button-light" type="button" onClick={onSaveDraft} disabled={busy}>Spremi promjene</button>
-            <button className="app-button app-button-primary" type="button" onClick={onPublish} disabled={incomplete || busy || published || publishBlocked}>{publishBlocked ? 'Objava zaključana' : 'Objavi'}</button>
+            <button className="app-button app-button-primary" data-mobile-primary="true" type="button" onClick={onPublish} disabled={incomplete || busy || published || publishBlocked}>{publishBlocked ? 'Objava zaključana' : 'Objavi'}</button>
           </>
         ) : (
-          <button className="app-button app-button-primary" type="button" onClick={onStartTrial} disabled={busy || !list || incomplete}>
+          <button className="app-button app-button-primary" data-mobile-primary="true" type="button" onClick={onStartTrial} disabled={busy || !list || incomplete}>
             Objavi besplatno na 24 h →
           </button>
         )}
@@ -978,7 +978,7 @@ function TrialClaimForm({
         {!accountEmail&&<TurnstileField onToken={setTurnstileToken} />}
         {error && <p className="app-error" role="alert">{error}</p>}
         <div className="trial-claim-actions">
-          <button className="app-button app-button-primary" type="submit" disabled={busy || (!accountEmail&&(turnstileLoading || !siteKey))}>{busy ? accountEmail?'Objavljujemo…':'Šaljemo…' : accountEmail?'Objavi moj cjenik':'Pošalji potvrdni link →'}</button>
+          <button className="app-button app-button-primary" data-mobile-primary="true" type="submit" disabled={busy || (!accountEmail&&(turnstileLoading || !siteKey))}>{busy ? accountEmail?'Objavljujemo…':'Šaljemo…' : accountEmail?'Objavi moj cjenik':'Pošalji potvrdni link →'}</button>
           <button className="app-button app-button-light" type="button" onClick={onCancel} disabled={busy}>Odustani</button>
         </div>
       </form>
@@ -1226,6 +1226,7 @@ function ValidatorApp({
   const importer = <>
     <section className="workspace-upload" aria-label={mode === 'publisher' ? 'Zamjena cjenika' : 'Uvoz cjenika'}>
       <label className="upload-action workspace-dropzone"><input type="file" aria-label="Učitaj cjenik" accept=".csv,.xml,.xlsx,.xls,text/csv,application/xml" onChange={event=>void loadFile(event.target.files?.[0])}/><IconUpload size={28} stroke={1.5}/><strong>{sourceFilename||'Odaberite svoj Excel, CSV ili XML'}</strong><span>Kliknite za odabir datoteke. Provjera i pregled su besplatni.</span></label>
+      {!list&&!excelFile&&<button className="app-button app-button-primary workspace-mobile-only" type="button" data-mobile-primary="true" disabled={busy} onClick={event=>event.currentTarget.parentElement?.querySelector<HTMLInputElement>('input[type=file]')?.click()}>Odaberi datoteku</button>}
       <p className="workspace-upload-note">CSV / XML do 2 MB · Excel do 5 MB · izvorna datoteka ostaje kod vas</p>
       {busy&&<p className="app-status" role="status">Provjeravamo datoteku…</p>}{error&&<p className="app-error" role="alert">{error}</p>}
     </section>
@@ -1268,7 +1269,7 @@ function ValidatorApp({
     return <div className="validator-app validator-app-embedded">{!onboarding&&intro}{tool}</div>
   }
 
-  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}} onMigrate={currentPublication?()=>{setList({...currentPublication.payload,formatVersion:'nn-132-2026'});setReplacing(true);setDraftId('');setPublished(false);setSourceFilename('postojeci-cjenik.csv');setIssues([]);setPublication(null);setError('');setMessage('Provjerite podatke i objavite novu verziju. Stara objava ostaje dostupna do potvrde.');}:undefined}/>{!replacing&&currentPublication&&<PriceHistoryPanel key={tenantSlug} slug={tenantSlug} items={currentPublication.payload.items}/>}{replacing && tool}{message && <p role="status">{message}</p>}</div>
+  if (mode === 'publisher' && !canEditItems) return <div className="validator-app"><PublicationOverview slug={tenantSlug} publication={currentPublication} list={list} active={!publishBlocked} mobilePrimary={!replacing} onReplace={() => {setReplacing(true);setList(null);setDraftId('');setPublished(false)}} onMigrate={currentPublication?()=>{setList({...currentPublication.payload,formatVersion:'nn-132-2026'});setReplacing(true);setDraftId('');setPublished(false);setSourceFilename('postojeci-cjenik.csv');setIssues([]);setPublication(null);setError('');setMessage('Provjerite podatke i objavite novu verziju. Stara objava ostaje dostupna do potvrde.');}:undefined}/>{!replacing&&currentPublication&&<PriceHistoryPanel key={tenantSlug} slug={tenantSlug} items={currentPublication.payload.items}/>}{replacing && tool}{message && <p role="status">{message}</p>}</div>
   if (mode === 'publisher') {
     return <div className="validator-app">{list ? <><details className="workspace-import"><summary>Zamijeni cjenik datotekom</summary>{importer}</details>{published&&<button className="app-button app-button-light" type="button" onClick={()=>{setList({...list,formatVersion:'nn-132-2026'});setDraftId('');setPublished(false)}}>Uredi postojeći cjenik</button>}{review}</> : tool}</div>
   }

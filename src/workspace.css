@@ -64,3 +64,57 @@
   .workspace-content{scroll-margin-top:112px}
 }
 @media print{.workspace .workspace-sidebar{position:static;box-shadow:none}}
+
+/* App-style bottom navigation. Desktop and the administration workspace retain their existing layout. */
+.workspace-mobile-dock,.workspace-mobile-account,.workspace-mobile-only{display:none!important}
+@media(max-width:760px){
+ .workspace:not(.workspace-admin){--mobile-nav-height:70px;--mobile-action-height:60px}
+ .workspace:not(.workspace-admin) .workspace-sidebar{position:sticky;top:0;z-index:40;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:10px 16px;min-height:56px;gap:12px}
+ .workspace:not(.workspace-admin) .workspace-brand{margin:0;min-width:0;font-size:20px}
+ .workspace:not(.workspace-admin) .workspace-brand small{font-size:10px;margin-left:7px}
+ .workspace:not(.workspace-admin) .workspace-nav-frame,.workspace:not(.workspace-admin) .workspace-topbar{display:none}
+ .workspace:not(.workspace-admin) .workspace-mobile-account{display:flex!important;align-items:center;flex-shrink:0}
+ .workspace-mobile-account a,.workspace-mobile-account button{display:grid;place-items:center;min-height:44px;min-width:44px;color:#0758dc;background:transparent;border:0;text-decoration:none;font-size:13px;font-weight:600;padding:0 4px}
+ .workspace:not(.workspace-admin) .workspace-content{padding:18px 16px calc(165px + env(safe-area-inset-bottom,0px));scroll-margin-top:72px}
+ .workspace:not(.workspace-admin) .workspace-page-heading{margin-bottom:16px;gap:8px}
+ .workspace:not(.workspace-admin) .workspace-page-heading h1{font-size:25px}
+ .workspace:not(.workspace-admin) .workspace-page-heading p{font-size:12px;margin:3px 0 0}
+ .workspace:not(.workspace-admin) .workspace-mobile-dock{display:block!important;position:fixed;bottom:0;left:0;right:0;z-index:60;background:#fff;border-top:1px solid var(--ws-line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 18px #1723390d}
+ .workspace-mobile-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center;min-height:var(--mobile-nav-height);padding:5px 6px;gap:2px}
+ .workspace-mobile-nav>button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ws-muted);background:none;border:0;min-width:0;min-height:56px;padding:2px;font-size:11px;font-weight:550;white-space:nowrap}
+ .workspace-tab-icon{display:grid;place-items:center;width:48px;height:32px;border-radius:12px}
+ .workspace-mobile-nav>button[aria-current=page]{color:#0758dc;font-weight:700}
+ .workspace-mobile-nav>button[aria-current=page] .workspace-tab-icon{background:#eaf1ff}
+ .workspace-more-backdrop{position:fixed;inset:0;background:#17233945;border:0;z-index:-1}
+ .workspace-more-panel{position:absolute;bottom:calc(var(--mobile-nav-height) + env(safe-area-inset-bottom,0px) + 8px);left:10px;right:10px;max-height:min(65dvh,450px);overflow:auto;display:grid;gap:3px;padding:12px;background:#fff;border-radius:16px;border:1px solid var(--ws-line);box-shadow:0 8px 36px #17233933;z-index:2}
+ .workspace-more-heading{display:flex;align-items:center;justify-content:space-between;padding:0 8px 4px}
+ .workspace-more-heading button{display:grid;place-items:center;width:44px;height:44px;border:0;background:none;color:var(--ws-muted)}
+ .workspace-more-panel>button,.workspace-more-panel>a,.workspace-more-account{display:flex;align-items:center;gap:12px;min-height:46px;text-align:left;padding:10px;border:0;border-radius:9px;background:#fff;color:var(--ws-ink);font-size:14px;text-decoration:none}
+ .workspace-more-panel>button[aria-current=page]{background:#eaf1ff;color:#0758dc;font-weight:650}
+ .workspace-more-account{border-top:1px solid var(--ws-line);border-radius:0;margin-top:6px;color:var(--ws-muted);overflow-wrap:anywhere}
+ .workspace:not(.workspace-admin) [data-mobile-primary="true"]{position:fixed!important;z-index:55;bottom:calc(var(--mobile-nav-height) + env(safe-area-inset-bottom,0px) + 8px);left:12px;right:12px;width:calc(100% - 24px)!important;max-width:none!important;min-height:48px;margin:0!important;border:1px solid #0758dc;border-radius:12px;background:#0866ff;color:#fff;box-shadow:0 0 0 7px #fff,0 -4px 18px 8px #17233915;justify-content:center;font-size:14px;font-weight:650;white-space:normal;text-align:center}
+ .workspace:not(.workspace-admin) [data-mobile-primary="true"]:disabled{opacity:1;background:#dce5f3;color:#63748b;border-color:#dce5f3}
+ .workspace:not(.workspace-admin) .workspace-mobile-only{display:inline-flex!important}
+ .workspace:not(.workspace-admin) .workspace-checker>.workspace-surface{padding:18px}
+ .workspace:not(.workspace-admin) .workspace-checker>.workspace-surface>h2{font-size:20px}
+ .workspace:not(.workspace-admin) .workspace-checker .acq-form{margin-top:16px}
+ .workspace:not(.workspace-admin) .workspace-checker .acq-trust{margin-top:12px;gap:10px;flex-wrap:wrap;font-size:12px}
+ .workspace:not(.workspace-admin) .workspace-checker .acq-result-anchor,.workspace:not(.workspace-admin) .validator-table-wrap{scroll-margin-top:76px}
+ .workspace:not(.workspace-admin) .workspace-checker .acq-result{margin-top:16px}
+ .workspace:not(.workspace-admin) .workspace-check-next{margin:12px 0 16px}
+ .workspace:not(.workspace-admin) .workspace-check-next p{font-size:13px}
+ .workspace:not(.workspace-admin) .workspace-mobile-help{margin-top:20px}
+ .workspace:not(.workspace-admin) .workspace-item-cards{overflow:visible}
+ .workspace:not(.workspace-admin) .workspace-item-cards table{display:block;width:100%;min-width:0;border:0}
+ .workspace:not(.workspace-admin) .workspace-item-cards thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .workspace:not(.workspace-admin) .workspace-item-cards tbody{display:grid;gap:12px}
+ .workspace:not(.workspace-admin) .workspace-item-cards tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:14px;background:#fff;border:1px solid var(--ws-line);border-radius:12px}
+ .workspace:not(.workspace-admin) .workspace-item-cards td{display:block;min-width:0;padding:0;border:0;background:transparent;white-space:normal;overflow-wrap:anywhere}
+ .workspace:not(.workspace-admin) .workspace-item-cards td[data-label]::before{content:attr(data-label);display:block;margin-bottom:5px;color:var(--ws-muted);font-size:11px;font-weight:650}
+ .workspace:not(.workspace-admin) .workspace-item-cards td:first-child,.workspace:not(.workspace-admin) .workspace-item-cards td[data-label="Bazna cijena"],.workspace:not(.workspace-admin) .workspace-item-cards td[data-label="Posebna prodaja"],.workspace:not(.workspace-admin) .workspace-item-cards td[data-label="Količina i jedinica"],.workspace:not(.workspace-admin) .workspace-item-cards td[colspan]{grid-column:1/-1}
+ .workspace:not(.workspace-admin) .workspace-item-cards input:not([type=checkbox]),.workspace:not(.workspace-admin) .workspace-item-cards select{width:100%;min-width:0;min-height:42px;font-size:14px}
+ .workspace:not(.workspace-admin) .workspace-item-cards .app-sale-fields{min-width:0}
+ .workspace:not(.workspace-admin) .workspace-item-cards .anchor-field{display:flex}
+ .workspace:not(.workspace-admin) .workspace-item-cards .special-sale-toggle{display:grid;gap:6px;margin-top:8px;white-space:normal}
+}
+@media print{.workspace .workspace-mobile-dock,.workspace .workspace-mobile-account{display:none!important}.workspace [data-mobile-primary="true"]{position:static!important;visibility:hidden!important}}

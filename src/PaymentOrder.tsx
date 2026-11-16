@@ -194,7 +194,7 @@ export function OrderForm({
       <p className="order-total">Ukupno za uplatu: <strong>{total}</strong></p>
       {error && <p className="app-error" role="alert">{error}</p>}
       <div className="publisher-upgrade-actions">
-        <button className="app-button app-button-primary" type="submit" disabled={busy}>{busy ? 'Spremamo…' : 'Nastavi na uplatu →'}</button>
+        <button className="app-button app-button-primary" data-mobile-primary="true" type="submit" disabled={busy}>{busy ? 'Spremamo…' : 'Nastavi na uplatu →'}</button>
         {onCancel && <button className="app-button app-button-light" type="button" onClick={onCancel} disabled={busy}>Odustani</button>}
       </div>
     </form>
@@ -215,7 +215,7 @@ export function KeepLinkFlow({ licence, email, name, startOpen = false, onChange
     )
   }
   if (!open && !editing) {
-    return <div className="publisher-upgrade-actions"><button className="app-button app-button-primary" type="button" onClick={() => setOpen(true)}>{kind==='publisher'?'Obnovi Publisher':'Zadrži ovaj link trajno'} — {formatEur(PLANS[kind==='publisher'?1:0].price, true)} →</button></div>
+    return <div className="publisher-upgrade-actions"><button className="app-button app-button-primary" data-mobile-primary="true" type="button" onClick={() => setOpen(true)}>{kind==='publisher'?'Obnovi Publisher':'Zadrži ovaj link trajno'} — {formatEur(PLANS[kind==='publisher'?1:0].price, true)} →</button></div>
   }
   return <OrderForm kind={kind} initialInstallation={initialInstallation} defaultEmail={email} defaultName={name} previous={order} onCancel={() => { setOpen(false); setEditing(false) }} onPlaced={() => { setOpen(false); setEditing(false); onChanged() }} />
 }
