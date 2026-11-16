@@ -39,7 +39,7 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Mijenja li se nešto s novim pravilnicima?',
         answer:
-          'Savjetovanje o baznoj cijeni i objavi cjenika završilo je 13.11.2026. Vlada je 14.11. najavila početak primjene 17.11. i edukativni inspekcijski pristup u početnom razdoblju. Na 16.11. nismo potvrdili konačne tekstove u Narodnim novinama; nacrti nisu važeći propis.',
+          'Savjetovanje je završilo 13.11. Ministarstvo je 16.11. potvrdilo slanje pravilnika na objavu s početkom 17.11., 15 dana arhive, izmjene do 11 sati i proširena izuzeća. U izvješću je potvrdilo vanjskog pružatelja. Konačni normativni tekst još treba provjeriti u Narodnim novinama.',
       },
     ],
   },
@@ -94,12 +94,12 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Koliko često treba ažurirati cjenik?',
         answer:
-          'Prema važećim odlukama trgovci na malo ažuriraju cjenik jednom dnevno, najkasnije do 8:00 za tekući radni dan, a pružatelji usluga nakon promjene cijene, najkasnije do 8:00 na dan objave izmjene. Nacrti pravilnika predlažu drukčiji ritam, ali još nisu doneseni.',
+          'Prema priopćenju Ministarstva od 16.11.2026., izmijenjeni cjenik robe ili usluge objavljuje se do 11 sati na dan izmjene, ne sljedeći radni dan. Pratite konačni pravilnik.',
       },
       {
         question: 'Koliko dugo prethodni cjenici moraju ostati dostupni?',
         answer:
-          'Najmanje 30 dana nakon objave novog cjenika. To znači da prethodne datoteke ostaju javno dostupne, a ne prepisivanje jedne datoteke bez povijesti. Posebna stranica arhive nije propisana, ali olakšava pronalaženje verzija.',
+          'Ministarstvo je 16.11. potvrdilo 15 dana javne dostupnosti nakon zamjene novim cjenikom. NEPAR i dalje zadržava prethodne verzije 30 dana. Vanjska arhiva dopuštena je ako je dostupna bez autentifikacije i pogodna za automatsku obradu.',
       },
       {
         question: 'Što znači automatizirani dohvat podataka?',
@@ -138,6 +138,10 @@ export const faqGroups: FaqGroup[] = [
       {
         question: 'Moram li mijenjati postojeći web?',
         answer: `Ne. Dodajete samo poveznicu na digitalni cjenik. Dizajn, sadržaj i platforma vašeg weba ostaju isti. Ako želite, poveznicu ili gumb postavimo mi za ${installationPriceLabel()}.`,
+      },
+      {
+        question: 'Smijem li na vlastitom webu imati poveznicu na vanjski digitalni cjenik?',
+        answer: 'Da. Ministarstvo je u izvješću e-Savjetovanja o članku 3. (prihvaćena primjedba) potvrdilo da aktualne i arhivske datoteke mogu biti kod vanjskog pružatelja ako su javno dostupne bez autentifikacije i pogodne za automatsku obradu. Poveznicu istaknite na svojem webu. Konačna tehnička pravila treba provjeriti u objavljenom pravilniku.',
       },
       {
         question: 'Trebam li instalirati plugin?',

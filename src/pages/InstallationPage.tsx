@@ -38,7 +38,7 @@ export function InstallationPage() {
     </section>
     <section className="site-section" id="odgovornosti" aria-labelledby="installation-responsibilities">
       <h2 id="installation-responsibilities">Što treba provjeriti prije objave?</h2>
-      <p>Stalni link i arhiva dio su tehničkog rješenja. Važno je i da datoteka sadrži odgovarajuća polja, naziv objekta i oznaku objave, da se može automatski dohvatiti te da je dostupna s vaše web stranice. Samostalni link bez povezivanja s vašim webom nije dovršena ugradnja.</p>
+      <p>Stalni link i arhiva dio su tehničkog rješenja. Važno je i da datoteka sadrži odgovarajuća polja, naziv objekta i oznaku objave, da se može automatski dohvatiti te da je dostupna s vaše web stranice. Samostalni link bez povezivanja s vašim webom nije dovršena ugradnja. Ministarstvo je u izvješću e-Savjetovanja potvrdilo vanjskog pružatelja i za arhivu; preporučujemo izravne poveznice na CSV ili XML i arhivu uz HTML stranicu. <a href="https://esavjetovanja.gov.hr/EConReport/10332">Službeno izvješće</a>.</p>
       <p>Za proizvode se zadnje objavljeno valjano stanje automatski objavljuje oko 06:30 Europe/Zagreb prema radnim danima objekta. Vaša je odgovornost pravodobno unijeti stvarne promjene cijena. Ovo nije ERP sinkronizacija.</p>
       <p>Potvrđeno plaćeno godišnje razdoblje ima 7 dana gracea. Tijekom njega URL i objava ostaju aktivni; nakon toga aktualni izlazi prelaze na 410 ako obnova nije potvrđena. Besplatna objava nema novi grace.</p>
       <p>Korisnik potvrđuje točne cijene i potpunost podataka. Pravila o isticanju cijena u poslovnici i drugim kanalima ne rješavaju se samom kupnjom hostinga. Za opseg obveze mjerodavni su važeći propisi; nacrti pravilnika nisu konačna pravila.</p>

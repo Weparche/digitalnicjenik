@@ -13,7 +13,7 @@ const related = [
 ]
 
 function RegulationUpdate() {
-  return <section className="site-section"><h2>Najnovije: bazne cijene i digitalni cjenici od 17. studenoga 2026.</h2><p>Vlada je 14.11. najavila početak primjene dvaju pravilnika 17.11.2026. i edukativni pristup inspekcije u početnom razdoblju. To nije nova odgoda niti ukidanje kaznenih odredbi. Na 16.11. nismo potvrdili objavu konačnih tekstova pravilnika u Narodnim novinama. U nastavku su tehničke upute i pregled ranijih odluka; konačne obveze, izuzeća i rokove ažuriranja provjerite prema važećem objavljenom propisu.</p><p><a href="https://vlada.gov.hr/inspektorat-nece-kaznjavati-zbog-baznih-cijena-nego-upozoravati/47604" target="_blank" rel="noopener noreferrer">Službena objava Vlade RH</a> · <a href="/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/">Detalji o nadzoru</a> · <a href="/vijesti/digitalni-cjenici-rezultati-provjera-studeni-2026/">NEPAR analiza provjera</a></p></section>
+  return <section className="site-section"><h2>Najnovije: bazne cijene i digitalni cjenici od 17. studenoga 2026.</h2><p>Ministarstvo je 16.11. potvrdilo da su pravilnici upućeni na objavu s početkom primjene 17.11.2026.: izmjene do 11 sati na dan izmjene, arhiva 15 dana, CSV ili XML te proširena izuzeća. Izvješće e-Savjetovanja potvrđuje vanjski hosting cjenika i arhive bez autentifikacije. Konačni normativni tekst i tehničku shemu još treba provjeriti u Narodnim novinama. NEPAR i dalje čuva 30 dana arhive.</p><p><a href="https://vlada.gov.hr/inspektorat-nece-kaznjavati-zbog-baznih-cijena-nego-upozoravati/47604" target="_blank" rel="noopener noreferrer">Službena objava Vlade RH</a> · <a href="/vijesti/digitalni-cjenici-novi-pravilnici-15-dana-2026/">Nova pravila i vanjski link</a> · <a href="/vijesti/digitalni-cjenici-rezultati-provjera-studeni-2026/">NEPAR analiza provjera</a></p></section>
 }
 
 function PublicationPath() {
@@ -85,7 +85,7 @@ export function ServicesPricelistPage() {
       <p><a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/">HOK Excel predlošci i objašnjenje</a> dobar su početak. Možete preuzeti i naš <a href="/examples/primjer-digitalni-cjenik-usluge-2026.csv" download>CSV primjer prema HOK predlošku</a>; primjer ne određuje vaše stvarne cijene.</p>
     </section>
     <section className="site-section"><h2>Kada mijenjati objavu?</h2>
-      <p>Cjenik čistih usluga ažurira se pri promjeni, najkasnije do 08:00 na dan objave izmjene. Nema potrebe svakodnevno stvarati identičnu objavu usluga. Prethodne objave moraju ostati dostupne u propisanom roku.</p>
+      <p>Prema objavi Ministarstva 16.11., izmijenjeni cjenik objavljuje se najkasnije do 11 sati na dan izmjene. Nema potrebe svakodnevno stvarati identičnu objavu usluga. Prethodne objave moraju ostati dostupne u propisanom roku.</p>
       <p>U Web Link paketu promjenu napravite u svojoj tablici i zamijenite cijeli cjenik. Ako želite cijene uređivati izravno u dashboardu i pratiti dostupnost objave, odaberite Publisher. Neispravan novi upload ne zamjenjuje valjanu objavu.</p>
     </section>
     <section className="site-section"><h2>Kako to izgleda na stvarnom webu?</h2><p><a href="/reference/auto-gubic/">Auto Gubić</a> je NEPAR referentna implementacija cjenika usluga s javnim prikazom i datotekama. Poveznica na cjenik može biti dio postojećeg WordPressa, Wixa ili drugog weba.</p></section>
@@ -100,7 +100,7 @@ export function WebshopPricelistPage() {
       <p>Izvoz za oglašavanje ili marketplace može biti dobar izvor, ali nije automatski dovoljan: provjerite povijesne cijene, posebne oblike prodaje i podatke o objavi. <a href="/specifikacija-csv-xml/">Popis polja i primjeri</a> pomažu pri usporedbi.</p>
     </section>
     <section className="site-section"><h2>Dnevna objava i promjene u izvoru podataka</h2>
-      <p>Odluka za proizvode predviđa dnevno ažuriranje do 08:00 tekućeg radnog dana. NEPAR može dnevno objaviti posljednje valjano objavljeno stanje proizvoda prema kalendaru. To ne preuzima nove cijene ili stanje zaliha iz webshopa.</p>
+      <p>Prema novoj objavi Ministarstva 16.11., izmijenjeni cjenik robe objavljuje se do 11 sati na dan izmjene. NEPAR može dodatno dnevno objaviti posljednje valjano objavljeno stanje proizvoda prema kalendaru. To ne preuzima nove cijene ili stanje zaliha iz webshopa.</p>
       <p>Kad promijenite cijene u trgovini, promijenjeni podaci moraju doći i u objavljeni cjenik: novim uploadom ili zasebno dogovorenom integracijom. Ako već koristite poslovni sustav koji to radi, provjerite njegov javni izlaz prije kupnje dodatnog alata.</p>
     </section>
     <section className="site-section"><h2>Kada je NEPAR prikladan?</h2>
@@ -142,9 +142,9 @@ export function LaunchGuidePage() {
       <ul className="news-bullets"><li><strong>Usluge:</strong> naziv, maloprodajna cijena, poseban oblik prodaje i njegov naziv te sidrena cijena.</li><li><strong>Proizvodi:</strong> uz cijene pripremite šifru, marku, barkod, dostupnost i podatke o jedinici mjere gdje je primjenjivo.</li><li><strong>Sidrena cijena:</strong> povijesna vrijednost prema odgovarajućem referentnom datumu, ne procjena iz aktualne cijene. <a href="/sidrena-cijena/">Pregled datuma i pojmova.</a></li></ul>
       <p>Odluka propisuje sadržaj, a ne univerzalne nazive stupaca ili XML oznaka. Naziv datoteke obuhvaća oblik objekta, adresu, oznaku objekta, broj pohrane i vremensku oznaku. Konkretan izlaz nastaje iz podataka o vašem objektu. <a href="/specifikacija-csv-xml/">Specifikacija NEPAR formata</a> razlikuje obvezne podatke od naših tehničkih preporuka.</p>
     </section>
-    <section className="site-section" id="rokovi"><h2>Ažuriranje i arhiva prema ranijoj Odluci NN 101/2026</h2>
-      <p>Prema ranijoj Odluci NN 101/2026 proizvodi se ažuriraju svakog radnog dana do 08:00. Usluge se ažuriraju pri promjeni, do 08:00 na dan objave izmjene. To su različita pravila; ne trebate svakodnevno duplicirati čisti cjenik usluga.</p>
-      <p>Ranija Odluka propisuje javnu dostupnost prethodnih objava tijekom 30 dana. Provjerite konačni pravilnik za pravila koja će se primjenjivati od 17.11. Posebna stranica arhive i stabilni aliasi aktualnih datoteka praktična su pomoć, ali njihov naziv nije univerzalna propisana shema. NEPAR čuva verzije; novu datoteku nemojte ručno prepisivati preko jedine stare kopije.</p>
+    <section className="site-section" id="rokovi"><h2>Ažuriranje do 11 sati i arhiva 15 dana</h2>
+      <p>Prema priopćenju Ministarstva 16.11., izmijenjeni cjenik objavljuje se do 11 sati istog dana kada se cijene mijenjaju, a ne sljedećeg radnog dana. Stariji datum objave sam po sebi ne dokazuje neaktualnost.</p>
+      <p>Ministarstvo je potvrdilo novi rok javne dostupnosti prethodnog cjenika: 15 dana od zamjene. NEPAR i dalje pruža 30 dana. Vanjska arhiva je dopuštena pod uvjetom javnog pristupa i automatske obrade. Posebna stranica arhive i stabilni aliasi aktualnih datoteka praktična su pomoć, ali njihov naziv nije univerzalna propisana shema. NEPAR čuva verzije; novu datoteku nemojte ručno prepisivati preko jedine stare kopije.</p>
       <p>Dnevna NEPAR objava koristi posljednje objavljeno valjano stanje proizvoda. Promjene u Excelu, blagajni ili webshopu ne dolaze u sustav same od sebe — objavite ih ili dogovorite integraciju.</p>
     </section>
     <section className="site-section" id="primjeri"><h2>Stvarni primjeri izlaznih datoteka</h2>

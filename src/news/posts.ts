@@ -110,7 +110,7 @@ export const NEWS_POSTS: NewsPost[] = [
     "excerpt": "Ministarstvo je objavilo detalje konačnih pravilnika upućenih na objavu. Arhiva se skraćuje na 15 dana, a pravila oglašavanja i iznimke preciziraju.",
     "readingTimeMinutes": 4,
     "publishedAt": "2026-11-16T15:36:00+01:00",
-    "updatedAt": "2026-11-16T15:36:00+01:00",
+    "updatedAt": "2026-11-16T19:16:00+01:00",
     "author": {
       "name": "NEPAR Publisher",
       "url": "https://nepar.hr/"
@@ -162,6 +162,11 @@ export const NEWS_POSTS: NewsPost[] = [
         "heading": "Što je Ministarstvo potvrdilo 16. studenoga?",
         "level": 2,
         "html": "<p>Ministarstvo gospodarstva objavilo je da su dva pravilnika poslana na objavu u Narodnim novinama, s početkom primjene 17. studenoga. Nakon 866 komentara u savjetovanju dorađene su odredbe i iznimke. Ovo je pregled službenog priopćenja, ne citat normativnog teksta: objavu pravilnika u Narodnim novinama u trenutku provjere još nismo potvrdili.</p>"
+      },
+      {
+        "heading": "Ministarstvo potvrdilo vanjski link za aktualni cjenik i arhivu",
+        "level": 2,
+        "html": "<p id=\"vanjski-link\">U izvješću e-Savjetovanja o načinu objave cjenika, odgovor na članak 3. označen kao prihvaćen (redak 173 izvezenog izvješća), Ministarstvo navodi: <q>Trgovci mogu objaviti cjenik iz članka 3. ovog Prijedloga zakona putem poveznice koju ističu na svojoj mrežnoj stranici, a koja vodi na mrežnu stranicu druge osobe, vanjskog pružatelja usluge pod uvjetom da su datoteke javno dostupne bez autentifikacije te pogodna za automatsku obradu.</q> U istom odgovoru potvrđuje mogućnost vanjske arhive i skraćenje na 15 dana.</p><p>To podupire model NEPAR Web Link: na vlastitom webu istaknite poveznicu prema javnom cjeniku s CSV/XML i arhivom. Preporučujemo i izravne poveznice na odabrani strojno čitljivi format i arhivu. NEPAR čuva 30 dana, a konačni sadržaj datoteka treba provjeriti prema objavljenom pravilniku. <a href=\"https://esavjetovanja.gov.hr/EConReport/10332\">Službeno izvješće e-Savjetovanja</a>.</p>"
       },
       {
         "heading": "Digitalni cjenik: arhiva 15 dana i izmjene do 11 sati",

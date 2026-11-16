@@ -67,7 +67,7 @@ export function SpecPage() {
       page={page}
       lead={
         <>
-          Odluka NN 101/2026 propisuje <strong>podatke</strong> koje cjenik mora sadržavati, ali ne nazive stupaca, separator ni kodiranje.
+          Ranija Odluka NN 101/2026 propisivala je podatke bez točnog formata stupaca. Ministarstvo je u izvješću e-Savjetovanja najavilo detaljnija pravila kodiranja, redoslijeda i razdjelnika. U nastavku je postojeći NEPAR format, ne još potvrđena konačna shema.
           Ovdje je točno kako izgleda NEPAR CSV i XML, kako se zove datoteka i što provjeravamo svaki dan.
         </>
       }
@@ -79,14 +79,14 @@ export function SpecPage() {
       ]}
     >
       <section className="site-section" aria-labelledby="odluka-title">
-        <h2 id="odluka-title">Što propisuje Odluka</h2>
+        <h2 id="odluka-title">Pregled ranije Odluke i najnovije izmjene</h2>
         <ul className="news-bullets">
           <li><strong>Format:</strong> važeći cjenik na mrežnoj stranici u <code>.csv</code> ili <code>.xml</code> obliku, uz mogućnost automatiziranog dohvata.</li>
           <li><strong>Usluge:</strong> naziv usluge, maloprodajna cijena, podatak o posebnom obliku prodaje (i njegov naziv) te sidrena odnosno dodatna cijena.</li>
           <li><strong>Proizvodi:</strong> među ostalim naziv, šifra, marka, maloprodajna i sidrena cijena, posebni oblik prodaje, barkod i dostupnost.</li>
           <li><strong>Naziv datoteke:</strong> oblik prodajnog odnosno uslužnog objekta, adresa, oznaka objekta, broj pohrane i vremenska oznaka.</li>
-          <li><strong>Arhiva:</strong> prethodno objavljeni cjenici dostupni su najmanje 30 dana. Posebna stranica ili adresa arhive nije propisana.</li>
-          <li><strong>Struktura:</strong> nazivi stupaca, XML elemenata i separator nisu propisani; trgovac s više objekata koristi jedinstvenu strukturu unutar lanca.</li>
+          <li><strong>Arhiva:</strong> Ministarstvo je najavilo 15 dana od zamjene. NEPAR čuva verzije 30 dana; vanjska arhiva dopuštena je bez autentifikacije.</li>
+          <li><strong>Struktura:</strong> u ranijoj odluci nazivi i separator nisu bili definirani. Novi pravilnik najavljuje konkretnije tehničke zahtjeve. Jedan zajednički cjenik predviđen je za prodajna mjesta s istim cijenama i asortimanom.</li>
           <li><strong>Rok primjene:</strong> 17. studenoga 2026. Referentni datum sidrene cijene je 10. rujna 2026. (za ranije obuhvaćene skupine proizvoda 2. svibnja 2025.).</li>
         </ul>
         <h3>Službeno pojašnjenje Ministarstva</h3>
@@ -94,7 +94,7 @@ export function SpecPage() {
         <h3>NEPAR preporuka</h3>
         <p>Stupci u nastavku su NEPAR preporučena shema, usklađena s podacima iz Odluke i HOK predloškom. Objava oba formata (CSV i XML), stabilna adresa poput <code>/cjenik.csv</code> i javna stranica arhive korisne su preporuke, ali nisu zakonska obveza.</p>
         <p className="news-lead-note">
-          Ovo je sažetak, ne zamjena za službeni tekst. <strong>Nacrt — nije na snazi:</strong> dva nacrta pravilnika su na e-Savjetovanju do 13.11.2026.; NEPAR će profil provjere uskladiti s konačnim tekstom.
+          Ovo je sažetak, ne zamjena za službeni tekst. <strong>Stanje 16.11.2026.:</strong> pravilnici su upućeni na objavu. <a href="https://esavjetovanja.gov.hr/EConReport/10332">Izvješće e-Savjetovanja</a> najavljuje detaljniji format; NEPAR će izlaznu shemu uskladiti nakon potvrde normativnog teksta.
         </p>
       </section>
 
