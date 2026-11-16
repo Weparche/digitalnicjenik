@@ -15,11 +15,6 @@ function Wordmark() {
   return <a className="acq-logo" href="/" aria-label="NEPAR početna"><svg width="32" height="34" viewBox="0 0 32 34" aria-hidden="true"><rect x="1" y="18" width="8" height="15" rx="4" fill="currentColor"/><rect x="12" y="9" width="8" height="24" rx="4" fill="currentColor"/><rect x="23" y="1" width="8" height="32" rx="4" fill="currentColor"/></svg><span>NEPAR</span></a>
 }
 
-function UploadPath({ onUpload }: { onUpload: () => void }) {
-  return <div className="acq-upload"><div><h2>Imate Excel, CSV ili XML cjenik?</h2><p>Otvorite svoj radni prostor za provjeru i objavu. Prvu objavu imate besplatno 24 sata.</p></div><div className="acq-upload-action"><button className="acq-secondary" type="button" onClick={onUpload}><IconUpload size={21}/>Učitaj cjenik</button><small>Bez registracije za pregled</small></div></div>
-}
-
-
 
 export function AcquisitionLanding() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -55,9 +50,9 @@ export function AcquisitionLanding() {
       <div>
         <section className="acq-hero" aria-labelledby="acq-title"><div className="acq-hero-copy"><h1 id="acq-title">Provjerite digitalni cjenik svoje web stranice <em>besplatno.</em></h1><p className="acq-intro">Unesite adresu svoje web stranice. Provjerit ćemo javno dostupni digitalni cjenik, CSV/XML datoteke, linkove i osnovnu tehničku strukturu.</p>
           <WebsiteCheckEntry source="landing" landing/>
+          <a className="acq-secondary" href="/app?new=1" style={{ width: '100%', marginTop: 8, minHeight: 44 }}><IconUpload size={20}/>Izradi digitalni cjenik<IconArrowRight size={19}/></a>
           <ul className="acq-trust">{['Bez registracije', 'Rezultat odmah', 'Potpuno besplatno'].map((text) => <li key={text}><IconCircleCheckFilled size={20}/>{text}</li>)}</ul>
           <div className="acq-hero-platforms"><p>Objava za bilo koji postojeći web od {formatEur(PLANS[0].price, true)} — bez plugina:</p><PlatformPills/></div>
-          <UploadPath onUpload={onUpload}/>
         </div></section>
       </div>
       <div className="acq-scene">
