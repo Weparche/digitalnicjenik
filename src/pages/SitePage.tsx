@@ -11,7 +11,13 @@ import type { SitePageMeta } from './registry'
 import { WebPublisherPage } from './WebPublisherPage'
 import { DigitalPricelistPage, AnchorPricePage, LaunchGuidePage, ServicesPricelistPage, WebshopPricelistPage, WooCommercePricelistPage } from './TopicPages'
 
+import { CheckerStatisticsPage, SalonGuidePage, AutoServiceGuidePage, HospitalityGuidePage } from './IndustryPages'
+
 const COMPONENTS: Record<string, () => ReactElement> = {
+  '/statistika-digitalnih-cjenika/': CheckerStatisticsPage,
+  '/vodici/digitalni-cjenik-frizerski-salon/': SalonGuidePage,
+  '/vodici/digitalni-cjenik-autoservis/': AutoServiceGuidePage,
+  '/vodici/digitalni-cjenik-ugostiteljstvo/': HospitalityGuidePage,
   '/digitalni-cjenik/': DigitalPricelistPage,
   '/sidrena-cijena/': AnchorPricePage,
   '/digitalni-cjenik-2026/': LaunchGuidePage,

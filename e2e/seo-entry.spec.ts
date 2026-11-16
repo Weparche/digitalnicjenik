@@ -66,3 +66,19 @@ test('campaign canonicals and plan handoffs preserve the intended purchase path'
   await page.goto('/?paket=web')
   await expect(page).toHaveURL(/\/app\?new=1$/)
 })
+
+
+test('public statistics and templates are discoverable without exposing individual domains',async({request,page})=>{
+ const url='/statistika-digitalnih-cjenika/'
+ const html=await (await request.get(url)).text()
+ expect(html).toContain('Metodologija i ograničenja')
+ expect(html).toContain('15 provjera, 11 različitih hostnameova')
+ await page.route('**/api/public/checker-statistics',route=>route.fulfill({json:{from:'2026-11-09',to:'2026-11-15',available:true,checks:15,domains:11,machineConfirmed:3,machineNotConfirmed:8}}))
+ await page.goto(url)
+ await expect(page.locator('#checker-statistics-live')).toContainText('15 evidentiranih provjera')
+ for(const filename of ['salon','autoservis','ugostiteljstvo']){
+  const response=await request.get('/examples/digitalni-cjenik-'+filename+'.xlsx')
+  expect(response.status()).toBe(200)
+  expect((await response.body()).subarray(0,2).toString()).toBe('PK')
+ }
+})

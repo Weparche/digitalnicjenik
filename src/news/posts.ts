@@ -171,7 +171,7 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         "heading": "Zašto je 17. studenoga važan?",
         "level": 2,
-        "html": "<p>Vlada je 14.11. najavila početak primjene dvaju novih pravilnika 17.11.2026. i edukativni inspekcijski pristup u početnom razdoblju. Najava upozorenja nije nova odgoda niti jamstvo izuzeća od kazni. Na datum ove analize nismo potvrdili konačne tekstove pravilnika u Narodnim novinama. Za zakonske obveze mjerodavan je objavljeni propis, ne rezultat checkera.</p><p>Pročitajte <a href=\"/digitalni-cjenik-2026/\">vodič za digitalni cjenik 2026.</a> i <a href=\"/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/\">pregled najave inspekcijskog nadzora</a>.</p>"
+        "html": "<p>Vlada je 14.11. najavila početak primjene dvaju novih pravilnika 17.11.2026. i edukativni inspekcijski pristup u početnom razdoblju. Najava upozorenja nije nova odgoda niti jamstvo izuzeća od kazni. Na datum ove analize nismo potvrdili konačne tekstove pravilnika u Narodnim novinama. Za zakonske obveze mjerodavan je objavljeni propis, ne rezultat checkera.</p><p>Za novije agregirane podatke pogledajte <a href=\"/statistika-digitalnih-cjenika/\">statistiku checkera</a>. Pročitajte <a href=\"/digitalni-cjenik-2026/\">vodič za digitalni cjenik 2026.</a> i <a href=\"/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/\">pregled najave inspekcijskog nadzora</a>.</p>"
       }
     ]
   },

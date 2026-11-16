@@ -48,6 +48,7 @@ export function DigitalPricelistPage() {
       <li><a href="/digitalni-cjenik-za-webshop/">Webshop i proizvodi</a><p>Podaci artikala, dostupnost, dnevna objava i arhiva prethodnih cjenika.</p></li>
       <li><a href="/digitalni-cjenik-woocommerce/">WooCommerce</a><p>Provjera postojećeg izvoza i razlika između jednostavne objave i posebne integracije.</p></li>
       <li><a href="/digitalni-cjenik-2026/">Rokovi i pravila za 2026.</a><p>Pregled obveza, stvarni CSV/XML primjeri i poveznice na službene izvore.</p></li>
+      <li><a href="/vodici/digitalni-cjenik-frizerski-salon/">Frizerski i kozmetički saloni</a><p>Excel predložak za usluge i pakete tretmana.</p></li><li><a href="/vodici/digitalni-cjenik-autoservis/">Autoservisi i vulkanizeri</a><p>Excel predložak za servisne usluge.</p></li><li><a href="/vodici/digitalni-cjenik-ugostiteljstvo/">Restorani i kafići</a><p>Jelovnik, cjenik pića i provjera izuzeća.</p></li>
     </ul></section>
     <PublicationPath/><SourceList sources={OFFICIAL_SOURCES}/>
   </SitePageLayout>
