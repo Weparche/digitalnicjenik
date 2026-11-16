@@ -22,7 +22,7 @@ test('hero upload opens the working dashboard instead of expanding the landing',
   await page.goto('/')
   await expect(page.locator('#csv-validator')).toHaveCount(0)
   await expect(page.locator('.excel-converter')).toHaveCount(0)
-  await page.getByRole('button',{name:'Učitaj cjenik',exact:true}).click()
+  await page.getByRole('link',{name:'Izradi digitalni cjenik',exact:true}).click()
   await expect(page).toHaveURL(/\/app\?new=1$/)
   await expect(page.getByRole('heading',{name:'Pripremite svoj prvi cjenik'})).toBeVisible()
   await page.getByLabel('Učitaj cjenik',{exact:true}).setInputFiles({name:'salon.csv',mimeType:'text/csv',buffer:Buffer.from(csv)})
