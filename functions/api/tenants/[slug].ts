@@ -28,7 +28,7 @@ export const onRequestGet = async ({ request, params, env }: { request: Request;
     return new Response(JSON.stringify({
       priceList: publication?.payload ?? null,
       publication,
-      metadata: await readMetadataForSlug(env, params.slug),
+      metadata: isOwner ? await readMetadataForSlug(env, params.slug) : undefined,
       publications: (await readPublications(env, params.slug, !isOwner)).map(({payload,...metadata})=>metadata),
       entitlement: await readEntitlement(env, params.slug),
       access: liveAccess,

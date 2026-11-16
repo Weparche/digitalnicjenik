@@ -45,7 +45,7 @@ function clipString(value: unknown, field: string, max = MAX_ITEM_STRING_LENGTH)
 export function parseImportIssues(raw: unknown): ValidationIssue[] {
   if (raw == null) return []
   if (!Array.isArray(raw) || raw.length > MAX_PRICE_LIST_ITEMS) throw new ValidationInputError('Nalazi uvoza nisu valjani.')
-  const fields: ValidationField[] = ['name', 'price', 'type', 'anchorPrice', 'specialSaleApplied', 'specialSaleName', 'externalId', 'brand', 'barcode', 'availability', 'unit', 'unitPrice', 'import']
+  const fields: ValidationField[] = ['name', 'price', 'type', 'anchorPrice', 'specialSaleApplied', 'specialSaleName', 'externalId', 'brand', 'barcode', 'availability', 'unit', 'unitPrice', 'netQuantity', 'eanBarcode', 'import']
   return raw.map(value => {
     if (!value || typeof value !== 'object') throw new ValidationInputError('Nalaz uvoza nije valjan.')
     const issue = value as Record<string, unknown>
@@ -84,6 +84,8 @@ function normalizeItem(raw: unknown, index: number): NormalizedPriceItem {
     unitPrice: optionalNumber(item.unitPrice, `items[${index}].unitPrice`),
     brand: clipString(item.brand, `items[${index}].brand`, 200) ?? null,
     barcode: clipString(item.barcode, `items[${index}].barcode`, 64)?.replace(/\s+/g, '') || null,
+    ...(item.netQuantity!=null?{netQuantity:optionalNumber(item.netQuantity,`items[${index}].netQuantity`)}:{}),
+    ...(item.eanBarcode!=null?{eanBarcode:clipString(item.eanBarcode,`items[${index}].eanBarcode`,64)?.replace(/\s+/g,'')||null}:{}),
     availability: item.availability === 'dostupno' || item.availability === 'nedostupno' ? item.availability : null,
     isNewSinceReferenceDate: item.isNewSinceReferenceDate === true,
   }

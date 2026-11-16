@@ -175,7 +175,7 @@ export async function createPrivateDraft(
 ) {
   const db = requireDb(env)
   const drafts = requireDrafts(env)
-  const validation = mergeValidationIssues(validatePriceList(list), extraIssues)
+  const validation = mergeValidationIssues(validatePriceList(list,{nn132:Boolean(publicationDetails?.merchantIdentifier)}), extraIssues)
   const draftId = crypto.randomUUID()
   const location = `drafts/${draftId}.json`
   const stamp = nowIso()
@@ -284,7 +284,7 @@ export async function startTrialClaim(
     throw new AccessDeniedError(400, 'draft_expired', 'Privremeni draft je istekao. Učitajte datoteku ponovno.')
   }
 
-  if (mergeValidationIssues(validatePriceList(draft.payload.list), draft.payload.validationIssues).blockingCount) {
+  if (mergeValidationIssues(validatePriceList(draft.payload.list,{nn132:Boolean(draft.payload.publicationDetails?.merchantIdentifier)}), draft.payload.validationIssues).blockingCount) {
     throw new AccessDeniedError(422, 'draft_not_ready', 'Dopunite označene podatke prije javne objave.')
   }
   try { parsePublicationDetails(draft.payload.publicationDetails) }
@@ -376,9 +376,9 @@ async function insertTenantWithSlug(env: TrialEnv, preferredSlug: string, busine
         ).bind(tenantId, slug, businessName, stamp, stamp),
         db.prepare(
           `INSERT INTO publication_metadata
-            (tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at, compliance_profile, working_days_json, closed_dates_json)
-           VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
-        ).bind(tenantId, details.objectType, details.objectAddress, details.objectCode, env.DEFAULT_PUBLICATION_TIMEZONE || 'Europe/Zagreb', stamp, stamp, products ? 'products' : 'services', JSON.stringify(details.workingDays ?? [1,2,3,4,5]), JSON.stringify(details.closedDates ?? [])),
+            (tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, created_at, updated_at, compliance_profile, working_days_json, closed_dates_json, merchant_identifier, merchant_type, all_locations)
+           VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).bind(tenantId, details.objectType, details.objectAddress, details.objectCode, env.DEFAULT_PUBLICATION_TIMEZONE || 'Europe/Zagreb', stamp, stamp, products ? 'products' : 'services', JSON.stringify(details.workingDays ?? [1,2,3,4,5]), JSON.stringify(details.closedDates ?? []),details.merchantIdentifier??null,details.merchantType??null,details.allLocations?1:0),
         db.prepare(
           `INSERT INTO publication_targets (id, tenant_id, hostname, status, created_at, updated_at)
            VALUES (?, ?, ?, 'active', ?, ?)`,
@@ -468,7 +468,7 @@ export async function provisionTrialFromToken(env: TrialEnv, rawToken: string) {
     }
 
     const details = parsePublicationDetails(draft.payload.publicationDetails)
-    const validation = mergeValidationIssues(validatePriceList(draft.payload.list), draft.payload.validationIssues)
+    const validation = mergeValidationIssues(validatePriceList(draft.payload.list,{nn132:Boolean(draft.payload.publicationDetails?.merchantIdentifier)}), draft.payload.validationIssues)
     if (validation.blockingCount) throw new AccessDeniedError(422, 'draft_not_ready', 'Cjenik nije spreman za javnu objavu.')
     const { tenantId, slug } = await insertTenantWithSlug(env, claim.requested_slug, claim.business_name, details, usesProductStructure(draft.payload.list))
     const stamp = nowIso()

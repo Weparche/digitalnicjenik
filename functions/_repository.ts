@@ -1,10 +1,11 @@
 import { deterministicPublicationHash, diffPriceLists } from "../src/price-engine/hash"
 import { usesProductStructure } from '../src/price-engine/profile'
 import { getRuleset } from '../shared/compliance/rulesets'
+import { nn132Kind } from '../src/price-engine/nn132'
 import { NEPAR_ARCHIVE_DAYS } from '../shared/regulation-update'
-import { parsePublicationDetails } from '../shared/publication-details'
+import { parsePublicationDetails, requireNn132Details } from '../shared/publication-details'
 import { entitlementIsLive, featuresForPlan, liveEntitlementSql } from '../shared/entitlements'
-import { createFilenameStemPrefix, filenameTimestamp } from "../src/price-engine/filename"
+import { createFilenameStemPrefix, filenameTimestamp, nn132FilenamePrefix, nn132FilenameTime } from "../src/price-engine/filename"
 import { parseMarketinoCsv } from "../src/price-engine/adapters/marketinoCsv"
 import { mergeValidationIssues, validatePriceList } from "../src/price-engine/validate"
 import type { DraftStatus, Entitlement, NormalizedPriceList, PricePublication, PriceSnapshot, PublicationMetadata, PriceUpload, ValidationIssue } from "../src/price-engine/types"
@@ -32,7 +33,7 @@ export type RuntimeEnv = {
 
 type PublicationRow = { id: string; tenant_id: string; tenant_slug: string; tenant_name: string; price_list_id: string; sequence: number; filename_stem: string; published_at: string; superseded_at: string | null; public_until: string | null; hash: string; payload_json: string; is_current: number }
 type UploadRow = { id: string; tenant_id: string; source_filename: string; source_type: string; normalized_payload_json: string; validation_issues_json: string; status: DraftStatus; created_at: string; updated_at: string }
-type MetadataRow = { tenant_id: string; object_type: string; object_address: string; object_code: string; next_publication_sequence: number; timezone: string; working_days_json: string; closed_dates_json: string; created_at: string; updated_at: string }
+type MetadataRow = { merchant_identifier?: string | null; merchant_type?: 'legal'|'natural'|null; all_locations?: number; tenant_id: string; object_type: string; object_address: string; object_code: string; next_publication_sequence: number; timezone: string; working_days_json: string; closed_dates_json: string; created_at: string; updated_at: string }
 
 const now = () => new Date().toISOString()
 const id = () => crypto.randomUUID()
@@ -42,7 +43,7 @@ const toList = (value: string) => JSON.parse(value) as NormalizedPriceList
 const toIssues = (value: string) => JSON.parse(value) as ValidationIssue[]
 
 function mapMetadata(row: MetadataRow): PublicationMetadata {
-  return { objectType: row.object_type, objectAddress: row.object_address, objectCode: row.object_code, nextPublicationSequence: row.next_publication_sequence, timezone: row.timezone, workingDays: JSON.parse(row.working_days_json), closedDates: JSON.parse(row.closed_dates_json) }
+  return { ...(row.merchant_identifier&&row.merchant_type?{merchantIdentifier:row.merchant_identifier,merchantType:row.merchant_type,allLocations:row.all_locations===1}:{}), objectType: row.object_type, objectAddress: row.object_address, objectCode: row.object_code, nextPublicationSequence: row.next_publication_sequence, timezone: row.timezone, workingDays: JSON.parse(row.working_days_json), closedDates: JSON.parse(row.closed_dates_json) }
 }
 
 function mapPublication(row: PublicationRow): PricePublication {
@@ -54,7 +55,7 @@ function mapUpload(row: UploadRow): PriceUpload {
 }
 
 async function metadataFor(env: RuntimeEnv, tenantId: string) {
-  const row = await env.DB!.prepare("SELECT tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, working_days_json, closed_dates_json, created_at, updated_at FROM publication_metadata WHERE tenant_id = ?").bind(tenantId).first<MetadataRow>()
+  const row = await env.DB!.prepare("SELECT tenant_id, object_type, object_address, object_code, next_publication_sequence, timezone, working_days_json, closed_dates_json, created_at, updated_at, merchant_identifier, merchant_type, all_locations FROM publication_metadata WHERE tenant_id = ?").bind(tenantId).first<MetadataRow>()
   if (!row) throw new Error("Nedostaju publication metadata podaci za tenant.")
   return mapMetadata(row)
 }
@@ -176,7 +177,7 @@ export async function createDraft(env: RuntimeEnv, slug: string, list: Normalize
   await ensureTenant(env, provisional)
   const tenant = await requireTenant(env, slug)
   const canonical = withCanonicalTenant(provisional, tenant)
-  const validation = mergeValidationIssues(validatePriceList(canonical), extraIssues)
+  const validation = mergeValidationIssues(validatePriceList(canonical,{nn132:Boolean((await metadataFor(env,tenant.id)).merchantIdentifier)||canonical.formatVersion==='nn-132-2026'}), extraIssues)
   const timestamp = now()
   const draftId = id()
   await env.DB.batch([
@@ -193,7 +194,7 @@ export async function updateDraft(env: RuntimeEnv, slug: string, draftId: string
   if (!draft || draft.status === "published") throw new Error("Draft nije pronađen ili je već objavljen.")
   if (draft.tenantId !== tenant.id) throw new Error("Draft nije pronađen.")
   const canonical = withCanonicalTenant(list, tenant)
-  const validation = mergeValidationIssues(validatePriceList(canonical), draft.validationIssues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED'))
+  const validation = mergeValidationIssues(validatePriceList(canonical,{nn132:Boolean((await metadataFor(env,tenant.id)).merchantIdentifier)||canonical.formatVersion==='nn-132-2026'}), draft.validationIssues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED'))
   const timestamp = now()
   const updated = await env.DB.prepare("UPDATE price_uploads SET normalized_payload_json = ?, validation_issues_json = ?, status = ?, updated_at = ? WHERE id = ? AND tenant_id = ? AND status != 'published'").bind(json(canonical), json(validation.issues), validation.status, timestamp, draftId, tenant.id).run()
   if (!(updated.meta?.changes ?? 0)) throw new Error("Draft nije pronađen ili je već objavljen.")
@@ -208,9 +209,11 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const tenant = await requireTenant(env, slug)
   const draft = await readDraft(env, slug, draftId)
   if (!draft || draft.tenantId !== tenant.id) throw new Error("Draft nije pronađen.")
-  const payload = withCanonicalTenant(draft.normalizedPayload, tenant)
-  if (draft.status !== "ready_to_publish" && !internalDemo) throw new Error("Cjenik još nije spreman za objavu.")
   const metadata = await metadataFor(env, tenant.id)
+  const newFormat = Boolean(metadata.merchantIdentifier)
+  if(!internalDemo && !newFormat && new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Zagreb',year:'numeric',month:'2-digit',day:'2-digit'}).format(clock)>='2026-11-17')requireNn132Details(metadata)
+  const payload:NormalizedPriceList = {...withCanonicalTenant(draft.normalizedPayload, tenant),formatVersion:newFormat?'nn-132-2026':undefined}
+  if (draft.status !== "ready_to_publish" && !internalDemo && !newFormat) throw new Error("Cjenik još nije spreman za objavu.")
   const draftValidation = mergeValidationIssues(validatePriceList(payload, { now: clock, timeZone: metadata.timezone }), draft.validationIssues.filter(issue => issue.code === 'IMPORT_ROW_SKIPPED'))
   if (!internalDemo && draftValidation.status !== "ready_to_publish") throw new Error("Cjenik više nije spreman za objavu. Ponovno provjerite dopune.")
   const entitlement = await readEntitlement(env, slug)
@@ -218,9 +221,12 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   if (!internalDemo && !live) throw new Error("Aktivan Publisher entitlement nije pronađen.")
   const current = await readCurrentPublication(env, slug)
   if (options.expectedCurrentId && current?.id !== options.expectedCurrentId) throw new Error('publication_changed')
-  if (slug !== (env.DEMO_WRITE_TENANT || 'nepar')) parsePublicationDetails(metadata)
+  if (newFormat) requireNn132Details(metadata)
+  else if (slug !== (env.DEMO_WRITE_TENANT || 'nepar')) parsePublicationDetails(metadata)
+  const kind=nn132Kind(payload)
+  if(newFormat&&kind==='mixed')throw new Error('Za novi pravilnik odvojite robu i usluge u dva cjenika.')
   const profile = getRuleset().profiles[usesProductStructure(payload) ? 'products' : 'services']
-  const dailyStamp = profile.freshness.kind === 'working_day' ? new Intl.DateTimeFormat('en-CA', { timeZone: metadata.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(clock) : undefined
+  const dailyStamp = !newFormat && profile.freshness.kind === 'working_day' ? new Intl.DateTimeFormat('en-CA', { timeZone: metadata.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(clock) : undefined
   const hash = await deterministicPublicationHash(payload, metadata, dailyStamp)
   if (current?.hash === hash) {
     await env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ?").bind(now(), draftId, tenant.id).run()
@@ -230,8 +236,8 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const tenantId = tenant.id
   const publicationId = id()
   const priceListId = id()
-  const filenamePrefix = createFilenameStemPrefix(metadata)
-  const filenameTime = filenameTimestamp(new Date(timestamp), metadata.timezone)
+  const filenamePrefix = newFormat?nn132FilenamePrefix(metadata,kind==='services'?'services':'products'):createFilenameStemPrefix(metadata)
+  const filenameTime = newFormat?nn132FilenameTime(clock,metadata.timezone):filenameTimestamp(new Date(timestamp), metadata.timezone)
   const publicUntil = addDays(timestamp, NEPAR_ARCHIVE_DAYS)
   await assertActivePublicationTarget(env, tenantId)
   // The first statement claims the draft. Every following statement also

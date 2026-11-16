@@ -23,3 +23,13 @@ export function createFilenameStemPrefix(metadata: Pick<PublicationMetadata, 'ob
 }
 
 export const filenameFor = (stem: string, extension: 'csv' | 'xml') => `${stem}.${extension}`
+
+/** Pravilnik prints GGGGMMDD_SSSMM. Use a zero-padded three-digit hour and two-digit minute; sequence disambiguates same-minute updates. */
+export function nn132FilenameTime(date:Date,timezone:string){
+ const old=filenameTimestamp(date,timezone);const [day,time]=old.split('-');return day+'_0'+time.slice(0,4)
+}
+export function nn132FilenamePrefix(metadata:PublicationMetadata,kind:'services'|'products'){
+ if(!metadata.merchantIdentifier)throw new Error('Nedostaje identifikator trgovca.')
+ const location=metadata.allLocations?'ZA_SVA_PRODAJNA_MJESTA':createFilenameStemPrefix(metadata)
+ return [metadata.merchantIdentifier,location,kind==='services'?'USLUGE':'ROBA'].join('_')
+}

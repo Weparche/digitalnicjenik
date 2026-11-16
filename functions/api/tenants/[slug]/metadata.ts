@@ -7,8 +7,8 @@ export const onRequestPatch = async ({ request, params, env }: { request: Reques
   try {
     const tenant = await requireTenantAccess({ request, env, slug: params.slug, operation: 'metadata' })
     const details = parsePublicationDetails(await readJsonBody(request, 4096))
-    await env.DB!.prepare('UPDATE publication_metadata SET object_type = ?, object_address = ?, object_code = ?, working_days_json = ?, closed_dates_json = ?, updated_at = ? WHERE tenant_id = ?')
-      .bind(details.objectType, details.objectAddress, details.objectCode, JSON.stringify(details.workingDays), JSON.stringify(details.closedDates), new Date().toISOString(), tenant.id).run()
+    await env.DB!.prepare('UPDATE publication_metadata SET object_type = ?, object_address = ?, object_code = ?, working_days_json = ?, closed_dates_json = ?, merchant_identifier = ?, merchant_type = ?, all_locations = ?, updated_at = ? WHERE tenant_id = ?')
+      .bind(details.objectType, details.objectAddress, details.objectCode, JSON.stringify(details.workingDays), JSON.stringify(details.closedDates), details.merchantIdentifier??null, details.merchantType??null, details.allLocations?1:0, new Date().toISOString(), tenant.id).run()
     return Response.json({ ok: true, metadata: details })
   } catch (error) {
     return accessErrorResponse(error) || Response.json({ error: error instanceof Error ? error.message : 'Podaci nisu spremljeni.' }, { status: errorStatus(error, 400) })
