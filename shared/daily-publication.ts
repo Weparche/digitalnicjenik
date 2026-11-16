@@ -14,6 +14,7 @@ export async function dailyPublication(env:DailyEnv,slug:string,now=new Date(),w
   const entitlement=await readEntitlement(env,slug)
   if(!entitlementIsLive(entitlement,now.getTime())) return {status:'not_live'}
   const current=await readCurrentPublication(env,slug)
+  if(current?.payload.formatVersion==='nn-132-2026')return {status:'on_change'}
   if(!current||!usesProductStructure(current.payload)) return {status:'services'}
   const metadata=await readMetadataForSlug(env,slug)
   if(!metadata) return {status:'no_metadata'}

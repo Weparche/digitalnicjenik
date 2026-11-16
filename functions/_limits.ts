@@ -92,6 +92,7 @@ function normalizeItem(raw: unknown, index: number): NormalizedPriceItem {
 }
 
 export type PriceListInput = {
+  formatVersion?: 'nn-132-2026'
   items: NormalizedPriceItem[]
   currency?: string
   updatedAt?: string
@@ -105,6 +106,7 @@ export function parsePriceListInput(value: unknown): PriceListInput {
   if (body.items.length > MAX_PRICE_LIST_ITEMS) throw new PayloadTooLargeError(`Cjenik smije imati najviše ${MAX_PRICE_LIST_ITEMS} stavki.`)
   if (!body.items.length) throw new ValidationInputError('Cjenik mora sadržavati barem jednu stavku.')
   return {
+    ...(body.formatVersion==='nn-132-2026'?{formatVersion:'nn-132-2026' as const}:{}),
     items: body.items.map((item, index) => normalizeItem(item, index)),
     currency: typeof body.currency === 'string' ? body.currency : undefined,
     updatedAt: typeof body.updatedAt === 'string' ? body.updatedAt : undefined,
@@ -115,6 +117,7 @@ export function parsePriceListInput(value: unknown): PriceListInput {
 export function attachCanonicalTenant(input: PriceListInput, tenant: { id: string; slug: string; name: string }): NormalizedPriceList {
   return {
     tenant,
+    ...(input.formatVersion?{formatVersion:input.formatVersion}:{}),
     source: input.source === 'marketino-api' || input.source === 'nepar' || input.source === 'marketino-csv' ? input.source : 'marketino-csv',
     currency: 'EUR',
     updatedAt: input.updatedAt && !Number.isNaN(Date.parse(input.updatedAt)) ? input.updatedAt : new Date().toISOString(),

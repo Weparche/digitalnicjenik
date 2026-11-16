@@ -110,7 +110,7 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
   const started = Date.now()
   const now = options.now ?? new Date()
   const fetcher = options.fetcher ?? fetch
-  const ruleset = getRuleset(options.rulesetId ?? ACTIVE_RULESET)
+  // Select rules from the immutable publication format after reading the payload.
   const db = env.DB
 
   const tenant = await db.prepare('SELECT id, slug, name FROM tenants WHERE slug = ?').bind(options.slug).first<{ id: string; slug: string; name: string }>()
@@ -136,6 +136,7 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
   if (!publication || !publication.hostname) return { status: 'skipped', reason: 'no_publication' }
 
   const payload = JSON.parse(publication.payload_json) as NormalizedPriceList
+  const ruleset = getRuleset(options.rulesetId ?? (payload.formatVersion==='nn-132-2026'?'nn-132-2026':ACTIVE_RULESET))
   const profileKey: ComplianceProfile = usesProductStructure(payload) ? 'products' : 'services'
   const profile = ruleset.profiles[profileKey]
   const timeZone = publication.timezone || env.DEFAULT_PUBLICATION_TIMEZONE || 'Europe/Zagreb'
@@ -177,7 +178,7 @@ export async function runTenantCheck(env: MonitorEnv, options: RunTenantCheckOpt
         issues.push({ code: 'FILENAME_RULESET_MISMATCH', severity: 'warn', field: format, message: `Naziv ${format.toUpperCase()} datoteke ne odgovara propisanom obliku (${ruleset.label}).` })
       }
     }
-    issues.push(...evaluateFeedGaps(format, profile, usesProductStructure(payload) ? 'products' : 'services'))
+    if(payload.formatVersion!=='nn-132-2026')issues.push(...evaluateFeedGaps(format, profile, usesProductStructure(payload) ? 'products' : 'services'))
   }
 
   issues.push(...evaluateRequiredFields(payload.items, profile))

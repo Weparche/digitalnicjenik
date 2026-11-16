@@ -31,7 +31,7 @@ import { NewsIndex } from './news/NewsIndex'
 const money = (value: number) => new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(value)
 const anchorLabel = (item: NormalizedPriceList['items'][number]) => {
   const date = item.anchorReferenceDate || (isServiceItem(item) ? '2026-09-10' : '')
-  return date && Number.isFinite(Date.parse(date)) ? 'Cijena na ' + new Intl.DateTimeFormat('hr-HR', { timeZone: 'Europe/Zagreb' }).format(new Date(date + 'T12:00:00Z')) : 'Sidrena cijena'
+  return date && Number.isFinite(Date.parse(date)) ? 'Bazna cijena na ' + new Intl.DateTimeFormat('hr-HR', { timeZone: 'Europe/Zagreb' }).format(new Date(date + 'T12:00:00Z')) : 'Bazna cijena'
 }
 const productDisplayDetails = (item: NormalizedPriceList['items'][number]) => isServiceItem(item) ? '' : [
   item.externalId ? 'Šifra: ' + item.externalId : '', item.brand ? 'Marka: ' + item.brand : '',
@@ -384,9 +384,9 @@ function ValidationResultPanel({
               <th>Naziv</th>
               <th>Vrsta</th>
               <th>Maloprodajna</th>
-              <th>Sidrena cijena</th>
+              <th>Bazna cijena</th>
               <th>Posebna prodaja</th>
-              {hasProducts && <><th>Šifra</th><th>Marka</th><th>Barkod</th><th>Jedinica i cijena po jedinici</th><th>Dostupnost</th></>}
+              {hasProducts && <><th>Šifra</th><th>Marka</th><th>Barkod / EAN</th><th>Neto količina, jedinica i cijena po jedinici</th><th>Dostupnost</th></>}
             {onDeleteItem && <th>Akcije</th>}</tr>
           </thead>
           <tbody>
@@ -460,11 +460,11 @@ function ValidationResultPanel({
                   {hasProducts && (service ? <td colSpan={5}><small>Usluga: ova polja se ne traže.</small></td> : <>
                     <td><input className="app-table-input" aria-label={'Šifra za ' + item.name} value={item.externalId ?? ''} placeholder="šifra" onChange={(event) => onUpdateItem(index, { externalId: event.target.value })} /></td>
                     <td><input className="app-table-input" aria-label={'Marka za ' + item.name} value={item.brand ?? ''} placeholder="marka" onChange={(event) => onUpdateItem(index, { brand: event.target.value })} /></td>
-                    <td><input className="app-table-input" inputMode="numeric" aria-label={'Barkod za ' + item.name} value={item.barcode ?? ''} placeholder="EAN" onChange={(event) => onUpdateItem(index, { barcode: event.target.value.replace(/\s+/g, '') || null })} /></td>
+                    <td><input className="app-table-input" inputMode="numeric" aria-label={'Barkod za ' + item.name} value={item.barcode ?? ''} placeholder="Barkod" onChange={(event) => onUpdateItem(index, { barcode: event.target.value.replace(/\s+/g, '') || null })} /><input className="app-table-input" aria-label={'EAN barkod za '+item.name} value={item.eanBarcode??''} placeholder="EAN" inputMode="numeric" onChange={event=>onUpdateItem(index,{eanBarcode:event.target.value.replace(/\s+/g,'')||null})}/></td>
                     <td>
                       <div className="app-sale-fields">
                         <input className="app-table-input" aria-label={'Jedinica mjere za ' + item.name} value={item.unit ?? ''} placeholder="npr. kg" onChange={(event) => onUpdateItem(index, { unit: event.target.value || null })} />
-                        <input className="app-table-input" aria-label={'Cijena za jedinicu mjere za ' + item.name} type="number" min="0.01" step="0.01" value={item.unitPrice ?? ''} placeholder="€ / jedinica" onChange={(event) => onUpdateItem(index, { unitPrice: event.target.value ? Number(event.target.value) : null })} />
+                        <input className="app-table-input" aria-label={'Neto količina za '+item.name} type="number" min="0.000001" step="any" value={item.netQuantity??''} placeholder="Neto količina" onChange={event=>onUpdateItem(index,{netQuantity:event.target.value?Number(event.target.value):null})}/><input className="app-table-input" aria-label={'Cijena za jedinicu mjere za ' + item.name} type="number" min="0.01" step="0.01" value={item.unitPrice ?? ''} placeholder="€ / jedinica" onChange={(event) => onUpdateItem(index, { unitPrice: event.target.value ? Number(event.target.value) : null })} />
                         {!item.unit && <input className="app-table-input" aria-label={'Razlog iznimke cijene po jedinici za ' + item.name} value={item.unitPricingExemption ?? ''} placeholder="Ako nije primjenjivo: navedite razlog" onChange={event => onUpdateItem(index, { unitPricingExemption: event.target.value || null })} />}
                       </div>
                     </td>
@@ -853,6 +853,9 @@ function TrialClaimForm({
   const [email, setEmail] = useState(accountEmail??'')
   const [slug, setSlug] = useState('')
   const [slugHint, setSlugHint] = useState('')
+  const [merchantType,setMerchantType]=useState<'legal'|'natural'|''>('')
+  const [merchantIdentifier,setMerchantIdentifier]=useState('')
+  const [allLocations,setAllLocations]=useState(false)
   const [objectAddress, setObjectAddress] = useState('')
   const [objectCode, setObjectCode] = useState('1')
   const [objectType, setObjectType] = useState(list.items.every(isServiceItem) ? 'usluzni-objekt' : 'prodavaonica')
@@ -909,7 +912,7 @@ function TrialClaimForm({
         body: JSON.stringify({
           list: { ...list, tenant: { ...list.tenant, name: businessName.trim() || list.tenant.name } },
           filename: sourceFilename || 'cjenik.csv',
-          publicationDetails: { objectType, objectAddress, objectCode, workingDays },
+          publicationDetails: { objectType, objectAddress, objectCode, workingDays, merchantType, merchantIdentifier, allLocations },
         }),
       })
       const draftPayload = await draftResponse.json() as { draftId?: string; error?: string }
@@ -962,7 +965,10 @@ function TrialClaimForm({
       <p>{accountEmail?'E-mail je potvrđen. Cjenik možete odmah objaviti.':'Potvrdite e-mail i vaš će cjenik biti objavljen.'} Besplatna objava traje 24 sata.</p>
       <form className="trial-claim-form" onSubmit={(event) => void submit(event)}>
         <label>Naziv poslovanja<input value={businessName} onChange={(event) => setBusinessName(event.target.value)} required maxLength={120} placeholder="Auto Gubić" /></label>
-        <label>Puna adresa objekta<input value={objectAddress} onChange={event => setObjectAddress(event.target.value)} required minLength={5} maxLength={240} placeholder="Ulica i broj, poštanski broj i mjesto" autoComplete="street-address" /></label>
+        <label>Vrsta trgovca<select value={merchantType} required onChange={event=>{setMerchantType(event.target.value as 'legal'|'natural'|'');setMerchantIdentifier('')}}><option value="">Odaberite</option><option value="legal">Pravna osoba (OIB)</option><option value="natural">Fizička osoba / obrt (matični broj)</option></select></label>
+        <label>{merchantType==='natural'?'Matični broj fizičke osobe':'OIB pravne osobe'}<input required inputMode="numeric" pattern={merchantType==='natural'?'[0-9]{5,15}':'[0-9]{11}'} value={merchantIdentifier} onChange={event=>setMerchantIdentifier(event.target.value.replace(/\D/g,''))}/><small>Identifikator ulazi u javni naziv datoteke prema NN 132/2026.</small></label>
+        <label><input type="checkbox" checked={allLocations} onChange={event=>setAllLocations(event.target.checked)}/> Isti cjenik za sva prodajna mjesta</label>
+        <label>Puna adresa objekta<input value={objectAddress} onChange={event => setObjectAddress(event.target.value)} required={!allLocations} minLength={5} maxLength={240} placeholder="Ulica i broj, poštanski broj i mjesto" autoComplete="street-address" /></label>
         {accountEmail?<p>Prijavljeni ste kao <strong>{accountEmail}</strong>.</p>:<label>E-mail<input type="email" value={email} onChange={event=>setEmail(event.target.value)} required maxLength={254} placeholder="info@primjer.hr" autoComplete="email"/></label>}
         <details><summary>Uredi adresu cjenika i podatke objekta</summary><label>Adresa vašeg cjenika<input value={slug} onChange={event=>setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={48}/></label><label>Vrsta objekta<select value={objectType} onChange={event=>setObjectType(event.target.value)}><option value="usluzni-objekt">Uslužni objekt</option><option value="prodavaonica">Prodavaonica</option><option value="internetska-trgovina">Internetska trgovina</option></select></label><label>Oznaka objekta<input value={objectCode} onChange={event=>setObjectCode(event.target.value)} maxLength={80}/></label>{!list.items.every(isServiceItem)&&<fieldset><legend>Radni dani objekta</legend>{['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'].map((label,day)=><label key={day}><input type="checkbox" checked={workingDays.includes(day)} onChange={event=>setWorkingDays(event.target.checked?[...workingDays,day]:workingDays.filter(value=>value!==day))}/>{label}</label>)}</fieldset>}</details>
         <p>Podatke koristimo za račun, potvrdu e-maila i javnu objavu cjenika. Provjerite točnost adrese i cijena. <a href="/privatnost.html" target="_blank" rel="noreferrer">Obrada podataka</a> · <a href="/uvjeti.html" target="_blank" rel="noreferrer">Uvjeti objave</a></p>
@@ -1064,7 +1070,7 @@ function ValidatorApp({
   }
 
   function applyNormalizedList(priceList: NormalizedPriceList, file: File, importIssues: ValidationIssue[] = []) {
-    const scoped = { ...priceList, tenant: { ...priceList.tenant, ...tenantIdentity } }
+    const scoped:NormalizedPriceList = { ...priceList, formatVersion:'nn-132-2026', tenant: { ...priceList.tenant, ...tenantIdentity } }
     setList(scoped)
     setSourceFilename(file.name)
     setSourceFile(file)
