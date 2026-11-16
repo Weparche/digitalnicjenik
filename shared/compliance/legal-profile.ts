@@ -110,3 +110,5 @@ NN132_RULES['list.mixed']={level:'warning',source:'binding',basis:'NN 132/2026-1
 NN132_RULES['schema.order']={level:'warning',source:'binding',basis:'NN 132/2026-1584, čl. 3. st. 4. i čl. 6. st. 7.'}
 NN132_RULES['sale.lowest30.missing']={level:'info',source:'recommendation',basis:'Podatak o najnižoj cijeni pripada zasebnim pravilima isticanja sniženja; nije stupac propisan ovim pravilnikom.'}
 NN132_RULES['sale.lowest30.not-lower']={level:'info',source:'recommendation',basis:'Provjerite zasebna pravila isticanja sniženja.'}
+
+NN132_RULES['publication.archive.unverified']={level:'warning',source:'binding',basis:'NN 132/2026-1584, čl. 3. st. 6. — 15 dana od zamjene'}
