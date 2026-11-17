@@ -33,7 +33,7 @@ export function PricingPage() {
       <section className="site-section" aria-labelledby="plans-title">
         <h2 id="plans-title">Paketi</h2>
         <PlanCards />
-        <p><a href="/c/digitalni-cjenik">Digitalni cjenik naših usluga — CSV, XML i arhiva</a></p>
+        <p><a href="/c/digitalni-cjenik">Digitalni cjenik naših usluga</a> — CSV, XML i arhiva</p>
       </section>
 
       <section className="site-section" aria-labelledby="link-scope-title">
