@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
 // Historical checker fixtures use the pre-NN132 schema; current-rule coverage is separate.
 beforeEach(()=>{vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-16T22:00:00Z'))})
 afterEach(()=>vi.useRealTimers())
-import { analyzeDocument, parsePublicationName, renderDynamicPage, runDigitalPriceListCheck, verifyFirstPublisherPublication } from './check'
+import { analyzeDocument, parsePublicationName, renderDynamicPage, runDigitalPriceListCheck, verifyFirstPublisherPublication, publisherArchivePage } from './check'
 import { technicalReport } from '../../../shared/website-check'
 
 const resolver = { resolve4: async () => ['93.184.216.34'], resolve6: async () => [] }
@@ -181,5 +181,28 @@ describe('first Publisher publication archive evidence',()=>{
     ] as Array<Parameters<typeof scenario>>){
       expect((await scenario(...args)).details.archiveNotApplicable).toBeUndefined();
     }
+  });
+});
+
+describe('Publisher archive without retail price amounts',()=>{
+  const route=new URL('https://digitalnicjenik.nepar.hr/c/geo/arhiva');
+  const stem='12345678_internetska-trgovina_ilica-1_web-geo-01_USLUGE_1_20261117_01911';
+  const body=(slug='geo',name=stem)=>'<title>Arhiva cjenika — GeoAdrese</title><main><h1>GeoAdrese</h1><p>Prethodne CSV i XML verzije ostaju dostupne.</p><a href="/c/'+slug+'/'+name+'.csv">CSV</a></main>';
+  it('recognizes actual scoped archive pages without prices but not unrelated links or routes',()=>{
+    expect(publisherArchivePage(html(body()),body(),route)).toBe(true);
+    expect(publisherArchivePage(html(body('other')),body('other'),route)).toBe(false);
+    expect(publisherArchivePage(html(body('geo','cjenik')),body('geo','cjenik'),route)).toBe(false);
+    expect(publisherArchivePage(html(body()),body(),new URL('https://example.hr/c/geo/arhiva'))).toBe(false);
+    expect(publisherArchivePage(html(body()),body(),new URL('https://digitalnicjenik.nepar.hr/c/geo'))).toBe(false);
+  });
+  it('verifies first version for an external shop with a price-free archive',async()=>{
+    const catalog='https://digitalnicjenik.nepar.hr/c/geo';
+    const current=stem+'.csv';
+    const first=vi.fn(async()=>({filename_stem:stem,sequence:1,total:1}));
+    const DB={prepare:vi.fn(()=>({bind:()=>({first})}))};
+    stub({'/':()=>html('<a href="'+catalog+'">Cjenik</a>'),'/c/geo':()=>html('<title>Digitalni cjenik</title><a href="/c/geo/cjenik.csv">CSV</a><a href="/c/geo/arhiva">Arhiva</a>'),'/c/geo/cjenik.csv':()=>new Response('Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje;Bazna cijena\nAPI;29;NE;29',{headers:{'content-type':'text/csv','content-disposition':'attachment; filename="'+current+'"'}}),'/c/geo/arhiva':()=>html(body())});
+    const result=await runDigitalPriceListCheck('https://example.hr',{DIGITAL_PRICE_LIST_DNS_RESOLVER:resolver,DB:DB as unknown as NonNullable<Parameters<typeof runDigitalPriceListCheck>[1]['DB']>,enforceNN132:true});
+    expect(result.details.archiveNotApplicable).toBe(true);
+    expect(technicalReport(result).checks.find(c=>c.id==='archive')?.status).toBe('not_applicable');
   });
 });
