@@ -10,11 +10,12 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: A
   try {
     const contentLength = Number(request.headers.get('content-length') || 0)
     if (Number.isFinite(contentLength) && contentLength > 2_200_000) return Response.json({ error: 'Zahtjev je prevelik.' }, { status: 413 })
-    const body = await request.json() as { csv?: unknown; xml?: unknown }
+    const body = await request.json() as { csv?: unknown; xml?: unknown; format?: unknown }
     const hasCsv = typeof body.csv === 'string' && body.csv.trim().length > 0
     const hasXml = typeof body.xml === 'string' && body.xml.trim().length > 0
-    if (hasCsv === hasXml) return Response.json({ error: 'Pošaljite CSV ili XML sadržaj.' }, { status: 400 })
-    const source = hasXml ? body.xml as string : body.csv as string
+    const excel = body.format === 'excel' && !hasCsv && !hasXml
+    if (!excel && hasCsv === hasXml) return Response.json({ error: 'Pošaljite CSV ili XML sadržaj.' }, { status: 400 })
+    const source = excel ? '' : hasXml ? body.xml as string : body.csv as string
     if (new TextEncoder().encode(source).byteLength > 2_000_000) return Response.json({ error: 'Datoteka je prevelika.' }, { status: 413 })
     let internal = false
     try { await requireAdmin(request, env); internal = true } catch { /* public validator */ }
@@ -25,6 +26,7 @@ export const onRequestPost = async ({ request, env }: { request: Request; env: A
       if (error instanceof CheckerRateLimitError) return Response.json({ error: CHECKER_LIMIT_MESSAGE, code: 'rate_limited' }, { status: 429, headers: checkerLimitHeaders(error) })
       return Response.json({ error: 'Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.' }, { status: 503, headers: { 'cache-control': 'no-store' } })
     }
+    if (excel) return Response.json({ ok: true }, { headers: quota ? checkerQuotaHeaders(quota) : { 'cache-control': 'no-store' } })
     const parsed = hasXml
       ? { priceList: parseXmlPriceList(source, { id: 'nepar', slug: 'nepar', name: 'NEPAR' }), warnings: [] }
       : parseMarketinoCsv(source)
