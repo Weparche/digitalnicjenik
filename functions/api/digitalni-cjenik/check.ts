@@ -496,6 +496,20 @@ export function pageLooksLikeArchive(response: Response, body: string): boolean 
   return /(arhiva|archive|povijest|prethodn)/i.test(body);
 }
 
+/** A Publisher archive lists immutable files, not retail-price amounts.
+ * Require its exact public route and a same-tenant versioned document link.
+ * This only qualifies the page for verification; the DB and current file
+ * must independently prove the first-publication exemption. */
+export function publisherArchivePage(response: Response, body: string, url: URL): boolean {
+  if (!response.ok || !isHtml(response, body) || url.origin !== 'https://digitalnicjenik.nepar.hr') return false;
+  const slug = /^\/c\/([a-z0-9][a-z0-9-]{0,62})\/arhiva\/?$/i.exec(url.pathname)?.[1];
+  if (!slug) return false;
+  return /<(?:title|h1|h2)[^>]*>[^<]*(?:arhiva|archive)/i.test(body) &&
+    extractLinks(body, url).some(link => (link.kind === 'csv' || link.kind === 'xml') &&
+      link.url.origin === url.origin && link.url.pathname.startsWith('/c/'+slug+'/') &&
+      parsePublicationName(link.url.href)?.nn132 === true);
+}
+
 function parseCsvRows(value: string): string[][] {
   const source = value.replace(/^\uFEFF/, "");
   const sample = source.split(/\r?\n/).filter(Boolean).slice(0, 5).join("\n");
@@ -1202,6 +1216,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   details.csvFound = Boolean(details.csvUrl);
   details.xmlFound = Boolean(details.xmlUrl);
   details.fetchBlocked = network.blocked;
+  const verifiedArchivePages: string[] = [];
   let archivePageUrl: string | null = null;
   for (const candidate of archive) {
     try {
@@ -1212,11 +1227,17 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
       if (!fetched.response.ok) { network.checked = true; continue; }
       network.checked = true;
       for (const link of extractLinks(archiveHtml, fetched.url)) if (link.kind === 'csv' || link.kind === 'xml') appendUnique(documentLinks, link.url, MAX_PUBLICATION_LINKS);
-      if (!archivePageUrl && pageLooksLikeArchive(fetched.response, archiveHtml)) archivePageUrl = fetched.url.href;
+      if (pageLooksLikeArchive(fetched.response, archiveHtml) || publisherArchivePage(fetched.response, archiveHtml, fetched.url)) {
+        if (!archivePageUrl) archivePageUrl = fetched.url.href;
+        verifiedArchivePages.push(fetched.url.href);
+      }
     } catch { network.failed = true; }
   }
   await checkPublications(details, documentLinks, env, network, analyses);
-  await verifyFirstPublisherPublication(details, archivePageUrl, env, analyses);
+  for (const verifiedArchive of verifiedArchivePages) {
+    await verifyFirstPublisherPublication(details, verifiedArchive, env, analyses);
+    if (details.archiveNotApplicable) break;
+  }
   if (!details.archiveFound && !details.archiveRemoved && archivePageUrl && !details.csvFound && !details.xmlFound && !details.zipEvidence) {
     details.archiveFound = true;
     details.archiveUrl = archivePageUrl;
