@@ -11,3 +11,6 @@ Korisnički račun ima postojeće tenant_members veze. Svaki tenant je zaseban c
 
 ## Sljedeća faza
 Zajednički poslovni profil (pravni naziv, registracijski identifikator i OIB za naplatu nisu nužno ista stvar), eksplicitno povezivanje i ponovna uporaba podataka pri dodavanju cjenika, interni plan za vlastite NEPAR cjenike s auditom, objedinjeni checker/monitor rezultati, API sinkronizacija. Ne prepisivati identifikator u već objavljenim arhivama, ne spajati prava pristupa na temelju istog identifikatora, ne izuzimati administratore iz provjera licenci bez zasebne politike.
+
+## Faza 2
+Privatni poslovni profili vlasnika: pravni naziv, vrsta i identifikator trgovca, adresa, opcionalni OIB za naplatu. Odabir profila pri izradi kopira identifikator i adresu u novi cjenik, ne mijenja postojeće objave niti stvara pravo pristupa. Oznaka objekta ostaje zasebna i provjerava se postojećim validatorom. Interna licenca dodjeljuje se samo kroz auditiranu admin operaciju grant_internal za vlastiti neplaćeni, nesuspendirani cjenik, s postojećim Publisher pravima do 31.12.2099., bez potvrde uplate, narudžbe ili grace perioda. Prava vlasnika i postojeći javni linkovi ne mijenjaju se. Produkcijsko dodjeljivanje i stvaranje šest cjenika odvojeni su koraci.

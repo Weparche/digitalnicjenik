@@ -106,3 +106,17 @@ it('launch allows new Web Link orders but rejects new Publisher orders and prese
   await env.DB.prepare("UPDATE entitlements SET plan='publisher_self_service',status='active' WHERE tenant_id=?").bind(tenant.id).run()
   expect((await orderPost({request:req('publisher'),env:runtime})).status).toBe(200)
 })
+
+it('grants an audited long-term internal licence only to an admin-owned unpaid catalog',async()=>{
+  await session('nepar@nepar.hr','admin-test')
+  const input={action:'grant_internal',reason:'Vlastiti NEPAR cjenik',requestKey:'internal-grant-test'}
+  await expect(applyOperation(env.DB,actor,tenant,input,now)).rejects.toMatchObject({status:403})
+  await env.DB.prepare("INSERT INTO tenant_members(id,tenant_id,user_id,role,created_at) VALUES (?,?,?,'owner',?)").bind('internal-owner',tenant.id,actor.id,now.toISOString()).run()
+  await expect(applyOperation(env.DB,{id:actor.id,email:null,type:'service'},tenant,input,now)).rejects.toMatchObject({status:403})
+  const result=await applyOperation(env.DB,actor,tenant,input,now)
+  expect(result).toMatchObject({plan:'publisher_self_service',status:'active',periodEnd:'2099-12-31T23:00:00.000Z'})
+  expect(await entitlement()).toMatchObject({paid_confirmed_at:null,grace_until:null})
+  expect((await env.DB.prepare('SELECT COUNT(*) AS n FROM payment_orders').first<{n:number}>())?.n).toBe(0)
+  expect((await env.DB.prepare("SELECT COUNT(*) AS n FROM admin_audit WHERE action='grant_internal'").first<{n:number}>())?.n).toBe(1)
+  expect(await applyOperation(env.DB,actor,tenant,input,now)).toMatchObject({repeated:true})
+})

@@ -1,5 +1,6 @@
 import {useEffect,useState} from 'react'
 import {IconArrowUpRight,IconFileText,IconPlus,IconRefresh} from '@tabler/icons-react'
+import {BusinessProfilesPanel} from './BusinessProfiles'
 import {untilLabel} from './licenceView'
 import type {PublisherTenant} from './PublisherAuth'
 
@@ -9,7 +10,7 @@ export function groupCatalogs(catalogs:CatalogSummary[]){
   for(const catalog of catalogs){
     const identified=Boolean(catalog.merchantIdentifier&&catalog.merchantType)
     const key=identified?catalog.merchantType+':'+catalog.merchantIdentifier:'unassigned'
-    const label=identified?(catalog.merchantType==='legal'?'MBS':'Matični broj')+': '+catalog.merchantIdentifier:'Bez potvrđenog identifikatora trgovca'
+    const label=identified?(catalog.merchantType==='legal'?'OIB':'Matični broj')+': '+catalog.merchantIdentifier:'Bez potvrđenog identifikatora trgovca'
     const group=groups.get(key)??{label,catalogs:[]}
     group.catalogs.push(catalog);groups.set(key,group)
   }
@@ -43,6 +44,7 @@ export function PublisherCatalogDashboard({tenants}:{tenants:PublisherTenant[]})
   const groups=groupCatalogs(filtered)
   const addUrl=tenants.length?'/app?new=1&add=1&tab=cjenik':'/app?new=1&tab=cjenik'
   return <div className="catalog-dashboard">
+    <BusinessProfilesPanel/>
     <section className="workspace-surface catalog-intro"><div><h2>Upravljajte svim cjenicima na jednom mjestu</h2><p>Svaka poslovnica, web ili zasebna ponuda ima svoj javni link, arhivu i licencu.</p></div><a className="app-button app-button-primary" href={addUrl}><IconPlus size={19}/>Dodaj cjenik</a></section>
     {catalogs&&<><div className="catalog-metrics" aria-label="Sažetak cjenika">
       <div><span>Cjenici</span><strong>{catalogs.length}</strong></div><div><span>Objavljeni i dostupni</span><strong>{catalogs.filter(c=>c.publicLive).length}</strong></div><div><span>Za pregled</span><strong>{catalogs.filter(attention).length}</strong></div>

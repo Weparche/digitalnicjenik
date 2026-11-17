@@ -19,8 +19,9 @@ for(const width of [390,1440])test(`missing price list leads to upload and conta
   await expect(page.getByRole('heading',{name:'Kontakt',exact:true})).toBeVisible()
   await expect(page.getByLabel('Web stranica',{exact:true})).toHaveValue('https://salon.hr/')
   await page.getByLabel('Ime ili naziv tvrtke').fill('Salon Test');await page.getByLabel('E-mail',{exact:true}).fill('owner@salon.hr');await page.getByLabel('Poruka',{exact:true}).fill('Trebam pomoć.')
-  const nav=page.getByRole('navigation',{name:'Radni prostor'}),labels=await nav.getByRole('button').allTextContents();expect(labels.indexOf('Kontakt')).toBe(labels.indexOf('Paketi i cijene')+1)
-  await nav.getByRole('button',{name:'Paketi i cijene',exact:true}).click();await nav.getByRole('button',{name:'Kontakt',exact:true}).click();await expect(page.getByLabel('Poruka',{exact:true})).toHaveValue('Trebam pomoć.')
+  const nav=page.getByRole('navigation',{name:'Radni prostor'})
+  if(width===1440){const labels=await nav.getByRole('button').allTextContents();expect(labels.indexOf('Kontakt')).toBe(labels.indexOf('Paketi i cijene')+1)}
+  await nav.getByRole('button',{name:'Paketi i cijene',exact:true}).click();if(width===390)await nav.getByRole('button',{name:'Više',exact:true}).click();await nav.getByRole('button',{name:'Kontakt',exact:true}).click();await expect(page.getByLabel('Poruka',{exact:true})).toHaveValue('Trebam pomoć.')
   await page.getByLabel(/Dopuštam obradu podataka/).check()
   let form: string|undefined
   await page.route('**/api/leads/digitalni-cjenik',route=>{form=route.request().postData();return route.fulfill({json:{ok:true}})})

@@ -54,7 +54,7 @@ test('list without a Vrsta column asks once for services or products before prod
 
 test('sample list runs the real review flow instead of opening a public page', async ({ page }) => {
   await page.goto('/app?new=1')
-  await page.getByRole('button', { name: /Učitaj primjer cjenika usluga/ }).click()
+  await page.getByRole('button', { name: /Isprobajte na primjeru/ }).click()
   const panel = page.locator('.validation-app-panel')
   await expect(panel).toContainText('Učitano: 3 stavke')
   await expect(page).toHaveURL(/\/app/)

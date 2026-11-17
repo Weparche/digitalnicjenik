@@ -1,3 +1,4 @@
+import {useBusinessProfiles} from './BusinessProfiles'
 import { trackCheckerInteraction } from './checker-analytics'
 import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
 import { stavke, stavkeNema } from '../shared/plural'
@@ -850,6 +851,8 @@ function TrialClaimForm({
   onCancel: () => void
   accountEmail?:string
 }) {
+  const {profiles}=useBusinessProfiles(Boolean(accountEmail))
+  const [profileId,setProfileId]=useState('')
   const [businessName, setBusinessName] = useState(list.tenant.name && list.tenant.name !== 'Draft' ? list.tenant.name : '')
   const [email, setEmail] = useState(accountEmail??'')
   const [slug, setSlug] = useState('')
@@ -896,6 +899,13 @@ function TrialClaimForm({
       window.clearTimeout(timer)
     }
   }, [businessName])
+
+  useEffect(()=>{
+    const requested=new URLSearchParams(window.location.search).get('profile')
+    if(!requested||profileId)return
+    const profile=profiles.find(p=>p.id===requested)
+    if(profile){setProfileId(profile.id);setMerchantType(profile.merchantType);setMerchantIdentifier(profile.merchantIdentifier);setObjectAddress(profile.address);setAllLocations(false)}
+  },[profiles,profileId])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -965,6 +975,7 @@ function TrialClaimForm({
       <h2>Još podaci o vašem poslovanju</h2>
       <p>{accountEmail?'E-mail je potvrđen. Cjenik možete odmah objaviti.':'Potvrdite e-mail i vaš će cjenik biti objavljen.'} Besplatna objava traje 24 sata.</p>
       <form className="trial-claim-form" onSubmit={(event) => void submit(event)}>
+        {accountEmail&&profiles.length>0&&<label>Preuzmi podatke iz poslovnog profila<select value={profileId} onChange={event=>{const id=event.target.value;setProfileId(id);const profile=profiles.find(p=>p.id===id);if(profile){setMerchantType(profile.merchantType);setMerchantIdentifier(profile.merchantIdentifier);setObjectAddress(profile.address);setAllLocations(false)}}}><option value="">Unesite podatke ručno</option>{profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><small>Preuzima identifikator i adresu. Naziv, oznaku i vrstu novog cjenika odredite zasebno.</small></label>}
         <label>Naziv poslovanja<input value={businessName} onChange={(event) => setBusinessName(event.target.value)} required maxLength={120} placeholder="Auto Gubić" /></label>
         <label>Vrsta trgovca<select aria-label="Vrsta trgovca" value={merchantType} required onChange={event=>{setMerchantType(event.target.value as 'legal'|'natural'|'');setMerchantIdentifier('')}}><option value="">Odaberite</option><option value="legal">Pravna osoba (OIB)</option><option value="natural">Fizička osoba / obrt (matični broj)</option></select></label>
         <label>{merchantType==='natural'?'Matični broj fizičke osobe':'OIB pravne osobe'}<input required inputMode="numeric" pattern={merchantType==='natural'?'[0-9]{5,15}':'[0-9]{11}'} value={merchantIdentifier} onChange={event=>setMerchantIdentifier(event.target.value.replace(/\D/g,''))}/><small>Identifikator ulazi u javni naziv datoteke prema NN 132/2026.</small></label>
