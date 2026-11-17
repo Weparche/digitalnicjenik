@@ -54,6 +54,15 @@ describe('checker v2 regressions',()=>{
     expect(result.details.archiveFound).toBe(true)
     expect(result.details.archiveUrl).toBe('https://example.hr'+b)
   })
+  it('accepts genuine earlier same-location files published under the previous filename format',async()=>{
+    const current='/files/12345678901_usluzni-objekt_ilica-1_a_USLUGE_3_20261117_00930.csv';
+    const legacy='/files/usluzni-objekt_ilica-1_a_0002_20261027T154508+0100.csv';
+    const foreign='/files/usluzni-objekt_ilica-1_b_0002_20261027T154508+0100.csv';
+    stub({'/':()=>html('<a href="/cjenik">Cjenik</a>'),'/cjenik':()=>html('<a href="'+current+'">CSV</a><a href="'+legacy+'">CSV</a><a href="'+foreign+'">CSV</a>'),[current]:()=>new Response('Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje;Bazna cijena\nŠišanje;15;NE;15'),[legacy]:()=>new Response(csv),[foreign]:()=>new Response(csv)})
+    const result=await check();
+    expect(result.details.archiveFound).toBe(true);
+    expect(result.details.archiveUrl).toBe('https://example.hr'+legacy);
+  })
   it('does not treat an empty archive page as proof of retained files',async()=>{
     stub({'/':()=>html('<a href="/cjenik">Cjenik</a>'),'/cjenik':()=>html('<a href="/current.csv">CSV</a><a href="/arhiva">Arhiva</a>'),'/current.csv':()=>new Response(csv),'/arhiva':()=>html('<h1>Arhiva</h1><p>Nema prethodnih objava</p>')})
     const result=await check()
