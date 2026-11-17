@@ -321,10 +321,11 @@ test('new catalog can reuse a saved business profile but keeps its distinct cata
   await page.route('**/api/trials/start?**',route=>route.fulfill({json:{suggested:'kids',available:true}}))
   await page.goto('/app?new=1&add=1&tab=cjenik&profile=p-nepar')
   await expect(page.getByRole('heading',{name:'Dodajte novi cjenik',exact:true})).toBeVisible()
-  const upload=page.getByLabel('Učitaj cjenik',{exact:true})
-  await expect(upload).toBeAttached()
-  await upload.setInputFiles({name:'kids.csv',mimeType:'text/csv',buffer:Buffer.from(csv)})
-  await expect(page.locator('.validation-app-panel')).toBeVisible()
+  // This test exercises business-profile reuse, not browser file chooser timing.
+  // The ordinary file-upload flow is tested separately above.
+  await page.route('**/examples/primjer-digitalni-cjenik-usluge-2026.csv',route=>route.fulfill({contentType:'text/csv; charset=utf-8',body:csv}))
+  await page.getByRole('button',{name:/Isprobajte na primjeru/}).click()
+  await expect(page.locator('.validation-app-panel')).toBeVisible({timeout:10000})
   await page.getByRole('button',{name:/Objavi besplatno na 24 h/}).click()
   await expect(page.getByLabel('Vrsta trgovca',{exact:true})).toHaveValue('natural')
   await expect(page.getByLabel(/Matični broj fizičke osobe/)).toHaveValue('12345678')
