@@ -374,11 +374,15 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
     const csv = !compressed && (/\.csv$/i.test(filename) || format === "csv" || /\bcsv\b/i.test(text));
     const xml = !compressed && (/\.xml$/i.test(filename) || format === "xml" || /\bxml\b/i.test(text));
     const other = /\.xlsx?$/i.test(filename) || (/\.(pdf|zip|gz)$/i.test(filename) && /cjenik|cjenic|cijene|cijenama|price/i.test(href + ' ' + text)) || (/\b(xlsx?|pdf|zip|gz)\b/i.test(text) && /cjenik|cjenic|cijene|cijenama|price/i.test(href + ' ' + text));
-    const archive = /(arhiva|archive)/.test(`${href} ${text}`) && /(cjenik|cjenic|cijene|cijenama|price)/.test(`${href} ${text}`);
+    // A Publisher catalog has explicit, tenant-scoped routes even when link labels are short.
+    const publisherCatalog = url.hostname === 'digitalnicjenik.nepar.hr' && /^\/c\/[a-z0-9][a-z0-9-]{0,62}\/?$/i.test(url.pathname);
+    const publisherArchive = url.hostname === 'digitalnicjenik.nepar.hr' && /^\/c\/[a-z0-9][a-z0-9-]{0,62}\/arhiva\/?$/i.test(url.pathname);
+    const priceContext = /cjenik|cjenic|cijene|cijenama|price/i.test(baseUrl.pathname) || (baseUrl.hostname === 'digitalnicjenik.nepar.hr' && /^\/c\/[a-z0-9-]+\/?$/i.test(baseUrl.pathname));
+    const archive = publisherArchive || (/(arhiva|archive)/.test(`${href} ${text}`) && (/(cjenik|cjenic|cijene|cijenama|price)/.test(`${href} ${text}`) || (priceContext && url.origin === baseUrl.origin)));
     // Follow explicit external feed/archive links through the same DNS/redirect
     // protections, but do not turn this into a cross-site general crawl.
-    if (url.origin !== baseUrl.origin && !(csv || xml || other || archive || /(cjenik|cjenic|cijene|cijenama|price)/.test(`${href} ${text}`))) continue;
-    if (csv || xml || other || archive || /(cjenik|cjenic|cijene|cijenama|price)/.test(`${href} ${text}`)) results.push({ url, label: text, kind: csv ? "csv" : xml ? "xml" : other ? "other" : archive ? "archive" : "price" });
+    if (url.origin !== baseUrl.origin && !(csv || xml || other || archive || publisherCatalog || /(cjenik|cjenic|cijene|cijenama|price)/.test(`${href} ${text}`))) continue;
+    if (csv || xml || other || archive || publisherCatalog || /(cjenik|cjenic|cijene|cijenama|price)/.test(`${href} ${text}`)) results.push({ url, label: text, kind: csv ? "csv" : xml ? "xml" : other ? "other" : archive ? "archive" : "price" });
   }
   const embedded = /<(?:iframe|script)\b([^>]*)>/gi;
   while ((match = embedded.exec(html)) && results.length < 500) {
@@ -398,7 +402,7 @@ function extractLinks(html: string, baseUrl: URL): Candidate[] {
 }
 function candidatePriority(c:Candidate) {
   if(c.kind!=='price') return 100;
-  return /cjenik|cjenic|price[-_]lists?/i.test(c.url.pathname+' '+(c.label||'')) ? 90 : /cijene|cijenama/i.test(c.url.pathname+' '+(c.label||'')) ? 60 : 10;
+  return (c.url.hostname === 'digitalnicjenik.nepar.hr' && /^\/c\/[a-z0-9-]+\/?$/i.test(c.url.pathname)) || /cjenik|cjenic|price[-_]lists?/i.test(c.url.pathname+' '+(c.label||'')) ? 90 : /cijene|cijenama/i.test(c.url.pathname+' '+(c.label||'')) ? 60 : 10;
 }
 
 /** CMS hints are only used for instructions, never for scoring or legal conclusions. */
@@ -924,8 +928,9 @@ function publicationFinding(rule: string, message: string): DocumentFinding {
 }
 
 /**
- * Archive evidence is any earlier versioned publication that is still served; the Odluka requires 30-day
- * availability, not an archive page or a particular URL. File names are checked for the prescribed parts.
+ * Archive evidence is an earlier versioned publication that is still served.
+ * Retention follows the configured rule; an archive page alone does not prove
+ * that prior files are available. File names are checked for the prescribed parts.
  */
 async function checkPublications(details: CheckDetails, links: URL[], env: CheckerEnv, network: { failed: boolean; blocked: boolean; checked: boolean }, analyses: CheckerDocumentAnalysis[]) {
   const seen = new Set<string>();
@@ -949,7 +954,7 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
   }
   const key = (name: PublicationName) => `${name.storage}|${name.stamp}`;
   const newestFirst = versioned.filter(entry=>entry.name.objectKey===current.objectKey).sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
-  const previous = newestFirst.filter((entry) => key(entry.name) !== key(current) && (current.time != null && entry.name.time != null ? entry.name.time < current.time : entry.name.storage < current.storage)).slice(0, MAX_ARCHIVE_PROBES);
+  const previous = newestFirst.filter((entry) => key(entry.name) !== key(current) && (current.time != null && entry.name.time != null ? entry.name.time < current.time || (entry.name.time === current.time && entry.name.storage < current.storage) : entry.name.storage < current.storage)).slice(0, MAX_ARCHIVE_PROBES);
   for (const entry of previous) {
     try {
       const fetched = await safeDigitalPriceListFetch(new URL(entry.href), env);
@@ -962,7 +967,7 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
         continue;
       }
       if ([404, 410].includes(fetched.response.status) && entry.name.time != null) {
-        const supersededAt = [current,...newestFirst.map(other=>other.name)].map(other=>other.time).filter((time): time is number => time != null && time > entry.name.time!).sort((a, b) => a - b)[0];
+        const supersededAt = [current,...newestFirst.map(other=>other.name)].filter(other=>other.time != null && (other.time > entry.name.time! || (other.time === entry.name.time && other.storage > entry.name.storage))).map(other=>other.time!).sort((a, b) => a - b)[0];
         if (supersededAt != null && (env.now??new Date()).getTime() - supersededAt < RETENTION_MS) {
           details.archiveRemoved = true;
           details.archiveUrl = fetched.url.href;
