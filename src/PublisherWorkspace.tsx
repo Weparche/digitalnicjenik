@@ -23,6 +23,7 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
   const {session,error:authError,logout}=usePublisherSession()
   const [params]=useState(()=>new URLSearchParams(window.location.search))
   const [tab,setTab]=useState(()=>params.has('order')||params.has('renew')?'pretplata':titles[params.get('tab')??'']?params.get('tab')!:params.has('created')||params.has('welcome')||params.get('new')==='1'||params.get('upload')==='1'?'cjenik':params.toString()?'provjera':'pregled')
+  const isOverview=tab==='pregled'
   const [licence,setLicence]=useState<Licence|null>(null)
   const [error,setError]=useState('')
   const [loaded,setLoaded]=useState(false)
@@ -35,20 +36,20 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
   const createAnother=params.get('add')==='1'&&Boolean(session);
   const tenant=createAnother?undefined:(tenantId?session?.tenants.find(t=>t.id===tenantId):session?.tenants.find(t=>t.slug===selectedSlug))||session?.tenants[0]
   const reload=useCallback(async()=>{
-    if(!tenant||tab==='pregled')return
+    if(!tenant||isOverview)return
     inFlight.current?.abort();const controller=new AbortController();inFlight.current=controller
     try{const data=await fetchLicence(tenant.slug,controller.signal);if(controller.signal.aborted)return;if(!data)throw new Error('Podaci o pretplati nisu dostupni. Pokušajte osvježiti.');if(data.tenant&&data.tenant.id!==tenant.id)setTenantId(data.tenant.id);const url=new URL(window.location.href);url.searchParams.set('tenant',data.tenant?.slug??tenant.slug);window.history.replaceState({},'',url.pathname+url.search);setLicence(data);setError('')}
     catch(caught){if(!controller.signal.aborted)setError(caught instanceof Error?caught.message:'Dohvat nije uspio.')}
     finally{if(!controller.signal.aborted)setLoaded(true)}
-  },[tenant?.slug,tab])
+  },[tenant?.slug,isOverview])
   useEffect(()=>{setLoaded(false);void reload();return()=>inFlight.current?.abort()},[reload])
   useEffect(()=>{
-    if(!tenant||tab==='pregled')return
+    if(!tenant||isOverview)return
     const timer=setInterval(()=>{if(document.visibilityState==='visible')void reload()},30_000)
     const visible=()=>{if(document.visibilityState==='visible')void reload()}
     document.addEventListener('visibilitychange',visible)
     return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',visible)}
-  },[tenant?.slug,reload,tab])
+  },[tenant?.slug,reload,isOverview])
   function navigate(next:string){if(next==='kontakt')setContactOpened(true);setTab(next);const url=new URL(window.location.href);url.searchParams.set('tab',next);url.searchParams.delete('welcome');window.history.replaceState({},'',url.pathname+url.search);requestAnimationFrame(()=>{window.scrollTo({top:0,behavior:'instant'});document.getElementById('workspace-content')?.focus({preventScroll:true})})}
   const newWorkspace=params.get('new')==='1'||params.get('upload')==='1'
   if(session===undefined)return <WorkspaceShell title="Učitavamo radni prostor" items={navigation} active="cjenik" onNavigate={()=>{}}><div className="workspace-skeleton" role="status" aria-label="Učitavanje"><span/><span/><span/></div></WorkspaceShell>
@@ -85,7 +86,7 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
       {tab==='cjenik'&&paymentReported&&<section className="workspace-notice" aria-label="Status prijavljene uplate"><IconClock size={23}/><div><h2>{licence?.order?.kind==='installation'?'Uplata za ugradnju je prijavljena — čeka potvrdu':'Uplata je prijavljena — čeka potvrdu'}</h2><p>Prijava za narudžbu {licence?.order?.reference} je spremljena. Ne trebate ponovno uplatiti. {licence?.order?.kind==='installation'?'Ugradnju dogovaramo nakon provjere uplate.':'Aktivacija ili obnova slijedi nakon provjere bankovne uplate.'}</p></div><button className="workspace-button" type="button" onClick={()=>navigate('pretplata')}>Pogledaj status uplate<IconArrowRight size={17}/></button></section>}
       {tab==='cjenik'&&!paymentReported&&!firstPublication&&(state==='free'||state==='awaiting_payment')&&<TrialOffer published onHelp={()=>navigate('pretplata')}/>}
       {tab==='cjenik'&&<div className={`workspace-live-strip${effective?.live?'':' workspace-live-strip-warning'}`}><span className="workspace-status"><IconCheck size={17}/>{status}</span><span>{effective?.accessUntil&&state==='grace'?`Aktivan do ${untilLabel(effective.accessUntil)}`:licence?.entitlement?.periodEnd?`Vrijedi do ${untilLabel(licence.entitlement.periodEnd)}`:''}</span>{!paymentReported&&state!=='publisher'&&state!=='web_link'&&<button type="button" onClick={()=>navigate('pretplata')}>{licence?.order?'Otvori uplatu':'Zadrži isti link'}<IconArrowRight size={16}/></button>}</div>}
-      <div hidden={tab!=='cjenik'}>{<div key={tenant.id}>{renderEditor({tenantSlug:tenant.slug,tenantId:tenant.id,tenantName:tenant.name,publishBlocked:!effective?.live,canEditItems:licence?.features.editItems??false,entitlementStatus:licence?.entitlement?.status,trialEndsAt:licence?.entitlement?.periodEnd})}</div></div>
+      <div hidden={tab!=='cjenik'}><div key={tenant.id}>{renderEditor({tenantSlug:tenant.slug,tenantId:tenant.id,tenantName:tenant.name,publishBlocked:!effective?.live,canEditItems:licence?.features.editItems??false,entitlementStatus:licence?.entitlement?.status,trialEndsAt:licence?.entitlement?.periodEnd})}</div></div>
       {tab==='objava'&&<div className="workspace-stack"><section className="workspace-surface"><h2>Jedan link za sve objave</h2><p>Kopirajte svoj URL ili ga ugradite na postojeći web. Zamjena cjenika zadržava istu adresu.</p><ShareAndPrintCard slug={tenant.slug} publicUrl={publicUrl}/></section><section className="workspace-surface"><InstallationChoice slug={tenant.slug}/></section><section className="workspace-surface"><OwnedArchive slug={tenant.slug}/></section><details className="workspace-surface"><summary>Podaci objekta i radni dani</summary><PublicationSettings slug={tenant.slug} onSaved={()=>void reload()}/></details></div>}
       {tab==='upute'&&<WorkspaceInstructions onPrepare={()=>navigate('cjenik')}/>}
       {tab==='pretplata'&&<div className="workspace-stack">{licence&&<div className="workspace-billing"><LicenceCard licence={licence} email={session?.user.email??''} name={tenant.name} onChanged={()=>void reload()}/></div>}<WorkspacePackages onContact={()=>{setContactPlan('web');navigate('kontakt')}}/></div>}
