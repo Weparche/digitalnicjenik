@@ -14,6 +14,7 @@ import { readZipDirectory, readZipMember, type FetchRange } from './zip-inspecti
 import { requireAdmin } from '../../_admin-auth';
 import type { AuthEnv } from '../../_auth';
 import { recordCheckerRun } from '../../_checker-history';
+import { consumeCheckerBudget, CheckerRateLimitError, CHECKER_LIMIT_MESSAGE, checkerQuotaHeaders, checkerLimitHeaders, type CheckerQuota } from '../../_checker-quota';
 
 type Resolver = {
   resolve4: (hostname: string) => Promise<string[]>;
@@ -1228,47 +1229,25 @@ function reportCheckToNepar(url: unknown, status: CheckResult["status"]) {
 }
 
 export const onRequestPost = async ({ request, env, waitUntil }: { request: Request; env: CheckerEnv; waitUntil?: (promise: Promise<unknown>) => void }) => {
-  try {
-    await consumeCheckerBudget(request, env);
-  } catch (caught) {
-    if (caught instanceof Error && caught.message === "rate_limited") {
-      return Response.json({ ...result("unavailable", "Previše provjera. Pokušajte kasnije."), code: "rate_limited" }, { status: 429 });
-    }
-    if (caught instanceof Error && caught.message === "rate_limit_misconfigured") {
-      return Response.json(result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno."), { status: 503 });
-    }
-  }
   const body = await parseBody(request);
   if (!body || body.url === undefined) return Response.json(result("red", "Unesite ispravnu adresu web stranice."), { status: 400 });
+  let internal=false;
+  if(body.source==='internal'){try{await requireAdmin(request,env as AuthEnv);internal=true}catch{/* anonymous clients cannot mark themselves internal */}}
+  let quota: CheckerQuota | undefined;
+  try {
+    if (!internal) quota = await consumeCheckerBudget(request, env);
+  } catch (caught) {
+    if (caught instanceof CheckerRateLimitError) {
+      return Response.json({ ...result("unavailable", CHECKER_LIMIT_MESSAGE), code: "rate_limited" }, { status: 429, headers: checkerLimitHeaders(caught) });
+    }
+    return Response.json(result("unavailable", "Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno."), { status: 503, headers: { 'cache-control': 'no-store' } });
+  }
   const zipEntry=typeof body.zipEntry==='string'&&body.zipEntry.length<=512?body.zipEntry:undefined;
   const checked = await runDigitalPriceListCheck(body.url, { ...env, zipEntry });
   let checkerRunId:string|null=null;
   const checkedAt=new Date();
-  let internal=false;if(body.source==='internal'){try{await requireAdmin(request,env as AuthEnv);internal=true}catch{/* anonymous clients cannot mark themselves internal */}}
   try {const normalized=normalizeDigitalPriceListUrl(body.url).href;checkerRunId=await recordCheckerRun(env.DB,normalized,checked,body.attribution,body.source,checkedAt,internal)}catch{/* Invalid addresses are not checker runs. */}
   if(!internal)waitUntil?.(reportCheckToNepar(body.url, checked.status));
-  return Response.json({ ...checked,checkerRunId, report: technicalReport(checked) }, { headers: { 'cache-control': 'no-store' } });
+  return Response.json({ ...checked,checkerRunId, report: technicalReport(checked) }, { headers: quota ? checkerQuotaHeaders(quota) : { 'cache-control': 'no-store' } });
 };
 
-const CHECKER_LIMIT_PER_HOUR = 30;
-const HOUR_MS = 3_600_000;
-
-async function consumeCheckerBudget(request: Request, env: CheckerEnv) {
-  if (!env.DB) return;
-  const secret = env.CHECKER_RATE_LIMIT_SECRET || env.LEAD_RATE_LIMIT_SECRET;
-  if (!secret) throw new Error("rate_limit_misconfigured");
-  const { hmacIp } = await import("../../_lead");
-  const ip = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0";
-  const ipHash = await hmacIp(ip, secret);
-  const windowStart = new Date(Math.floor(Date.now() / HOUR_MS) * HOUR_MS).toISOString();
-  const existing = await env.DB.prepare("SELECT attempt_count FROM checker_rate_buckets WHERE ip_hash = ? AND window_start = ?").bind(ipHash, windowStart).first<{ attempt_count: number }>();
-  if ((existing?.attempt_count ?? 0) >= CHECKER_LIMIT_PER_HOUR) throw new Error("rate_limited");
-  await env.DB.prepare(
-    `INSERT INTO checker_rate_buckets (ip_hash, window_start, attempt_count, updated_at)
-     VALUES (?, ?, 1, ?)
-     ON CONFLICT(ip_hash, window_start) DO UPDATE SET
-       attempt_count = attempt_count + 1,
-       updated_at = excluded.updated_at
-     WHERE attempt_count < ?`,
-  ).bind(ipHash, windowStart, new Date().toISOString(), CHECKER_LIMIT_PER_HOUR).run();
-}
