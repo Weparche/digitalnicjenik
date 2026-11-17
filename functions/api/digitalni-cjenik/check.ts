@@ -953,7 +953,14 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
       'Prema NN 132/2026, izmijenjeni cjenik objavljuje se do 11 sati na dan izmjene. Stariji datum sam po sebi ne znači da cjenik nije aktualan. Sam naziv ne dokazuje vrijeme stvarne objave.';
   }
   const key = (name: PublicationName) => `${name.storage}|${name.stamp}`;
-  const newestFirst = versioned.filter(entry=>entry.name.objectKey===current.objectKey).sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
+  // Historical files may have been published under the previous naming rule.
+  // Match the exact same three location segments, only on the verified current
+  // file's origin. Do not combine different merchants or unrelated stores.
+  const currentOrigin = analyses.find(a => a.structureRecognized && (parsePublicationName(a.publicationFilename || '') || parsePublicationName(a.url || ''))?.objectKey === current.objectKey)?.url;
+  const legacyLocation = current.nn132 ? current.objectKey.split('|')[1]?.split('_').join('|') : undefined;
+  const sameLocation = (entry: {href:string;name:PublicationName}) => entry.name.objectKey === current.objectKey ||
+    Boolean(legacyLocation && legacyLocation.split('|').length === 3 && !entry.name.nn132 && entry.name.objectKey === legacyLocation && currentOrigin && new URL(entry.href).origin === new URL(currentOrigin).origin);
+  const newestFirst = versioned.filter(sameLocation).sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
   const previous = newestFirst.filter((entry) => key(entry.name) !== key(current) && (current.time != null && entry.name.time != null ? entry.name.time < current.time || (entry.name.time === current.time && entry.name.storage < current.storage) : entry.name.storage < current.storage)).slice(0, MAX_ARCHIVE_PROBES);
   for (const entry of previous) {
     try {
@@ -975,6 +982,34 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
       }
     } catch { network.failed = true; }
   }
+}
+
+/** Verify only our own public tenant, exact current filename, and complete retained history.
+ * For unrelated sites an empty archive or a filename ending in sequence 1 is insufficient. */
+export async function verifyFirstPublisherPublication(details: CheckDetails, archivePageUrl: string | null, env: CheckerEnv, analyses: CheckerDocumentAnalysis[]) {
+  if (!env.DB || !archivePageUrl || details.archiveFound || details.archiveRemoved || !details.archiveLinkDiscovered) return;
+  try {
+    const archiveUrl = new URL(archivePageUrl);
+    const slug = archiveUrl.hostname === 'digitalnicjenik.nepar.hr' && /^\/c\/([a-z0-9][a-z0-9-]{0,62})\/arhiva\/?$/i.exec(archiveUrl.pathname)?.[1];
+    if (!slug || archiveUrl.protocol !== 'https:') return;
+    const row = await env.DB.prepare(`SELECT p.filename_stem, p.sequence,
+       (SELECT count(*) FROM price_publications history WHERE history.tenant_id=t.id) AS total
+       FROM tenants t JOIN price_publications p ON p.tenant_id=t.id AND p.is_current=1
+       JOIN publication_targets pt ON pt.tenant_id=t.id AND pt.current_publication_id=p.id AND pt.status='active'
+       WHERE t.slug=? LIMIT 1`).bind(slug).first<{filename_stem:string;sequence:number;total:number}>();
+    if (!row || row.sequence !== 1 || row.total !== 1) return;
+    const verified = analyses.some(a => {
+      if (!a.fetched || !a.structureRecognized || !a.url) return false;
+      const url = new URL(a.url);
+      if (url.origin !== archiveUrl.origin || !url.pathname.startsWith('/c/'+slug+'/')) return false;
+      const filename = (a.publicationFilename || decodeURIComponent(url.pathname.split('/').pop() || '')).replace(/\.(csv|xml)$/i,'');
+      return filename === row.filename_stem && parsePublicationName(filename)?.nn132 === true;
+    });
+    if (!verified) return;
+    details.archiveNotApplicable = true;
+    details.archiveUrl = archivePageUrl;
+    details.archiveEvidence = 'Javna arhiva je dostupna; evidencija NEPAR Publishera potvrđuje jednu aktualnu objavu (broj pohrane 1), bez zamijenjenih verzija. Rok od 15 dana počinje zamjenom.';
+  } catch { /* Fail closed: without matching evidence the archive remains unknown. */ }
 }
 
 function parseBody(request: Request): Promise<{ url?: unknown;attribution?:unknown;source?:unknown;zipEntry?:unknown } | null> {
@@ -1181,6 +1216,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     } catch { network.failed = true; }
   }
   await checkPublications(details, documentLinks, env, network, analyses);
+  await verifyFirstPublisherPublication(details, archivePageUrl, env, analyses);
   if (!details.archiveFound && !details.archiveRemoved && archivePageUrl && !details.csvFound && !details.xmlFound && !details.zipEvidence) {
     details.archiveFound = true;
     details.archiveUrl = archivePageUrl;

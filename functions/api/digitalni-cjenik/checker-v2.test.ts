@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
 // Historical checker fixtures use the pre-NN132 schema; current-rule coverage is separate.
 beforeEach(()=>{vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-11-16T22:00:00Z'))})
 afterEach(()=>vi.useRealTimers())
-import { analyzeDocument, parsePublicationName, renderDynamicPage, runDigitalPriceListCheck } from './check'
+import { analyzeDocument, parsePublicationName, renderDynamicPage, runDigitalPriceListCheck, verifyFirstPublisherPublication } from './check'
 import { technicalReport } from '../../../shared/website-check'
 
 const resolver = { resolve4: async () => ['93.184.216.34'], resolve6: async () => [] }
@@ -53,6 +53,15 @@ describe('checker v2 regressions',()=>{
     expect(result.details.archiveLinkDiscovered).toBe(true)
     expect(result.details.archiveFound).toBe(true)
     expect(result.details.archiveUrl).toBe('https://example.hr'+b)
+  })
+  it('accepts genuine earlier same-location files published under the previous filename format',async()=>{
+    const current='/files/12345678901_usluzni-objekt_ilica-1_a_USLUGE_3_20261117_00930.csv';
+    const legacy='/files/usluzni-objekt_ilica-1_a_0002_20261027T154508+0100.csv';
+    const foreign='/files/usluzni-objekt_ilica-1_b_0002_20261027T154508+0100.csv';
+    stub({'/':()=>html('<a href="/cjenik">Cjenik</a>'),'/cjenik':()=>html('<a href="'+current+'">CSV</a><a href="'+legacy+'">CSV</a><a href="'+foreign+'">CSV</a>'),[current]:()=>new Response('Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje;Bazna cijena\nŠišanje;15;NE;15'),[legacy]:()=>new Response(csv),[foreign]:()=>new Response(csv)})
+    const result=await check();
+    expect(result.details.archiveFound).toBe(true);
+    expect(result.details.archiveUrl).toBe('https://example.hr'+legacy);
   })
   it('does not treat an empty archive page as proof of retained files',async()=>{
     stub({'/':()=>html('<a href="/cjenik">Cjenik</a>'),'/cjenik':()=>html('<a href="/current.csv">CSV</a><a href="/arhiva">Arhiva</a>'),'/current.csv':()=>new Response(csv),'/arhiva':()=>html('<h1>Arhiva</h1><p>Nema prethodnih objava</p>')})
@@ -139,5 +148,38 @@ describe('native browser discovery',()=>{
     expect(e.DB.prepare).not.toHaveBeenCalled();
     expect(await renderDynamicPage(new URL('https://www.dm.hr/'),e)).toBeNull();
     expect(e.CHECKER_BROWSER.quickAction).not.toHaveBeenCalled();
+  });
+});
+
+describe('first Publisher publication archive evidence',()=>{
+  const stem='12345678901_ZA_SVA_PRODAJNA_MJESTA_USLUGE_1_20261117_00930';
+  const archive='https://digitalnicjenik.nepar.hr/c/acme/arhiva';
+  const scenario=async (row:unknown, href=archive, file='https://digitalnicjenik.nepar.hr/c/acme/cjenik.csv', filename=stem+'.csv', linked=true)=>{
+    const first=vi.fn(async()=>row);
+    const DB={prepare:vi.fn(()=>({bind:()=>({first})}))};
+    const details={archiveFound:false,archiveRemoved:false,archiveLinkDiscovered:linked} as Parameters<typeof verifyFirstPublisherPublication>[0];
+    const analyses=[{fetched:true,structureRecognized:true,url:file,publicationFilename:filename}] as Parameters<typeof verifyFirstPublisherPublication>[3];
+    await verifyFirstPublisherPublication(details,href,{DB:DB as unknown as NonNullable<Parameters<typeof verifyFirstPublisherPublication>[2]['DB']>},analyses);
+    return {details,first};
+  };
+  it('marks first publication not applicable only when actual DB history and public filename agree',async()=>{
+    const {details}=await scenario({filename_stem:stem,sequence:1,total:1});
+    expect(details.archiveNotApplicable).toBe(true);
+    expect(details.archiveFound).toBe(false);
+    expect(technicalReport({status:'green',message:'',details}).checks.find(c=>c.id==='archive')?.status).toBe('not_applicable');
+  });
+  it('does not award a point for an unrelated site, another tenant, wrong filename, previous history or missing archive link',async()=>{
+    const row={filename_stem:stem,sequence:1,total:1};
+    for(const args of [
+      [row,'https://example.hr/c/acme/arhiva'],
+      [row,archive,'https://digitalnicjenik.nepar.hr/c/other/cjenik.csv'],
+      [row,archive,'https://digitalnicjenik.nepar.hr/c/acme/cjenik.csv','wrong.csv'],
+      [{...row,total:2}],
+      [{...row,sequence:4}],
+      [null],
+      [row,archive,undefined,undefined,false]
+    ] as Array<Parameters<typeof scenario>>){
+      expect((await scenario(...args)).details.archiveNotApplicable).toBeUndefined();
+    }
   });
 });

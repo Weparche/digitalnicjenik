@@ -63,6 +63,8 @@ export type WebsiteCheckDetails = {
   contentStatus?: DocumentAnalysisStatus
   /** What proved that an earlier publication is still public (versioned file or archive page). */
   archiveEvidence?: string
+  /** First version verified against Publisher's own immutable publication records. */
+  archiveNotApplicable?: boolean
   /** A linked previous publication appears to have been removed within the announced 15-day retention window. */
   archiveRemoved?: boolean
   /** Publication-level notes (file name metadata, single format, chain structure). */
@@ -166,7 +168,9 @@ export function technicalReport(result: WebsiteCheckResult) {
       ? { status: 'warning', evidence: `Poveznica na prethodnu objavu ne radi. Prema vremenskim oznakama možda je zamijenjena unutar roka od ${ANNOUNCED_ARCHIVE_DAYS} dana; stvarni trenutak zamjene provjerite u evidenciji.`, url: d.archiveUrl }
       : d.archiveFound
         ? { status: 'pass', evidence: `${d.archiveEvidence || 'Pronađena je prethodna objava cjenika.'} Ne potvrđuje trajanje ni potpunost povijesti objava.`, url: d.archiveUrl }
-        : { status: 'unknown', evidence: `Arhivu prethodnih objava nije moguće potvrditi. NN 132/2026 propisuje dostupnost arhive ${ANNOUNCED_ARCHIVE_DAYS} dana od zamjene; može biti kod vanjskog pružatelja. Ako još nije bilo izmjena, arhiva može biti prazna.` },
+        : d.archiveNotApplicable
+          ? { status: 'not_applicable', evidence: d.archiveEvidence || 'Prva objava; još nema zamijenjene verzije.', url: d.archiveUrl }
+          : { status: 'unknown', evidence: `Arhivu prethodnih objava nije moguće potvrditi. NN 132/2026 propisuje dostupnost arhive ${ANNOUNCED_ARCHIVE_DAYS} dana od zamjene; može biti kod vanjskog pružatelja. Ako još nije bilo izmjena, arhiva može biti prazna.` },
     { status: d.contentStatus ?? 'unknown', evidence: d.contentReasons?.join(' ') || (uncertain?unknownReason:undefined) || d.contentEvidence || 'Potrebna detaljna provjera. Učitajte cjenik u validator.' },
   ]
   const checks = TECHNICAL_CHECKS.map((check, i) => ({ ...check, ...states[i] }))
