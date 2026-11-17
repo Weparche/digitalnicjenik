@@ -11,8 +11,12 @@
 @media (max-width: 640px) { .share-card-grid { grid-template-columns: 1fr; } .share-card-qr { justify-items: start; } }
 
 /* Public price list: embed (iframe) and print (A4) variants */
-body:has(.public-shell--embed) { background: transparent; }
-.public-shell--embed { width: 100%; min-height: 0; background: transparent; }
+/* A cross-origin iframe cannot rely on the host's background. Set an opaque,
+   accessible light surface even when the root document has the dark theme. */
+html:has(.public-shell--embed), body:has(.public-shell--embed) { background: var(--paper); }
+.public-shell--embed { width: 100%; min-height: 0; background: var(--paper); color: var(--ink); }
+.public-shell--embed :is(.public-updated, .item-count, .price-group h2, .public-row small, .public-price del, .public-footer, .public-badge, .public-checker-cta p) { color: #665f55; }
+.public-shell--embed :is(.public-price strong, .public-demo-note, .public-links a, .archive-links a, .public-header .eyebrow, .logo-mark) { color: #855710; }
 .public-shell--embed .public-header { padding: 20px 4% 16px; }
 .public-shell--embed .public-header .eyebrow, .public-shell--embed .public-header h1 { display: none; }
 .public-shell--embed .public-list { padding: 0 4% 24px; }
