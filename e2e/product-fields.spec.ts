@@ -8,6 +8,7 @@ const productCsv = [
 
 test('product list: Odluka fields are grouped, editable, and clear the blocker count', async ({ page }) => {
   await page.goto('/app?new=1')
+  await page.route('**/api/validator/validate',route=>route.fulfill({status:204}))
   await page.locator('label.upload-action input[accept*=".csv"]').setInputFiles({ name: 'proizvodi.csv', mimeType: 'text/csv', buffer: Buffer.from(productCsv, 'utf8') })
 
   const panel = page.locator('.validation-app-panel')
@@ -40,6 +41,7 @@ test('product list: Odluka fields are grouped, editable, and clear the blocker c
 test('list without a Vrsta column asks once for services or products before product fields', async ({ page }) => {
   const salonCsv = ['Grupa,Naziv,Cijena,Sidrena cijena', 'Šišanje,Žensko šišanje,25.00,25.00', 'Njega,Feniranje,15.00,15.00'].join('\n')
   await page.goto('/app?new=1')
+  await page.route('**/api/validator/validate',route=>route.fulfill({status:204}))
   await page.locator('label.upload-action input[accept*=".csv"]').setInputFiles({ name: 'salon.csv', mimeType: 'text/csv', buffer: Buffer.from(salonCsv, 'utf8') })
 
   const panel = page.locator('.validation-app-panel')
