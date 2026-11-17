@@ -1,3 +1,4 @@
+import { basePriceChanges } from '../shared/base-price-correction'
 import {useBusinessProfiles} from './BusinessProfiles'
 import { trackCheckerInteraction } from './checker-analytics'
 import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
@@ -1048,6 +1049,8 @@ function ValidatorApp({
   const [claimOpen, setClaimOpen] = useState(false)
   const [replacing,setReplacing] = useState(false)
   const [currentPublication,setCurrentPublication] = useState<PricePublication | null>(null)
+  const [baseCorrectionReason,setBaseCorrectionReason]=useState('')
+  const baseChanges=useMemo(()=>list&&currentPublication?basePriceChanges(currentPublication.payload,list):[],[list,currentPublication])
   const resolvedTenantId = tenantId || tenantSlug
   const tenantIdentity = { id: resolvedTenantId, slug: tenantSlug, name: tenantName }
   const apiBase = `/api/tenants/${encodeURIComponent(tenantSlug)}`
@@ -1193,6 +1196,7 @@ function ValidatorApp({
 
   async function publish() {
     if (!list || validation.blockingCount > 0 || mode !== 'publisher' || publishBlocked) return
+    if(baseChanges.length&&(baseCorrectionReason.trim().length<10||baseCorrectionReason.trim().length>500)){setError('Za ispravak bazne cijene navedite obrazloženje (10–500 znakova).');return}
     setBusy(true); setError(''); setMessage('')
     try {
       // Always persist the currently displayed edits, including edits after a previous save.
@@ -1202,11 +1206,11 @@ function ValidatorApp({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         ...fetchOpts,
-        body: JSON.stringify({ draftId: id }),
+        body: JSON.stringify({ draftId: id, ...(baseChanges.length?{baseCorrectionReason:baseCorrectionReason.trim(),baseCorrectionPublicationId:currentPublication?.id}:{}) }),
       })
       const payload = await response.json() as { error?: string; message?: string; publication?: PricePublication }
       if (!response.ok) throw new Error(payload.error || 'Objava nije uspjela.')
-      setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setPublished(true); setDraftId(''); setReplacing(false); setCurrentPublication(payload.publication ?? null)
+      setPublication(payload.publication ?? null); setMessage(payload.message || 'Cjenik je objavljen.'); setPublished(true); setDraftId(''); setReplacing(false); setCurrentPublication(payload.publication ?? null);setBaseCorrectionReason('')
       const current = await fetch(apiBase, fetchOpts).then((item) => item.json()).catch(() => null) as { priceList?: NormalizedPriceList } | null
       if (current?.priceList) setList(current.priceList)
     } catch (caught) { setError(caught instanceof Error ? caught.message : 'Objava nije uspjela.') } finally { setBusy(false) }
@@ -1265,6 +1269,7 @@ function ValidatorApp({
     {excelFile&&<ExcelConverter file={excelFile} onConverted={applyNormalizedList}/>}
   </>
   const review = <>
+    {mode==='publisher'&&baseChanges.length>0&&<section className="workspace-surface" role="region" aria-label="Ispravak bazne cijene"><h3>Ispravak evidentirane bazne cijene</h3><p>Aktualne cijene možete mijenjati bez obrazloženja. Za promjenu već objavljene bazne cijene potrebno je evidentirati opravdan razlog.</p><ul>{baseChanges.slice(0,10).map((change,index)=><li key={index}>{change.name}: {change.before.price} € → {change.after.price??'nije uneseno'} €{change.before.date!==change.after.date?` (${change.before.date??'bez datuma'} → ${change.after.date??'bez datuma'})`:''}</li>)}</ul>{baseChanges.length>10&&<p>I još {baseChanges.length-10} stavki.</p>}<label>Razlog ispravka<textarea aria-label="Razlog ispravka bazne cijene" value={baseCorrectionReason} onChange={event=>setBaseCorrectionReason(event.target.value)} maxLength={500} rows={3}/></label></section>}
     {list&&(mode==='publisher'||mode==='sandbox')&&<PriceHistoryPanel key={tenantSlug} slug={tenantSlug} items={list.items} allowServer={mode==='publisher'} onApply={!published&&!publishBlocked?values=>{setList(current=>current?{...current,items:current.items.map((item,index)=>values[index]!=null&&item.lowest30DayPrice==null?{...item,lowest30DayPrice:values[index]}:item)}:current);setDraftId('');setMessage('Najniže cijene prenesene su u nacrt. Provjerite ih prije objave.');}:undefined}/>}
     {list && claimOpen && mode === 'sandbox' && (
       <TrialClaimForm list={list} accountEmail={accountEmail} sourceFilename={sourceFilename} onCancel={() => setClaimOpen(false)} />
