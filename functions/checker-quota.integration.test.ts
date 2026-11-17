@@ -7,7 +7,7 @@ import { createSessionForUser } from './_auth'
 
 const runtime = { DB: env.DB, CHECKER_RATE_LIMIT_SECRET: 'test-secret', ADMIN_EMAILS: 'nepar@nepar.hr' }
 const request = (body: object, ip = '203.0.113.20', extra: Record<string,string> = {}) => new Request('https://app.test/api/check', {
-  method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip, ...extra }, body: JSON.stringify(body)
+  method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip, origin: 'https://app.test', ...extra }, body: JSON.stringify(body)
 })
 beforeEach(async () => { await env.DB.prepare('DELETE FROM checker_rate_buckets').run() })
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
