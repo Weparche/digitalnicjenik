@@ -201,7 +201,7 @@ describe('Publisher archive without retail price amounts',()=>{
     const first=vi.fn(async()=>({filename_stem:stem,sequence:1,total:1}));
     const DB={prepare:vi.fn(()=>({bind:()=>({first})}))};
     stub({'/':()=>html('<a href="'+catalog+'">Cjenik</a>'),'/c/geo':()=>html('<title>Digitalni cjenik</title><a href="/c/geo/cjenik.csv">CSV</a><a href="/c/geo/arhiva">Arhiva</a>'),'/c/geo/cjenik.csv':()=>new Response('Naziv usluge;Maloprodajna cijena;Poseban oblik prodaje;Bazna cijena\nAPI;29;NE;29',{headers:{'content-type':'text/csv','content-disposition':'attachment; filename="'+current+'"'}}),'/c/geo/arhiva':()=>html(body())});
-    const result=await runDigitalPriceListCheck('https://example.hr',{DIGITAL_PRICE_LIST_DNS_RESOLVER:resolver,DB:DB as unknown as NonNullable<Parameters<typeof runDigitalPriceListCheck>[1]['DB']>,enforceNN132:true});
+    const result=await runDigitalPriceListCheck('https://example.hr',{DIGITAL_PRICE_LIST_DNS_RESOLVER:resolver,DB:DB as unknown as NonNullable<Parameters<typeof verifyFirstPublisherPublication>[2]['DB']>,enforceNN132:true});
     expect(result.details.archiveNotApplicable).toBe(true);
     expect(technicalReport(result).checks.find(c=>c.id==='archive')?.status).toBe('not_applicable');
   });
