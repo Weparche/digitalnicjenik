@@ -1073,9 +1073,12 @@ function ValidatorApp({
     void fetch(apiBase, { credentials: 'include' }).then(async (response) => {
       if (cancelled || !response.ok) return
       const payload = await response.json() as { priceList?: NormalizedPriceList; publication?: PricePublication; draft?: {id:string; source_filename:string; normalized_payload_json:string; validation_issues_json:string} | null }
-      if (!payload.priceList) return
-      setList(canEditItems && payload.draft ? JSON.parse(payload.draft.normalized_payload_json) as NormalizedPriceList : payload.priceList)
-      if (canEditItems && payload.draft) {setDraftId(payload.draft.id);setSourceFilename(payload.draft.source_filename);setIssues(JSON.parse(payload.draft.validation_issues_json) as ValidationIssue[])}
+      const ownedDraft=canEditItems?payload.draft:null
+      if (!payload.priceList&&!ownedDraft) return
+      if (ownedDraft) {
+        setList(JSON.parse(ownedDraft.normalized_payload_json) as NormalizedPriceList)
+        setDraftId(ownedDraft.id);setSourceFilename(ownedDraft.source_filename);setIssues(JSON.parse(ownedDraft.validation_issues_json) as ValidationIssue[])
+      } else if(payload.priceList) setList(payload.priceList)
       if(payload.publication)setCurrentPublication(payload.publication)
       setPublished(!canEditItems)
       if(!canEditItems||!payload.draft)setSourceFilename('trenutna-objava')
