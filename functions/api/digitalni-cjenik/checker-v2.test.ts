@@ -45,6 +45,28 @@ describe('checker v2 regressions',()=>{
     stub({'/':()=>html('<a href="'+a+'">CSV</a><a href="'+b+'">CSV</a>'),[a]:()=>new Response(csv),[b]:()=>new Response(csv)})
     expect((await check()).details.archiveFound).toBe(false)
   })
+  it('discovers a short archive link from a price-list page and verifies an earlier same-minute version',async()=>{
+    const a='/files/12345678901_ZA_SVA_PRODAJNA_MJESTA_USLUGE_10_20261117_00930.csv'
+    const b='/files/12345678901_ZA_SVA_PRODAJNA_MJESTA_USLUGE_9_20261117_00930.csv'
+    stub({'/':()=>html('<a href="/cjenik">Cjenik</a>'),'/cjenik':()=>html('<a href="'+a+'">CSV</a><a href="/arhiva">Arhiva</a>'),'/arhiva':()=>html('<a href="'+b+'">CSV</a>'),[a]:()=>new Response(csv),[b]:()=>new Response(csv)})
+    const result=await check()
+    expect(result.details.archiveLinkDiscovered).toBe(true)
+    expect(result.details.archiveFound).toBe(true)
+    expect(result.details.archiveUrl).toBe('https://example.hr'+b)
+  })
+  it('does not treat an empty archive page as proof of retained files',async()=>{
+    stub({'/':()=>html('<a href="/cjenik">Cjenik</a>'),'/cjenik':()=>html('<a href="/current.csv">CSV</a><a href="/arhiva">Arhiva</a>'),'/current.csv':()=>new Response(csv),'/arhiva':()=>html('<h1>Arhiva</h1><p>Nema prethodnih objava</p>')})
+    const result=await check()
+    expect(result.details.archiveLinkDiscovered).toBe(true)
+    expect(result.details.archiveFound).toBe(false)
+  })
+  it('follows a tenant-scoped external Publisher catalog even with a generic link label',async()=>{
+    const a='/c/acme/files/store_ilica_A_9_20261113-073000.csv'
+    stub({'/':()=>html('<a href="https://digitalnicjenik.nepar.hr/c/acme">Pogledajte više</a>'),'/c/acme':()=>html('<a href="'+a+'">CSV</a>'),[a]:()=>new Response(csv)})
+    const result=await check()
+    expect(result.details.csvFound).toBe(true)
+    expect(result.details.csvUrl).toBe('https://digitalnicjenik.nepar.hr'+a)
+  })
   it('detects sitemap-based price pages and alternate spreadsheet links without claiming CSV',async()=>{
     stub({'/':()=>html('<h1>Trgovina</h1>'),'/sitemap.xml':()=>new Response('<urlset><url><loc>https://example.hr/info/digitalni-cjenici</loc></url></urlset>'),'/info/digitalni-cjenici':()=>html('<a href="/downloads/cjenik.xlsx">Preuzmi cjenik</a>')})
     const result=await check()
