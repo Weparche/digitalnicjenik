@@ -8,8 +8,8 @@ export function WorkspaceShell({children,items,active,onNavigate,title,subtitle,
   const [keyboardOpen,setKeyboardOpen]=useState(false)
   const moreRef=useRef<HTMLButtonElement>(null)
   const morePanel=useRef<HTMLDivElement>(null)
-  const mobileIds=['provjera','cjenik',items.some(item=>item.id==='objava')?'objava':'upute','pretplata']
-  const mobileLabels:Record<string,string>={provjera:'Provjera',cjenik:'Cjenik',objava:'Objava',upute:'Upute',pretplata:'Paketi'}
+  const mobileIds=items.some(item=>item.id==='pregled')?['pregled','provjera','cjenik','pretplata']:['provjera','cjenik',items.some(item=>item.id==='objava')?'objava':'upute','pretplata']
+  const mobileLabels:Record<string,string>={pregled:'Cjenici',provjera:'Provjera',cjenik:'Cjenik',objava:'Objava',upute:'Upute',pretplata:'Paketi'}
   const primary=mobileIds.flatMap(id=>items.filter(item=>item.id===id))
   const extra=items.filter(item=>!mobileIds.includes(item.id))
   const moreActive=extra.some(item=>item.id===active)

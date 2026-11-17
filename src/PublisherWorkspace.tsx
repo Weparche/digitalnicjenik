@@ -1,5 +1,5 @@
 import { useCallback,useEffect,useRef,useState,type ReactNode } from 'react'
-import { IconArrowRight,IconArrowUpRight,IconBook,IconCheck,IconClock,IconCreditCard,IconFileSearch,IconFileText,IconLink,IconMail,IconRefresh,IconShieldCheck } from '@tabler/icons-react'
+import { IconArrowRight,IconArrowUpRight,IconBook,IconCheck,IconClock,IconCreditCard,IconFileSearch,IconFileText,IconLink,IconLayoutDashboard,IconMail,IconRefresh,IconShieldCheck } from '@tabler/icons-react'
 import { WorkspaceShell } from './WorkspaceShell'
 import { usePublisherSession,PublisherLogin } from './PublisherAuth'
 import { fetchLicence,LicenceCard } from './PaymentOrder'
@@ -13,14 +13,16 @@ import { MonitorPanel } from './MonitorPanel'
 import { FirstPublicationNotice,TrialOffer,WorkspaceInstructions,WorkspacePackages } from './WorkspaceResources'
 import { WebsiteChecker,type CheckerContactContext } from './WebsiteChecker'
 import { WorkspaceContact } from './WorkspaceContact'
+import { PublisherCatalogDashboard } from './PublisherCatalogDashboard'
 
 export type WorkspaceEditorProps={tenantSlug:string;tenantId:string;tenantName:string;publishBlocked:boolean;canEditItems:boolean;entitlementStatus?:string;trialEndsAt?:string|null}
 const navigation=[{id:'provjera',label:'Provjera weba',icon:IconFileSearch},{id:'cjenik',label:'Moj cjenik',icon:IconFileText},{id:'upute',label:'Upute',icon:IconBook},{id:'objava',label:'Objava i ugradnja',icon:IconLink},{id:'pretplata',label:'Paketi i cijene',icon:IconCreditCard},{id:'kontakt',label:'Kontakt',icon:IconMail}]
-const titles:Record<string,string>={provjera:'Provjera weba',cjenik:'Moj cjenik',upute:'Upute',objava:'Objava i ugradnja',pretplata:'Paketi i cijene',kontakt:'Kontakt',nadzor:'Nadzor cjenika'}
+const overviewNav={id:'pregled',label:'Moji cjenici',icon:IconLayoutDashboard}
+const titles:Record<string,string>={pregled:'Moji cjenici',provjera:'Provjera weba',cjenik:'Moj cjenik',upute:'Upute',objava:'Objava i ugradnja',pretplata:'Paketi i cijene',kontakt:'Kontakt',nadzor:'Nadzor cjenika'}
 export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor:(props:WorkspaceEditorProps)=>ReactNode;renderOnboarding:(email?:string)=>ReactNode}){
   const {session,error:authError,logout}=usePublisherSession()
   const [params]=useState(()=>new URLSearchParams(window.location.search))
-  const [tab,setTab]=useState(()=>params.has('order')||params.has('renew')?'pretplata':titles[params.get('tab')??'']?params.get('tab')!:params.has('created')||params.has('welcome')||params.get('new')==='1'||params.get('upload')==='1'?'cjenik':'provjera')
+  const [tab,setTab]=useState(()=>params.has('order')||params.has('renew')?'pretplata':titles[params.get('tab')??'']?params.get('tab')!:params.has('created')||params.has('welcome')||params.get('new')==='1'||params.get('upload')==='1'?'cjenik':params.toString()?'provjera':'pregled')
   const [licence,setLicence]=useState<Licence|null>(null)
   const [error,setError]=useState('')
   const [loaded,setLoaded]=useState(false)
@@ -33,32 +35,33 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
   const createAnother=params.get('add')==='1'&&Boolean(session);
   const tenant=createAnother?undefined:(tenantId?session?.tenants.find(t=>t.id===tenantId):session?.tenants.find(t=>t.slug===selectedSlug))||session?.tenants[0]
   const reload=useCallback(async()=>{
-    if(!tenant)return
+    if(!tenant||tab==='pregled')return
     inFlight.current?.abort();const controller=new AbortController();inFlight.current=controller
     try{const data=await fetchLicence(tenant.slug,controller.signal);if(controller.signal.aborted)return;if(!data)throw new Error('Podaci o pretplati nisu dostupni. Pokušajte osvježiti.');if(data.tenant&&data.tenant.id!==tenant.id)setTenantId(data.tenant.id);const url=new URL(window.location.href);url.searchParams.set('tenant',data.tenant?.slug??tenant.slug);window.history.replaceState({},'',url.pathname+url.search);setLicence(data);setError('')}
     catch(caught){if(!controller.signal.aborted)setError(caught instanceof Error?caught.message:'Dohvat nije uspio.')}
     finally{if(!controller.signal.aborted)setLoaded(true)}
-  },[tenant?.slug])
+  },[tenant?.slug,tab])
   useEffect(()=>{setLoaded(false);void reload();return()=>inFlight.current?.abort()},[reload])
   useEffect(()=>{
-    if(!tenant)return
+    if(!tenant||tab==='pregled')return
     const timer=setInterval(()=>{if(document.visibilityState==='visible')void reload()},30_000)
     const visible=()=>{if(document.visibilityState==='visible')void reload()}
     document.addEventListener('visibilitychange',visible)
     return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',visible)}
-  },[tenant?.slug,reload])
+  },[tenant?.slug,reload,tab])
   function navigate(next:string){if(next==='kontakt')setContactOpened(true);setTab(next);const url=new URL(window.location.href);url.searchParams.set('tab',next);url.searchParams.delete('welcome');window.history.replaceState({},'',url.pathname+url.search);requestAnimationFrame(()=>{window.scrollTo({top:0,behavior:'instant'});document.getElementById('workspace-content')?.focus({preventScroll:true})})}
   const newWorkspace=params.get('new')==='1'||params.get('upload')==='1'
   if(session===undefined)return <WorkspaceShell title="Učitavamo radni prostor" items={navigation} active="cjenik" onNavigate={()=>{}}><div className="workspace-skeleton" role="status" aria-label="Učitavanje"><span/><span/><span/></div></WorkspaceShell>
   if(!session&&!newWorkspace)return <PublisherLogin initialError={params.get('authError')??authError}/>
+  if(session&&tab==='pregled'&&!createAnother)return <WorkspaceShell title="Moji cjenici" subtitle="Centralni pregled svih vaših objava" items={[overviewNav,...navigation.filter(item=>item.id!=='objava')]} active={tab} onNavigate={next=>{if(next==='cjenik'&&tenant){window.location.assign('/app?tenant='+encodeURIComponent(tenant.slug)+'&tab=cjenik');return}navigate(next)}} email={session.user.email} isAdmin={session.isAdmin} onLogout={()=>void logout()}><PublisherCatalogDashboard tenants={session.tenants}/></WorkspaceShell>
   const checker=<div hidden={tab!=='provjera'}><WebsiteChecker reportId={params.get('report')??''} initialUrl={params.get('url')??''} autoRun={params.get('check')==='1'} fromLanding={params.get('from')==='landing'} internal={params.get('internal')==='1'} onUpload={()=>navigate('cjenik')} onResult={setContactContext} onHelp={context=>{setContactContext(context);setContactPlan(null);navigate('kontakt')}}/></div>
   const contact=<div hidden={tab!=='kontakt'}>{contactOpened&&<WorkspaceContact context={contactContext} defaultEmail={session?.user.email} defaultName={tenant?.name} plan={contactPlan} templateId={params.get('template')} initialWebsite={params.get('website')??''} relatedRunId={params.get('checkerRun')} onCheck={()=>navigate('provjera')}/>}</div>
-  if(!tenant)return <WorkspaceShell title={tab==='upute'||tab==='pretplata'||tab==='provjera'||tab==='kontakt'?titles[tab]:createAnother?'Dodajte novi cjenik':'Pripremite svoj prvi cjenik'} subtitle={tab==='cjenik'?'Učitajte datoteku, provjerite podatke i objavite svoj javni link.':undefined} items={navigation.filter(item=>item.id!=='objava')} active={tab==='upute'||tab==='pretplata'||tab==='provjera'||tab==='kontakt'?tab:'cjenik'} onNavigate={navigate} email={session?.user.email} isAdmin={session?.isAdmin} onLogout={session?()=>void logout():undefined}>
+  if(!tenant)return <WorkspaceShell title={tab==='upute'||tab==='pretplata'||tab==='provjera'||tab==='kontakt'?titles[tab]:createAnother?'Dodajte novi cjenik':'Pripremite svoj prvi cjenik'} subtitle={tab==='cjenik'?'Učitajte datoteku, provjerite podatke i objavite svoj javni link.':undefined} items={session?[overviewNav,...navigation.filter(item=>item.id!=='objava')]:navigation.filter(item=>item.id!=='objava')} active={tab==='upute'||tab==='pretplata'||tab==='provjera'||tab==='kontakt'?tab:'cjenik'} onNavigate={navigate} email={session?.user.email} isAdmin={session?.isAdmin} onLogout={session?()=>void logout():undefined}>
     {checker}
     {contact}
     <div hidden={tab!=='cjenik'}>
     {session?.isAdmin&&<div className="workspace-notice"><IconShieldCheck size={21}/><div><strong>Prijavljeni ste kao administrator.</strong><p>Za korisnike i uplate otvorite administraciju. Ovdje možete pripremiti vlastiti cjenik.</p></div><a className="workspace-button" href="/admin">Otvori administraciju<IconArrowUpRight size={17}/></a></div>}
-    {createAnother&&<section className="workspace-surface"><p>Za drugu poslovnicu ili zaseban cjenik robe/usluga otvorite dodatnu objavu pod istim korisničkim računom. Svaki cjenik ima svoj link, arhivu i zasebnu licencu nakon probnog razdoblja.</p><a href="/app?tab=cjenik" className="workspace-button">Natrag na moje cjenike</a></section>}
+    {createAnother&&<section className="workspace-surface"><p>Za drugu poslovnicu ili zaseban cjenik robe/usluga otvorite dodatnu objavu pod istim korisničkim računom. Svaki cjenik ima svoj link, arhivu i zasebnu licencu nakon probnog razdoblja.</p><a href="/app?tab=pregled" className="workspace-button">Natrag na moje cjenike</a></section>}
     <TrialOffer onHelp={()=>navigate('upute')}/>
     <div className="workspace-setup">{renderOnboarding(session?.user.email)}</div>
     </div>
@@ -71,7 +74,7 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
   const firstPublication=(params.get('created')==='1'||params.get('welcome')==='1')&&tenant.slug===selectedSlug&&licence?.entitlement?.status==='trial'&&effective?.live&&!licence.order
   const publicUrl=`${window.location.origin}/c/${tenant.slug}`
   const plan=licence?.entitlement?.plan==='managed'?PLANS[2]:licence?.features.editItems?PLANS[1]:PLANS[0]
-  const items=licence?.features.monitoring?[...navigation,{id:'nadzor',label:'Nadzor',icon:IconShieldCheck}]:navigation
+  const items=[overviewNav,...navigation,...(licence?.features.monitoring?[{id:'nadzor',label:'Nadzor',icon:IconShieldCheck}]:[])]
   const status=state==='none'?'Objava još nije aktivirana':state==='grace'?'Obnova čeka uplatu':state==='suspended'?'Pristup je suspendiran':state==='expired'?'Javni link nije aktivan':state==='free'||state==='awaiting_payment'?'Besplatna objava 24 h':'Javni link je aktivan'
   return <WorkspaceShell title={titles[tab]??titles.cjenik} subtitle={tenant.name} email={session?.user.email} isAdmin={session?.isAdmin} items={items} active={tab} onNavigate={navigate} onLogout={()=>void logout()} tools={<><span className="workspace-plan">{plan.name}</span><a className="workspace-button" href="/app?new=1&add=1&tab=cjenik">Dodaj cjenik</a>{session&&session.tenants.length>1&&<select aria-label="Odaberi cjenik" value={tenant.id} onChange={event=>{setTenantId(event.target.value);setLicence(null);const url=new URL(window.location.href);const next=session?.tenants.find(t=>t.id===event.target.value);if(next)url.searchParams.set('tenant',next.slug);url.searchParams.delete('order');window.history.replaceState({},'',url.pathname+url.search)}}>{session.tenants.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select>}<a className="workspace-button" href={publicUrl} target="_blank" rel="noreferrer">Otvori javni cjenik<IconArrowUpRight size={17}/></a></>}>
     {(error||authError)&&<div className="workspace-notice workspace-notice-error" role="alert"><p>{error||authError}</p><button type="button" onClick={()=>void reload()}><IconRefresh size={17}/>Pokušaj ponovno</button></div>}
@@ -82,7 +85,7 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
       {tab==='cjenik'&&paymentReported&&<section className="workspace-notice" aria-label="Status prijavljene uplate"><IconClock size={23}/><div><h2>{licence?.order?.kind==='installation'?'Uplata za ugradnju je prijavljena — čeka potvrdu':'Uplata je prijavljena — čeka potvrdu'}</h2><p>Prijava za narudžbu {licence?.order?.reference} je spremljena. Ne trebate ponovno uplatiti. {licence?.order?.kind==='installation'?'Ugradnju dogovaramo nakon provjere uplate.':'Aktivacija ili obnova slijedi nakon provjere bankovne uplate.'}</p></div><button className="workspace-button" type="button" onClick={()=>navigate('pretplata')}>Pogledaj status uplate<IconArrowRight size={17}/></button></section>}
       {tab==='cjenik'&&!paymentReported&&!firstPublication&&(state==='free'||state==='awaiting_payment')&&<TrialOffer published onHelp={()=>navigate('pretplata')}/>}
       {tab==='cjenik'&&<div className={`workspace-live-strip${effective?.live?'':' workspace-live-strip-warning'}`}><span className="workspace-status"><IconCheck size={17}/>{status}</span><span>{effective?.accessUntil&&state==='grace'?`Aktivan do ${untilLabel(effective.accessUntil)}`:licence?.entitlement?.periodEnd?`Vrijedi do ${untilLabel(licence.entitlement.periodEnd)}`:''}</span>{!paymentReported&&state!=='publisher'&&state!=='web_link'&&<button type="button" onClick={()=>navigate('pretplata')}>{licence?.order?'Otvori uplatu':'Zadrži isti link'}<IconArrowRight size={16}/></button>}</div>}
-      <div hidden={tab!=='cjenik'}>{renderEditor({tenantSlug:tenant.slug,tenantId:tenant.id,tenantName:tenant.name,publishBlocked:!effective?.live,canEditItems:licence?.features.editItems??false,entitlementStatus:licence?.entitlement?.status,trialEndsAt:licence?.entitlement?.periodEnd})}</div>
+      <div hidden={tab!=='cjenik'}>{<div key={tenant.id}>{renderEditor({tenantSlug:tenant.slug,tenantId:tenant.id,tenantName:tenant.name,publishBlocked:!effective?.live,canEditItems:licence?.features.editItems??false,entitlementStatus:licence?.entitlement?.status,trialEndsAt:licence?.entitlement?.periodEnd})}</div></div>
       {tab==='objava'&&<div className="workspace-stack"><section className="workspace-surface"><h2>Jedan link za sve objave</h2><p>Kopirajte svoj URL ili ga ugradite na postojeći web. Zamjena cjenika zadržava istu adresu.</p><ShareAndPrintCard slug={tenant.slug} publicUrl={publicUrl}/></section><section className="workspace-surface"><InstallationChoice slug={tenant.slug}/></section><section className="workspace-surface"><OwnedArchive slug={tenant.slug}/></section><details className="workspace-surface"><summary>Podaci objekta i radni dani</summary><PublicationSettings slug={tenant.slug} onSaved={()=>void reload()}/></details></div>}
       {tab==='upute'&&<WorkspaceInstructions onPrepare={()=>navigate('cjenik')}/>}
       {tab==='pretplata'&&<div className="workspace-stack">{licence&&<div className="workspace-billing"><LicenceCard licence={licence} email={session?.user.email??''} name={tenant.name} onChanged={()=>void reload()}/></div>}<WorkspacePackages onContact={()=>{setContactPlan('web');navigate('kontakt')}}/></div>}

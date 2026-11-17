@@ -292,3 +292,25 @@ test('mobile keyboard viewport keeps checker action in the form and restores the
  await expect(dock).toBeVisible()
  await expect(action).toHaveCSS('position','fixed')
 })
+
+test('owner dashboard groups owned catalogs, filters attention and opens the correct editor on mobile',async({page})=>{
+  await page.setViewportSize({width:390,height:800});await api(page)
+  const second={...tenant,id:'t-kids',slug:'kids',name:'NEPAR Kids'}
+  await page.route('**/api/auth/me',route=>route.fulfill({json:{...owner,tenants:[tenant,second]}}))
+  const common={merchantIdentifier:'12345678',merchantType:'natural',objectCode:'1',objectAddress:'Zagreb',publishedAt:'2026-11-17T08:00:00Z',sequence:3,itemCount:5,formatVersion:'nn-132-2026',plan:'publisher_self_service',accessState:'active',accessUntil:'2099-01-01T00:00:00Z',publicLive:true}
+  await page.route('**/api/publisher/catalogs',route=>route.fulfill({json:{catalogs:[{...tenant,...common},{...second,...common,objectCode:'2',publicLive:false,accessState:'expired'}]}}))
+  await page.goto('/app')
+  await expect(page.getByRole('heading',{name:'Moji cjenici',exact:true})).toBeVisible()
+  await expect(page.getByRole('heading',{name:/Matični broj: 12345678/})).toHaveCount(1)
+  await expect(page.getByRole('heading',{name:'Salon Lana'})).toBeVisible()
+  await page.getByLabel('Samo za pregled').check()
+  await expect(page.getByRole('heading',{name:'Salon Lana'})).toHaveCount(0)
+  await expect(page.getByRole('heading',{name:'NEPAR Kids'})).toBeVisible()
+  await expect(page.getByRole('link',{name:'Uredi cjenik'})).toHaveAttribute('href','/app?tenant=kids&tab=cjenik')
+  await expect(page.getByRole('link',{name:'Javni link'})).toHaveCount(0)
+  await page.getByLabel('Samo za pregled').uncheck()
+  await page.getByLabel('Pretraži cjenike').fill('salon')
+  await expect(page.getByRole('heading',{name:'NEPAR Kids'})).toHaveCount(0)
+  await expect(page.getByRole('link',{name:'Javni link'})).toHaveAttribute('href','/c/salon')
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390)
+})
