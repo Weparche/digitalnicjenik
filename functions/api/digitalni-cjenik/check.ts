@@ -953,7 +953,14 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
       'Prema NN 132/2026, izmijenjeni cjenik objavljuje se do 11 sati na dan izmjene. Stariji datum sam po sebi ne znači da cjenik nije aktualan. Sam naziv ne dokazuje vrijeme stvarne objave.';
   }
   const key = (name: PublicationName) => `${name.storage}|${name.stamp}`;
-  const newestFirst = versioned.filter(entry=>entry.name.objectKey===current.objectKey).sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
+  // Historical files may have been published under the previous naming rule.
+  // Match the exact same three location segments, only on the verified current
+  // file's origin. Do not combine different merchants or unrelated stores.
+  const currentOrigin = analyses.find(a => a.structureRecognized && (parsePublicationName(a.publicationFilename || '') || parsePublicationName(a.url || ''))?.objectKey === current.objectKey)?.url;
+  const legacyLocation = current.nn132 ? current.objectKey.split('|')[1]?.split('_').join('|') : undefined;
+  const sameLocation = (entry: {href:string;name:PublicationName}) => entry.name.objectKey === current.objectKey ||
+    Boolean(legacyLocation && legacyLocation.split('|').length === 3 && !entry.name.nn132 && entry.name.objectKey === legacyLocation && currentOrigin && new URL(entry.href).origin === new URL(currentOrigin).origin);
+  const newestFirst = versioned.filter(sameLocation).sort((a, b) => b.name.storage - a.name.storage || (b.name.time ?? 0) - (a.name.time ?? 0));
   const previous = newestFirst.filter((entry) => key(entry.name) !== key(current) && (current.time != null && entry.name.time != null ? entry.name.time < current.time || (entry.name.time === current.time && entry.name.storage < current.storage) : entry.name.storage < current.storage)).slice(0, MAX_ARCHIVE_PROBES);
   for (const entry of previous) {
     try {
