@@ -330,3 +330,25 @@ test('new catalog can reuse a saved business profile but keeps its distinct cata
   await expect(page.getByLabel('Oznaka objekta')).toHaveValue('kids')
   await expect(page.getByLabel('Naziv poslovanja',{exact:true})).toHaveValue('NEPAR Kids')
 })
+
+test('central monitoring shows only current-version results and routes checks to the selected catalog',async({page})=>{
+  await api(page)
+  const second={...tenant,id:'t-kids',slug:'kids',name:'NEPAR Kids'}
+  await page.route('**/api/auth/me',route=>route.fulfill({json:{...owner,tenants:[tenant,second]}}))
+  await page.route('**/api/publisher/business-profiles',route=>route.fulfill({json:{profiles:[]}}))
+  const common={merchantIdentifier:'12345678',merchantType:'natural',objectCode:'1',objectAddress:'Zagreb',publishedAt:'2026-11-17T08:00:00Z',sequence:3,itemCount:5,formatVersion:'nn-132-2026',plan:'publisher_self_service',accessState:'active',accessUntil:'2099-01-01T00:00:00Z',publicLive:true}
+  const monitor={enabled:true,overall:'ok',checkedAt:'2026-11-17T08:00:00Z',alertOpen:false,jobStatus:'completed',jobUpdatedAt:'2026-11-17T08:01:00Z',currentVersion:true}
+  let queued=false
+  await page.route('**/api/publisher/catalogs',route=>route.fulfill({json:{catalogs:[{...tenant,...common,monitor},{...second,...common,monitor:{...monitor,currentVersion:false,jobStatus:queued?'queued':'completed'}}]}}))
+  await page.route('**/api/tenants/kids/monitor',route=>{expect(route.request().method()).toBe('POST');queued=true;return route.fulfill({status:202,json:{status:'queued'}})})
+  await page.goto('/app')
+  await expect(page.getByRole('region',{name:'Skupni nadzor'})).toBeVisible()
+  await expect(page.getByText('Nadzor: Provjera u redu',{exact:true})).toBeVisible()
+  await page.getByLabel('Samo problemi nadzora').check()
+  await expect(page.getByRole('heading',{name:'Salon Lana'})).toHaveCount(0)
+  await expect(page.getByText('Nadzor: Nova verzija čeka provjeru')).toBeVisible()
+  await page.getByRole('button',{name:'Provjeri sada'}).click()
+  await page.getByLabel('Samo problemi nadzora').uncheck()
+  await expect(page.getByText('Nadzor: Provjera u tijeku')).toBeVisible()
+  await expect(page.locator('article').filter({has:page.getByRole('heading',{name:'NEPAR Kids'})}).getByRole('button',{name:'Provjeri sada'})).toBeDisabled()
+})

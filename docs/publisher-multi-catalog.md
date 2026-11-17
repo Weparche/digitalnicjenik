@@ -14,3 +14,6 @@ Zajednički poslovni profil (pravni naziv, registracijski identifikator i OIB za
 
 ## Faza 2
 Privatni poslovni profili vlasnika: pravni naziv, vrsta i identifikator trgovca, adresa, opcionalni OIB za naplatu. Odabir profila pri izradi kopira identifikator i adresu u novi cjenik, ne mijenja postojeće objave niti stvara pravo pristupa. Oznaka objekta ostaje zasebna i provjerava se postojećim validatorom. Interna licenca dodjeljuje se samo kroz auditiranu admin operaciju grant_internal za vlastiti neplaćeni, nesuspendirani cjenik, s postojećim Publisher pravima do 31.12.2099., bez potvrde uplate, narudžbe ili grace perioda. Prava vlasnika i postojeći javni linkovi ne mijenjaju se. Produkcijsko dodjeljivanje i stvaranje šest cjenika odvojeni su koraci.
+
+## Faza 3
+Skupni nadzor koristi posljednji spremljeni monitor_run, monitor_state i monitor_job, samo za cjenike vlasnika s monitoring paketom. Rezultat prethodne objave nije zelena potvrda nove verzije. Ručna provjera za pojedini cjenik koristi postojeći autorizirani endpoint i njegov rate limit; pregled i osvježavanje ne pokreću provjere. Prikaz tehničkog stanja nije pravna potvrda. Namjerno nema masovnog pokretanja provjera.
