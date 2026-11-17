@@ -1,5 +1,5 @@
 import { PlanCards } from '../PlanCards'
-import { MAX_ITEMS_LABEL, installationPriceLabel } from '../../shared/pricing'
+import { MAX_ITEMS_LABEL, INSTALLATION, formatEur, installationPriceLabel } from '../../shared/pricing'
 import { SitePageLayout } from './PageLayout'
 import { getSitePage } from './registry'
 
@@ -37,7 +37,7 @@ export function PricingPage() {
 
       <section className="site-section" aria-labelledby="link-scope-title">
         <h2 id="link-scope-title">Što pokriva Web Link?</h2>
-        <p>Web Link je za Excel, CSV ili XML koji sami ažurirate, do {MAX_ITEMS_LABEL} stavki. Neograničeno zamjenjujete cijeli cjenik novom datotekom uz validaciju. Uključeni su HTML, CSV/XML, arhiva, QR, PDF, iframe i embed. Ugradnja na postojeći web zasebno stoji {installationPriceLabel()}.</p>
+        <p>Web Link je za Excel, CSV ili XML koji sami ažurirate, do {MAX_ITEMS_LABEL} stavki. Neograničeno zamjenjujete cijeli cjenik novom datotekom uz validaciju. Uključeni su HTML, CSV/XML, arhiva, QR, PDF, iframe i embed. Ugradnja na postojeći web zasebno stoji {installationPriceLabel()} (bazna cijena: {formatEur(INSTALLATION.basePrice)}).</p>
         <p>Posljednje valjano objavljeno stanje proizvoda automatski se ponovno objavljuje svakog radnog dana prema kalendaru. NEPAR ne mijenja cijene niti ih preuzima iz blagajne ili webshopa. Usluge ne dobivaju dnevne duplikate bez promjene. <a href="/objava-digitalnog-cjenika/#odgovornosti">Priprema i odgovornosti prije objave.</a></p>
       </section>
 
