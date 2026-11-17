@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react'
 import {IconArrowUpRight,IconFileText,IconPlus,IconRefresh} from '@tabler/icons-react'
-import {BusinessProfilesPanel} from './BusinessProfiles'
+import {BusinessProfilesPanel,useBusinessProfiles} from './BusinessProfiles'
 import {untilLabel} from './licenceView'
 import type {PublisherTenant} from './PublisherAuth'
 
@@ -25,6 +25,7 @@ function status(c:CatalogSummary){
   return 'Objavljen'
 }
 export function PublisherCatalogDashboard({tenants}:{tenants:PublisherTenant[]}){
+  const businessProfiles=useBusinessProfiles()
   const [catalogs,setCatalogs]=useState<CatalogSummary[]|null>(null)
   const [error,setError]=useState('')
   const [attempt,setAttempt]=useState(0)
@@ -44,7 +45,6 @@ export function PublisherCatalogDashboard({tenants}:{tenants:PublisherTenant[]})
   const groups=groupCatalogs(filtered)
   const addUrl=tenants.length?'/app?new=1&add=1&tab=cjenik':'/app?new=1&tab=cjenik'
   return <div className="catalog-dashboard">
-    <BusinessProfilesPanel/>
     <section className="workspace-surface catalog-intro"><div><h2>Upravljajte svim cjenicima na jednom mjestu</h2><p>Svaka poslovnica, web ili zasebna ponuda ima svoj javni link, arhivu i licencu.</p></div><a className="app-button app-button-primary" href={addUrl}><IconPlus size={19}/>Dodaj cjenik</a></section>
     {catalogs&&<><div className="catalog-metrics" aria-label="Sažetak cjenika">
       <div><span>Cjenici</span><strong>{catalogs.length}</strong></div><div><span>Objavljeni i dostupni</span><strong>{catalogs.filter(c=>c.publicLive).length}</strong></div><div><span>Za pregled</span><strong>{catalogs.filter(attention).length}</strong></div>
@@ -53,10 +53,11 @@ export function PublisherCatalogDashboard({tenants}:{tenants:PublisherTenant[]})
     {!catalogs&&!error&&<p role="status">Učitavamo cjenike…</p>}
     {catalogs?.length===0&&<section className="workspace-surface"><h2>Još nemate cjenik</h2><p>Učitajte prvi CSV ili XML i pripremite javnu objavu.</p><a className="workspace-button" href={addUrl}>Pripremi prvi cjenik</a></section>}
     {catalogs&&catalogs.length>0&&!filtered.length&&<p role="status">Nema cjenika koji odgovaraju pretrazi.</p>}
-    {groups.map(group=><section className="catalog-group" key={group.key}><h2>{group.label} <span>· {group.catalogs.length}</span></h2><div className="catalog-grid">{group.catalogs.map(c=>{
+    {groups.map(group=><section className="catalog-group" key={group.key}><h2>{businessProfiles.profiles.find(p=>p.merchantType+':'+p.merchantIdentifier===group.key)?.name??group.label} <span>· {group.catalogs.length}</span></h2><div className="catalog-grid">{group.catalogs.map(c=>{
       const url='/c/'+encodeURIComponent(c.slug)
       const edit='/app?tenant='+encodeURIComponent(c.slug)
       return <article className="workspace-surface catalog-card" key={c.id}><div className="catalog-card-heading"><IconFileText size={25}/><div><h3>{c.name}</h3><p>{c.objectCode?'Oznaka '+c.objectCode+' · ':''}{c.objectAddress||c.slug}</p></div></div><span className={'catalog-status'+(attention(c)?' catalog-attention':'')}>{status(c)}</span><dl className="catalog-facts"><div><dt>Stavke</dt><dd>{c.itemCount??'—'}</dd></div><div><dt>Verzija</dt><dd>{c.sequence??'—'}</dd></div><div><dt>Zadnja objava</dt><dd>{c.publishedAt?untilLabel(c.publishedAt):'—'}</dd></div></dl><div className="catalog-actions"><a className="app-button app-button-primary" href={edit+'&tab=cjenik'}>Uredi cjenik</a><a className="workspace-button" href={edit+'&tab=objava'}>Objava i arhiva</a>{c.publicLive&&<a className="workspace-button" href={url} target="_blank" rel="noreferrer">Javni link <IconArrowUpRight size={16}/></a>}</div></article>
     })}</div></section>)}
+    <BusinessProfilesPanel {...businessProfiles}/>
   </div>
 }

@@ -50,7 +50,7 @@ export function PublisherWorkspace({renderEditor,renderOnboarding}:{renderEditor
     document.addEventListener('visibilitychange',visible)
     return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',visible)}
   },[tenant?.slug,reload,isOverview])
-  function navigate(next:string){if(next==='kontakt')setContactOpened(true);setTab(next);const url=new URL(window.location.href);url.searchParams.set('tab',next);url.searchParams.delete('welcome');window.history.replaceState({},'',url.pathname+url.search);requestAnimationFrame(()=>{window.scrollTo({top:0,behavior:'instant'});document.getElementById('workspace-content')?.focus({preventScroll:true})})}
+  function navigate(next:string){if(next==='pregled'&&createAnother){window.location.assign('/app?tab=pregled');return}if(next==='kontakt')setContactOpened(true);setTab(next);const url=new URL(window.location.href);url.searchParams.set('tab',next);url.searchParams.delete('welcome');window.history.replaceState({},'',url.pathname+url.search);requestAnimationFrame(()=>{window.scrollTo({top:0,behavior:'instant'});document.getElementById('workspace-content')?.focus({preventScroll:true})})}
   const newWorkspace=params.get('new')==='1'||params.get('upload')==='1'
   if(session===undefined)return <WorkspaceShell title="Učitavamo radni prostor" items={navigation} active="cjenik" onNavigate={()=>{}}><div className="workspace-skeleton" role="status" aria-label="Učitavanje"><span/><span/><span/></div></WorkspaceShell>
   if(!session&&!newWorkspace)return <PublisherLogin initialError={params.get('authError')??authError}/>

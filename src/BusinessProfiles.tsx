@@ -18,8 +18,7 @@ export function useBusinessProfiles(enabled=true){
   },[enabled,version])
   return {profiles,error,loading,refresh:()=>setVersion(n=>n+1)}
 }
-export function BusinessProfilesPanel(){
-  const {profiles,error,loading,refresh}=useBusinessProfiles()
+export function BusinessProfilesPanel({profiles,error,loading,refresh}:ReturnType<typeof useBusinessProfiles>){
   const [open,setOpen]=useState(false)
   const [name,setName]=useState('')
   const [type,setType]=useState<'legal'|'natural'>('natural')
