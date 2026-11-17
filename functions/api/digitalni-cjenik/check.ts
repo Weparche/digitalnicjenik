@@ -977,6 +977,34 @@ async function checkPublications(details: CheckDetails, links: URL[], env: Check
   }
 }
 
+/** Verify only our own public tenant, exact current filename, and complete retained history.
+ * For unrelated sites an empty archive or a filename ending in sequence 1 is insufficient. */
+export async function verifyFirstPublisherPublication(details: CheckDetails, archivePageUrl: string | null, env: CheckerEnv, analyses: CheckerDocumentAnalysis[]) {
+  if (!env.DB || !archivePageUrl || details.archiveFound || details.archiveRemoved || !details.archiveLinkDiscovered) return;
+  try {
+    const archiveUrl = new URL(archivePageUrl);
+    const slug = archiveUrl.hostname === 'digitalnicjenik.nepar.hr' && /^\/c\/([a-z0-9][a-z0-9-]{0,62})\/arhiva\/?$/i.exec(archiveUrl.pathname)?.[1];
+    if (!slug || archiveUrl.protocol !== 'https:') return;
+    const row = await env.DB.prepare(`SELECT p.filename_stem, p.sequence,
+       (SELECT count(*) FROM price_publications history WHERE history.tenant_id=t.id) AS total
+       FROM tenants t JOIN price_publications p ON p.tenant_id=t.id AND p.is_current=1
+       JOIN publication_targets pt ON pt.tenant_id=t.id AND pt.current_publication_id=p.id AND pt.status='active'
+       WHERE t.slug=? LIMIT 1`).bind(slug).first<{filename_stem:string;sequence:number;total:number}>();
+    if (!row || row.sequence !== 1 || row.total !== 1) return;
+    const verified = analyses.some(a => {
+      if (!a.fetched || !a.structureRecognized || !a.url) return false;
+      const url = new URL(a.url);
+      if (url.origin !== archiveUrl.origin || !url.pathname.startsWith('/c/'+slug+'/')) return false;
+      const filename = (a.publicationFilename || decodeURIComponent(url.pathname.split('/').pop() || '')).replace(/\.(csv|xml)$/i,'');
+      return filename === row.filename_stem && parsePublicationName(filename)?.nn132 === true;
+    });
+    if (!verified) return;
+    details.archiveNotApplicable = true;
+    details.archiveUrl = archivePageUrl;
+    details.archiveEvidence = 'Javna arhiva je dostupna; evidencija NEPAR Publishera potvrđuje jednu aktualnu objavu (broj pohrane 1), bez zamijenjenih verzija. Rok od 15 dana počinje zamjenom.';
+  } catch { /* Fail closed: without matching evidence the archive remains unknown. */ }
+}
+
 function parseBody(request: Request): Promise<{ url?: unknown;attribution?:unknown;source?:unknown;zipEntry?:unknown } | null> {
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) return Promise.resolve(null);
@@ -1181,6 +1209,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     } catch { network.failed = true; }
   }
   await checkPublications(details, documentLinks, env, network, analyses);
+  await verifyFirstPublisherPublication(details, archivePageUrl, env, analyses);
   if (!details.archiveFound && !details.archiveRemoved && archivePageUrl && !details.csvFound && !details.xmlFound && !details.zipEvidence) {
     details.archiveFound = true;
     details.archiveUrl = archivePageUrl;
