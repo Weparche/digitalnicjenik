@@ -107,7 +107,7 @@ it('requires a reason for a published NN132 base correction, permits current pri
  expect(retail.changed).toBe(true)
  const changedBase={...changedRetail,items:[{...changedRetail.items[0],anchorPrice:16}]}
  const baseDraft=await createDraft(runtime(),'retained',changedBase,'base.csv','nepar')
- await expect(publishDraft(runtime(),'retained',baseDraft.draft!.id)).rejects.toThrow('bazne cijene')
+ await expect(publishDraft(runtime(),'retained',baseDraft.draft!.id)).rejects.toThrow('Bazne cijene')
  await expect(publishDraft(runtime(),'retained',baseDraft.draft!.id,false,{baseCorrectionPublicationId:'stale',baseCorrectionReason:'Provjereno u starom cjeniku.'})).rejects.toThrow('Osvježite')
  await expect(publishDraft(runtime(),'retained',baseDraft.draft!.id,false,{baseCorrectionPublicationId:retail.publication!.id,baseCorrectionReason:'kratko'})).rejects.toThrow('obrazloženje')
  const result=await publishDraft(runtime(),'retained',baseDraft.draft!.id,false,{baseCorrectionPublicationId:retail.publication!.id,baseCorrectionReason:'Provjereno u starom cjeniku.'})
