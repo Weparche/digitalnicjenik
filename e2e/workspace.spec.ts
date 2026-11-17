@@ -362,3 +362,13 @@ test('central monitoring shows only current-version results and routes checks to
   await expect(page.getByText('Nadzor: Provjera u tijeku')).toBeVisible()
   await expect(page.locator('article').filter({has:page.getByRole('heading',{name:'NEPAR Kids'})}).getByRole('button',{name:'Provjeri sada'})).toBeDisabled()
 })
+
+test('first private draft reopens even before its first public publication',async({page})=>{
+  await api(page,true)
+  await page.route('**/api/tenants/salon',route=>route.fulfill({json:{priceList:null,publication:null,draft:{id:'first-private-draft',source_filename:'salon.csv',normalized_payload_json:JSON.stringify(list),validation_issues_json:'[]'}}}))
+  await page.goto('/app?tenant=salon&tab=cjenik')
+  await expect(page.getByLabel('Sidrena cijena za Šišanje',{exact:true})).toHaveValue('15')
+  await expect(page.getByRole('button',{name:'Spremi promjene',exact:true})).toBeVisible()
+  await page.reload()
+  await expect(page.getByLabel('Sidrena cijena za Šišanje',{exact:true})).toHaveValue('15')
+})
