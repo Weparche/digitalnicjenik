@@ -862,9 +862,9 @@ function TrialClaimForm({
   const [merchantIdentifier,setMerchantIdentifier]=useState('')
   const [allLocations,setAllLocations]=useState(false)
   const [objectAddress, setObjectAddress] = useState('')
-  const [objectCode, setObjectCode] = useState('1')
   const distinctCode=Boolean(accountEmail&&new URLSearchParams(window.location.search).get('add')==='1')
-  const effectiveObjectCode=distinctCode&&objectCode==='1'&&slug?slug:objectCode
+  const [objectCode, setObjectCode] = useState<string|null>(distinctCode?null:'1')
+  const effectiveObjectCode=objectCode??slug
   const [objectType, setObjectType] = useState(list.items.every(isServiceItem) ? 'usluzni-objekt' : 'prodavaonica')
   const [workingDays, setWorkingDays] = useState([1, 2, 3, 4, 5])
   const [busy, setBusy] = useState(false)
