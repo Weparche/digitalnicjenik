@@ -297,3 +297,68 @@ test('mobile keyboard viewport keeps checker action in the form and restores the
  await expect(dock).toBeVisible()
  await expect(action).toHaveCSS('position','fixed')
 })
+
+test('owner dashboard groups owned catalogs, filters attention and opens the correct editor on mobile',async({page})=>{
+  await page.setViewportSize({width:390,height:800});await api(page)
+  const second={...tenant,id:'t-kids',slug:'kids',name:'NEPAR Kids'}
+  await page.route('**/api/auth/me',route=>route.fulfill({json:{...owner,tenants:[tenant,second]}}))
+  const common={merchantIdentifier:'12345678',merchantType:'natural',objectCode:'1',objectAddress:'Zagreb',publishedAt:'2026-11-17T08:00:00Z',sequence:3,itemCount:5,formatVersion:'nn-132-2026',plan:'publisher_self_service',accessState:'active',accessUntil:'2099-01-01T00:00:00Z',publicLive:true}
+  await page.route('**/api/publisher/catalogs',route=>route.fulfill({json:{catalogs:[{...tenant,...common},{...second,...common,objectCode:'2',publicLive:false,accessState:'expired'}]}}))
+  await page.goto('/app')
+  await expect(page.getByRole('heading',{name:'Moji cjenici',exact:true})).toBeVisible()
+  await expect(page.getByRole('heading',{name:/Matični broj: 12345678/})).toHaveCount(1)
+  await expect(page.getByRole('heading',{name:'Salon Lana'})).toBeVisible()
+  await page.getByLabel('Samo za pregled').check()
+  await expect(page.getByRole('heading',{name:'Salon Lana'})).toHaveCount(0)
+  await expect(page.getByRole('heading',{name:'NEPAR Kids'})).toBeVisible()
+  await expect(page.getByRole('link',{name:'Uredi cjenik'})).toHaveAttribute('href','/app?tenant=kids&tab=cjenik')
+  await expect(page.getByRole('link',{name:'Javni link'})).toHaveCount(0)
+  await page.getByLabel('Samo za pregled').uncheck()
+  await page.getByLabel('Pretraži cjenike').fill('salon')
+  await expect(page.getByRole('heading',{name:'NEPAR Kids'})).toHaveCount(0)
+  await expect(page.getByRole('link',{name:'Javni link'})).toHaveAttribute('href','/c/salon')
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBe(390)
+})
+
+test('new catalog can reuse a saved business profile but keeps its distinct catalog name and code',async({page})=>{
+  await api(page)
+  await page.route('**/api/publisher/business-profiles',route=>route.fulfill({json:{profiles:[{id:'p-nepar',name:'NEPAR obrt',merchantType:'natural',merchantIdentifier:'12345678',address:'Ilica 10, 10000 Zagreb',billingOib:null}]}}))
+  await page.route('**/api/trials/start?**',route=>route.fulfill({json:{suggested:'kids',available:true}}))
+  await page.goto('/app?new=1&add=1&tab=cjenik&profile=p-nepar')
+  await expect(page.getByRole('heading',{name:'Dodajte novi cjenik',exact:true})).toBeVisible()
+  // This test exercises business-profile reuse, not browser file chooser timing.
+  // The ordinary file-upload flow is tested separately above.
+  await page.route('**/examples/primjer-digitalni-cjenik-usluge-2026.csv',route=>route.fulfill({contentType:'text/csv; charset=utf-8',body:csv}))
+  await page.getByRole('button',{name:/Isprobajte na primjeru/}).click()
+  await expect(page.locator('.validation-app-panel')).toBeVisible({timeout:10000})
+  await page.getByRole('button',{name:/Objavi besplatno na 24 h/}).click()
+  await expect(page.getByLabel('Vrsta trgovca',{exact:true})).toHaveValue('natural')
+  await expect(page.getByLabel(/Matični broj fizičke osobe/)).toHaveValue('12345678')
+  await expect(page.getByLabel('Puna adresa objekta')).toHaveValue('Ilica 10, 10000 Zagreb')
+  await page.getByLabel('Naziv poslovanja',{exact:true}).fill('NEPAR Kids')
+  await page.getByText('Uredi adresu cjenika i podatke objekta',{exact:true}).click()
+  await expect(page.getByLabel('Oznaka objekta')).toHaveValue('kids')
+  await expect(page.getByLabel('Naziv poslovanja',{exact:true})).toHaveValue('NEPAR Kids')
+})
+
+test('central monitoring shows only current-version results and routes checks to the selected catalog',async({page})=>{
+  await api(page)
+  const second={...tenant,id:'t-kids',slug:'kids',name:'NEPAR Kids'}
+  await page.route('**/api/auth/me',route=>route.fulfill({json:{...owner,tenants:[tenant,second]}}))
+  await page.route('**/api/publisher/business-profiles',route=>route.fulfill({json:{profiles:[]}}))
+  const common={merchantIdentifier:'12345678',merchantType:'natural',objectCode:'1',objectAddress:'Zagreb',publishedAt:'2026-11-17T08:00:00Z',sequence:3,itemCount:5,formatVersion:'nn-132-2026',plan:'publisher_self_service',accessState:'active',accessUntil:'2099-01-01T00:00:00Z',publicLive:true}
+  const monitor={enabled:true,overall:'ok',checkedAt:'2026-11-17T08:00:00Z',alertOpen:false,jobStatus:'completed',jobUpdatedAt:'2026-11-17T08:01:00Z',currentVersion:true}
+  let queued=false
+  await page.route('**/api/publisher/catalogs',route=>route.fulfill({json:{catalogs:[{...tenant,...common,monitor},{...second,...common,monitor:{...monitor,currentVersion:false,jobStatus:queued?'queued':'completed'}}]}}))
+  await page.route('**/api/tenants/kids/monitor',route=>{expect(route.request().method()).toBe('POST');queued=true;return route.fulfill({status:202,json:{status:'queued'}})})
+  await page.goto('/app')
+  await expect(page.getByRole('region',{name:'Skupni nadzor'})).toBeVisible()
+  await expect(page.getByText('Nadzor: Provjera u redu',{exact:true})).toBeVisible()
+  await page.getByLabel('Samo problemi nadzora').check()
+  await expect(page.getByRole('heading',{name:'Salon Lana'})).toHaveCount(0)
+  await expect(page.getByText('Nadzor: Nova verzija čeka provjeru')).toBeVisible()
+  await page.getByRole('button',{name:'Provjeri sada'}).click()
+  await page.getByLabel('Samo problemi nadzora').uncheck()
+  await expect(page.getByText('Nadzor: Provjera u tijeku')).toBeVisible()
+  await expect(page.locator('article').filter({has:page.getByRole('heading',{name:'NEPAR Kids'})}).getByRole('button',{name:'Provjeri sada'})).toBeDisabled()
+})

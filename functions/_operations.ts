@@ -17,7 +17,7 @@ export async function currentEntitlement(db:D1DatabaseLike,tenantId:string) {
 export async function applyOperation(db:D1DatabaseLike,actor:AdminActor,tenant:Tenant,input:Record<string,unknown>,now=new Date()) {
   const action=String(input.action??'')
   const reference=typeof input.reference==='string'?input.reference:null
-  if(!['confirm_payment','activate','extend','set_expiry','change_plan','suspend','reactivate','confirm_legacy_paid','cancel_order'].includes(action)) throw new AccessDeniedError(400,'invalid_action','Odaberite operaciju.')
+  if(!['confirm_payment','activate','extend','set_expiry','change_plan','suspend','reactivate','confirm_legacy_paid','cancel_order','grant_internal'].includes(action)) throw new AccessDeniedError(400,'invalid_action','Odaberite operaciju.')
   const reason=action==='confirm_payment'?'Potvrđena bankovna uplata':String(input.reason??'').trim().slice(0,500)
   if(reason.length<3) throw new AccessDeniedError(400,'reason_required','Unesite razlog operacije.')
   const key=action==='confirm_payment'?`payment:${reference}`:String(input.requestKey??'')
@@ -29,6 +29,11 @@ export async function applyOperation(db:D1DatabaseLike,actor:AdminActor,tenant:T
     return {...JSON.parse(previous.new_json),repeated:true}
   }
   const old=await currentEntitlement(db,tenant.id)
+  if(action==='grant_internal'){
+    const membership=actor.type==='admin'&&await db.prepare("SELECT 1 AS ok FROM tenant_members WHERE tenant_id=? AND user_id=? AND role='owner'").bind(tenant.id,actor.id).first<{ok:number}>()
+    if(!membership)throw new AccessDeniedError(403,'internal_owner_required','Internu licencu može dodijeliti samo administrator vlastitom cjeniku.')
+    if(reference||old.paid_confirmed_at||old.status==='suspended'||await db.prepare("SELECT 1 AS ok FROM payment_orders WHERE tenant_id=? AND status='paid' LIMIT 1").bind(tenant.id).first())throw new AccessDeniedError(409,'internal_conflict','Interna licenca ne može zamijeniti plaćeni ili suspendirani cjenik.')
+  }
   const order=reference?await db.prepare('SELECT * FROM payment_orders WHERE reference=? AND tenant_id=?').bind(reference,tenant.id).first<PaidOrder>():null
   if(['confirm_payment','cancel_order'].includes(action)&&!order) throw new AccessDeniedError(404,'order_missing','Narudžba nije pronađena.')
   if(action==='confirm_payment'&&order?.status==='paid') return {plan:order.confirmed_plan??old.plan,periodEnd:order.confirmed_period_end??old.period_end,repeated:true}
@@ -46,6 +51,8 @@ export async function applyOperation(db:D1DatabaseLike,actor:AdminActor,tenant:T
       if(order.kind!=='publisher_upgrade') {next.period_start=stamp;next.period_end=yearEnd();next.paid_confirmed_at=stamp}
       next.status=old.status==='suspended'?'suspended':'active'
     }
+  } else if(action==='grant_internal') {
+    next.plan='publisher_self_service';next.status='active';next.period_start=stamp;next.period_end='2099-12-31T23:00:00.000Z';next.paid_confirmed_at=null
   } else if(action==='activate'||action==='extend') {
     next.status=old.status==='suspended'?'suspended':'active';next.period_start=stamp;next.period_end=yearEnd()
     // Manual activation is not evidence of a bank payment for this new period.

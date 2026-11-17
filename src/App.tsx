@@ -1,3 +1,4 @@
+import {useBusinessProfiles} from './BusinessProfiles'
 import { trackCheckerInteraction } from './checker-analytics'
 import { PublisherWorkspace as UserWorkspace } from './PublisherWorkspace'
 import { stavke, stavkeNema } from '../shared/plural'
@@ -855,6 +856,9 @@ function TrialClaimForm({
   onCancel: () => void
   accountEmail?:string
 }) {
+  const {profiles}=useBusinessProfiles(Boolean(accountEmail))
+  const [profileId,setProfileId]=useState('')
+  const profileInitialized=useRef(false)
   const [businessName, setBusinessName] = useState(list.tenant.name && list.tenant.name !== 'Draft' ? list.tenant.name : '')
   const [email, setEmail] = useState(accountEmail??'')
   const [slug, setSlug] = useState('')
@@ -863,7 +867,9 @@ function TrialClaimForm({
   const [merchantIdentifier,setMerchantIdentifier]=useState('')
   const [allLocations,setAllLocations]=useState(false)
   const [objectAddress, setObjectAddress] = useState('')
-  const [objectCode, setObjectCode] = useState('1')
+  const distinctCode=Boolean(accountEmail&&new URLSearchParams(window.location.search).get('add')==='1')
+  const [objectCode, setObjectCode] = useState<string|null>(distinctCode?null:'1')
+  const effectiveObjectCode=objectCode??slug
   const [objectType, setObjectType] = useState(list.items.every(isServiceItem) ? 'usluzni-objekt' : 'prodavaonica')
   const [workingDays, setWorkingDays] = useState([1, 2, 3, 4, 5])
   const [busy, setBusy] = useState(false)
@@ -902,6 +908,13 @@ function TrialClaimForm({
     }
   }, [businessName])
 
+  useEffect(()=>{
+    const requested=new URLSearchParams(window.location.search).get('profile')
+    if(!requested||profileInitialized.current)return
+    const profile=profiles.find(p=>p.id===requested)
+    if(profile){profileInitialized.current=true;setProfileId(profile.id);setMerchantType(profile.merchantType);setMerchantIdentifier(profile.merchantIdentifier);setObjectAddress(profile.address);setAllLocations(false)}
+  },[profiles])
+
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     setBusy(true)
@@ -918,7 +931,7 @@ function TrialClaimForm({
         body: JSON.stringify({
           list: { ...list, tenant: { ...list.tenant, name: businessName.trim() || list.tenant.name } },
           filename: sourceFilename || 'cjenik.csv',
-          publicationDetails: { objectType, objectAddress, objectCode, workingDays, merchantType, merchantIdentifier, allLocations },
+          publicationDetails: { objectType, objectAddress, objectCode:effectiveObjectCode, workingDays, merchantType, merchantIdentifier, allLocations },
         }),
       })
       const draftPayload = await draftResponse.json() as { draftId?: string; error?: string }
@@ -970,13 +983,14 @@ function TrialClaimForm({
       <h2>Još podaci o vašem poslovanju</h2>
       <p>{accountEmail?'E-mail je potvrđen. Cjenik možete odmah objaviti.':'Potvrdite e-mail i vaš će cjenik biti objavljen.'} Besplatna objava traje 24 sata.</p>
       <form className="trial-claim-form" onSubmit={(event) => void submit(event)}>
+        {accountEmail&&profiles.length>0&&<label>Preuzmi podatke iz poslovnog profila<select value={profileId} onChange={event=>{const id=event.target.value;profileInitialized.current=true;setProfileId(id);const profile=profiles.find(p=>p.id===id);if(profile){setMerchantType(profile.merchantType);setMerchantIdentifier(profile.merchantIdentifier);setObjectAddress(profile.address);setAllLocations(false)}}}><option value="">Unesite podatke ručno</option>{profiles.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><small>Preuzima identifikator i adresu. Naziv, oznaku i vrstu novog cjenika odredite zasebno.</small></label>}
         <label>Naziv poslovanja<input value={businessName} onChange={(event) => setBusinessName(event.target.value)} required maxLength={120} placeholder="Auto Gubić" /></label>
         <label>Vrsta trgovca<select aria-label="Vrsta trgovca" value={merchantType} required onChange={event=>{setMerchantType(event.target.value as 'legal'|'natural'|'');setMerchantIdentifier('')}}><option value="">Odaberite</option><option value="legal">Pravna osoba (OIB)</option><option value="natural">Fizička osoba / obrt (matični broj)</option></select></label>
         <label>{merchantType==='natural'?'Matični broj fizičke osobe':'OIB pravne osobe'}<input required inputMode="numeric" pattern={merchantType==='natural'?'[0-9]{5,15}':'[0-9]{11}'} value={merchantIdentifier} onChange={event=>setMerchantIdentifier(event.target.value.replace(/\D/g,''))}/><small>Identifikator ulazi u javni naziv datoteke prema NN 132/2026.</small></label>
         <label><input type="checkbox" checked={allLocations} onChange={event=>setAllLocations(event.target.checked)}/> Isti cjenik za sva prodajna mjesta</label>
         <label>Puna adresa objekta<input value={objectAddress} onChange={event => setObjectAddress(event.target.value)} required={!allLocations} minLength={5} maxLength={240} placeholder="Ulica i broj, poštanski broj i mjesto" autoComplete="street-address" /></label>
         {accountEmail?<p>Prijavljeni ste kao <strong>{accountEmail}</strong>.</p>:<label>E-mail<input type="email" value={email} onChange={event=>setEmail(event.target.value)} required maxLength={254} placeholder="info@primjer.hr" autoComplete="email"/></label>}
-        <details><summary>Uredi adresu cjenika i podatke objekta</summary><label>Adresa vašeg cjenika<input value={slug} onChange={event=>setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={48}/></label><label>Vrsta objekta<select value={objectType} onChange={event=>setObjectType(event.target.value)}><option value="usluzni-objekt">Uslužni objekt</option><option value="prodavaonica">Prodavaonica</option><option value="internetska-trgovina">Internetska trgovina</option></select></label><label>Oznaka objekta<input value={objectCode} onChange={event=>setObjectCode(event.target.value)} maxLength={80}/></label>{!list.items.every(isServiceItem)&&<fieldset><legend>Radni dani objekta</legend>{['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'].map((label,day)=><label key={day}><input type="checkbox" checked={workingDays.includes(day)} onChange={event=>setWorkingDays(event.target.checked?[...workingDays,day]:workingDays.filter(value=>value!==day))}/>{label}</label>)}</fieldset>}</details>
+        <details><summary>Uredi adresu cjenika i podatke objekta</summary><label>Adresa vašeg cjenika<input value={slug} onChange={event=>setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={48}/></label><label>Vrsta objekta<select value={objectType} onChange={event=>setObjectType(event.target.value)}><option value="usluzni-objekt">Uslužni objekt</option><option value="prodavaonica">Prodavaonica</option><option value="internetska-trgovina">Internetska trgovina</option></select></label><label>Oznaka objekta<input value={effectiveObjectCode} onChange={event=>setObjectCode(event.target.value)} maxLength={80}/></label>{!list.items.every(isServiceItem)&&<fieldset><legend>Radni dani objekta</legend>{['Nedjelja','Ponedjeljak','Utorak','Srijeda','Četvrtak','Petak','Subota'].map((label,day)=><label key={day}><input type="checkbox" checked={workingDays.includes(day)} onChange={event=>setWorkingDays(event.target.checked?[...workingDays,day]:workingDays.filter(value=>value!==day))}/>{label}</label>)}</fieldset>}</details>
         <p>Podatke koristimo za račun, potvrdu e-maila i javnu objavu cjenika. Provjerite točnost adrese i cijena. <a href="/privatnost.html" target="_blank" rel="noreferrer">Obrada podataka</a> · <a href="/uvjeti.html" target="_blank" rel="noreferrer">Uvjeti objave</a></p>
         <p className="trial-slug-preview">Vaš cjenik bit će dostupan na <strong>{typeof window !== 'undefined' ? window.location.origin : 'https://digitalnicjenik.nepar.hr'}/c/{slug || '…'}</strong></p>
         {slugHint && <p className="premium-inline-error">{slugHint}</p>}
