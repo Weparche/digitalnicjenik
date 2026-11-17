@@ -9,6 +9,7 @@ const loadingCopy=['Otvaramo vašu web stranicu…','Tražimo javni digitalni cj
 export type CheckerContactContext={website:string;result:WebsiteCheckResult}
 export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,internal=false,reportId='',onUpload,onHelp,onResult}:{initialUrl?:string;autoRun?:boolean;fromLanding?:boolean;internal?:boolean;reportId?:string;onUpload:()=>void;onHelp:(context:CheckerContactContext)=>void;onResult:(context:CheckerContactContext)=>void}){
   const [url,setUrl]=useState(initialUrl),[checkedUrl,setCheckedUrl]=useState(''),[error,setError]=useState('')
+  const [remaining,setRemaining]=useState<number|null>(null),[limited,setLimited]=useState(false)
   const [result,setResult]=useState<WebsiteCheckResult|null>(null),[checking,setChecking]=useState(false),[phase,setPhase]=useState(0),[cancelled,setCancelled]=useState(false)
   const request=useRef<AbortController|null>(null),anchor=useRef<HTMLDivElement|null>(null),input=useRef<HTMLInputElement|null>(null),stop=useRef(false)
   const landingRequest=useRef(fromLanding)
@@ -18,12 +19,14 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,in
     let normalized:string
     try{normalized=normalizeWebsiteInput(selectedUrl??url)}catch{setError('Unesite ispravnu adresu, primjerice vasweb.hr.');input.current?.focus();return}
     const controller=new AbortController();request.current=controller;stop.current=false
-    if(selectedUrl){setUrl(selectedUrl);chosenEntry.current=zipEntry;}else if(event){chosenEntry.current=undefined;}setChecking(true);setResult(null);setError('');setCancelled(false);setCheckedUrl(normalized);setPhase(0)
+    if(selectedUrl){setUrl(selectedUrl);chosenEntry.current=zipEntry;}else if(event){chosenEntry.current=undefined;}setChecking(true);setResult(null);setError('');setLimited(false);setCancelled(false);setCheckedUrl(normalized);setPhase(0)
     const timer=setTimeout(()=>controller.abort(),45_000)
     try{
       const source=internal?'internal':landingRequest.current?'landing':'dashboard';landingRequest.current=false
       const response=await fetch('/api/digitalni-cjenik/check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:normalized,attribution:readAcquisitionTouch(),source,zipEntry:chosenEntry.current}),signal:controller.signal})
       const data=await response.json() as WebsiteCheckResult
+      const quota=response.headers.get('x-checker-remaining');if(quota!==null&&!stop.current)setRemaining(Number(quota))
+      if(response.status===429&&!stop.current){setLimited(true);setError(data.message);return}
       if(!data||!['green','yellow','red','unavailable'].includes(data.status))throw new Error('invalid_response')
       if(!stop.current){setResult(data);if(!internal)rememberCheckerRun(data.checkerRunId);else rememberCheckerRun(null);onResult({website:normalized,result:data})}
     }catch{if(!stop.current){const data:WebsiteCheckResult={status:'unavailable',message:'Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno ili učitajte datoteku za detaljnu provjeru.'};setResult(data);onResult({website:normalized,result:data})}}
@@ -60,8 +63,9 @@ export function WebsiteChecker({initialUrl='',autoRun=false,fromLanding=false,in
     <section className="workspace-surface"><h2>Provjerite digitalni cjenik na svojem webu</h2><p>Unesite adresu weba ili CSV/XML datoteke. Dobit ćete 9 tehničkih provjera i upute što popraviti.</p>
       <form className="acq-form" onSubmit={check} noValidate aria-busy={checking}><label className="sr-only" htmlFor="workspace-check-url">Adresa web stranice</label><div className="acq-input"><IconWorld size={23}/><input ref={input} id="workspace-check-url" inputMode="url" autoComplete="url" autoCapitalize="none" spellCheck={false} maxLength={2048} value={url} onChange={event=>{setUrl(event.target.value);setError('')}} aria-invalid={Boolean(error)} aria-describedby={error?'workspace-check-error':undefined} placeholder="https://vasweb.hr"/></div><button className="acq-primary" type="submit" data-mobile-primary={!result?'true':undefined} disabled={checking}>{checking?'Provjeravamo…':'Provjeri besplatno'}<IconArrowRight size={22}/></button></form>
       {error&&<p id="workspace-check-error" role="alert" className="acq-error">{error}</p>}
+      {limited&&<a className="workspace-button" href="/app?new=1&tab=kontakt">Zatražite pomoć oko cjenika <IconArrowRight size={18}/></a>}
       <div className="acq-loading" role="status" aria-live="polite">{checking?<><span className="acq-spinner" aria-hidden="true"/>{loadingCopy[phase]}<small>Provjera je u tijeku. Rezultate prikazujemo po završetku dohvata.</small><button className="acq-cancel" type="button" onClick={()=>{stop.current=true;request.current?.abort();setCancelled(true);input.current?.focus()}}>Odustani od provjere</button></>:cancelled?'Provjera je zaustavljena. Možete pokušati ponovno.':null}</div>
-      <ul className="acq-trust">{['Bez registracije','Potpuno besplatno'].map(text=><li key={text}><IconCircleCheckFilled size={18}/>{text}</li>)}</ul>
+      <ul className="acq-trust">{['Bez registracije',internal?'Interna provjera':remaining===null?'3 besplatne provjere dnevno':`Preostalo danas: ${remaining} / 3`].map(text=><li key={text}><IconCircleCheckFilled size={18}/>{text}</li>)}</ul>
     </section>
     <div className="acq-result-anchor" ref={anchor} tabIndex={-1} aria-label="Rezultat provjere"><span className="sr-only" role="status">{report?`Rezultat: ${report.score} potvrđenih od 9 tehničkih provjera; ${report.unknown} nije moguće potvrditi.`:''}</span>{result&&<WebsiteCheckResultPanel result={result} website={checkedUrl} onSelectDocument={(url,entry)=>void check(undefined,url,entry)} onRetry={()=>void check()} onUpload={()=>{if(!internal){rememberCheckerRun(result.checkerRunId);trackCheckerInteraction('upload_click')}onUpload()}} onHelp={()=>onHelp({website:checkedUrl,result})}/>}</div>
   </div>
