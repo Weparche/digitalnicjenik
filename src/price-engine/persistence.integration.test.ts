@@ -50,11 +50,11 @@ describe('D1 Publisher persistence', () => {
   it('imports a draft, completes it, publishes immutable versions and serves one current payload', async () => {
     const writeEnv = runtimeEnv()
     const context = { params: { slug: 'nepar' }, env: writeEnv }
-    const anonymousValidation = await validateAnonymous({ request: new Request('https://validator.test/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: fixture }) }) })
+    const anonymousValidation = await validateAnonymous({ env: writeEnv, request: new Request('https://validator.test/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ csv: fixture }) }) })
     expect(anonymousValidation.status).toBe(200)
     const anonymousStatus = (await anonymousValidation.json() as { validation: { status: string } }).validation.status
     expect(['manual_review', 'ready_to_publish']).toContain(anonymousStatus)
-    const xmlValidation = await validateAnonymous({ request: new Request('https://validator.test/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ xml: renderXml({ ...parseMarketinoCsv(fixture).priceList, items: [parseMarketinoCsv(fixture).priceList.items[0]] }) }) }) })
+    const xmlValidation = await validateAnonymous({ env: writeEnv, request: new Request('https://validator.test/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ xml: renderXml({ ...parseMarketinoCsv(fixture).priceList, items: [parseMarketinoCsv(fixture).priceList.items[0]] }) }) }) })
     expect(xmlValidation.status).toBe(200)
     expect((await xmlValidation.json() as { priceList: NormalizedPriceList }).priceList.items[0]).toMatchObject({ name: 'Administracija sadržaja', price: 40 })
     expect((await env.DB.prepare('SELECT COUNT(*) AS count FROM price_publications').first<{ count: number }>())?.count).toBe(0)

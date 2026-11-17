@@ -7,6 +7,7 @@ test('a valid HOK file leads to explicit object metadata before a trial claim', 
   await page.route('**/api/trials/start*', route => route.fulfill({ json: route.request().method() === 'GET' ? { suggested: 'salon-test', available: true } : { ok: true } }))
   await page.route('**/api/drafts', route => route.fulfill({ json: { ok: true, draftId: 'test-draft' } }))
   await page.goto('/app?new=1')
+  await page.route('**/api/validator/validate',route=>route.fulfill({status:204}))
   await page.locator('label.upload-action input[accept*=".csv"]').setInputFiles({ name: 'hok.csv', mimeType: 'text/csv', buffer: readFileSync(new URL('../public/examples/primjer-digitalni-cjenik-usluge-2026.csv', import.meta.url)) })
   const panel = page.locator('.validation-app-panel')
   await expect(panel.getByRole('button', { name: /Objavi besplatno na 24 h/ })).toBeEnabled()

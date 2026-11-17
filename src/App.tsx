@@ -50,6 +50,11 @@ async function writeErrorMessage(response: Response, fallback: string) {
   if (response.status === 429) return payload.error || 'Previše zahtjeva. Pokušajte kasnije.'
   return payload.error || fallback
 }
+async function authorizePublicFileCheck(payload: { csv: string } | { xml: string } | { format: 'excel' }) {
+  const response = await fetch('/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+  if (!response.ok) throw new Error(await writeErrorMessage(response, 'Provjeru trenutačno nije moguće dovršiti. Pokušajte ponovno.'))
+}
+
 const isCustomPublication = () => window.location.pathname.startsWith('/arhiva') && !['localhost', '127.0.0.1'].includes(window.location.hostname) && !window.location.hostname.endsWith('.pages.dev')
 
 function download(text: string, filename: string, type: string) {
@@ -1094,14 +1099,23 @@ function ValidatorApp({
     try {
       const response = await fetch('/examples/primjer-digitalni-cjenik-usluge-2026.csv')
       if (!response.ok) throw new Error()
-      await loadFile(new File([await response.text()], 'primjer-digitalni-cjenik-usluge-2026.csv', { type: 'text/csv' }))
+      await loadFile(new File([await response.text()], 'primjer-digitalni-cjenik-usluge-2026.csv', { type: 'text/csv' }), true)
     } catch { setError('Primjer trenutačno nije moguće učitati.') }
     finally { setBusy(false) }
   }
 
-  async function loadFile(file?: File) {
+  async function loadFile(file?: File, example = false) {
     if (!file) return
-    if (/\.(xlsx|xls)$/i.test(file.name)) {setExcelFile(file);setError('');return}
+    if (/\.(xlsx|xls)$/i.test(file.name)) {
+      setBusy(true);setError('')
+      try {
+        if (file.size > 5_000_000) throw new Error('Datoteka je prevelika. Maksimalna veličina je 5 MB.')
+        if (mode !== 'publisher' && !example) await authorizePublicFileCheck({ format: 'excel' })
+        setExcelFile(file)
+      } catch (caught) { setExcelFile(undefined);setError(caught instanceof Error ? caught.message : 'Datoteku nije moguće učitati.') }
+      finally {setBusy(false)}
+      return
+    }
     setExcelFile(undefined)
     setBusy(true); setError(''); setMessage(''); setPublished(false); setDraftId(''); setPublication(null); setClaimOpen(false)
     try {
@@ -1110,16 +1124,11 @@ function ValidatorApp({
       const lowerName = file.name.toLowerCase()
       const isXml = lowerName.endsWith('.xml')
       if (!isXml && !lowerName.endsWith('.csv')) throw new Error('Učitajte datoteku s nastavkom .csv ili .xml.')
+      if (mode !== 'publisher' && !example) await authorizePublicFileCheck(isXml ? { xml: raw } : { csv: raw })
       const parsed = isXml
         ? { priceList: parseXmlPriceList(raw, tenantIdentity), warnings: [] as { row: number; message: string }[] }
         : parseMarketinoCsv(raw, tenantIdentity)
       applyNormalizedList(parsed.priceList, file, importIssuesFromParseWarnings(parsed.warnings || [], isXml ? 'xml' : 'csv'))
-      try {
-        const response = await fetch('/api/validator/validate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(isXml ? { xml: raw } : { csv: raw }) })
-        if (response.ok) setIssues(((await response.json()) as { validation: { issues: ValidationIssue[] } }).validation.issues)
-      } catch {
-        // The local validator is enough for an anonymous preview; the API adds server-side confirmation when available.
-      }
     } catch (caught) {
       setList(null); setSourceFile(null); setError(caught instanceof Error ? caught.message : 'Datoteku nije moguće učitati.')
     } finally { setBusy(false) }
@@ -1231,7 +1240,7 @@ function ValidatorApp({
       {onboarding&&!list&&!excelFile&&<p className="workspace-upload-trust"><IconCircleCheck size={18} aria-hidden="true"/><span>Provjera i pregled bez plaćanja i registracije.</span></p>}
       <label className="upload-action workspace-dropzone"><input type="file" aria-label="Učitaj cjenik" accept=".csv,.xml,.xlsx,.xls,text/csv,application/xml" disabled={busy} onChange={event=>void loadFile(event.target.files?.[0])}/><IconUpload size={28} stroke={1.5}/><strong>{sourceFilename||'Odaberite svoj Excel, CSV ili XML'}</strong><span>{onboarding?'Dodajte datoteku sa svojeg uređaja.':'Kliknite za odabir datoteke.'}</span></label>
       {!list&&!excelFile&&<button className="app-button app-button-primary workspace-mobile-only" type="button" data-mobile-primary="true" disabled={busy} onClick={event=>event.currentTarget.parentElement?.querySelector<HTMLInputElement>('input[type=file]')?.click()}>Odaberi datoteku</button>}
-      <p className="workspace-upload-note">CSV / XML do 2 MB · Excel do 5 MB · izvorna datoteka ostaje kod vas</p>
+      <p className="workspace-upload-note">CSV / XML do 2 MB · Excel do 5 MB{mode==='sandbox'?' · 3 besplatne provjere dnevno':''}</p>
       {onboarding&&!list&&!excelFile&&<button className="workspace-example-button" type="button" disabled={busy} onClick={()=>void loadExample()}><IconFileSpreadsheet size={21} aria-hidden="true"/><span><strong>Isprobajte na primjeru</strong><small>Otvorite demo cjenik bez vlastite datoteke.</small></span><IconArrowRight size={18} aria-hidden="true"/></button>}
       {onboarding&&sourceFilename==='primjer-digitalni-cjenik-usluge-2026.csv'&&list&&<p className="workspace-demo-notice" role="status">Prikazujete demo podatke. Za stvarnu objavu učitajte vlastiti cjenik.</p>}
       {busy&&<p className="app-status" role="status">Provjeravamo datoteku…</p>}{error&&<p className="app-error" role="alert">{error}</p>}
