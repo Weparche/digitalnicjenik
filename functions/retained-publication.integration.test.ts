@@ -95,3 +95,23 @@ it('calculates a private historical minimum across expired public archive and ac
  expect(result.headers.get('cache-control')).toContain('no-store')
  expect(await result.json()).toMatchObject({results:[{status:'complete',lowest:12,observations:[{price:15},{price:12}]}]})
 })
+
+it('requires a reason for a published NN132 base correction, permits current price changes, and records the correction',async()=>{
+ await env.DB.batch([
+  env.DB.prepare("UPDATE publication_metadata SET merchant_identifier='12345678',merchant_type='natural',all_locations=0 WHERE tenant_id='t-retained'"),
+  env.DB.prepare("UPDATE entitlements SET status='active',period_end='2099-01-01T00:00:00Z' WHERE tenant_id='t-retained'")
+ ])
+ const changedRetail={...list,items:[{...list.items[0],price:18}]}
+ const retailDraft=await createDraft(runtime(),'retained',changedRetail,'retail.csv','nepar')
+ const retail=await publishDraft(runtime(),'retained',retailDraft.draft!.id)
+ expect(retail.changed).toBe(true)
+ const changedBase={...changedRetail,items:[{...changedRetail.items[0],anchorPrice:16}]}
+ const baseDraft=await createDraft(runtime(),'retained',changedBase,'base.csv','nepar')
+ await expect(publishDraft(runtime(),'retained',baseDraft.draft!.id)).rejects.toThrow('Bazne cijene')
+ await expect(publishDraft(runtime(),'retained',baseDraft.draft!.id,false,{baseCorrectionPublicationId:'stale',baseCorrectionReason:'Provjereno u starom cjeniku.'})).rejects.toThrow('Osvježite')
+ await expect(publishDraft(runtime(),'retained',baseDraft.draft!.id,false,{baseCorrectionPublicationId:retail.publication!.id,baseCorrectionReason:'kratko'})).rejects.toThrow('obrazloženje')
+ const result=await publishDraft(runtime(),'retained',baseDraft.draft!.id,false,{baseCorrectionPublicationId:retail.publication!.id,baseCorrectionReason:'Provjereno u starom cjeniku.'})
+ expect(result.current.items[0].anchorPrice).toBe(16)
+ const audit=await env.DB.prepare("SELECT details_json FROM sync_logs WHERE tenant_id='t-retained' AND event_type='publication_published' AND json_extract(details_json,'$.publicationId')=?").bind(result.publication!.id).first<{details_json:string}>()
+ expect(JSON.parse(audit!.details_json).basePriceCorrection).toMatchObject({reason:'Provjereno u starom cjeniku.',previousPublicationId:retail.publication!.id,changes:[{before:{price:14},after:{price:16}}]})
+})

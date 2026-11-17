@@ -9,6 +9,7 @@ import { createFilenameStemPrefix, filenameTimestamp, nn132FilenamePrefix, nn132
 import { parseMarketinoCsv } from "../src/price-engine/adapters/marketinoCsv"
 import { mergeValidationIssues, validatePriceList } from "../src/price-engine/validate"
 import type { DraftStatus, Entitlement, NormalizedPriceList, PricePublication, PriceSnapshot, PublicationMetadata, PriceUpload, ValidationIssue } from "../src/price-engine/types"
+import { basePriceChanges, requireBaseCorrection } from '../shared/base-price-correction'
 import { marketinoFixture } from "./_fixture"
 
 type D1Result = { meta?: { changes?: number } }
@@ -201,7 +202,7 @@ export async function updateDraft(env: RuntimeEnv, slug: string, draftId: string
   return { draft: await readDraft(env, slug, draftId), validation }
 }
 
-export async function publishDraft(env: RuntimeEnv, slug: string, draftId: string, internalDemo = false, options: { now?: Date; expectedCurrentId?: string } = {}) {
+export async function publishDraft(env: RuntimeEnv, slug: string, draftId: string, internalDemo = false, options: { now?: Date; expectedCurrentId?: string; baseCorrectionReason?: unknown; baseCorrectionPublicationId?: string } = {}) {
   const clock = options.now ?? new Date()
   if (!env.DB) throw new Error("D1 binding DB nije konfiguriran.")
   // Internal fixture shortcuts may never bypass validation/entitlements for a customer.
@@ -220,6 +221,8 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const live = entitlementIsLive(entitlement, clock.getTime()) && featuresForPlan(entitlement?.plan).publish
   if (!internalDemo && !live) throw new Error("Aktivan Publisher entitlement nije pronađen.")
   const current = await readCurrentPublication(env, slug)
+  const baseChanges = !internalDemo && newFormat ? basePriceChanges(current?.payload,payload) : []
+  const correctionReason=requireBaseCorrection(baseChanges,options.baseCorrectionReason,options.baseCorrectionPublicationId,current?.id)
   if (options.expectedCurrentId && current?.id !== options.expectedCurrentId) throw new Error('publication_changed')
   if (newFormat) requireNn132Details(metadata)
   else if (slug !== (env.DEMO_WRITE_TENANT || 'nepar')) parsePublicationDetails(metadata)
@@ -247,16 +250,20 @@ export async function publishDraft(env: RuntimeEnv, slug: string, draftId: strin
   const guard = "EXISTS (SELECT 1 FROM price_uploads WHERE id = ? AND tenant_id = ? AND status = 'published') AND NOT EXISTS (SELECT 1 FROM price_publications WHERE tenant_id = ? AND is_current = 1 AND hash = ?)"
   const guarded = guard + cas
   const entitlementGuard = internalDemo ? "1 = 1" : "EXISTS (SELECT 1 FROM entitlements WHERE tenant_id = ? AND " + liveEntitlementSql('entitlements') + ')'
+  // Compare against the exact published version and draft reviewed above. The initial claim
+  // must fail closed if either changed concurrently. Internal demo/daily paths keep existing guards.
+  const correctionGuard = !internalDemo && newFormat ? " AND normalized_payload_json = ? AND ((? IS NULL AND NOT EXISTS (SELECT 1 FROM price_publications WHERE tenant_id=? AND is_current=1)) OR EXISTS (SELECT 1 FROM price_publications WHERE tenant_id=? AND id=? AND is_current=1))" : ''
+  const correctionBindings = correctionGuard ? [json(draft.normalizedPayload),current?.id??null,tenantId,tenantId,current?.id??null] : []
   const firstBindings = internalDemo ? [timestamp, draftId, tenantId] : [timestamp, draftId, tenantId, tenantId, timestamp, timestamp, timestamp, timestamp]
   const insertedGuard = "EXISTS (SELECT 1 FROM price_publications WHERE id = ? AND tenant_id = ?)"
   const results = await env.DB.batch([
-    env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ? AND status " + (internalDemo ? "IN ('ready_to_publish', 'manual_review', 'invalid')" : "= 'ready_to_publish'") + " AND " + entitlementGuard + cas).bind(...firstBindings),
+    env.DB.prepare("UPDATE price_uploads SET status = 'published', updated_at = ? WHERE id = ? AND tenant_id = ? AND status " + (internalDemo ? "IN ('ready_to_publish', 'manual_review', 'invalid')" : "= 'ready_to_publish'") + " AND " + entitlementGuard + cas + correctionGuard).bind(...firstBindings,...correctionBindings),
     env.DB.prepare("UPDATE price_publications SET is_current = 0, superseded_at = ?, public_until = ? WHERE tenant_id = ? AND is_current = 1 AND " + guarded).bind(timestamp, publicUntil, tenantId, draftId, tenantId, tenantId, hash),
     env.DB.prepare("INSERT INTO price_list_versions (id, tenant_id, hash, payload_json, created_at) SELECT ?, ?, ?, ?, ? WHERE " + guarded).bind(priceListId, tenantId, hash, json(payload), timestamp, draftId, tenantId, tenantId, hash),
     env.DB.prepare("INSERT INTO price_publications (id, tenant_id, price_list_id, sequence, filename_stem, published_at, superseded_at, public_until, hash, payload_json, is_current) SELECT ?, ?, ?, next_publication_sequence, ? || '_' || next_publication_sequence || '_' || ?, ?, NULL, NULL, ?, ?, 1 FROM publication_metadata WHERE tenant_id = ? AND " + guarded).bind(publicationId, tenantId, priceListId, filenamePrefix, filenameTime, timestamp, hash, json(payload), tenantId, draftId, tenantId, tenantId, hash),
     env.DB.prepare("UPDATE publication_metadata SET next_publication_sequence = next_publication_sequence + 1, updated_at = ? WHERE tenant_id = ? AND " + insertedGuard).bind(timestamp, tenantId, publicationId, tenantId),
     env.DB.prepare("UPDATE publication_targets SET current_publication_id = ?, updated_at = ? WHERE tenant_id = ? AND " + insertedGuard).bind(publicationId, timestamp, tenantId, publicationId, tenantId),
-    env.DB.prepare("INSERT INTO sync_logs (id, tenant_id, provider, status, message, created_at, event_type, details_json) SELECT ?, ?, ?, 'published', ?, ?, 'publication_published', ? WHERE " + insertedGuard).bind(id(), tenantId, draft.sourceType, "Objavljena nova verzija cjenika.", timestamp, json({ publicationId, hash }), publicationId, tenantId),
+    env.DB.prepare("INSERT INTO sync_logs (id, tenant_id, provider, status, message, created_at, event_type, details_json) SELECT ?, ?, ?, 'published', ?, ?, 'publication_published', ? WHERE " + insertedGuard).bind(id(), tenantId, draft.sourceType, "Objavljena nova verzija cjenika.", timestamp, json({ publicationId, hash, ...(correctionReason?{basePriceCorrection:{reason:correctionReason,previousPublicationId:current?.id,changes:baseChanges}}:{}) }), publicationId, tenantId),
   ])
   const inserted = results[3]?.meta?.changes ?? 0
   if (!inserted) {
