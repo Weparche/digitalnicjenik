@@ -1,7 +1,8 @@
 import {useEffect,useState} from 'react'
-import {IconArrowUpRight,IconFileText,IconPlus,IconRefresh} from '@tabler/icons-react'
+import {IconArrowUpRight,IconFileText,IconPlus,IconRefresh,IconFileSpreadsheet} from '@tabler/icons-react'
 import {BusinessProfilesPanel,useBusinessProfiles} from './BusinessProfiles'
 import {catalogMonitorState,monitorLabels,needsMonitorAttention,type CatalogMonitor} from './catalogMonitorView'
+import {HOK_TEMPLATES_URL} from './WorkspaceResources'
 import {untilLabel} from './licenceView'
 import type {PublisherTenant} from './PublisherAuth'
 
@@ -62,12 +63,13 @@ export function PublisherCatalogDashboard({tenants}:{tenants:PublisherTenant[]})
   const addUrl=tenants.length?'/app?new=1&add=1&tab=cjenik':'/app?new=1&tab=cjenik'
   return <div className="catalog-dashboard">
     <section className="workspace-surface catalog-intro"><div><h2>Upravljajte svim cjenicima na jednom mjestu</h2><p>Svaka poslovnica, web ili zasebna ponuda ima svoj javni link, arhivu i licencu.</p></div><a className="app-button app-button-primary" href={addUrl}><IconPlus size={19}/>Dodaj cjenik</a></section>
+    <section className="workspace-surface catalog-intro catalog-hok" aria-label="Uvoz HOK Excel predloška"><div><h2><IconFileSpreadsheet size={21} aria-hidden="true"/> Imate HOK Excel predložak?</h2><p>Aktualni predlošci za robu i usluge automatski se prepoznaju. <a href={HOK_TEMPLATES_URL} target="_blank" rel="noreferrer">Službeni HOK predlošci ↗</a></p></div><a className="workspace-button" href={addUrl}>Učitaj novi HOK cjenik<IconPlus size={17} aria-hidden="true"/></a></section>
     {catalogs&&<><div className="catalog-metrics" aria-label="Sažetak cjenika">
       <div><span>Cjenici</span><strong>{catalogs.length}</strong></div><div><span>Objavljeni i dostupni</span><strong>{catalogs.filter(c=>c.publicLive).length}</strong></div><div><span>Za pregled</span><strong>{catalogs.filter(attention).length}</strong></div>
     </div>{monitored.length>0&&<section className="workspace-surface catalog-monitor-overview" aria-label="Skupni nadzor"><div><h2>Nadzor svih cjenika</h2><p>Posljednji spremljeni rezultati, bez pokretanja dodatnih provjera.</p></div><div className="catalog-metrics"><div><span>U redu</span><strong>{monitored.filter(c=>catalogMonitorState(c.monitor)==='ok'&&!c.monitor?.alertOpen).length}</strong></div><div><span>Za pregled</span><strong>{monitored.filter(c=>needsMonitorAttention(c.monitor)).length}</strong></div><div><span>U tijeku</span><strong>{monitored.filter(c=>catalogMonitorState(c.monitor)==='pending').length}</strong></div></div><label className="catalog-check"><input type="checkbox" checked={monitorOnly} onChange={e=>setMonitorOnly(e.target.checked)}/>Samo problemi nadzora</label><small>Tehnički nadzor nije pravna potvrda usklađenosti.</small></section>}<div className="catalog-filter"><label>Pretraži cjenike<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Naziv, oznaka ili adresa"/></label><label className="catalog-check"><input type="checkbox" checked={onlyAttention} onChange={e=>setOnlyAttention(e.target.checked)}/>Samo za pregled</label><button type="button" className="workspace-button" onClick={()=>setAttempt(n=>n+1)}><IconRefresh size={17}/>Osvježi</button></div></>}
     {error&&<section className="workspace-surface"><p role="alert">{error}</p><button className="workspace-button" onClick={()=>setAttempt(n=>n+1)}>Pokušaj ponovno</button>{tenants.map(t=><p key={t.id}><a href={'/app?tenant='+encodeURIComponent(t.slug)+'&tab=cjenik'}>{t.name}</a></p>)}</section>}
     {!catalogs&&!error&&<p role="status">Učitavamo cjenike…</p>}
-    {catalogs?.length===0&&<section className="workspace-surface"><h2>Još nemate cjenik</h2><p>Učitajte prvi CSV ili XML i pripremite javnu objavu.</p><a className="workspace-button" href={addUrl}>Pripremi prvi cjenik</a></section>}
+    {catalogs?.length===0&&<section className="workspace-surface"><h2>Još nemate cjenik</h2><p>Učitajte prvi Excel, CSV ili XML i pripremite javnu objavu.</p><a className="workspace-button" href={addUrl}>Pripremi prvi cjenik</a></section>}
     {catalogs&&catalogs.length>0&&!filtered.length&&<p role="status">Nema cjenika koji odgovaraju pretrazi.</p>}
     {groups.map(group=><section className="catalog-group" key={group.key}><h2>{businessProfiles.profiles.find(p=>p.merchantType+':'+p.merchantIdentifier===group.key)?.name??group.label} <span>· {group.catalogs.length}</span></h2><div className="catalog-grid">{group.catalogs.map(c=>{
       const url='/c/'+encodeURIComponent(c.slug)
