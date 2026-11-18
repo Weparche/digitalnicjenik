@@ -9,7 +9,8 @@
       "database_name": "digitalni-cjenik-nepar",
       "database_id": "5fab5acf-0d2d-4355-895b-39da1f0462e1",
       "migrations_dir": "./migrations"
-    }
+    },
+        { "binding": "SVEUSLUGE_AUDIT_DB", "database_name": "sveusluge-price-lists", "database_id": "345513fb-7211-4333-8c12-a3489657aad2" }
   ],
   "r2_buckets": [
     {
@@ -81,7 +82,8 @@
           "database_name": "digitalni-cjenik-nepar",
           "database_id": "5fab5acf-0d2d-4355-895b-39da1f0462e1",
           "migrations_dir": "./migrations"
-        }
+        },
+        { "binding": "SVEUSLUGE_AUDIT_DB", "database_name": "sveusluge-price-lists", "database_id": "345513fb-7211-4333-8c12-a3489657aad2" }
       ],
       "r2_buckets": [
         {
