@@ -519,3 +519,29 @@
  .acq-solutions-offers--launch .acq-plan, .acq-solutions-offers--launch .acq-extra { padding: 20px; }
  .acq-solutions-offers--launch .acq-plan ul { grid-template-columns: minmax(0,1fr); }
 }
+
+/* Original brand marks and real Publisher onboarding. */
+.acq-reference-mark { position: relative; overflow: hidden; }
+.acq-reference-mark img { position: absolute; inset: 0; width: 100%; height: 100%; padding: 3px; object-fit: contain; background: #fff; border-radius: inherit; }
+.acq-reference-mark img[hidden] { display: none; }
+.acq-publisher-explainer { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); align-items: center; gap: 32px; margin-top: 38px; padding: 30px; background: #fff; border: 1px solid #dce5ef; border-radius: 18px; }
+.acq-publisher-steps h2 { font-size: clamp(24px, 3vw, 32px); }
+.acq-publisher-steps ol { list-style: none; padding: 0; margin: 20px 0; display: grid; gap: 15px; }
+.acq-publisher-steps li { display: flex; align-items: start; gap: 12px; }
+.acq-step-num { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; color: #0753df; background: #e6efff; border-radius: 10px; font-size: 14px; font-weight: 800; }
+.acq-publisher-steps li strong { font-size: 15px; font-weight: 700; }
+.acq-publisher-steps li p { margin-top: 4px; font-size: 13px; line-height: 1.55; color: #475569; }
+.acq-publisher-figure { margin: 0; min-width: 0; }
+.acq-publisher-figure > a { display: block; border: 1px solid #dce5ef; border-radius: 12px; overflow: hidden; }
+.acq-publisher-figure img { display: block; width: 100%; height: auto; }
+.acq-publisher-figure figcaption { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding-top: 10px; color: #64748b; font-size: 12px; line-height: 1.5; }
+.acq-publisher-figure figcaption a { color: #0753df; }
+.acq-mobile-cta { display: none; }
+@media (max-width: 999px) { .acq-publisher-explainer { grid-template-columns: minmax(0,1fr); gap: 20px; } }
+@media (max-width: 650px) {
+ .acq-publisher-explainer { padding: 18px; margin-top: 22px; border-radius: 14px; }
+ .acq-publisher-steps > .acq-primary { width: 100%; }
+ .acquisition .acq-content { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+ .acq-mobile-cta { display: block; position: fixed; z-index: 20; inset-inline: 0; bottom: 0; padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid #dce5ef; box-shadow: 0 -6px 20px #0f172a0d; }
+ .acq-mobile-cta .acq-primary { display: flex; width: 100%; min-height: 50px; }
+}

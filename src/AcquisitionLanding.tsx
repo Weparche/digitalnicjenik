@@ -12,13 +12,13 @@ import { landingFaq } from './productFaq'
 import { getLatestPosts,newsArticlePath } from './news/posts'
 
 const liveReferences = [
-  { name: 'Auto Gubić', domain: 'autogubic.hr', category: 'Autoservis', slug: 'auto-gubic', initials: 'AG' },
-  { name: 'Handyman', domain: 'handyman.nepar.hr', category: 'Montaža i kućne usluge', slug: 'handyman', initials: 'H' },
-  { name: 'NEPAR Kids', domain: 'kids.nepar.hr', category: 'Personalizirani pokloni', slug: 'nepar-kids', initials: 'NK' },
-  { name: 'NEPAR', domain: 'nepar.hr', category: 'Digitalna rješenja', slug: 'nepar-solutions', initials: 'N' },
-  { name: 'GeoAdrese', domain: 'geoadrese.net', category: 'Geoinformacijske usluge', slug: 'geoadrese', initials: 'GA' },
-  { name: 'KPDinfo', domain: 'kpdinfo.com', category: 'Klasifikacija i savjetovanje', slug: 'kpdinfo', initials: 'K' },
-  { name: 'Digitalni cjenik', domain: 'digitalnicjenik.nepar.hr', category: 'Objava cjenika', slug: 'digitalni-cjenik', initials: 'DC' },
+  { name: 'Auto Gubić', domain: 'autogubic.hr', category: 'Autoservis', slug: 'auto-gubic', initials: 'AG', logo: 'https://autogubic.hr/favicon-48x48.png' },
+  { name: 'Handyman', domain: 'handyman.nepar.hr', category: 'Montaža i kućne usluge', slug: 'handyman', initials: 'H', logo: '/assets/references/handyman.svg' },
+  { name: 'NEPAR Kids', domain: 'kids.nepar.hr', category: 'Personalizirani pokloni', slug: 'nepar-kids', initials: 'NK', logo: '/assets/references/nepar-kids.png' },
+  { name: 'NEPAR', domain: 'nepar.hr', category: 'Digitalna rješenja', slug: 'nepar-solutions', initials: 'N', logo: '/assets/nepar-logo.png' },
+  { name: 'GeoAdrese', domain: 'geoadrese.net', category: 'Geoinformacijske usluge', slug: 'geoadrese', initials: 'GA', logo: '/assets/references/geoadrese.svg' },
+  { name: 'KPDinfo', domain: 'kpdinfo.com', category: 'Klasifikacija i savjetovanje', slug: 'kpdinfo', initials: 'K', logo: '/assets/references/kpdinfo.png' },
+  { name: 'Digitalni cjenik', domain: 'digitalnicjenik.nepar.hr', category: 'Objava cjenika', slug: 'digitalni-cjenik', initials: 'DC', logo: '/assets/references/digitalni-cjenik.svg' },
 ] as const
 
 function Wordmark() {
@@ -28,6 +28,18 @@ function Wordmark() {
 
 export function AcquisitionLanding() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showSticky, setShowSticky] = useState(false)
+  useEffect(() => {
+    const checker = document.getElementById('checker')
+    if (!checker) return
+    const update = () => setShowSticky(checker.getBoundingClientRect().bottom < 0 && !checker.contains(document.activeElement))
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    document.addEventListener('focusin', update)
+    document.addEventListener('focusout', update)
+    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update); document.removeEventListener('focusin', update); document.removeEventListener('focusout', update) }
+  }, [])
   useEffect(() => {
     if (!menuOpen) return
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') { setMenuOpen(false); document.querySelector<HTMLButtonElement>('.acq-menu')?.focus() } }
@@ -78,13 +90,21 @@ export function AcquisitionLanding() {
           <div className="acq-reference-metrics" aria-label="7 implementacija, 63 od 63 bodova"><strong>7</strong><span>objavljenih cjenika</span><strong>63/63</strong><span>bodova Checkera</span></div>
         </div>
         <ul className="acq-reference-grid">
-          {liveReferences.map(({name, domain, category, slug, initials}) => <li key={slug}><a className="acq-reference-card" href={'/c/'+slug} aria-label={name+' – javni digitalni cjenik'}>
-            <div className="acq-reference-card-top"><span className="acq-reference-mark" aria-hidden="true">{initials}</span><span className="acq-reference-score"><IconCircleCheckFilled size={15} aria-hidden="true"/>9/9</span></div>
+          {liveReferences.map(({name, domain, category, slug, initials, logo}) => <li key={slug}><a className="acq-reference-card" href={'/c/'+slug} aria-label={name+' – javni digitalni cjenik'}>
+            <div className="acq-reference-card-top"><span className="acq-reference-mark" aria-hidden="true"><span>{initials}</span><img src={logo} alt="" width={36} height={36} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={event => { event.currentTarget.hidden = true }}/></span><span className="acq-reference-score"><IconCircleCheckFilled size={15} aria-hidden="true"/>9/9</span></div>
             <h3>{name}</h3><span className="acq-reference-domain">{domain}</span><span className="acq-reference-category">{category}</span>
             <span className="acq-reference-link">Otvori cjenik<IconArrowRight size={16} aria-hidden="true"/></span>
           </a></li>)}
         </ul>
         <div className="acq-reference-bottom"><div><p className="acq-reference-note">Rezultati tehničkih provjera 17. i 18.11.2026. Nisu potvrda pravne usklađenosti.</p><a href="/reference/auto-gubic/">Pogledajte primjer ugradnje za Auto Gubić →</a></div><a className="acq-primary" href="/app?new=1&plan=link">Objavite i svoj digitalni cjenik<IconArrowRight size={19} aria-hidden="true"/></a></div>
+      </section>
+      <section className="acq-publisher-explainer" aria-labelledby="how-publish-title">
+        <div className="acq-publisher-steps"><span className="acq-preview-label">Kako radi NEPAR Publisher</span><h2 id="how-publish-title">Do javnog cjenika u tri koraka.</h2><ol>
+          <li><span className="acq-step-num" aria-hidden="true">1</span><div><strong>Učitajte datoteku</strong><p>Koristite postojeći Excel, CSV ili XML.</p></div></li>
+          <li><span className="acq-step-num" aria-hidden="true">2</span><div><strong>Provjerite i objavite</strong><p>Ispravite eventualne nedostatke i objavite besplatno na 24 sata.</p></div></li>
+          <li><span className="acq-step-num" aria-hidden="true">3</span><div><strong>Dodajte link na web</strong><p>Uz godišnji paket zadržite istu poveznicu i pri izmjenama cijena.</p></div></li>
+        </ol><a className="acq-primary" href="/app?new=1&plan=link">Započnite besplatno<IconArrowRight size={19} aria-hidden="true"/></a></div>
+        <figure className="acq-publisher-figure"><a href="/app?new=1" aria-label="Otvori stvarni radni prostor Publishera"><img src="/assets/publisher-workspace-preview.jpg" alt="Stvarno sučelje NEPAR Publishera za pripremu prvog cjenika: učitavanje datoteke, provjera podataka i objava poveznice" width={1100} height={620} loading="lazy" decoding="async"/></a><figcaption>Stvarni radni prostor · priprema prvog cjenika <a href="/app?new=1">Otvori Publisher →</a></figcaption></figure>
       </section>
       <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title">
         <div className="acq-solutions-heading">
@@ -100,5 +120,6 @@ export function AcquisitionLanding() {
       <section className="acq-compact-faq" aria-labelledby="landing-faq-title"><h2 id="landing-faq-title">Česta pitanja</h2>{landingFaq.map(entry=><details key={entry.question}><summary>{entry.question}<IconChevronDown size={18}/></summary><p>{entry.answer}</p></details>)}<a href="/faq/">Sva pitanja i odgovori<IconArrowRight size={17}/></a></section>
       <footer className="acq-footer"><Wordmark/><nav aria-label="Dodatne informacije"><a href="/digitalni-cjenik-za-wordpress-webshop/">Za postojeći web</a><a href="/objava-digitalnog-cjenika/">Objava i ugradnja</a><a href="/digitalni-cjenik-za-knjigovode/">Za knjigovođe</a><a href="/faq/">Česta pitanja</a><a href="/vodici/">Vodiči</a><a href="/statistika-digitalnih-cjenika/">Statistika provjera</a><a href="/usporedba/">Usporedba mogućnosti</a><a href="/specifikacija-csv-xml/">Specifikacija CSV/XML</a><a href="/app?login=1">Prijava u dashboard</a><a href="/impressum.html">Impressum</a><a href="/privatnost.html">Privatnost</a><a href="/uvjeti.html">Uvjeti usluge</a></nav><details className="acq-resources"><summary>Vodiči i aktualne informacije</summary><nav aria-label="Vodiči i novosti"><a href="/vodici/sidrena-cijena/">Sidrena cijena</a><a href="/specifikacija-csv-xml/">CSV i XML formati</a><a href="/vodici/automatizacija-digitalnog-cjenika/">Automatizacija objave</a>{getLatestPosts(4).map(post=><a key={post.slug} href={newsArticlePath(post.slug)}>{post.widgetHeadline??post.title}</a>)}<a href="/vijesti/">Sve vijesti</a></nav></details><p>Tehnička provjera i objava digitalnog cjenika. Bez jamstva pravne usklađenosti.</p></footer>
     </div></main>
+    {showSticky && !menuOpen && <div className="acq-mobile-cta"><a className="acq-primary" href="#checker" aria-label="Vrati se na besplatnu provjeru" onClick={() => document.getElementById('acq-url')?.focus({preventScroll:true})}>Provjeri besplatno<IconArrowRight size={19} aria-hidden="true"/></a></div>}
   </div>
 }

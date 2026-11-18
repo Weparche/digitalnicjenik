@@ -42,3 +42,23 @@ test('landing pricing uses adjacent desktop cards and stacked mobile cards', asy
     expect(layout.overflow).toBe(false)
   }
 })
+
+test('landing has real Publisher preview, three steps and contextual mobile check CTA', async ({ page }) => {
+  await page.setViewportSize({width:390,height:844})
+  await page.goto('/')
+  const explainer=page.locator('.acq-publisher-explainer')
+  await expect(explainer.locator('ol li')).toHaveCount(3)
+  const preview=explainer.locator('img')
+  await preview.scrollIntoViewIfNeeded()
+  await expect.poll(async()=>preview.evaluate((n:HTMLImageElement)=>n.complete && n.naturalWidth===1100)).toBe(true)
+  await expect(page.locator('.acq-reference-mark img')).toHaveCount(7)
+  await page.locator('#rjesenja').scrollIntoViewIfNeeded()
+  const sticky=page.getByRole('link',{name:'Vrati se na besplatnu provjeru'})
+  await expect(sticky).toBeVisible()
+  await sticky.click()
+  await expect(page.locator('#acq-url')).toBeFocused()
+  await expect(sticky).not.toBeVisible()
+  await page.setViewportSize({width:1440,height:900})
+  await page.locator('#rjesenja').scrollIntoViewIfNeeded()
+  await expect(sticky).not.toBeVisible()
+})

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#F7FAF8"/>
+  <path d="M32 8C21.6 8 13.2 16.4 13.2 26.8c0 14.1 18.8 27.6 18.8 27.6s18.8-13.5 18.8-27.6C50.8 16.4 42.4 8 32 8z" fill="#1D9E75" opacity=".13"/>
+  <path d="M32 8C21.6 8 13.2 16.4 13.2 26.8c0 14.1 18.8 27.6 18.8 27.6s18.8-13.5 18.8-27.6C50.8 16.4 42.4 8 32 8z" stroke="#1D9E75" stroke-width="2.4"/>
+  <clipPath id="pin-clip">
+    <path d="M32 10.2c-9.2 0-16.6 7.4-16.6 16.6C15.4 38.9 32 50 32 50s16.6-11.1 16.6-23.2C48.6 17.6 41.2 10.2 32 10.2z"/>
+  </clipPath>
+  <g clip-path="url(#pin-clip)" opacity=".32">
+    <path d="M13.2 22.4h37.6M13.2 26.8h37.6M13.2 31.2h37.6M24.3 8v46.4M32 8v46.4M39.7 8v46.4" stroke="#1D9E75" stroke-width=".75"/>
+  </g>
+  <circle cx="32" cy="26.8" r="4.8" fill="#1D9E75"/>
+  <circle cx="32" cy="26.8" r="2.2" fill="#fff"/>
+  <ellipse cx="32" cy="58.3" rx="7.3" ry="2.6" fill="#1D9E75" opacity=".14"/>
+</svg>
