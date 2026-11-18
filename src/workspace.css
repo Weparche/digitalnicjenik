@@ -191,3 +191,14 @@
 .catalog-profiles{display:grid;gap:12px}.catalog-profile-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #dce4ee;padding-top:10px}.catalog-profile-row>div{flex:1;min-width:150px;overflow-wrap:anywhere}.catalog-profile-row p{margin:3px 0;font-size:.85rem}.catalog-profile-form{border-top:1px solid #dce4ee;padding-top:12px}.catalog-profile-form input,.catalog-profile-form select{min-width:0;max-width:100%}
 
 .catalog-monitor-overview{display:grid;gap:10px}.catalog-monitor-overview h2,.catalog-monitor-overview p{margin:0}.catalog-monitor-card{display:grid;gap:6px;border-top:1px solid #dce4ee;padding-top:10px}.catalog-monitor-card strong{font-size:.87rem}.catalog-monitor-card small,.catalog-monitor-overview small{color:#53657a}.catalog-monitor-card .catalog-actions button{font-size:.83rem;min-height:40px}
+
+/* HOK support is contextual to the existing upload, not a separate flow. */
+.workspace-hok-note { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border:1px solid #dce7f8; border-radius:10px; background:#f4f8ff; color:#243754; text-align:left; }
+.workspace-hok-note > svg { flex-shrink:0; color:#0753df; margin-top:2px; }
+.workspace-hok-note strong { font-size:14px; }
+.workspace-hok-note p { margin:4px 0 0; font-size:13px; line-height:1.5; }
+.workspace-hok-note a,.catalog-hok a:not(.workspace-button) { color:#0753df; text-decoration:underline; text-underline-offset:2px; }
+.catalog-hok h2 { display:flex; align-items:center; gap:8px; }
+.catalog-hok h2 svg { flex-shrink:0; color:#0753df; }
+.catalog-hok .workspace-button { flex-shrink:0; }
+@media(max-width:650px){ .catalog-hok .workspace-button { width:100%; } }
