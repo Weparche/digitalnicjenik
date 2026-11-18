@@ -883,15 +883,15 @@ export const NEWS_POSTS: NewsPost[] = [
   },
   {
     slug: 'hok-excel-predlosci-digitalni-cjenik-2026',
-    title: 'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti prije roka',
+    title: 'HOK Excel predlošci za digitalni cjenik robe i usluga od 17. studenoga 2026.',
     seoTitle: 'HOK Excel predlošci za digitalni cjenik 2026. | NEPAR',
     description:
-      'HOK je objavio Excel predloške cjenika proizvoda i usluga, upute i webinar za nove obveze (primjena odgođena do 17.11.2026.). Pogledajte što još treba objaviti na webu.',
+      'Aktualni HOK Excel predlošci robe i usluga prema NN 132/2026. Učitajte ih u NEPAR i pretvorite u CSV/XML.',
     excerpt:
       'HOK je objavio Excel predloške, upute i webinar. Excel pomaže pripremiti podatke, ali web obveza i dalje traži CSV/XML i automatizirani dohvat.',
     readingTimeMinutes: 5,
     publishedAt: '2026-09-21T17:00:00+02:00',
-    updatedAt: '2026-09-21T17:00:00+02:00',
+    updatedAt: '2026-11-18T10:00:00+01:00',
     author: { name: 'NEPAR Publisher', url: 'https://nepar.hr/' },
     tags: ['HOK', 'Excel', 'digitalni cjenik', 'obrtnici', 'CSV', 'XML'],
     kicker: 'Aktualno · HOK',
@@ -905,15 +905,15 @@ export const NEWS_POSTS: NewsPost[] = [
       width: 1200,
       height: 630,
     },
-    cta: { label: 'Učitaj HOK Excel predložak usluga', href: '/#csv-validator' },
+    cta: { label: 'Učitaj HOK Excel predložak', href: '/#csv-validator' },
     secondaryCta: {
       label: 'Pogledaj primjer CSV cjenika za usluge',
       href: '/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026/',
     },
     sources: [
       {
-        title: 'HOK, 18.9.2026. — Dodatna cijena i objava cjenika: upute i Excel predlošci',
-        url: HOK_2026,
+        title: 'HOK, 17.11.2026. — aktualne upute i Excel predlošci',
+        url: 'https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-upute-za-objavu-cjenika-i-usluga',
         type: 'secondary',
       },
       {
@@ -931,8 +931,8 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         heading: 'Što je HOK objavio',
         level: 2,
-        html: `<p>Hrvatska obrtnička komora objavila je 18. rujna 2026. objedinjene upute za nove obveze od 1. listopada, snimku webinara te <strong>dva Excel predloška cjenika</strong> — jedan za proizvode i jedan za usluge.</p>
-<p>Predlošci su praktična pomoć za pripremu podataka. Uz njih HOK na istoj stranici objavljuje prezentaciju, detaljne upute i tekstove odluka, pa je to koristan operativni početak za obrtnike koji tek slažu svoj cjenik.</p>`,
+        html: `<p>Hrvatska obrtnička komora objavila je 17. studenoga 2026. ažurirane upute i <strong>dva Excel predloška prema NN 132/2026</strong> — za robu (11 stupaca) i usluge (4 stupca). <a href="https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-upute-za-objavu-cjenika-i-usluga">Preuzmite aktualne službene predloške na HOK-u.</a></p>
+<p>Predlošci su praktična pomoć za pripremu podataka. Uz njih HOK na istoj stranici objavljuje detaljne upute i konačne pravilnike, pa je to koristan operativni početak za obrtnike koji tek slažu svoj cjenik.</p>`,
       },
       {
         heading: 'Excel predložak nije završna objava na webu',
@@ -941,17 +941,17 @@ export const NEWS_POSTS: NewsPost[] = [
 <p>Zato nije dovoljno samo popuniti <code>.xlsx</code> i spremiti ga na web. Potrebno je iz podataka napraviti odgovarajući CSV/XML, objaviti ga na mrežnoj stranici i osigurati tehnički način automatiziranog dohvaćanja.</p>`,
       },
       {
-        heading: 'Kako HOK Excel predložak usluga koristiti u NEPAR Publisheru',
+        heading: 'Kako HOK Excel predloške robe i usluga koristiti u NEPAR Publisheru',
         level: 2,
-        html: `<p>NEPAR sada prepoznaje standardna zaglavlja <strong>HOK predloška cjenika usluga</strong>, uključujući naziv usluge, maloprodajnu cijenu, poseban oblik prodaje, njegov naziv i sidrenu/dodatnu cijenu.</p>
+        html: `<p>NEPAR automatski prepoznaje aktualne <strong>HOK predloške robe i usluga</strong>, odabire radni list s cjenikom i mapira propisane stupce.</p>
 <ol class="news-bullets">
-<li>Preuzmite HOK predložak za usluge i unesite svoje podatke.</li>
+<li>Preuzmite odgovarajući HOK predložak i unesite svoje podatke.</li>
 <li>Na NEPAR Publisheru otvorite dio <strong>Učitajte Excel ili CSV</strong>.</li>
 <li>Učitajte <code>.xlsx</code>; standardna HOK polja bit će predložena za mapiranje.</li>
 <li>Provjerite vrijednosti i rezultate validacije.</li>
 <li>Nakon provjere objavite CSV/XML na stalnom javnom URL-u — prva 24 sata besplatno.</li>
 </ol>
-<p><strong>Važno:</strong> automatsko prepoznavanje u ovom flowu odnosi se na HOK predložak za <strong>usluge</strong>. Za proizvode Odluka traži širi skup podataka pa ih treba provjeriti prema HOK predlošku i službenom tekstu Odluke.</p>`,
+<p><strong>Važno:</strong> automatski uvoz ne potvrđuje točnost cijena ni primjenjivost obveze. Za posebnu prodaju mogu biti potrebni dodatni podaci iz vaše evidencije.</p>`,
       },
       {
         heading: 'HOK traži ukidanje odluka — znači li to da je rok odgođen?',
@@ -968,7 +968,7 @@ export const NEWS_POSTS: NewsPost[] = [
 <li>popunite HOK Excel predložak usluga,</li>
 <li>provjerite podatke i pretvorite ih u strojno čitljiv CSV/XML,</li>
 <li>objavite datoteku na webu i osigurajte automatizirani dohvat,</li>
-<li>kod promjene cijena ažurirajte objavu u roku koji se odnosi na usluge i čuvajte prethodne verzije najmanje 30 dana.</li>
+<li>kod promjene cijena ažurirajte objavu najkasnije do 11 sati na dan izmjene i čuvajte zamijenjene verzije u javnoj arhivi 15 dana od zamjene.</li>
 </ul>
 <p><a href="/#csv-validator"><strong>Imate HOK Excel predložak? Učitajte ga za provjeru →</strong></a></p>`,
       },
