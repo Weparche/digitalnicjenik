@@ -545,3 +545,9 @@
  .acq-mobile-cta { display: block; position: fixed; z-index: 20; inset-inline: 0; bottom: 0; padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid #dce5ef; box-shadow: 0 -6px 20px #0f172a0d; }
  .acq-mobile-cta .acq-primary { display: flex; width: 100%; min-height: 50px; }
 }
+
+/* Compact HOK resource card below the main checker. */
+.acq-hok { margin-top: 20px; }
+.acq-hok .acq-preview-label { display: inline-flex; align-items: center; gap: 7px; }
+.acq-hok > .acq-secondary { flex-shrink: 0; }
+@media (max-width: 650px) { .acq-hok > .acq-secondary { width: 100%; } }
