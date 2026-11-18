@@ -67,3 +67,11 @@ test('landing has real Publisher preview, three steps and contextual mobile chec
   await page.locator('#rjesenja').scrollIntoViewIfNeeded()
   await expect(sticky).not.toBeVisible()
 })
+
+ test('landing FAQ describes 15-day public archive, not 30-day price history', async ({ page }) => {
+  await page.goto('/')
+  const faq = page.locator('.acq-compact-faq')
+  await faq.getByText('Što je NEPAR digitalni cjenik?', { exact: true }).click()
+  await expect(faq).toContainText('najmanje 15 dana od zamjene novim cjenikom')
+  await expect(faq).not.toContainText('arhiva prethodnih verzija 30 dana')
+ })
