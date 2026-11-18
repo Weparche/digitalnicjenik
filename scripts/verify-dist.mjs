@@ -305,9 +305,9 @@ verifyArticle(
 verifyArticle(
   HOK_REL,
   HOK_CANONICAL,
-  'HOK objavio Excel predloške za digitalni cjenik: što obrtnici trebaju napraviti prije roka',
+  'HOK Excel predlošci za digitalni cjenik robe i usluga od 17. studenoga 2026.',
   [
-    ['hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika', 'HOK article HTML must link HOK source'],
+    ['hok.hr/novosti-iz-hok/dodatna-cijena-i-upute-za-objavu-cjenika-i-usluga', 'HOK article HTML must link HOK source'],
     ['href="/#csv-validator"', 'HOK article must link the Excel/CSV validator'],
     ['/vijesti/primjer-csv-digitalnog-cjenika-usluge-2026', 'HOK article must link the CSV guide'],
   ],

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as XLSX from 'xlsx'
-import { EXCEL_MAX_COLUMNS, excelRowsToPriceList, headersForSheet, isHokServiceTemplate, readExcelWorkbook, suggestExcelMapping, type ExcelSheet } from './excel'
-import { renderCsv, renderXml, validatePriceList, mergeValidationIssues } from './price-engine'
+import { EXCEL_MAX_COLUMNS, excelRowsToPriceList, headersForSheet, isHokServiceTemplate, isHokGoodsTemplate, selectExcelSheet, readExcelWorkbook, suggestExcelMapping, type ExcelSheet } from './excel'
+import { renderCsv, renderXml, validatePriceList, mergeValidationIssues, parseMarketinoCsv, canonicalPriceHeader } from './price-engine'
 
 function workbookBytes(bookType: 'xlsx' | 'xls' = 'xlsx') {
   const workbook = XLSX.utils.book_new()
@@ -124,5 +124,53 @@ describe('product columns in Excel imports', () => {
     const { priceList } = excelRowsToPriceList(sheet, 0, { name: 'Naziv', price: 'Cijena', externalId: 'Šifra', brand: 'Marka', barcode: 'Barkod', availability: 'Dostupnost' })
     expect(priceList.items[0]).toMatchObject({ brand: 'Dukat', barcode: '3850123456786', availability: 'dostupno' })
     expect(priceList.items[1]).toMatchObject({ price: 0.99, barcode: '03850123', availability: 'nedostupno' })
+  })
+})
+
+describe('HOK original 17 November 2026 headers (NN 132/2026)', () => {
+  // Exact original header text, including the newline in D1 of the services workbook.
+  // Synthetic rows are used: the published official templates contain no actual price rows.
+  const serviceHeaders = ['Naziv usluge', 'Maloprodajna cijena', 'Poseban oblik prodaje usluga (DA/NE)', 'Bazna cijena usluge\n']
+  const goodsHeaders = ['Naziv robe', 'Šifra robe, ako je primjenjivo', 'Marka robe, ako je primjenjivo',
+    'Neto količina kada je riječ o robi za koju je posebnim propisom uređena obveza isticanja cijene za jedinicu mjere',
+    'Jedinica mjere robe, ako je primjenjivo', 'Maloprodajna cijena robe', 'Poseban oblik prodaje robe (DA/NE)',
+    'Cijena za jedinicu mjere robe, ako je primjenjivo', 'Barkod robe, ako je primjenjivo',
+    'EAN barkod robe, ako je primjenjivo', 'Bazna cijena robe']
+  const cases = [
+    { name: 'Cjenik USLUGA', headers: serviceHeaders, row: ['Šišanje', '15,50', 'NE', '15,00'],
+      expected: {name:'Šišanje',type:'Usluga',price:15.5,anchorPrice:15,specialSaleApplied:false}, canonical: ['name','price','sale','base'], fields:4 },
+    { name: 'CJENIK ROBE', headers: goodsHeaders, row: ['Mlijeko','M001','Marka',1,'l','1,50','NE','1,50','001234','03850123456786','1,40'],
+      expected: {name:'Mlijeko',type:'Proizvod',externalId:'M001',brand:'Marka',netQuantity:1,unit:'l',price:1.5,specialSaleApplied:false,unitPrice:1.5,barcode:'001234',eanBarcode:'03850123456786',anchorPrice:1.4},
+      canonical:['name','code','brand','quantity','unit','price','sale','unitprice','barcode','ean','base'],fields:11 },
+  ]
+  it.each(cases)('imports actual HOK header layout in XLSX, ignores instructions and preserves fields ($name)', async (entry) => {
+    const wb=XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['UPUTE'],['Ovo nije cjenik']]),'Upute')
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([entry.headers,entry.row]),entry.name)
+    const imported=await readExcelWorkbook(XLSX.write(wb,{type:'array',bookType:'xlsx'}) as ArrayBuffer)
+    const {sheetIndex,headerRow}=selectExcelSheet(imported)
+    expect({sheetIndex,headerRow}).toEqual({sheetIndex:1,headerRow:0})
+    const sheet=imported.sheets[sheetIndex]
+    const headers=headersForSheet(sheet,headerRow)
+    expect(entry.fields===4?isHokServiceTemplate(headers):isHokGoodsTemplate(headers)).toBe(true)
+    const {priceList,issues}=excelRowsToPriceList(sheet,headerRow,suggestExcelMapping(headers))
+    expect(issues).toEqual([])
+    expect(priceList.items).toHaveLength(1)
+    expect(priceList.items[0]).toMatchObject(entry.expected)
+    const list={...priceList,formatVersion:'nn-132-2026' as const}
+    const csv=renderCsv(list)
+    expect(csv.split('\r\n')[0].split(';')).toHaveLength(entry.fields)
+    expect(csv).toContain(';NE;')
+    expect(renderXml(list)).toContain('<poseban_oblik_prodaje>NE</poseban_oblik_prodaje>')
+    expect(parseMarketinoCsv(csv).priceList.items[0]).toMatchObject(entry.expected)
+    expect(validatePriceList(list).blockingCount).toBe(0)
+  })
+  it.each(cases)('imports direct HOK CSV export with exact original header text ($name)',entry=>{
+    const escape=(value:unknown)=>'"'+String(value).replaceAll('"','""')+'"'
+    const csv='\uFEFF'+[entry.headers,entry.row].map(row=>row.map(escape).join(';')).join('\r\n')
+    expect(entry.headers.map(canonicalPriceHeader)).toEqual(entry.canonical)
+    const result=parseMarketinoCsv(csv)
+    expect(result.warnings).toEqual([])
+    expect(result.priceList.items[0]).toMatchObject(entry.expected)
   })
 })

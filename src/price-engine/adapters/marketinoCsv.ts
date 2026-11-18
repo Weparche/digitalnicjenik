@@ -1,4 +1,4 @@
-import { normalizeBarcode, normalizeHeader, normalizeNumber, normalizeReferenceDate, parseAvailability, validateItems } from '../normalize'
+import { normalizeBarcode, normalizeHokHeader, normalizeNumber, normalizeReferenceDate, parseAvailability, validateItems } from '../normalize'
 import type { FieldSources, NormalizedPriceList, ParseResult, PriceSourceAdapter } from '../types'
 
 export function splitCsv(input: string, delimiter: string): string[][] {
@@ -16,8 +16,20 @@ export function splitCsv(input: string, delimiter: string): string[][] {
   return rows
 }
 
-const cleanHeader = (v:string)=>normalizeHeader(v).replace(/\s*\((?:eur|€|u eurima)\)\s*$/i,'').replace(/\s*\[(?:eur|€)\]\s*$/i,'').replace(/\s*[:*]+$/,'').trim()
-export function priceCsvHeader(csv:string){const input=csv.replace(/^\uFEFF/,'').replace(/^sep=[;,\t]\r?\n/i,'');const first=input.split(/\r?\n/,1)[0]??'';const delimiter=[';',',','\t'].sort((a,b)=>splitCsv(first,b)[0]?.length-splitCsv(first,a)[0]?.length)[0];return {input,delimiter,headers:splitCsv(first,delimiter)[0]??[]}}
+const cleanHeader = (v:string)=>normalizeHokHeader(v).replace(/\s*\((?:eur|€|u eurima)\)\s*$/i,'').replace(/\s*\[(?:eur|€)\]\s*$/i,'').replace(/\s*[:*]+$/,'').trim()
+function firstCsvRecord(input: string): string {
+  let quoted = false
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i]
+    if (ch === '"') {
+      if (quoted && input[i+1] === '"') { i++; continue }
+      quoted = !quoted
+    }
+    if (!quoted && (ch === '\r' || ch === '\n')) return input.slice(0, i)
+  }
+  return input
+}
+export function priceCsvHeader(csv:string){const input=csv.replace(/^\uFEFF/,'').replace(/^sep=[;,\t]\r?\n/i,'');const first=firstCsvRecord(input);const delimiter=[';',',','\t'].sort((a,b)=>splitCsv(first,b)[0]?.length-splitCsv(first,a)[0]?.length)[0];return {input,delimiter,headers:splitCsv(first,delimiter)[0]??[]}}
 const semanticAliases:Record<string,string[]>={name:['naziv','naziv robe','naziv proizvoda','naziv usluge','name','service name','product name','usluga','opis usluge','naziv artikla'],code:['šifra robe','šifra proizvoda','šifra','sifra','sku','interna šifra'],brand:['marka robe','marka proizvoda','marka','brend','brand'],quantity:['neto količina','neto kolicina','net quantity'],unit:['jedinica mjere','jedinica mjere robe','jedinica','unit'],price:['maloprodajna cijena','maloprodajna cijena robe','maloprodajna cijena usluge','mpc','cijena','price','retail price'],sale:['poseban oblik prodaje','posebni oblik prodaje','poseban oblik prodaje (da/ne)','posebni oblik prodaje (da/ne)','special sale','special sale applied','primijenjena tijekom posebnog oblika prodaje','informacija o posebnom obliku prodaje'],unitprice:['cijena za jedinicu mjere','cijena za jedinicu mjere robe','cijena po jedinici mjere','jedinična cijena','unit price'],barcode:['barkod robe','barkod','barcode'],ean:['ean barkod robe','ean barkod','ean','ean barcode'],base:['bazna cijena','bazna cijena robe','bazna cijena usluge','base price']}
 export function canonicalPriceHeader(value:string){const clean=cleanHeader(value);return Object.entries(semanticAliases).find(([,aliases])=>aliases.includes(clean))?.[0]??clean}
 // Alias order is priority order (e.g. SKU wins over a generic ID column).
@@ -59,7 +71,7 @@ export function parseMarketinoCsv(csv: string, tenant = { id: 'marketino-demo', 
   const specialSaleAppliedIndex = findColumn(headers, 'poseban oblik prodaje', 'posebni oblik prodaje', 'special sale', 'special sale applied', 'poseban oblik prodaje (da/ne)', 'posebni oblik prodaje (da/ne)','primijenjena tijekom posebnog oblika prodaje','informacija o posebnom obliku prodaje')
   const specialSaleNameIndex = findColumn(headers, 'naziv posebnog oblika prodaje', 'poseban oblik prodaje naziv', 'special sale name')
   const unitIndex = findColumn(headers, 'jedinica', 'jedinica mjere', 'jedinica mjere robe', 'unit')
-  const unitPriceIndex = findColumn(headers, 'cijena za jedinicu mjere', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price')
+  const unitPriceIndex = findColumn(headers, 'cijena za jedinicu mjere', 'cijena za jedinicu mjere robe', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price')
   const brandIndex = findColumn(headers, 'marka', 'marka proizvoda', 'marka robe', 'brend', 'brand', 'brands')
   const netQuantityIndex = findColumn(headers,'neto količina','neto kolicina','net quantity')
   const eanIndex = findColumn(headers,'ean barkod robe','ean barkod','ean barcode')
