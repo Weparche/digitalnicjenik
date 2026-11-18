@@ -433,3 +433,115 @@
 .acq-trial-note strong { color: #166534; }
 
 .acq-weblink-offer{display:grid;grid-template-columns:1fr minmax(190px,240px);gap:16px;padding:18px;margin:16px 0;border:1px solid var(--line,#d7ddd8);border-radius:14px;background:var(--surface,#fff)}.acq-weblink-offer h3{margin:4px 0 8px;font-size:1.1rem}.acq-weblink-offer p{margin:0 0 8px}.acq-offer-eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.06em}.acq-weblink-offer ul{margin:8px 0 0;padding-left:1.1rem}.acq-offer-actions{display:flex;flex-direction:column;justify-content:center;gap:8px}.acq-offer-actions>strong{font-size:1.55rem}.acq-offer-actions small{font-size:.75rem}.acq-grouped-findings details{border-bottom:1px solid var(--line,#d7ddd8);padding:9px 0}.acq-grouped-findings summary{cursor:pointer;line-height:1.5}.acq-publication-notes select{max-width:100%;width:100%;min-height:44px;display:block;margin-top:6px}.ops-check-overview{margin:18px 0}.ops-check-overview .ops-stats{grid-template-columns:repeat(auto-fit,minmax(110px,1fr))}.ops-check-detail ul{overflow-wrap:anywhere}@media(max-width:640px){.acq-weblink-offer{grid-template-columns:1fr;padding:14px}.acq-offer-actions .acq-primary{width:100%}}
+
+
+/* Verified publisher references: compact proof immediately below the checker. */
+.acq-live-references { margin-top: 28px; padding: 32px; border: 1px solid #dce5ef; border-radius: 20px; background: #fff; scroll-margin-top: 24px; }
+.acq-reference-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.acq-reference-heading h2 { font-size: clamp(23px, 3vw, 32px); }
+.acq-reference-heading p { margin-top: 10px; max-width: 60ch; color: #475569; font-size: 14px; line-height: 1.6; }
+.acq-reference-metrics { display: grid; grid-template-columns: auto 1fr; align-items: baseline; column-gap: 12px; row-gap: 6px; flex-shrink: 0; }
+.acq-reference-metrics strong { color: #14763d; font-size: 25px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.acq-reference-metrics span { color: #475569; font-size: 12px; }
+.acq-reference-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 0; margin: 24px 0 0; list-style: none; }
+.acq-reference-grid li { min-width: 0; display: flex; }
+.acq-reference-card { display: flex; flex-direction: column; gap: 4px; min-width: 0; width: 100%; padding: 16px; border: 1px solid #e1e7ef; border-radius: 12px; background: #f8fafc; text-decoration: none; color: #0f172a; transition: border-color 160ms ease-out, background 160ms ease-out; }
+.acq-reference-card:hover { background: #f1f6ff; border-color: #9cb9ef; }
+.acq-reference-card-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.acq-reference-mark { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 9px; background: #e6efff; color: #0753df; font-size: 13px; font-weight: 800; }
+.acq-reference-score { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 750; color: #14763d; white-space: nowrap; }
+.acq-reference-card h3 { font-size: 16px; line-height: 1.3; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.acq-reference-domain { color: #64748b; font-size: 11px; overflow-wrap: anywhere; }
+.acq-reference-category { color: #475569; font-size: 12px; line-height: 1.4; margin-bottom: 8px; }
+.acq-reference-link { display: flex; align-items: center; justify-content: space-between; gap: 4px; color: #0753df; font-size: 12px; font-weight: 650; margin-top: auto; min-height: 32px; }
+.acq-reference-link svg { flex-shrink: 0; }
+.acq-reference-bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 22px; }
+.acq-reference-bottom .acq-reference-note { font-size: 12px; color: #64748b; line-height: 1.6; }
+.acq-reference-bottom > div > a { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; color: #0753df; }
+.acq-reference-bottom > .acq-primary { flex-shrink: 0; }
+@media (max-width: 999px) {
+ .acq-reference-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .acq-reference-heading { align-items: start; flex-direction: column; gap: 14px; }
+ .acq-reference-metrics { grid-template-columns: auto auto auto auto; align-items: center; gap: 8px; }
+ .acq-reference-bottom { align-items: start; flex-direction: column; gap: 12px; }
+}
+@media (max-width: 650px) {
+ .acq-live-references { padding: 15px; margin-top: 20px; border-radius: 14px; }
+ .acq-reference-heading h2 { font-size: 23px; }
+ .acq-reference-heading p { font-size: 13px; }
+ .acq-reference-metrics { grid-template-columns: auto 1fr; column-gap: 9px; row-gap: 3px; }
+ .acq-reference-metrics strong { font-size: 22px; }
+ .acq-reference-grid { gap: 8px; margin-top: 16px; }
+ .acq-reference-card { padding: 10px; }
+ .acq-reference-card h3 { font-size: 14px; }
+ .acq-reference-mark { width: 30px; height: 30px; font-size: 11px; }
+ .acq-reference-category { font-size: 11px; }
+ .acq-reference-link { font-size: 11px; }
+ .acq-reference-bottom > .acq-primary { width: 100%; font-size: 14px; }
+}
+
+
+/* Landing pricing: desktop uses the full content width; the optional installation
+   sits next to, not below, the main annual plan. Other PlanCards consumers are unchanged. */
+.acq-solutions { padding-top: 48px; }
+.acq-solutions-heading { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); align-items: center; gap: 30px; }
+.acq-solutions-heading h2 { font-size: clamp(25px, 3vw, 34px); }
+.acq-solutions-heading > div:first-child > p { margin-top: 12px; max-width: 64ch; font-size: 15px; line-height: 1.65; color: #475569; }
+.acq-solutions-heading .acq-trial-note { margin: 0; padding: 20px 22px; border: 1px solid #c8e7d4; border-radius: 14px; }
+.acq-trial-heading { display: flex; align-items: center; gap: 9px; font-size: 17px; }
+.acq-trial-heading svg { flex-shrink: 0; color: #14763d; }
+.acq-solutions-heading .acq-trial-note p { margin-top: 8px; font-size: 13px; line-height: 1.6; color: #14532d; }
+.acq-trial-note small { display: block; margin-top: 8px; font-size: 12px; font-weight: 650; color: #166534; }
+.acq-solutions-offers { margin-top: 24px; }
+.acq-solutions-offers--launch { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: stretch; gap: 16px; }
+.acq-solutions-offers--launch > .acq-plans, .acq-solutions-offers--launch > .acq-extras { grid-template-columns: minmax(0, 1fr); align-items: stretch; margin: 0; min-width: 0; }
+.acq-solutions-offers--launch .acq-plan { border: 1.5px solid #9dbcf9; padding: 26px; gap: 12px; }
+.acq-solutions-offers--launch .acq-plan ul { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 20px; margin: 5px 0 12px; }
+.acq-solutions-offers--launch .acq-plan li { font-size: 13px; line-height: 1.5; }
+.acq-solutions-offers--launch .acq-plan > .acq-secondary { background: #0660ff; color: #fff; }
+.acq-solutions-offers--launch .acq-plan > .acq-secondary:hover { background: #1d4ed8; }
+.acq-solutions-offers--launch .acq-extra { padding: 26px; background: #fff; }
+.acq-solutions-offers--launch .acq-extra h3 { font-size: 23px; }
+.acq-solutions-offers--launch .acq-extra .acq-extra-price { margin-top: 20px; font-size: 24px; line-height: 1.25; }
+.acq-solutions-offers--launch .acq-extra .acq-secondary { width: 100%; min-height: 52px; }
+.acq-solutions-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 16px; }
+.acq-solutions-footer p { color: #475569; font-size: 13px; line-height: 1.6; }
+.acq-solutions-footer a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; flex-shrink: 0; color: #0753df; font-size: 13px; }
+@media (max-width: 999px) {
+ .acq-solutions-heading, .acq-solutions-offers--launch { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+ .acq-solutions-footer { flex-direction: column; align-items: start; gap: 4px; }
+}
+@media (max-width: 650px) {
+ .acq-solutions { padding-top: 36px; }
+ .acq-solutions-heading > div:first-child > p { font-size: 14px; }
+ .acq-solutions-heading .acq-trial-note { padding: 16px; }
+ .acq-solutions-offers { margin-top: 16px; }
+ .acq-solutions-offers--launch .acq-plan, .acq-solutions-offers--launch .acq-extra { padding: 20px; }
+ .acq-solutions-offers--launch .acq-plan ul { grid-template-columns: minmax(0,1fr); }
+}
+
+/* Original brand marks and real Publisher onboarding. */
+.acq-reference-mark { position: relative; overflow: hidden; }
+.acq-reference-mark img { position: absolute; inset: 0; width: 100%; height: 100%; padding: 3px; object-fit: contain; background: #fff; border-radius: inherit; }
+.acq-reference-mark img[hidden] { display: none; }
+.acq-publisher-explainer { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); align-items: center; gap: 32px; margin-top: 38px; padding: 30px; background: #fff; border: 1px solid #dce5ef; border-radius: 18px; }
+.acq-publisher-steps h2 { font-size: clamp(24px, 3vw, 32px); }
+.acq-publisher-steps ol { list-style: none; padding: 0; margin: 20px 0; display: grid; gap: 15px; }
+.acq-publisher-steps li { display: flex; align-items: start; gap: 12px; }
+.acq-step-num { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; color: #0753df; background: #e6efff; border-radius: 10px; font-size: 14px; font-weight: 800; }
+.acq-publisher-steps li strong { font-size: 15px; font-weight: 700; }
+.acq-publisher-steps li p { margin-top: 4px; font-size: 13px; line-height: 1.55; color: #475569; }
+.acq-publisher-figure { margin: 0; min-width: 0; }
+.acq-publisher-figure > a { display: block; border: 1px solid #dce5ef; border-radius: 12px; overflow: hidden; }
+.acq-publisher-figure img { display: block; width: 100%; height: auto; }
+.acq-publisher-figure figcaption { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding-top: 10px; color: #64748b; font-size: 12px; line-height: 1.5; }
+.acq-publisher-figure figcaption a { color: #0753df; }
+.acq-mobile-cta { display: none; }
+@media (max-width: 999px) { .acq-publisher-explainer { grid-template-columns: minmax(0,1fr); gap: 20px; } }
+@media (max-width: 650px) {
+ .acq-publisher-explainer { padding: 18px; margin-top: 22px; border-radius: 14px; }
+ .acq-publisher-steps > .acq-primary { width: 100%; }
+ .acquisition .acq-content { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+ .acq-mobile-cta { display: block; position: fixed; z-index: 20; inset-inline: 0; bottom: 0; padding: 10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid #dce5ef; box-shadow: 0 -6px 20px #0f172a0d; }
+ .acq-mobile-cta .acq-primary { display: flex; width: 100%; min-height: 50px; }
+}
