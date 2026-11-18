@@ -12,7 +12,7 @@ export const productFaq: ProductFaqEntry[] = [
   {
     question: 'Što je NEPAR digitalni cjenik?',
     answer:
-      'Sloj za objavu digitalnog cjenika uz web koji već imate: javni cjenik na stalnoj poveznici, CSV i XML te arhiva prethodnih verzija 30 dana. Web Link omogućuje provjeru datoteke prije objave i dnevnu ponovnu objavu posljednjeg valjanog cjenika proizvoda.',
+      'Sloj za objavu digitalnog cjenika uz web koji već imate: javni cjenik na stalnoj poveznici, CSV i XML te javna arhiva prethodnih verzija najmanje 15 dana od zamjene novim cjenikom. Web Link omogućuje provjeru datoteke prije objave i dnevnu ponovnu objavu posljednjeg valjanog cjenika proizvoda.',
   },
   {
     question: 'Radi li s WordPressom i webshopom?',
