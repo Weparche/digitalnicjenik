@@ -1,4 +1,4 @@
-import { normalizeBarcode, normalizeHeader, normalizeNumber, normalizeReferenceDate, parseAvailability } from './price-engine/normalize'
+import { normalizeBarcode, normalizeHokHeader, normalizeNumber, normalizeReferenceDate, parseAvailability } from './price-engine/normalize'
 import { importIssuesFromParseWarnings } from './price-engine/validate'
 import type { NormalizedPriceList, ParseWarning, ValidationIssue } from './price-engine/types'
 
@@ -58,8 +58,8 @@ const aliases: Record<ExcelField, string[]> = {
     'special sale applied',
   ],
   specialSaleName: ['naziv posebnog oblika prodaje', 'naziv posebne prodaje', 'special sale name'],
-  unit: ['jedinica', 'jedinica mjere', 'unit'],
-  unitPrice: ['cijena za jedinicu mjere', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price'],
+  unit: ['jedinica', 'jedinica mjere', 'jedinica mjere robe', 'unit'],
+  unitPrice: ['cijena za jedinicu mjere', 'cijena za jedinicu mjere robe', 'cijena po jedinici mjere', 'jedinična cijena', 'jedinicna cijena', 'unit price'],
   brand: ['marka', 'marka robe','marka proizvoda','brend', 'brand', 'brands'],
   netQuantity:['neto količina','neto kolicina','net quantity'],
   eanBarcode:['ean barkod robe','ean barkod','ean barcode'],
@@ -72,7 +72,7 @@ const aliases: Record<ExcelField, string[]> = {
 }
 
 const clean = (value: unknown) => String(value ?? '').replace(/^\uFEFF/, '').trim()
-const normalizedHeader = (value: unknown) => normalizeHeader(clean(value)).replace(/\s*\((?:eur|€|u eurima)\)\s*$/i,'').replace(/[*:]+$/g, '').trim()
+const normalizedHeader = (value: unknown) => normalizeHokHeader(clean(value)).replace(/\s*\((?:eur|€|u eurima)\)\s*$/i,'').replace(/[*:]+$/g, '').trim()
 
 function booleanValue(value: unknown): boolean | null {
   const normalized = clean(value).toLocaleLowerCase('hr-HR')
@@ -114,6 +114,7 @@ export function headersForSheet(sheet: ExcelSheet, headerRowIndex: number): stri
 
 export function isHokServiceTemplate(headers: string[]): boolean {
   const normalized = new Set(headers.map(normalizedHeader))
+  if (['naziv usluge', 'maloprodajna cijena', 'poseban oblik prodaje (da/ne)', 'bazna cijena usluge'].every(header => normalized.has(header))) return true
   const requiredGroups = [
     ['naziv usluge'],
     ['maloprodajna cijena'],
@@ -127,6 +128,25 @@ export function isHokServiceTemplate(headers: string[]): boolean {
     ],
   ]
   return requiredGroups.every((group) => group.some((header) => normalized.has(header)))
+}
+
+export function isHokGoodsTemplate(headers: string[]): boolean {
+  const normalized = new Set(headers.map(normalizedHeader))
+  return ['naziv robe', 'šifra robe', 'marka robe', 'neto količina', 'jedinica mjere robe',
+    'maloprodajna cijena robe', 'poseban oblik prodaje (da/ne)', 'cijena za jedinicu mjere robe',
+    'barkod robe', 'ean barkod robe', 'bazna cijena robe'].every(header => normalized.has(header))
+}
+
+/** Prefer a recognized HOK data sheet over instructions, even if sheet order changes. */
+export function selectExcelSheet(workbook: ExcelWorkbook): { sheetIndex: number; headerRow: number } {
+  for (let sheetIndex = 0; sheetIndex < workbook.sheets.length; sheetIndex++) {
+    const sheet = workbook.sheets[sheetIndex]
+    for (let headerRow = 0; headerRow < Math.min(10, sheet.rows.length); headerRow++) {
+      const headers = headersForSheet(sheet, headerRow)
+      if (isHokServiceTemplate(headers) || isHokGoodsTemplate(headers)) return { sheetIndex, headerRow }
+    }
+  }
+  return { sheetIndex: 0, headerRow: 0 }
 }
 
 export function suggestExcelMapping(headers: string[]): ExcelMapping {
