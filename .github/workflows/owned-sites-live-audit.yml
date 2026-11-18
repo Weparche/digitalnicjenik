@@ -1,0 +1,36 @@
+name: Owned sites live checker audit
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Run production URLs against the actual checker engine (read-only)
+        run: |
+          cat > owned-sites-audit.test.ts <<'EOF'
+          import { test } from 'vitest'
+          import { runDigitalPriceListCheck } from './functions/api/digitalni-cjenik/check'
+          import { technicalReport } from './shared/website-check'
+          import { resolve4, resolve6 } from 'node:dns/promises'
+          const sites = ['https://nepar.hr','https://kids.nepar.hr','https://handyman.nepar.hr','https://geoadrese.net','https://www.kpdinfo.com','https://autogubic.hr','https://digitalnicjenik.nepar.hr']
+          test('owned production sites, actual checker engine; no public endpoint or quota access', async () => {
+            for (const url of sites) {
+              try {
+                const result = await runDigitalPriceListCheck(url, { enforceNN132: true, DIGITAL_PRICE_LIST_DNS_RESOLVER: { resolve4, resolve6 } })
+                const report = technicalReport(result)
+                console.log('OWNED_AUDIT '+JSON.stringify({ url, status:result.status, score:report.score, unknown:report.unknown, attention:report.attention, checks:report.checks.map(c=>({id:c.id,status:c.status,evidence:c.evidence,url:c.url})) }))
+              } catch (e) { console.log('OWNED_AUDIT_ERROR '+JSON.stringify({url,error:String(e)})) }
+            }
+          }, 200000)
+          EOF
+          npx vitest run owned-sites-audit.test.ts --reporter=verbose
