@@ -8,7 +8,7 @@ import { technicalReport } from '../../../shared/website-check'
 type Env = AuthEnv & NonNullable<Parameters<typeof runDigitalPriceListCheck>[1]> & { SVEUSLUGE_AUDIT_DB?: D1DatabaseLike }
 type Candidate = { host: string; last_probe_at: string; last_status: number }
 type Run = { id: string; hostname: string; checked_at: string; score: number | null; status: string; unknown_count: number; checks_json: string; discovered_urls_json: string }
-const ELIGIBLE = "state = 'NONE' AND lists = 0 AND last_status BETWEEN 200 AND 299 AND last_probe_at >= ?"
+const ELIGIBLE = "state = 'NONE' AND lists = 0 AND last_status BETWEEN 200 AND 299 AND last_probe_at >= ? AND NOT EXISTS (SELECT 1 FROM price_list_sources p WHERE p.host = domains.host AND p.status = 'active')"
 const MAX_CANDIDATES = 100
 const RECENCY_MS = 7 * 86400000
 
