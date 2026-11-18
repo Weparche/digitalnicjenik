@@ -52,6 +52,11 @@ test('landing has real Publisher preview, three steps and contextual mobile chec
   await preview.scrollIntoViewIfNeeded()
   await expect.poll(async()=>preview.evaluate((n:HTMLImageElement)=>n.complete && n.naturalWidth===1100)).toBe(true)
   await expect(page.locator('.acq-reference-mark img')).toHaveCount(7)
+  const localMarks = page.locator('.acq-reference-mark img[src^="/"]')
+  for (const mark of await localMarks.all()) {
+    await mark.scrollIntoViewIfNeeded()
+    await expect.poll(async()=>mark.evaluate((n:HTMLImageElement)=>n.complete && n.naturalWidth>0)).toBe(true)
+  }
   await page.locator('#rjesenja').scrollIntoViewIfNeeded()
   const sticky=page.getByRole('link',{name:'Vrati se na besplatnu provjeru'})
   await expect(sticky).toBeVisible()

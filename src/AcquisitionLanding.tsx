@@ -18,7 +18,7 @@ const liveReferences = [
   { name: 'NEPAR', domain: 'nepar.hr', category: 'Digitalna rješenja', slug: 'nepar-solutions', initials: 'N', logo: '/assets/nepar-logo.png' },
   { name: 'GeoAdrese', domain: 'geoadrese.net', category: 'Geoinformacijske usluge', slug: 'geoadrese', initials: 'GA', logo: '/assets/references/geoadrese.svg' },
   { name: 'KPDinfo', domain: 'kpdinfo.com', category: 'Klasifikacija i savjetovanje', slug: 'kpdinfo', initials: 'K', logo: '/assets/references/kpdinfo.png' },
-  { name: 'Digitalni cjenik', domain: 'digitalnicjenik.nepar.hr', category: 'Objava cjenika', slug: 'digitalni-cjenik', initials: 'DC', logo: '/assets/references/digitalni-cjenik.svg' },
+  { name: 'Digitalni cjenik', domain: 'digitalnicjenik.nepar.hr', category: 'Objava cjenika', slug: 'digitalni-cjenik', initials: 'DC', logo: '/favicon-32x32.png' },
 ] as const
 
 function Wordmark() {
