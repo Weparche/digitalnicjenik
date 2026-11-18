@@ -10,9 +10,9 @@ export const EXTRA_SERVICES: Array<{ id: ExtraServiceId; title: string; price: s
   { id: 'integration', title: 'Napredna integracija', price: 'Individualna ponuda', text: 'Treba vam povezivanje s WooCommerceom, webshopom, API-jem ili ERP/POS sustavom? Integraciju možemo izraditi prema vašem sustavu — individualna ponuda.', cta: 'Zatraži ponudu' },
 ]
 
-export function PlanCards({ onSelect, onExtra }: { onSelect?: (plan: PlanId) => void; onExtra?: (service: ExtraServiceId) => void }) {
+export function PlanCards({ onSelect, onExtra, landingLayout = false }: { onSelect?: (plan: PlanId) => void; onExtra?: (service: ExtraServiceId) => void; landingLayout?: boolean }) {
   return <>
-    <div className="acq-plans" style={WEB_LINK_LAUNCH_ONLY ? {gridTemplateColumns:'minmax(0, 1fr)',maxWidth:560,marginInline:'auto'} : undefined}>{PUBLIC_PLANS.map((plan) => <article key={plan.id} className={plan.id === 'publisher' ? 'acq-plan acq-plan-featured' : 'acq-plan'}>
+    <div className="acq-plans" style={WEB_LINK_LAUNCH_ONLY ? {gridTemplateColumns:'minmax(0, 1fr)',...(landingLayout ? {} : {maxWidth:560,marginInline:'auto'})} : undefined}>{PUBLIC_PLANS.map((plan) => <article key={plan.id} className={plan.id === 'publisher' ? 'acq-plan acq-plan-featured' : 'acq-plan'}>
       {plan.id === 'publisher' && <span className="acq-recommended">Preporučeni paket</span>}
       <div className="acq-plan-head"><h3>{plan.name}</h3><p className="acq-plan-tagline">{plan.tagline}</p></div>
       <p className="acq-plan-price"><strong>{formatEur(plan.price)}</strong><span>/ god</span></p>
