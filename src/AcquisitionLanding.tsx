@@ -1,6 +1,6 @@
 import { PlanCards } from './PlanCards'
 import { useEffect, useState } from 'react'
-import { IconArrowRight, IconUpload, IconCircleCheckFilled, IconAlertCircle,IconCalendar, IconMenu2, IconX, IconChevronDown } from '@tabler/icons-react'
+import { IconArrowRight, IconUpload, IconCircleCheckFilled, IconAlertCircle,IconCalendar, IconMenu2, IconX, IconChevronDown, IconFileSpreadsheet } from '@tabler/icons-react'
 import { WebsiteCheckEntry } from './WebsiteCheckEntry'
 import { PLANS, formatEur, type PlanId } from './publisherPricing'
 import { WEB_LINK_LAUNCH_ONLY } from '../shared/pricing'
@@ -9,6 +9,7 @@ import type { LeadIntent } from './LeadForm'
 import '@fontsource-variable/inter/wght.css'
 import './acquisition.css'
 import { landingFaq } from './productFaq'
+import { HOK_TEMPLATES_URL } from './WorkspaceResources'
 import { getLatestPosts,newsArticlePath } from './news/posts'
 
 const liveReferences = [
@@ -84,6 +85,7 @@ export function AcquisitionLanding() {
     </div>
     <div className="acq-content">
       <p className="acq-domain-note">Naše usluge: <a href="/c/digitalni-cjenik">službeni digitalni cjenik naših usluga</a> · CSV/XML i arhiva.</p>
+      <section className="acq-help acq-hok" aria-labelledby="hok-landing-title"><div><span className="acq-preview-label"><IconFileSpreadsheet size={18} aria-hidden="true"/> HOK Excel · 17.11.2026.</span><h2 id="hok-landing-title">Imate HOK Excel predložak?</h2><p>Podržavamo oba nova predloška: cjenik robe (11 stupaca) i usluga (4 stupca). Učitajte popunjeni Excel — automatski prepoznajemo stupce, besplatno provjeravamo i pretvaramo podatke u CSV/XML.</p><p><a href={HOK_TEMPLATES_URL} target="_blank" rel="noreferrer">Preuzmite službene HOK predloške ↗</a> · <a href="/vijesti/hok-excel-predlosci-digitalni-cjenik-2026/">Upute za uvoz</a></p></div><a className="acq-secondary" href="/app?new=1"><IconUpload size={20} aria-hidden="true"/>Učitaj HOK predložak<IconArrowRight size={19} aria-hidden="true"/></a></section>
       <section className="acq-live-references" id="reference" aria-labelledby="reference-title">
         <div className="acq-reference-heading">
           <div><span className="acq-preview-label">Stvarne NEPAR implementacije</span><h2 id="reference-title">Digitalni cjenici koji već rade.</h2><p>Od autoservisa do digitalnih usluga i web trgovine. Otvorite stvarne javne cjenike objavljene preko NEPAR Publishera.</p></div>

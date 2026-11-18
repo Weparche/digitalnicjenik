@@ -18,6 +18,7 @@ import { ShareAndPrintCard } from './ShareAndPrintCard'
 import { Fragment, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { adapters, isServiceItem, parseMarketinoCsv, parseXmlPriceList, renderCsv, renderXml, validatePriceList, importIssuesFromParseWarnings, mergeValidationIssues, type Availability, type NormalizedPriceList, type PricePublication, type ValidationIssue } from './price-engine'
 import { ExcelConverter } from './ExcelConverter'
+import { HOK_TEMPLATES_URL } from './WorkspaceResources'
 import { usesProductStructure } from './price-engine/profile'
 import { EducationSection } from './EducationSection'
 import { TurnstileField, type LeadContext, type LeadIntent } from './LeadForm'
@@ -1263,6 +1264,7 @@ function ValidatorApp({
       <label className="upload-action workspace-dropzone"><input type="file" aria-label="Učitaj cjenik" accept=".csv,.xml,.xlsx,.xls,text/csv,application/xml" disabled={busy} onChange={event=>void loadFile(event.target.files?.[0])}/><IconUpload size={28} stroke={1.5}/><strong>{sourceFilename||'Odaberite svoj Excel, CSV ili XML'}</strong><span>{onboarding?'Dodajte datoteku sa svojeg uređaja.':'Kliknite za odabir datoteke.'}</span></label>
       {!list&&!excelFile&&<button className="app-button app-button-primary workspace-mobile-only" type="button" data-mobile-primary="true" disabled={busy} onClick={event=>event.currentTarget.parentElement?.querySelector<HTMLInputElement>('input[type=file]')?.click()}>Odaberi datoteku</button>}
       <p className="workspace-upload-note">CSV / XML do 2 MB · Excel do 5 MB{mode==='sandbox'?' · 3 besplatne provjere dnevno':''}</p>
+      {!excelFile&&<div className="workspace-hok-note"><IconFileSpreadsheet size={21} aria-hidden="true"/><div><strong>Kompatibilno s HOK Excel predlošcima 2026.</strong><p>Roba i usluge · automatsko mapiranje stupaca. <a href={HOK_TEMPLATES_URL} target="_blank" rel="noreferrer">Preuzmi službene predloške ↗</a></p></div></div>}
       {onboarding&&!list&&!excelFile&&<button className="workspace-example-button" type="button" disabled={busy} onClick={()=>void loadExample()}><IconFileSpreadsheet size={21} aria-hidden="true"/><span><strong>Isprobajte na primjeru</strong><small>Otvorite demo cjenik bez vlastite datoteke.</small></span><IconArrowRight size={18} aria-hidden="true"/></button>}
       {onboarding&&sourceFilename==='primjer-digitalni-cjenik-usluge-2026.csv'&&list&&<p className="workspace-demo-notice" role="status">Prikazujete demo podatke. Za stvarnu objavu učitajte vlastiti cjenik.</p>}
       {busy&&<p className="app-status" role="status">Provjeravamo datoteku…</p>}{error&&<p className="app-error" role="alert">{error}</p>}

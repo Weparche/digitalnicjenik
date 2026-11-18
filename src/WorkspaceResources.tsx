@@ -4,7 +4,7 @@ import { INSTALLATION,PLANS,formatEur,PUBLIC_PLANS,WEB_LINK_LAUNCH_ONLY } from '
 import { formatCents,orderAmountCents,UPGRADE_WINDOW_DAYS } from '../shared/payment'
 import { untilLabel } from './licenceView'
 
-export const HOK_TEMPLATES_URL='https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-objava-cjenika-od-1-listopada-2026-najvaznije-informacije'
+export const HOK_TEMPLATES_URL='https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-upute-za-objavu-cjenika-i-usluga'
 
 export function FirstPublicationNotice({publicUrl,expiresAt}:{publicUrl:string;expiresAt:string}){
   const [copied,setCopied]=useState(false)
@@ -35,15 +35,15 @@ export function WorkspaceInstructions({onPrepare}:{onPrepare:()=>void}){
       <h2>Od datoteke do javnog cjenika</h2>
       <ol className="workspace-guide-steps">
         <li><strong>Pripremite Excel, CSV ili XML.</strong><p>Jedna stavka u svakom retku. Za početak možete koristiti HOK predložak ili naš popunjeni primjer u nastavku.</p></li>
-        <li><strong>Učitajte i provjerite podatke.</strong><p>U „Moj cjenik” učitajte datoteku. Za Excel odaberite stupce i pregledajte rezultat. Nedostajuće podatke dopunite prije objave.</p></li>
+        <li><strong>Učitajte i provjerite podatke.</strong><p>U „Moj cjenik” učitajte datoteku. HOK predlošci automatski se mapiraju; za ostale Excel datoteke provjerite odabrane stupce. Nedostajuće podatke dopunite prije objave.</p></li>
         <li><strong>Prvi cjenik objavite besplatno na 24 h.</strong><p>Unesite podatke poslovanja i potvrdite e-mail ako već niste prijavljeni. Dobivate javni link, CSV i XML.</p></li>
         <li><strong>Zadržite isti link i podijelite ga.</strong><p>Web Link je {formatEur(PLANS[0].price)} za godinu dana. Podatke za bankovnu uplatu pronađite u „Paketi i cijene”. „Uplatio sam” prijavljuje uplatu; aktivacija slijedi nakon NEPAR potvrde. QR i ugradnja su u „Objava i ugradnja”.</p></li>
       </ol>
       <button type="button" className="workspace-button" onClick={onPrepare}>Otvori moj cjenik<IconArrowRight size={17}/></button>
     </section>
     <section className="workspace-surface" aria-labelledby="hok-templates-title">
-      <div className="workspace-resource-heading"><IconFileSpreadsheet size={26}/><div><h2 id="hok-templates-title">Krenite od HOK Excel predloška</h2><p>HOK objavljuje zasebne predloške za proizvode i za usluge.</p></div></div>
-      <p>Na službenoj stranici, u odjeljku „Preuzimanja”, odaberite <strong>HOK predložak cjenika USLUGA</strong> ili <strong>HOK predložak cjenika PROIZVODA</strong> (.xlsx). Ispunite ga svojim podacima i učitajte ovdje, bez ručnog pretvaranja u CSV.</p>
+      <div className="workspace-resource-heading"><IconFileSpreadsheet size={26}/><div><h2 id="hok-templates-title">Krenite od HOK Excel predloška</h2><p>Podržavamo oba aktualna predloška HOK-a od 17.11.2026. — robu (11 stupaca) i usluge (4 stupca).</p></div></div>
+      <p>Na službenoj stranici, u odjeljku „Preuzimanja”, odaberite <strong>HOK predložak cjenika USLUGA</strong> ili <strong>HOK predložak cjenika ROBE</strong> (.xlsx). Ispunite ga svojim podacima i učitajte ovdje, bez ručnog pretvaranja u CSV. Radni list i stupce prepoznajemo automatski.</p>
       <a className="workspace-button" href={HOK_TEMPLATES_URL} target="_blank" rel="noreferrer">Otvori HOK Excel predloške<IconArrowUpRight size={17}/></a>
       <details className="workspace-example" open>
         <summary>Kako izgledaju popunjeni podaci?</summary>
