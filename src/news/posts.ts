@@ -106,11 +106,11 @@ export const NEWS_POSTS: NewsPost[] = [
     "slug": "digitalni-cjenici-novi-pravilnici-15-dana-2026",
     "title": "Digitalni cjenici od 17. studenoga: arhiva 15 dana i nova pravila",
     "seoTitle": "Digitalni cjenici 2026.: arhiva 15 dana i nova pravila | NEPAR",
-    "description": "Ministarstvo 16.11. potvrdilo slanje pravilnika na objavu: arhiva 15 dana, izmjene do 11 sati, CSV/XML i proširene iznimke. Početak 17.11.",
-    "excerpt": "Ministarstvo je objavilo detalje konačnih pravilnika upućenih na objavu. Arhiva se skraćuje na 15 dana, a pravila oglašavanja i iznimke preciziraju.",
+    "description": "Digitalni cjenici prema NN 132/2026: arhiva 15 dana, CSV/XML i nove HOK upute te Excel predlošci za robu i usluge od 17.11.",
+    "excerpt": "Konačni pravilnici vrijede od 17.11. HOK je objavio nove praktične upute i Excel predloške za robu i usluge.",
     "readingTimeMinutes": 4,
     "publishedAt": "2026-11-16T15:36:00+01:00",
-    "updatedAt": "2026-11-16T19:16:00+01:00",
+    "updatedAt": "2026-11-17T20:00:00+01:00",
     "author": {
       "name": "NEPAR Publisher",
       "url": "https://nepar.hr/"
@@ -124,7 +124,7 @@ export const NEWS_POSTS: NewsPost[] = [
     "kicker": "Ministarstvo gospodarstva · 16.11.2026.",
     "widgetEyebrow": "NOVO · PRAVILNICI",
     "widgetHeadline": "Arhiva cjenika 15 dana prema novim pravilima",
-    "widgetSub": "Ministarstvo potvrdilo slanje pravilnika na objavu",
+    "widgetSub": "Konačni pravilnici i nove HOK upute od 17.11.",
     "schemaSection": "Regulativa",
     "image": {
       "src": "/og/vijesti-digitalni-cjenik-2026.png",
@@ -141,6 +141,9 @@ export const NEWS_POSTS: NewsPost[] = [
       "href": "/app?new=1"
     },
     "sources": [
+      {"title":"HOK, 17.11.2026. — upute i predlošci za robu i usluge","url":"https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-upute-za-objavu-cjenika-i-usluga","type":"secondary"},
+      {"title":"NN 132/2026-1584 — Pravilnik o načinu objave cjenika proizvoda","url":"https://narodne-novine.nn.hr/clanci/sluzbeni/2026_11_132_1584.html","type":"primary"},
+      {"title":"NN 132/2026-1583 — Pravilnik o isticanju bazne cijene proizvoda","url":"https://narodne-novine.nn.hr/clanci/sluzbeni/2026_11_132_1583.html","type":"primary"},
       {
         "title": "Ministarstvo gospodarstva, 16.11.2026. — priopćenje o konačnim pravilnicima",
         "url": "https://mingo.gov.hr/vijesti/pravilnici-o-baznim-cijenama-i-objavi-cjenika-veca-transparentnost-za-potrosace-provediva-pravila-za-gospodarstvo/10490",
@@ -158,6 +161,7 @@ export const NEWS_POSTS: NewsPost[] = [
       }
     ],
     "sections": [
+      {"heading":"HOK objavio nove upute i Excel predloške 17. studenoga","level":2,"html":"<p>Hrvatska obrtnička komora 17.11.2026. u 13:51 objavila je <a href=\"https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-upute-za-objavu-cjenika-i-usluga\">praktične upute za objavu cjenika robe i usluga</a>. Na stranici su dostupni PDF s uputama, zasebni Excel predlošci za robu i usluge te izdanje NN 132/2026. Riječ je o pomoći pri primjeni, ne o novom propisu ili odgodi.</p><p>Excel služi pripremi podataka; za javnu objavu prema pravilniku potreban je CSV ili XML. Referentni datum 10.9.2026. ne primjenjuje se jednako na sve kategorije: za ranije obuhvaćenu robu vrijedi 2.5.2025., uz ostala pravila i iznimke iz pravilnika. Pogledajte <a href=\"/specifikacija-csv-xml/\">CSV/XML specifikaciju</a>, <a href=\"/digitalni-cjenik-2026/\">vodič</a> ili <a href=\"/#checker\">provjerite web</a>.</p>"},
       {
         "heading": "Što je Ministarstvo potvrdilo 16. studenoga?",
         "level": 2,
@@ -181,7 +185,7 @@ export const NEWS_POSTS: NewsPost[] = [
       {
         "heading": "Što sada napraviti s postojećim cjenikom?",
         "level": 2,
-        "html": "<p>Sačuvajte postojeće datoteke i arhivu dok se ne potvrdi objavljeni tekst. Provjerite javni dohvat i pripremite ažuriranje cjenika. <a href=\"/digitalni-cjenik-2026/\">Vodič za digitalni cjenik</a> i <a href=\"/specifikacija-csv-xml/\">CSV/XML specifikacija</a> daju tehnički kontekst ranijeg režima; pojedinosti treba uskladiti s novim propisima. <a href=\"/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/\">Najava upozorenja umjesto kazni</a> nije odgoda obveza. <a href=\"/#checker\">Provjerite tehničku dostupnost weba</a> ili <a href=\"/app?new=1\">pripremite cjenik</a>. Checker nije pravna potvrda usklađenosti.</p>"
+        "html": "<p>Uskladite postojeće datoteke i arhivu s objavljenim pravilnikom. Provjerite javni dohvat i pripremite ažuriranje cjenika. <a href=\"/digitalni-cjenik-2026/\">Vodič za digitalni cjenik</a> i <a href=\"/specifikacija-csv-xml/\">CSV/XML specifikacija</a> daju dodatni tehnički kontekst. <a href=\"/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/\">Najava upozorenja umjesto kazni</a> nije odgoda obveza. <a href=\"/#checker\">Provjerite tehničku dostupnost weba</a> ili <a href=\"/app?new=1\">pripremite cjenik</a>. Checker nije pravna potvrda usklađenosti.</p>"
       }
     ]
   },
