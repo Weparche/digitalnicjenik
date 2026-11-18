@@ -21,3 +21,24 @@ test('landing shows seven dated verified references with real Publisher destinat
     expect(layout.pageOverflow).toBe(false)
   }
 })
+
+test('landing pricing uses adjacent desktop cards and stacked mobile cards', async ({ page }) => {
+  await page.goto('/')
+  const section = page.locator('#rjesenja')
+  await expect(section.getByRole('heading', {name:'Trebate riješiti digitalni cjenik?'})).toBeVisible()
+  await expect(section).toContainText('Besplatna objava 24 sata.')
+  await expect(section).toContainText('Bez kartice i bez automatske naplate.')
+  await expect(section.getByRole('button',{name:'Odaberi Web Link'})).toBeVisible()
+  await expect(section.getByRole('button',{name:'Zatraži ugradnju'})).toBeVisible()
+  for (const width of [320,390,768,1024,1440]) {
+    await page.setViewportSize({width,height:844})
+    const layout = await section.evaluate(el=>{
+      const plan=el.querySelector('.acq-plan')!.getBoundingClientRect()
+      const extra=el.querySelector('.acq-extra')!.getBoundingClientRect()
+      return {planTop:plan.top,extraTop:extra.top,planRight:plan.right,extraLeft:extra.left,overflow:document.documentElement.scrollWidth>innerWidth+1}
+    })
+    if(width>=1000) {expect(Math.abs(layout.planTop-layout.extraTop)).toBeLessThan(2); expect(layout.extraLeft).toBeGreaterThan(layout.planRight)}
+    else expect(layout.extraTop).toBeGreaterThan(layout.planTop)
+    expect(layout.overflow).toBe(false)
+  }
+})
