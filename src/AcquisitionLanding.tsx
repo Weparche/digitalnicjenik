@@ -11,6 +11,16 @@ import './acquisition.css'
 import { landingFaq } from './productFaq'
 import { getLatestPosts,newsArticlePath } from './news/posts'
 
+const liveReferences = [
+  { name: 'Auto Gubić', domain: 'autogubic.hr', category: 'Autoservis', slug: 'auto-gubic', initials: 'AG' },
+  { name: 'Handyman', domain: 'handyman.nepar.hr', category: 'Montaža i kućne usluge', slug: 'handyman', initials: 'H' },
+  { name: 'NEPAR Kids', domain: 'kids.nepar.hr', category: 'Personalizirani pokloni', slug: 'nepar-kids', initials: 'NK' },
+  { name: 'NEPAR', domain: 'nepar.hr', category: 'Digitalna rješenja', slug: 'nepar-solutions', initials: 'N' },
+  { name: 'GeoAdrese', domain: 'geoadrese.net', category: 'Geoinformacijske usluge', slug: 'geoadrese', initials: 'GA' },
+  { name: 'KPDinfo', domain: 'kpdinfo.com', category: 'Klasifikacija i savjetovanje', slug: 'kpdinfo', initials: 'K' },
+  { name: 'Digitalni cjenik', domain: 'digitalnicjenik.nepar.hr', category: 'Objava cjenika', slug: 'digitalni-cjenik', initials: 'DC' },
+] as const
+
 function Wordmark() {
   return <a className="acq-logo" href="/" aria-label="NEPAR početna"><svg width="32" height="34" viewBox="0 0 32 34" aria-hidden="true"><rect x="1" y="18" width="8" height="15" rx="4" fill="currentColor"/><rect x="12" y="9" width="8" height="24" rx="4" fill="currentColor"/><rect x="23" y="1" width="8" height="32" rx="4" fill="currentColor"/></svg><span>NEPAR</span></a>
 }
@@ -62,7 +72,20 @@ export function AcquisitionLanding() {
     </div>
     <div className="acq-content">
       <p className="acq-domain-note">Naše usluge: <a href="/c/digitalni-cjenik">službeni digitalni cjenik naših usluga</a> · CSV/XML i arhiva.</p>
-      <section className="acq-help acq-reference" aria-labelledby="reference-title"><div><span className="acq-preview-label">Stvarna NEPAR implementacija</span><h2 id="reference-title">Digitalni cjenik za Auto Gubić</h2><p>Javni cjenik na webu autoservisa, s aktualnom i baznom cijenom, CSV/XML poveznicama i podacima o objavi.</p><p><a href="/c/auto-gubic">Otvori objavljeni cjenik Auto Gubić →</a></p></div><a className="acq-secondary" href="/reference/auto-gubic/">Pogledajte primjer<IconArrowRight size={19}/></a></section>
+      <section className="acq-live-references" id="reference" aria-labelledby="reference-title">
+        <div className="acq-reference-heading">
+          <div><span className="acq-preview-label">Stvarne NEPAR implementacije</span><h2 id="reference-title">Digitalni cjenici koji već rade.</h2><p>Od autoservisa do digitalnih usluga i web trgovine. Otvorite stvarne javne cjenike objavljene preko NEPAR Publishera.</p></div>
+          <div className="acq-reference-metrics" aria-label="7 implementacija, 63 od 63 bodova"><strong>7</strong><span>objavljenih cjenika</span><strong>63/63</strong><span>bodova Checkera</span></div>
+        </div>
+        <ul className="acq-reference-grid">
+          {liveReferences.map(({name, domain, category, slug, initials}) => <li key={slug}><a className="acq-reference-card" href={'/c/'+slug} aria-label={name+' – javni digitalni cjenik'}>
+            <div className="acq-reference-card-top"><span className="acq-reference-mark" aria-hidden="true">{initials}</span><span className="acq-reference-score"><IconCircleCheckFilled size={15} aria-hidden="true"/>9/9</span></div>
+            <h3>{name}</h3><span className="acq-reference-domain">{domain}</span><span className="acq-reference-category">{category}</span>
+            <span className="acq-reference-link">Otvori cjenik<IconArrowRight size={16} aria-hidden="true"/></span>
+          </a></li>)}
+        </ul>
+        <div className="acq-reference-bottom"><div><p className="acq-reference-note">Rezultati tehničkih provjera 17. i 18.11.2026. Nisu potvrda pravne usklađenosti.</p><a href="/reference/auto-gubic/">Pogledajte primjer ugradnje za Auto Gubić →</a></div><a className="acq-primary" href="/app?new=1&plan=link">Objavite i svoj digitalni cjenik<IconArrowRight size={19} aria-hidden="true"/></a></div>
+      </section>
       <section className="acq-solutions" id="rjesenja" aria-labelledby="solutions-title"><h2 id="solutions-title">Trebate riješiti digitalni cjenik?</h2><p className="acq-trial-note"><strong>Besplatna objava 24 sata.</strong> Učitajte cjenik i dobijte stvarni javni link s CSV/XML datotekama. Isti link zadržavate uz godišnji paket, bez kartice i bez automatske naplate.</p><p>Web Link je za web koji već imate. Učitajte novu datoteku kad promijenite cijene. Poveznicu zadržavate cijelu godinu.</p><PlanCards onSelect={(p) => onLead(p === 'web' ? 'implementation' : 'plugin', p)} onExtra={() => onLead('consultation')}/><p className="acq-domain-note">Vaša postojeća web stranica i domena ostaju vaše. NEPAR objavljuje cjenik i priprema link koji možete ugraditi.</p><p><a href="/objava-digitalnog-cjenika/">Kako izgleda objava i ugradnja →</a></p></section>
       <section className="acq-help" aria-labelledby="acq-current-title"><div><span className="acq-preview-label">Aktualno · 16.11.2026.</span><h2 id="acq-current-title">Sidrene cijene i digitalni cjenik od 17. studenoga</h2><p>Ministarstvo potvrđuje vanjske poveznice na digitalni cjenik i arhivu. NEPAR čuva arhivu 15 dana od zamjene, prema novom pravilniku. Provjerite svoj web i najnovija pravila.</p><p><a href="/digitalni-cjenik-2026/">Vodič za digitalni cjenik 2026.</a> · <a href="/sidrena-cijena/">Sidrene cijene: zakon i primjeri</a> · <a href="/statistika-digitalnih-cjenika/">Statistika checkera</a></p></div><a className="acq-secondary" href="/vijesti/digitalni-cjenici-novi-pravilnici-15-dana-2026/">Najnovije o pravilima<IconArrowRight size={19}/></a></section>
       <section className="acq-compact-faq" aria-labelledby="landing-faq-title"><h2 id="landing-faq-title">Česta pitanja</h2>{landingFaq.map(entry=><details key={entry.question}><summary>{entry.question}<IconChevronDown size={18}/></summary><p>{entry.answer}</p></details>)}<a href="/faq/">Sva pitanja i odgovori<IconArrowRight size={17}/></a></section>
