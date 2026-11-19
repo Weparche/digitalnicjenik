@@ -106,11 +106,11 @@ export const NEWS_POSTS: NewsPost[] = [
     "slug": "digitalni-cjenici-novi-pravilnici-15-dana-2026",
     "title": "Digitalni cjenici od 17. studenoga: arhiva 15 dana i nova pravila",
     "seoTitle": "Digitalni cjenici 2026.: arhiva 15 dana i nova pravila | NEPAR",
-    "description": "Ministarstvo 16.11. potvrdilo slanje pravilnika na objavu: arhiva 15 dana, izmjene do 11 sati, CSV/XML i proširene iznimke. Početak 17.11.",
-    "excerpt": "Ministarstvo je objavilo detalje konačnih pravilnika upućenih na objavu. Arhiva se skraćuje na 15 dana, a pravila oglašavanja i iznimke preciziraju.",
-    "readingTimeMinutes": 4,
+    "description": "Konačni pravilnici NN 132/2026: arhiva 15 dana, CSV/XML, bazne cijene i HOK Excel predlošci za robu i usluge.",
+    "excerpt": "Konačni pravilnici vrijede od 17.11. HOK je objavio praktične upute i Excel predloške za robu i usluge.",
+    "readingTimeMinutes": 5,
     "publishedAt": "2026-11-16T15:36:00+01:00",
-    "updatedAt": "2026-11-16T19:16:00+01:00",
+    "updatedAt": "2026-11-18T20:46:00+01:00",
     "author": {
       "name": "NEPAR Publisher",
       "url": "https://nepar.hr/"
@@ -121,10 +121,10 @@ export const NEWS_POSTS: NewsPost[] = [
       "CSV/XML",
       "15 dana"
     ],
-    "kicker": "Ministarstvo gospodarstva · 16.11.2026.",
+    "kicker": "Narodne novine · NN 132/2026",
     "widgetEyebrow": "NOVO · PRAVILNICI",
     "widgetHeadline": "Arhiva cjenika 15 dana prema novim pravilima",
-    "widgetSub": "Ministarstvo potvrdilo slanje pravilnika na objavu",
+    "widgetSub": "Konačni pravilnici i HOK upute od 17.11.",
     "schemaSection": "Regulativa",
     "image": {
       "src": "/og/vijesti-digitalni-cjenik-2026.png",
@@ -142,6 +142,21 @@ export const NEWS_POSTS: NewsPost[] = [
     },
     "sources": [
       {
+        "title": "NN 132/2026-1584 — Pravilnik o načinu objave cjenika proizvoda",
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_11_132_1584.html",
+        "type": "primary"
+      },
+      {
+        "title": "NN 132/2026-1583 — Pravilnik o isticanju bazne cijene proizvoda",
+        "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_11_132_1583.html",
+        "type": "primary"
+      },
+      {
+        "title": "e-Savjetovanje — izvješće o načinu objave cjenika (institucionalno pojašnjenje)",
+        "url": "https://esavjetovanja.gov.hr/EConReport/10332",
+        "type": "primary"
+      },
+      {
         "title": "Ministarstvo gospodarstva, 16.11.2026. — priopćenje o konačnim pravilnicima",
         "url": "https://mingo.gov.hr/vijesti/pravilnici-o-baznim-cijenama-i-objavi-cjenika-veca-transparentnost-za-potrosace-provediva-pravila-za-gospodarstvo/10490",
         "type": "primary"
@@ -155,33 +170,43 @@ export const NEWS_POSTS: NewsPost[] = [
         "title": "NN 101/2026 — dosadašnja odluka o objavi cjenika",
         "url": "https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html",
         "type": "primary"
+      },
+      {
+        "title": "HOK, 17.11.2026. — upute i predlošci za robu i usluge",
+        "url": "https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-upute-za-objavu-cjenika-i-usluga",
+        "type": "secondary"
       }
     ],
     "sections": [
       {
-        "heading": "Što je Ministarstvo potvrdilo 16. studenoga?",
+        "heading": "Konačni pravilnici na snazi od 17. studenoga",
         "level": 2,
-        "html": "<p>Konačni pravilnici objavljeni su u NN 132/2026 (1583 i 1584), s početkom primjene 17. studenoga. Članci 3. i 6. pravilnika 1584 definiraju sadržaj i redoslijed podataka, UTF-8, točku-zarez, stabilnu adresu i naziv datoteke. NEPAR uvodi novi format uz zadržavanje prethodnih arhiva. <a href=\"https://narodne-novine.nn.hr/eli/sluzbeni/2026/132/pdf\">Službeni tekst</a>.</p>"
+        "html": "<p>Oba pravilnika objavljena su 16.11.2026. u NN 132/2026. Stupanje na snagu 17.11. propisuju članak 7. pravilnika o objavi cjenika i članak 9. pravilnika o baznoj cijeni. <a href=\"https://narodne-novine.nn.hr/clanci/sluzbeni/2026_11_132_1584.html\">Objava cjenika (1584)</a> i <a href=\"https://narodne-novine.nn.hr/clanci/sluzbeni/2026_11_132_1583.html\">bazna cijena (1583)</a> mjerodavni su tekstovi.</p>"
+      },
+      {
+        "heading": "HOK objavio nove upute i Excel predloške 17. studenoga",
+        "level": 2,
+        "html": "<p>Hrvatska obrtnička komora 17.11.2026. u 13:51 objavila je <a href=\"https://www.hok.hr/novosti-iz-hok/dodatna-cijena-i-upute-za-objavu-cjenika-i-usluga\">praktične upute za objavu cjenika robe i usluga</a>. Na stranici su dostupni PDF s uputama, zasebni Excel predlošci za robu i usluge te izdanje NN 132/2026. Riječ je o pomoći pri primjeni, ne o novom propisu ili odgodi.</p><p>Excel služi pripremi podataka; za javnu objavu prema pravilniku potreban je CSV ili XML. Referentni datum 10.9.2026. ne primjenjuje se jednako na sve kategorije: za ranije obuhvaćenu robu vrijedi 2.5.2025., uz ostala pravila i iznimke iz pravilnika. Pogledajte <a href=\"/specifikacija-csv-xml/\">CSV/XML specifikaciju</a>, <a href=\"/digitalni-cjenik-2026/\">vodič</a> ili <a href=\"/#checker\">provjerite web</a>.</p>"
       },
       {
         "heading": "Ministarstvo potvrdilo vanjski link za aktualni cjenik i arhivu",
         "level": 2,
-        "html": "<p id=\"vanjski-link\">U izvješću e-Savjetovanja o načinu objave cjenika, odgovor na članak 3. označen kao prihvaćen (redak 173 izvezenog izvješća), Ministarstvo navodi: <q>Trgovci mogu objaviti cjenik iz članka 3. ovog Prijedloga zakona putem poveznice koju ističu na svojoj mrežnoj stranici, a koja vodi na mrežnu stranicu druge osobe, vanjskog pružatelja usluge pod uvjetom da su datoteke javno dostupne bez autentifikacije te pogodna za automatsku obradu.</q> U istom odgovoru potvrđuje mogućnost vanjske arhive i skraćenje na 15 dana.</p><p>To podupire model NEPAR Web Link: na vlastitom webu istaknite poveznicu prema javnom cjeniku s CSV/XML i arhivom. Preporučujemo i izravne poveznice na odabrani strojno čitljivi format i arhivu. NEPAR čuva arhivu 15 dana od zamjene prema NN 132/2026-1584. <a href=\"https://esavjetovanja.gov.hr/EConReport/10332\">Službeno izvješće e-Savjetovanja</a>.</p>"
+        "html": "<p id=\"vanjski-link\">U izvješću e-Savjetovanja o načinu objave cjenika, odgovor na članak 3. označen kao prihvaćen (redak 173 izvezenog izvješća), Ministarstvo navodi: <q>Trgovci mogu objaviti cjenik iz članka 3. ovog Prijedloga zakona putem poveznice koju ističu na svojoj mrežnoj stranici, a koja vodi na mrežnu stranicu druge osobe, vanjskog pružatelja usluge pod uvjetom da su datoteke javno dostupne bez autentifikacije te pogodna za automatsku obradu.</q> U istom odgovoru potvrđuje mogućnost vanjske arhive i skraćenje na 15 dana.</p><p>Ovo je institucionalno pojašnjenje iz izvješća, a ne izričita odredba pravilnika o vanjskom hostingu. Članci 3. i 6. zahtijevaju objavu na webu trgovca i stabilnu URL adresu. To podupire model NEPAR Web Link: na vlastitom webu istaknite poveznicu prema javnom cjeniku s CSV/XML i arhivom. Preporučujemo i izravne poveznice na odabrani strojno čitljivi format i arhivu. NEPAR čuva arhivu 15 dana od zamjene prema NN 132/2026-1584. <a href=\"https://esavjetovanja.gov.hr/EConReport/10332\">Službeno izvješće e-Savjetovanja</a>.</p>"
       },
       {
         "heading": "Digitalni cjenik: arhiva 15 dana i izmjene do 11 sati",
         "level": 2,
-        "html": "<p>Prema Ministarstvu, CSV ili XML ostaju predviđeni formati. Nova verzija cjenika objavljuje se do 11 sati na dan promjene, a prethodna ostaje dostupna 15 dana nakon zamjene. To je kraće od 30 dana iz dosadašnjeg režima. Automatizirani pristup podacima ne smije se blokirati. Za prodajna mjesta s jednakim asortimanom i cjenikom predviđena je zajednička objava; različiti cjenici objavljuju se odvojeno.</p>"
+        "html": "<p>Članci 3., 5. i 6. pravilnika 1584 propisuju CSV/XML, automatizirani dohvat, objavu izmjene do 11 sati na dan promjene na istoj URL adresi te dostupnost zamijenjene verzije 15 dana. Propisani su redoslijed podataka, UTF-8, točka-zarez i naziv datoteke s identifikatorom trgovca, prodajnim mjestom, vrstom cjenika, brojem pohrane i vremenskom oznakom. ZIP/GZ su dopušteni. Jedan cjenik može pokriti sva mjesta ako je jednak.</p><p>Za usluge se navode naziv, maloprodajna cijena, podatak o posebnom obliku prodaje i bazna cijena; za robu i ostali podaci prema članku 3.</p>"
       },
       {
         "heading": "Bazna cijena, oglašavanje i iznimke",
         "level": 2,
-        "html": "<p>Referentni datumi ostaju 2. svibnja 2025. za ranije obuhvaćene kategorije i 10. rujna 2026. za ostalu robu i usluge. Za naknadno uvedenu ponudu relevantna je početna cijena. Ministarstvo navodi obvezno isticanje bazne cijene u tiskanim i televizijskim oglasima s maloprodajnom cijenom, a dobrovoljno u drugim oblicima oglašavanja. To ne ukida zasebne obveze isticanja cijene na prodajnom mjestu. Priopćenje navodi i proširene iznimke za određene personalizirane i dinamičke cijene te posredničke kanale; točan obuhvat treba provjeriti u pravilnicima.</p>"
+        "html": "<p>Članak 3. pravilnika 1583 zadržava referentne datume 2.5.2025. za navedene kategorije robe i 10.9.2026. za ostalu robu i usluge. Za novu ponudu relevantan je dan uvođenja. Ako je tada vrijedio popust, za prvu skupinu primjenjuje se najniža cijena u prethodnih 30 dana prije početka popusta, a za ostalu robu i usluge prethodno primijenjena maloprodajna cijena, prema stavcima 2.–5.</p><p>Članak 4. oba pravilnika uređuje iznimke za posebno regulirane cijene, određene popuste, personalizirane i dinamičke cijene pod propisanim uvjetima, automate i posredničke kanale. Nema općeg izuzeća svih obrtnika. Članci 5.–8. pravilnika 1583 uređuju prikaz na prodajnom mjestu i oglašavanje: bazna cijena obvezna je u tiskanim i TV oglasima s maloprodajnom cijenom; u ostalim oglasima dobrovoljna. Ranije izrađeni tiskani oglasi mogu se koristiti najdulje 30 dana, što nije opća odgoda.</p>"
       },
       {
         "heading": "Što sada napraviti s postojećim cjenikom?",
         "level": 2,
-        "html": "<p>Sačuvajte postojeće datoteke i arhivu dok se ne potvrdi objavljeni tekst. Provjerite javni dohvat i pripremite ažuriranje cjenika. <a href=\"/digitalni-cjenik-2026/\">Vodič za digitalni cjenik</a> i <a href=\"/specifikacija-csv-xml/\">CSV/XML specifikacija</a> daju tehnički kontekst ranijeg režima; pojedinosti treba uskladiti s novim propisima. <a href=\"/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/\">Najava upozorenja umjesto kazni</a> nije odgoda obveza. <a href=\"/#checker\">Provjerite tehničku dostupnost weba</a> ili <a href=\"/app?new=1\">pripremite cjenik</a>. Checker nije pravna potvrda usklađenosti.</p>"
+        "html": "<p>Uskladite postojeće datoteke i arhivu s objavljenim pravilnikom. Provjerite javni dohvat i pripremite ažuriranje cjenika. <a href=\"/digitalni-cjenik-2026/\">Vodič za digitalni cjenik</a> i <a href=\"/specifikacija-csv-xml/\">CSV/XML specifikacija</a> pružaju dodatni tehnički kontekst. <a href=\"/vijesti/digitalni-cjenici-inspektorat-upozorenja-2026/\">Najava upozorenja umjesto kazni</a> nije odgoda obveza. <a href=\"/#checker\">Provjerite tehničku dostupnost weba</a> ili <a href=\"/app?new=1\">pripremite cjenik</a>. Checker nije pravna potvrda usklađenosti.</p>"
       }
     ]
   },
