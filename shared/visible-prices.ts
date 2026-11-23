@@ -37,6 +37,7 @@ function linesFromHtml(html: string): string[] {
     .replace(/<!--[^]*?-->/g, ' ')
     .replace(/<(?:script|style|noscript|svg|nav|header|footer|form|template)\b[^>]*>[\s\S]*?<\/\s*(?:script|style|noscript|svg|nav|header|footer|form|template)\s*>/gi, ' ')
     .replace(/<[^>]*\b(?:hidden|aria-hidden\s*=\s*["']true["'])[^>]*>[\s\S]*?<\/[^>]+>/gi, ' ')
+    .replace(/<h[1-6]\b[^>]*>/gi, '\n__PRICE_HEADING__')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/\s*(?:p|h[1-6]|li|tr|section|article)\s*>/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
@@ -74,19 +75,19 @@ export function detectVisiblePrices(html: string, url: string): VisiblePriceRow[
   const lines = linesFromHtml(html)
   const rows: VisiblePriceRow[] = []
   let heading: string | null = null
-  let lastRow: { row: VisiblePriceRow; line: number } | null = null
+  const cursor: { lastRow: { row: VisiblePriceRow; line: number } | null } = { lastRow: null }
   const add = (name: string, value: number, evidence: string, line: number) => {
     const row: VisiblePriceRow = { name, currentPrice: value, basePrice: null, referenceDate: null, status: 'current_only', evidence: evidence.slice(0, 260), url }
     rows.push(row)
-    lastRow = { row, line }
+    cursor.lastRow = { row, line }
   }
   for (let index = 0; index < lines.length && rows.length < MAX_ROWS; index++) {
     const line = lines[index]
     const prices = amounts(line)
     if (!prices.length) {
       if (!isBase(line)) {
-        const candidate = safeName(line)
-        if (candidate && candidate.length < 65) { heading = candidate; lastRow = null }
+        const candidate = safeName(line.replace(/^__PRICE_HEADING__/, ''))
+        if (candidate && candidate.length < 65 && (/^__PRICE_HEADING__/.test(line) || /\b(?:nastava|tečaj|kurs|radionica|paket|usluga)\b/i.test(line))) { heading = candidate; cursor.lastRow = null }
       }
       continue
     }
@@ -97,7 +98,7 @@ export function detectVisiblePrices(html: string, url: string): VisiblePriceRow[
       const previous = prices.find(p => p.start < labelStart)
       const anchor = prices.find(p => p.start > labelStart)
       if (previous && anchor) {
-        const name = safeName(line.slice(0, previous.start)) || heading
+        const name = safeName(line.slice(0, previous.start).replace(/^__PRICE_HEADING__/, '')) || heading
         if (name) {
           add(name, previous.value, line, index)
           const row = rows[rows.length - 1]
@@ -105,11 +106,11 @@ export function detectVisiblePrices(html: string, url: string): VisiblePriceRow[
           row.referenceDate = referenceDate(line)
           row.status = rowStatus(row)
         }
-      } else if (lastRow && index - lastRow.line <= 3 && anchor && heading === lastRow.row.name) {
-        lastRow.row.basePrice = anchor.value
-        lastRow.row.referenceDate = referenceDate(line) || lastRow.row.referenceDate
-        lastRow.row.evidence = (lastRow.row.evidence + ' | ' + line).slice(0, 260)
-        lastRow.row.status = rowStatus(lastRow.row)
+      } else if (cursor.lastRow && index - cursor.lastRow.line <= 3 && anchor && heading === cursor.lastRow.row.name) {
+        cursor.lastRow.row.basePrice = anchor.value
+        cursor.lastRow.row.referenceDate = referenceDate(line) || cursor.lastRow.row.referenceDate
+        cursor.lastRow.row.evidence = (cursor.lastRow.row.evidence + ' | ' + line).slice(0, 260)
+        cursor.lastRow.row.status = rowStatus(cursor.lastRow.row)
       }
       continue
     }
