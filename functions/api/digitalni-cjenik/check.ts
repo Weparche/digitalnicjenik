@@ -9,6 +9,7 @@ import { deferredNote, ruleFor, NN132_RULES } from '../../../shared/compliance/l
 import { canonicalPriceHeader, priceCsvHeader } from '../../../src/price-engine/adapters/marketinoCsv';
 import { ANNOUNCED_ARCHIVE_DAYS } from '../../../shared/regulation-update';
 import { aggregateDocumentStatus, technicalReport, type DocumentAnalysis, type DocumentFinding, type FindingGroup, type WebsiteCheckDetails } from '../../../shared/website-check';
+import { detectVisiblePrices, summarizeVisiblePrices, type VisiblePriceRow } from '../../../shared/visible-prices';
 import { parseContentDispositionFilename } from '../../../shared/compliance/checks';
 import { readZipDirectory, readZipMember, type FetchRange } from './zip-inspection';
 import { requireAdmin } from '../../_admin-auth';
@@ -487,6 +488,10 @@ export function pageLooksLikePriceList(response: Response, body: string): boolea
   // Only a linked document counts; WordPress pages always reference sitemap/wlwmanifest/oEmbed XML.
   if (/href=["'][^"']*\.(csv|xml)(?:[?#][^"']*)?["']/i.test(body.replace(/href=["'][^"']*(?:sitemap|wlwmanifest|oembed|feed|rss|xmlrpc)[^"']*["']/gi, ''))) score += 1;
   const explicitList = /<(?:h1|h2|h3|title)[^>]*>[^<]*(?:cjenik|cjenic|cijene|cijenama|price list)/i.test(body);
+  const visiblePrices = detectVisiblePrices(body, '');
+  // A single named service with its visible reference price is an HTML price list,
+  // but never evidence that a machine-readable CSV/XML publication exists.
+  if (visiblePrices.some(row => row.basePrice !== null) || (explicitList && visiblePrices.length)) return true;
   const priceTable = /<(table|tbody)[\s>]/i.test(body) && /(cijena|price|€|\beur\b)/i.test(visible) && /(naziv|name|usluga|artikl)/i.test(visible);
   return score >= 2 && (explicitList || priceTable);
 }
@@ -1094,13 +1099,15 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     details.pricePageFound = true;
     details.pricePageUrl = homepage.url.href;
   }
+  const visiblePriceRows: VisiblePriceRow[] = homepageReadable && isHtml(homepage.response, html) ? detectVisiblePrices(html, homepage.url.href) : [];
+  let visiblePagesScanned = homepageReadable && isHtml(homepage.response, html) ? 1 : 0;
   let links = homepageReadable && isHtml(homepage.response,html) ? extractLinks(html, homepage.url) : [];
   let renderedPage:URL|null=null;
   const dynamicShell = homepageReadable && isHtml(homepage.response,html) && !links.length && stripTags(html).length < 150 && (html.match(/<script\b/gi)||[]).length >= 5;
   if (dynamicShell || homepageChallenge) {
     details.dynamicShell = true;
     const rendered=await renderDynamicPage(homepage.url,env);
-    if(rendered){const found=extractLinks(rendered.html,rendered.url);if(found.length){links=found;renderedPage=rendered.url;details.dynamicShell=false;details.homepageReadable=true;details.renderedEvidence='Poveznice su pronađene nakon ograničenog renderiranja: '+rendered.url.href;}}
+    if(rendered){const found=extractLinks(rendered.html,rendered.url);const rows=detectVisiblePrices(rendered.html,rendered.url.href);visiblePriceRows.push(...rows);visiblePagesScanned++;if(found.length){links=found;renderedPage=rendered.url;details.dynamicShell=false;details.homepageReadable=true;details.renderedEvidence='Poveznice su pronađene nakon ograničenog renderiranja: '+rendered.url.href;}}
   }
   const directFormat = homepageReadable && !isHtml(homepage.response,html)
     ? html.trimStart().startsWith('<') ? (documentLooksValid('xml',homepage.response,html) ? 'xml' : null) : documentLooksValid('csv',homepage.response,directTruncated ? trimCsvToCompleteRecords(html,MAX_CSV_ROWS) : html) ? 'csv' : null
@@ -1167,6 +1174,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
       if (isBotChallenge(fetched.response, secondaryHtml) || [401, 403, 429].includes(fetched.response.status)) { network.blocked = true; continue; }
       if (!fetched.response.ok) { network.checked = true; continue; }
       network.checked = true;
+      if (isHtml(fetched.response, secondaryHtml)) { visiblePriceRows.push(...detectVisiblePrices(secondaryHtml, fetched.url.href)); visiblePagesScanned++; }
       if (pageLooksLikePriceList(fetched.response, secondaryHtml)) {
         details.pricePageFound = true;
         details.pricePageUrl ||= fetched.url.href;
@@ -1247,6 +1255,13 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
   if (robots) { details.robotsStatus = robots.status; details.robotsEvidence = robots.evidence; }
   details.fetchBlocked = network.blocked;
   details.networkIncomplete = network.failed;
+  const visibleDistinct = new Map<string, VisiblePriceRow>();
+  for (const row of visiblePriceRows) {
+    const key = row.url + '|' + row.name.toLocaleLowerCase('hr-HR') + '|' + row.currentPrice;
+    const previous = visibleDistinct.get(key);
+    if (!previous || (previous.basePrice === null && row.basePrice !== null)) visibleDistinct.set(key, row);
+  }
+  details.visiblePrices = summarizeVisiblePrices([...visibleDistinct.values()].slice(0, 30), visiblePagesScanned, network.blocked || network.failed || Boolean(details.dynamicShell));
   details.csvAnalysis = analyses.find(a => a.format === 'csv') ?? { format: 'csv', url: csv[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['CSV nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
   details.xmlAnalysis = analyses.find(a => a.format === 'xml') ?? { format: 'xml', url: xml[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['XML nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
   const classification = aggregatePriceListKind(analyses);

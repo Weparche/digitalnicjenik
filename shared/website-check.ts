@@ -1,4 +1,5 @@
 import { ANNOUNCED_ARCHIVE_DAYS } from './regulation-update'
+import type { VisiblePricesReport } from './visible-prices'
 
 /** Evidence model shared by the anonymous checker and the acquisition UI. */
 export type DocumentAnalysisStatus = 'pass' | 'warning' | 'fail' | 'unknown'
@@ -32,6 +33,8 @@ export function aggregateDocumentStatus(statuses: DocumentAnalysisStatus[]): Doc
 }
 
 export type WebsiteCheckDetails = {
+  /** Advisory analysis of HTML-visible prices; never part of the nine CSV/XML checks. */
+  visiblePrices?: VisiblePricesReport
   reachable?: boolean
   homepageReadable?: boolean
   https?: boolean
