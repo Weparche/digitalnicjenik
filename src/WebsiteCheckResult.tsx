@@ -73,6 +73,28 @@ export function WebsiteCheckResultPanel({ result, onUpload, onRetry,onHelp, webs
       {result.details?.publicationDateEvidence && <p><strong>Aktualnost:</strong> {result.details.publicationDateEvidence}</p>}
       {result.details?.robotsEvidence && <p><strong>Automatsko preuzimanje:</strong> {result.details.robotsEvidence} Sam robots.txt ne dokazuje stvarnu blokadu; pristup datoteci provjerava se zasebno.</p>}
     </div>
+    {result.details?.visiblePrices && <section className="acq-publication-notes" aria-label="Cijene istaknute na web-stranici">
+      <h3>Cijene istaknute na webu <small>— ne utječe na rezultat 9/9</small></h3>
+      <p>Odvojena informativna analiza javnog HTML-a. Pronađeni iznosi nisu potvrda ispravnosti povijesnih cijena ili primjenjivosti propisa; CSV/XML objava provjerava se zasebno.</p>
+      {result.details.visiblePrices.status === 'unavailable'
+        ? <p>Automatski dohvat sadržaja nije uspio. Ne možemo potvrditi jesu li cijene istaknute.</p>
+        : result.details.visiblePrices.rows.length === 0
+          ? <p>U {result.details.visiblePrices.pagesScanned} pregledanih HTML stranica nisu prepoznati dovoljno jasno povezani nazivi i cijene. To ne dokazuje da bazna cijena nedostaje.</p>
+          : <><p>Prepoznato {result.details.visiblePrices.rows.length} imenovanih stavki na {result.details.visiblePrices.pagesScanned} pregledanih HTML stranica. Provjera je ograničena na dohvaćene i čitljive stranice.</p>
+            <ul className="acq-document-findings">
+              {result.details.visiblePrices.rows.map((row, index) => <li key={row.url+'|'+row.name+'|'+index}>
+                <strong>{row.name}</strong> — aktualna cijena {row.currentPrice.toLocaleString('hr-HR',{style:'currency',currency:'EUR'})};
+                {' '}{row.basePrice !== null ? `bazna / referentna ${row.basePrice.toLocaleString('hr-HR',{style:'currency',currency:'EUR'})}` : 'bazna cijena nije jednoznačno prepoznata uz ovu stavku'}.
+                {' '}{row.status === 'paired' ? 'Iznos i referentni datum pronađeni (bez potvrde povijesne točnosti).' : row.status === 'needs_review' ? 'Referentni datum nije potvrđen — ručno provjeriti.' : 'Nije dokaz neusklađenosti; provjeriti primjenjivost i javni prikaz.'}
+                {row.referenceDate && <small>Referentni datum: 10. 9. 2026.</small>}
+                <small>Dokaz: {row.evidence}</small>
+                {/^https?:\/\//.test(row.url) && <a href={row.url} target="_blank" rel="noreferrer"> Izvorna stranica <IconExternalLink size={14}/></a>}
+              </li>)}
+            </ul>
+          </>}
+      {result.details.visiblePrices.limitation && <p>{result.details.visiblePrices.limitation}</p>}
+      <p><small>Za kulturne, obrazovne i druge djelatnosti primjenjivost članka 4. NN 132/2026 potrebno je zasebno utvrditi; sama djelatnost nije automatski dokaz izuzeća.</small></p>
+    </section>}
     {result.details?.platform && result.details.platform !== 'unknown' && <aside className="workspace-platform-tip">
       <strong>Upute za {platformInstructions[result.details.platform].name}</strong>
       <p>{platformInstructions[result.details.platform].tip}</p>
