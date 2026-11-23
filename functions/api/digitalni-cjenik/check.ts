@@ -1261,7 +1261,7 @@ async function checkWebsite(input: unknown, env: CheckerEnv): Promise<CheckResul
     const previous = visibleDistinct.get(key);
     if (!previous || (previous.basePrice === null && row.basePrice !== null)) visibleDistinct.set(key, row);
   }
-  details.visiblePrices = summarizeVisiblePrices([...visibleDistinct.values()].slice(0, 30), visiblePagesScanned, network.blocked || network.failed || details.dynamicShell);
+  details.visiblePrices = summarizeVisiblePrices([...visibleDistinct.values()].slice(0, 30), visiblePagesScanned, network.blocked || network.failed || Boolean(details.dynamicShell));
   details.csvAnalysis = analyses.find(a => a.format === 'csv') ?? { format: 'csv', url: csv[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['CSV nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
   details.xmlAnalysis = analyses.find(a => a.format === 'xml') ?? { format: 'xml', url: xml[0]?.href ?? null, fetched: false, structureRecognized: false, itemCount: 0, status: 'unknown', structureStatus: 'unknown', contentStatus: 'unknown', structureReasons: ['XML nije potvrđen u ovoj provjeri.'], findings: [], totalFindings: 0 };
   const classification = aggregatePriceListKind(analyses);
